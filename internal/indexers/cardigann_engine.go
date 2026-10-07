@@ -655,10 +655,32 @@ func (s *cgSession) checkSiteAddress(raw string) error {
 	if u.Scheme != "http" && u.Scheme != "https" {
 		return fmt.Errorf("%s: the site definition wants to use an address that is not a web address, so Cue refused", s.name)
 	}
-	if !s.siteRelated(u.Hostname()) {
+	if !s.siteRelated(u.Hostname()) && !s.carriesNothingSecret() {
 		return fmt.Errorf("%s: the site definition wants to connect to %s, which is not one of the site's own addresses, so Cue refused", s.name, u.Hostname())
 	}
 	return nil
+}
+
+// carriesNothingSecret says the site is public, has no login and holds no
+// secret of the person's (password, cookie, passkey, key or token), so a
+// request to another host can't hand anything private to it. Such sites may
+// use a separate API host: The Pirate Bay searches through apibay.org. The
+// address check still applies (netguard), and cookies stay with the hosts
+// that set them.
+func (s *cgSession) carriesNothingSecret() bool {
+	if s.def == nil || !strings.EqualFold(s.def.Type, "public") || s.def.Login != nil {
+		return false
+	}
+	for _, f := range s.def.Settings {
+		name := strings.ToLower(f.Name)
+		secretish := f.Type == "password" ||
+			strings.Contains(name, "pass") || strings.Contains(name, "cookie") || strings.Contains(name, "key") ||
+			strings.Contains(name, "token") || strings.Contains(name, "rss") || strings.Contains(name, "uid")
+		if secretish && strings.TrimSpace(s.settings[f.Name]) != "" {
+			return false
+		}
+	}
+	return true
 }
 
 // siteRelated reports whether host is the site's address (the one configured

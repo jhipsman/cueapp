@@ -408,6 +408,9 @@ func (s *Server) flareSolverrURL() string {
 	if v := s.flareSolverrSetting(); v != "" {
 		return v
 	}
+	if v := strings.TrimSpace(s.cfg.FlareSolverrURL); v != "" {
+		return v
+	}
 	if s.cfg.BundledFlareSolverr {
 		return bundledFlareSolverrURL
 	}

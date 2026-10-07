@@ -44,6 +44,9 @@ services:
       - PUID=${PUID:-1000}
       - PGID=${PGID:-1000}
       - TZ=${TZ:-Etc/UTC}
+      # The FlareSolverr below, for torrent sites behind a Cloudflare check
+      # (1337x, EZTV and others). A FlareSolverr saved in Settings wins.
+      - FLARESOLVERR_URL=http://flaresolverr:8191
     volumes:
       - ../config:/config
       - ../downloads:/downloads
@@ -56,13 +59,11 @@ services:
       # - ../ebooks:/ebooks
       # - ../audiobooks:/audiobooks
 
-  # Optional, for torrent sites behind a Cloudflare check:
-  #   docker compose --profile cloudflare up -d
-  # then use http://flaresolverr:8191 under Settings > Indexers & Search.
+  # For torrent sites behind a Cloudflare check (1337x, EZTV and others).
+  # Starts with Cue; Cue finds it through FLARESOLVERR_URL above.
   flaresolverr:
     image: ghcr.io/flaresolverr/flaresolverr:latest
     container_name: flaresolverr
     restart: unless-stopped
-    profiles: ["cloudflare"]
     environment:
       - TZ=${TZ:-Etc/UTC}

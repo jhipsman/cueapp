@@ -40,6 +40,10 @@ type Config struct {
 	// BundledFlareSolverr is true in the "-full" image, which runs FlareSolverr
 	// next to Cue on 127.0.0.1:8191. The image sets it; users do not.
 	BundledFlareSolverr bool
+	// FlareSolverrURL (FLARESOLVERR_URL) is the FlareSolverr used when none
+	// is saved in Settings, such as http://flaresolverr:8191 next to it in
+	// Docker Compose. Empty = none.
+	FlareSolverrURL string
 
 	// PauseAutomation is the safe mode: MEDIARIUM_PAUSE_AUTOMATION=1 starts the
 	// app with automatic searching, downloading, refreshing and the
@@ -76,6 +80,7 @@ func Load() Config {
 		AllowedOrigins: envStr("ALLOWED_ORIGINS", ""),
 
 		BundledFlareSolverr: truthy(envStr("BUNDLED_FLARESOLVERR", "")),
+		FlareSolverrURL:     envStr("FLARESOLVERR_URL", ""),
 		PauseAutomation:     truthy(envStr("MEDIARIUM_PAUSE_AUTOMATION", "")),
 
 		ImageVersion: envStr("MEDIARIUM_IMAGE_VERSION", ""),

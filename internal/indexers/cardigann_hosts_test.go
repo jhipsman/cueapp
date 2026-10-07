@@ -33,6 +33,26 @@ func TestResolvePathOnlyLeadsToTheSite(t *testing.T) {
 		{"the same IP address", mk("http://192.168.1.10:9117/"), "http://192.168.1.10:9117/login", ""},
 		{"localhost only matches itself", mk("http://localhost:9117/"), "http://evil.localhost:9117/login", "not one of the site's own addresses"},
 	}
+	public := func(base string, settings map[string]string, fields ...SettingField) *cgSession {
+		b, _ := url.Parse(base)
+		return &cgSession{name: "Fixture", base: b, settings: settings, def: &Definition{Type: "public", Settings: fields}}
+	}
+	withLogin := public("https://thepiratebay.org/", nil)
+	withLogin.def.Login = &LoginBlock{}
+	tests = append(tests, []struct {
+		name string
+		s    *cgSession
+		path string
+		want string
+	}{
+		{"a public site's separate API host", public("https://thepiratebay.org/", nil), "https://apibay.org/q.php?q=x", ""},
+		{"a public site with a login", withLogin, "https://apibay.org/q.php?q=x", "not one of the site's own addresses"},
+		{"a public site holding a passkey", public("https://thepiratebay.org/", map[string]string{"passkey": "secret"}, SettingField{Name: "passkey", Type: "text"}),
+			"https://apibay.org/q.php?q=x", "not one of the site's own addresses"},
+		{"a public site with an unused key field", public("https://thepiratebay.org/", map[string]string{"apikey": ""}, SettingField{Name: "apikey", Type: "text"}),
+			"https://apibay.org/q.php?q=x", ""},
+		{"a private site", mk("https://www.private.example/"), "https://apibay.org/q.php", "not one of the site's own addresses"},
+	}...)
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			_, err := tt.s.resolvePath(tt.path)
