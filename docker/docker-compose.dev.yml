@@ -63,7 +63,9 @@ services:
   # Starts with Cue; Cue finds it through FLARESOLVERR_URL above.
   flaresolverr:
     image: ghcr.io/flaresolverr/flaresolverr:latest
-    container_name: flaresolverr
+    # No fixed container name: one started some other way (or from another
+    # copy of this folder) would block this one. Cue reaches it by the
+    # service name, flaresolverr.
     restart: unless-stopped
     environment:
       - TZ=${TZ:-Etc/UTC}
