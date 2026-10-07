@@ -1,0 +1,55 @@
+# Builds Cue's TV app (Fire TV, Google TV, Android TV) and publishes the APK
+# as the "tv-latest" release, so a TV can install it with the Downloader app:
+#   https://github.com/<owner>/<repo>/releases/download/tv-latest/cue-tv.apk
+# (Cue's own server forwards http://<server>:8264/tv.apk there.)
+name: TV app
+
+on:
+  push:
+    paths:
+      - "android/**"
+      - ".github/workflows/android.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write # to publish the APK as a release
+
+concurrency:
+  group: tv-app
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Build the APK
+        working-directory: android
+        run: |
+          chmod +x gradlew
+          ./gradlew --no-daemon --stacktrace assembleRelease
+          cp app/build/outputs/apk/release/app-release.apk ../cue-tv.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cue-tv
+          path: cue-tv.apk
+
+      - name: Publish as the tv-latest release
+        if: github.ref == 'refs/heads/claude/nice-bohr-0m2h54' || github.ref == 'refs/heads/main'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: tv-latest
+          name: Cue for TV (latest)
+          body: |
+            The latest build of Cue for Fire TV, Google TV and Android TV (build ${{ github.run_number }}).
+            On the TV, install it with the Downloader app from http://<your Cue server>:8264/tv.apk or this release's cue-tv.apk link.
+          prerelease: true
+          make_latest: false
+          files: cue-tv.apk

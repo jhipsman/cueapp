@@ -11,6 +11,7 @@ import ManageProfiles from './ManageProfiles'
 import WhoIsWatching from './WhoIsWatching'
 import { Avatar, ProfilesProvider, useProfiles } from './profiles'
 import { useModules } from '../ModulesContext'
+import { installTVNavigation, onTV, refocusSoon } from './tv'
 import './watch.css'
 
 // Watch: the streaming side of Cue. Browse anything TMDB knows, press
@@ -19,8 +20,14 @@ import './watch.css'
 export default function WatchApp() {
   useEffect(() => {
     document.documentElement.classList.add('watch-mode')
-    return () => document.documentElement.classList.remove('watch-mode')
+    const stopTV = installTVNavigation() // the remote's arrows, in the TV app
+    return () => {
+      document.documentElement.classList.remove('watch-mode')
+      stopTV()
+    }
   }, [])
+  const location = useLocation()
+  useEffect(() => refocusSoon(), [location.pathname])
 
   return (
     <div className="wx">
@@ -89,6 +96,7 @@ function ProfileMenu() {
           </div>
           {multi && <button onClick={() => navigate('/watch/who')}>Switch profile</button>}
           {owner && <button onClick={() => navigate('/watch/profiles')}>Manage profiles</button>}
+          {onTV() && <button onClick={() => window.CueTV?.changeServer()}>Change server</button>}
           {owner && <button onClick={() => navigate(streamingOnly ? '/settings/streaming' : '/')}>{streamingOnly ? 'Settings' : 'Settings and library'}</button>}
         </div>
       )}

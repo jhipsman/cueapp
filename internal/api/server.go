@@ -291,6 +291,9 @@ func (s *Server) Routes() http.Handler {
 	public := http.NewServeMux()
 	public.HandleFunc("GET /api/version", s.handleVersion)
 	public.HandleFunc("GET /api/onboarding/status", s.handleOnboardingStatus)
+	// The TV app, for the Downloader app on a Fire TV: a short address that
+	// forwards to the latest build (watch_tv.go).
+	public.HandleFunc("GET /tv.apk", s.handleTVApp)
 	public.HandleFunc("POST /api/onboarding/admin", s.handleCreateAdmin)
 	public.HandleFunc("POST /api/auth/login", s.handleLogin)
 	public.HandleFunc("POST /api/auth/logout", s.handleLogout)

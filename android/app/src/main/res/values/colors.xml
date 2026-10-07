@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="cue_bg">#FF101114</color>
+    <color name="cue_panel">#FF1B1D22</color>
+    <color name="cue_teal">#FF34D1BF</color>
+    <color name="cue_text">#FFF4F4F5</color>
+    <color name="cue_dim">#FFA6A8AE</color>
+</resources>

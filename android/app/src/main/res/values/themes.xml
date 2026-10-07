@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Dark and full screen, like Watch itself. -->
+    <style name="Theme.Cue" parent="@android:style/Theme.Black.NoTitleBar.Fullscreen">
+        <item name="android:windowBackground">@color/cue_bg</item>
+        <item name="android:colorAccent">@color/cue_teal</item>
+    </style>
+</resources>

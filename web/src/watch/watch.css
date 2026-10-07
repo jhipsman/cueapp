@@ -834,3 +834,20 @@ html.watch-mode body {
 .wx-edit > div {
   width: 100%;
 }
+
+/* ---- On a TV (the Fire TV / Google TV app): no mouse, so focus is the
+   pointer. Make it impossible to miss, and keep hover-only bits visible. */
+html.tv-mode .wx :focus {
+  outline: 4px solid #fff;
+  outline-offset: 4px;
+}
+html.tv-mode .wx-card:focus {
+  transform: scale(1.08);
+  z-index: 3;
+}
+html.tv-mode .wx-row-arrow {
+  display: none;
+}
+html.tv-mode .wx-ep:focus {
+  background: var(--wx-panel);
+}

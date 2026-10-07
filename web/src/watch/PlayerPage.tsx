@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { api, type PlayAnswer, type WatchEpisode } from '../api'
+import { api, profileToken, type PlayAnswer, type WatchEpisode } from '../api'
 import Icon from '../components/Icon'
 import { useDocumentTitle } from '../documentTitle'
 import { epCode, playHref, Spinner } from './parts'
+import { onTV, type TVPlayerResult } from './tv'
 
 // How often where you are is saved while playing, and how long the "Next
 // episode" card counts down before playing it.
@@ -31,6 +32,7 @@ export default function PlayerPage() {
   const [next, setNext] = useState<WatchEpisode | null>(null)
   const [countdown, setCountdown] = useState<number | null>(null)
   const resumeAt = useRef(0)
+  const [resumeReady, setResumeReady] = useState(false)
   const loading = useRef(false)
   useDocumentTitle(answer?.title ?? 'Playing')
 
@@ -59,12 +61,14 @@ export default function PlayerPage() {
     setCountdown(null)
     setNote('')
     resumeAt.current = 0
+    setResumeReady(false)
     api
       .watchProgress(kind, tmdbId, season, episode)
       .then((p) => {
         if (!p.finished && p.position > 30) resumeAt.current = p.position
       })
       .catch(() => undefined)
+      .finally(() => setResumeReady(true))
     void load(1)
   }, [kind, tmdbId, season, episode, load])
 
@@ -106,6 +110,47 @@ export default function PlayerPage() {
       window.removeEventListener('touchstart', wake)
     }
   }, [])
+
+  // On a TV, the app's own player plays it (every format, Dolby and DTS
+  // sound) and saves where you are; this page waits and acts on how it ended.
+  useEffect(() => {
+    if (!onTV() || !answer || !resumeReady || error) return
+    window.cueTvPlayerDone = (r: TVPlayerResult) => {
+      window.cueTvPlayerDone = undefined
+      if (r.reason === 'ended') {
+        if (kind !== 'tv') return navigate(-1)
+        api
+          .watchNext(tmdbId, season, episode)
+          .then((n) => navigate(playHref('tv', tmdbId, n.season, n.episode), { replace: true }))
+          .catch(() => navigate(-1))
+        return
+      }
+      if (r.reason === 'error') {
+        if (answer.option < answer.options) {
+          setNote(`Version ${answer.option} wouldn't play, so trying the next one.`)
+          void load(answer.option + 1)
+        } else {
+          setError(`None of the versions found would play.${r.message ? ' ' + r.message : ''}`)
+        }
+        return
+      }
+      navigate(-1)
+    }
+    const label = kind === 'tv' ? epCode(season, episode) : ''
+    window.CueTV?.play(
+      JSON.stringify({
+        url: answer.url,
+        title: answer.title,
+        subtitle: [label, answer.quality, answer.source && `via ${answer.source}`].filter(Boolean).join(' · '),
+        startSec: resumeAt.current,
+        kind,
+        tmdbId,
+        season,
+        episode,
+        token: profileToken(),
+      }),
+    )
+  }, [answer, resumeReady, error, kind, tmdbId, season, episode, load, navigate])
 
   // Escape leaves the player.
   useEffect(() => {
@@ -224,7 +269,8 @@ export default function PlayerPage() {
         </div>
       )}
 
-      {answer && !error && (
+      {answer && !error && onTV() && <Spinner label="Starting the player…" />}
+      {answer && !error && !onTV() && (
         <video
           key={src}
           ref={video}
