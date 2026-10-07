@@ -74,6 +74,9 @@ type modulesPayload struct {
 	// account's pages can show or hide the subtitle parts. It is not a media
 	// type and is not changed here (see PUT /api/settings).
 	SubtitlesEnabled bool `json:"subtitlesEnabled"`
+	// StreamingOnly says Cue is set up as a streaming app: Watch is the
+	// front door and the library manager's pages are hidden.
+	StreamingOnly bool `json:"streamingOnly"`
 }
 
 func (s *Server) modulesPayload() modulesPayload {
@@ -85,6 +88,7 @@ func (s *Server) modulesPayload() modulesPayload {
 		Ebooks:     moduleState{Enabled: s.ebooksEnabled(), Available: true},
 
 		SubtitlesEnabled: s.subtitlesEnabled(),
+		StreamingOnly:    s.streamingOnly(),
 	}
 }
 

@@ -689,6 +689,8 @@ func (s *Server) protectedRoutes() *routeTable {
 	admin.HandleFunc("POST /api/profiles", s.handleAddWatchProfile)
 	admin.HandleFunc("PUT /api/profiles/{id}", s.handleUpdateWatchProfile)
 	admin.HandleFunc("DELETE /api/profiles/{id}", s.handleRemoveWatchProfile)
+	admin.HandleFunc("GET /api/settings/streaming", s.handleGetStreamingSettings)
+	admin.HandleFunc("PUT /api/settings/streaming", s.handlePutStreamingSettings)
 	admin.HandleFunc("GET /api/settings/stream-addons", s.handleListStreamAddons)
 	admin.HandleFunc("POST /api/settings/stream-addons", s.handleAddStreamAddon)
 	admin.HandleFunc("DELETE /api/settings/stream-addons/{index}", s.handleRemoveStreamAddon)

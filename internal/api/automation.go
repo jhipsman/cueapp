@@ -57,8 +57,8 @@ func (s *Server) StartAutomation() *automation.Scheduler {
 }
 
 func (s *Server) automationEnabled() bool {
-	if s.cfg.PauseAutomation {
-		return false
+	if s.cfg.PauseAutomation || s.streamingOnly() {
+		return false // streaming only: nothing is downloaded, so nothing is searched for
 	}
 	v, _ := s.Settings.Get(settings.KeyAutomationEnabled)
 	return v != "0"

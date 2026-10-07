@@ -283,6 +283,8 @@ func (s *Server) servePlay(w http.ResponseWriter, r *http.Request, t playTarget)
 		writeError(w, http.StatusNotFound, entry.nothing)
 		return
 	}
+	// The playback quality setting (a data saver) puts bigger versions last.
+	entry.candidates = preferResolution(entry.candidates, s.playbackMaxRes())
 	if option > len(entry.candidates) {
 		writeError(w, http.StatusNotFound, fmt.Sprintf("There are only %d versions of %s to play.", len(entry.candidates), t.label))
 		return

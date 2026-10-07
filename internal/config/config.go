@@ -44,6 +44,10 @@ type Config struct {
 	// is saved in Settings, such as http://flaresolverr:8191 next to it in
 	// Docker Compose. Empty = none.
 	FlareSolverrURL string
+	// StreamingOnly (CUE_STREAMING_ONLY, on unless "0") is whether Cue
+	// starts as a streaming app when Settings doesn't say. The switch in
+	// Settings wins once it has been set.
+	StreamingOnly bool
 
 	// PauseAutomation is the safe mode: MEDIARIUM_PAUSE_AUTOMATION=1 starts the
 	// app with automatic searching, downloading, refreshing and the
@@ -81,6 +85,7 @@ func Load() Config {
 
 		BundledFlareSolverr: truthy(envStr("BUNDLED_FLARESOLVERR", "")),
 		FlareSolverrURL:     envStr("FLARESOLVERR_URL", ""),
+		StreamingOnly:       envStr("CUE_STREAMING_ONLY", "1") != "0",
 		PauseAutomation:     truthy(envStr("MEDIARIUM_PAUSE_AUTOMATION", "")),
 
 		ImageVersion: envStr("MEDIARIUM_IMAGE_VERSION", ""),
