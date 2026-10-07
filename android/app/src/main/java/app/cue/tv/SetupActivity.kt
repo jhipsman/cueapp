@@ -34,7 +34,7 @@ class SetupActivity : Activity() {
             textSize = 44f
             typeface = Typeface.DEFAULT_BOLD
         }
-        val hint = TextView(this).apply {
+        val intro = TextView(this).apply {
             text = "Enter the address of your Cue server. At home that's your computer's address, like 192.168.1.20 (Cue's port 8264 is added for you). Away from home, use its Tailscale name."
             setTextColor(getColor(R.color.cue_dim))
             textSize = 18f
@@ -86,7 +86,7 @@ class SetupActivity : Activity() {
             setPadding(dp(64), dp(48), dp(64), dp(48))
             gravity = Gravity.CENTER_VERTICAL
             addView(title)
-            addView(hint)
+            addView(intro)
             addView(input, LinearLayout.LayoutParams(dp(560), LinearLayout.LayoutParams.WRAP_CONTENT))
             addView(connect, LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { topMargin = dp(20) })
             addView(status)
