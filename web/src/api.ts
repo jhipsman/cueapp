@@ -84,6 +84,68 @@ const put = <T>(path: string, body?: unknown) =>
   request<T>(path, { method: 'PUT', body: body !== undefined ? JSON.stringify(body) : undefined })
 const del = <T>(path: string) => request<T>(path, { method: 'DELETE' })
 
+// Watch: the streaming side (browse anything, play from Premiumize).
+export type WatchKind = 'movie' | 'tv'
+export interface WatchCard {
+  kind: WatchKind
+  tmdbId: number
+  title: string
+  year?: number
+  overview?: string
+  posterUrl?: string
+  backdropUrl?: string
+  rating?: number // TMDB's score out of 10
+  progress?: number // 0 to 1, on Continue Watching
+  season?: number
+  episode?: number
+  episodeTitle?: string
+}
+export interface WatchRow {
+  key: string
+  title: string
+  items: WatchCard[]
+}
+export interface WatchHome {
+  hero?: WatchCard
+  rows: WatchRow[]
+}
+export interface WatchRatings {
+  imdb?: string
+  imdbVotes?: string
+  rottenTomatoes?: string
+  metacritic?: string
+}
+export interface WatchTitle extends WatchCard {
+  tagline?: string
+  runtime?: number // minutes
+  genres: string[]
+  certification?: string
+  cast: string[]
+  directors?: string[]
+  networks?: string[]
+  seasons?: { number: number; name: string; episodes: number }[]
+  imdbId?: string
+  ratings: WatchRatings
+  inList: boolean
+  resumeSeason?: number
+  resumeEpisode?: number
+  resumePosition?: number // seconds
+  more: WatchCard[]
+}
+export interface WatchEpisode {
+  season: number
+  episode: number
+  title: string
+  overview?: string
+  airDate?: string
+  runtime?: number
+  stillUrl?: string
+  rating?: number
+  aired: boolean
+  progress?: number
+  finished?: boolean
+}
+
 // One-click play: the best release Premiumize can stream at once.
 export interface PlayAnswer {
   title: string
@@ -1985,6 +2047,26 @@ export const api = {
   unfollowSeries: (source: string, key: string) => del<null>(`/book-series/${source}/${encodeURIComponent(key)}/follow`),
   getHardcover: () => get<{ set: boolean; username?: string }>('/settings/hardcover'),
   putHardcover: (token: string) => put<{ set: boolean; username?: string }>('/settings/hardcover', { token }),
+  // Watch (the streaming side): any title by TMDB id.
+  playTMDB: (kind: WatchKind, tmdbId: number, season = 0, episode = 0, option = 1, fresh = false) =>
+    get<PlayAnswer>(
+      `/play/tmdb/${kind}/${tmdbId}${kind === 'tv' ? `/${season}/${episode}` : ''}?option=${option}${fresh ? '&fresh=1' : ''}`,
+    ),
+  watchHome: () => get<WatchHome>('/watch/home'),
+  watchSearch: (q: string) => get<WatchCard[]>(`/watch/search?q=${encodeURIComponent(q)}`),
+  watchTitle: (kind: WatchKind, tmdbId: number) => get<WatchTitle>(`/watch/${kind}/${tmdbId}`),
+  watchSeason: (tmdbId: number, season: number) => get<WatchEpisode[]>(`/watch/tv/${tmdbId}/season/${season}`),
+  watchNext: (tmdbId: number, season: number, episode: number) =>
+    get<WatchEpisode>(`/watch/tv/${tmdbId}/next?season=${season}&episode=${episode}`),
+  watchProgress: (kind: WatchKind, tmdbId: number, season = 0, episode = 0) =>
+    get<{ position: number; duration: number; finished: boolean }>(`/watch/progress/${kind}/${tmdbId}?season=${season}&episode=${episode}`),
+  saveWatchProgress: (body: { kind: WatchKind; tmdbId: number; season?: number; episode?: number; position: number; duration: number }) =>
+    put<null>('/watch/progress', body),
+  forgetWatchProgress: (kind: WatchKind, tmdbId: number) => del<null>(`/watch/progress/${kind}/${tmdbId}`),
+  addToWatchList: (kind: WatchKind, tmdbId: number) => put<null>(`/watch/list/${kind}/${tmdbId}`),
+  removeFromWatchList: (kind: WatchKind, tmdbId: number) => del<null>(`/watch/list/${kind}/${tmdbId}`),
+  getOMDb: () => get<{ set: boolean }>('/settings/omdb'),
+  putOMDb: (apiKey: string) => put<{ set: boolean }>('/settings/omdb', { apiKey }),
   playMovie: (id: number, option = 1, fresh = false) => get<PlayAnswer>(`/play/movies/${id}?option=${option}${fresh ? '&fresh=1' : ''}`),
   playEpisode: (seriesId: number, season: number, episode: number, option = 1, fresh = false) =>
     get<PlayAnswer>(`/play/series/${seriesId}/${season}/${episode}?option=${option}${fresh ? '&fresh=1' : ''}`),

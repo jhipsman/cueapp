@@ -386,7 +386,7 @@ function SeriesPage() {
                       <td>{qualityText(e.quality)}</td>
                       <td>
                         {canPlay && !unaired && (
-                          <button className="primary" onClick={() => navigate(`/watch/series/${seriesId}/${season}/${e.episode}`)}>
+                          <button className="primary" onClick={() => navigate(`/watch/play/tv/${series.tmdbId}/${season}/${e.episode}`)}>
                             Play
                           </button>
                         )}{' '}

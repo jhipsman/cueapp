@@ -1,0 +1,609 @@
+/* Watch: the streaming side. Always dark, artwork first, made to be used
+   from a couch as much as from a desk (big targets, visible focus). */
+
+.wx {
+  --wx-bg: #101114;
+  --wx-panel: #1b1d22;
+  --wx-text: #f4f4f5;
+  --wx-dim: #a6a8ae;
+  --wx-accent: #e2453c;
+  --wx-accent-text: #fff;
+  --wx-gutter: clamp(16px, 4vw, 56px);
+  min-height: 100vh;
+  background: var(--wx-bg);
+  color: var(--wx-text);
+  font-family: inherit;
+  overflow-x: hidden;
+}
+html.watch-mode,
+html.watch-mode body {
+  background: #101114;
+}
+.wx a {
+  color: inherit;
+  text-decoration: none;
+}
+.wx button {
+  font: inherit;
+}
+.wx :focus-visible {
+  outline: 3px solid #fff;
+  outline-offset: 3px;
+}
+
+/* ---- Top bar */
+.wx-nav {
+  position: fixed;
+  inset: 0 0 auto 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  padding: 14px var(--wx-gutter);
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.75), rgba(0, 0, 0, 0));
+  transition: background 0.25s;
+}
+.wx-nav.solid {
+  background: rgba(16, 17, 20, 0.97);
+}
+.wx-brand {
+  font-weight: 800;
+  font-size: 1.35rem;
+  letter-spacing: 0.02em;
+  color: var(--wx-accent) !important;
+}
+.wx-links {
+  display: flex;
+  gap: 18px;
+  font-size: 0.95rem;
+}
+.wx-links a {
+  color: var(--wx-dim);
+}
+.wx-links a.active,
+.wx-links a:hover {
+  color: var(--wx-text);
+}
+.wx-nav-right {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.wx-search {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(0, 0, 0, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 6px;
+  padding: 4px 8px;
+}
+.wx-search input {
+  background: transparent;
+  border: 0;
+  color: var(--wx-text);
+  width: min(220px, 34vw);
+  outline: none;
+  font-size: 0.95rem;
+}
+.wx-manage {
+  color: var(--wx-dim) !important;
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+@media (max-width: 640px) {
+  .wx-links {
+    display: none;
+  }
+  .wx-manage span {
+    display: none;
+  }
+}
+
+/* ---- Buttons */
+.wx-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 0;
+  border-radius: 6px;
+  padding: 10px 22px;
+  font-weight: 700;
+  font-size: 1.05rem;
+  cursor: pointer;
+  background: rgba(109, 109, 110, 0.7);
+  color: #fff;
+}
+.wx-btn:hover {
+  background: rgba(109, 109, 110, 0.5);
+}
+.wx-btn.play {
+  background: #fff;
+  color: #000;
+}
+.wx-btn.play:hover {
+  background: rgba(255, 255, 255, 0.8);
+}
+.wx-btn.small {
+  padding: 6px 14px;
+  font-size: 0.9rem;
+}
+.wx-round {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.6);
+  background: rgba(30, 30, 30, 0.6);
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.wx-round:hover {
+  border-color: #fff;
+}
+
+/* ---- Hero */
+.wx-hero {
+  position: relative;
+  min-height: min(80vh, 56vw);
+  display: flex;
+  align-items: flex-end;
+  padding: 120px var(--wx-gutter) clamp(40px, 8vh, 90px);
+  background-size: cover;
+  background-position: center top;
+}
+.wx-hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(to right, rgba(16, 17, 20, 0.92) 0%, rgba(16, 17, 20, 0.55) 45%, rgba(16, 17, 20, 0) 75%),
+    linear-gradient(to top, var(--wx-bg) 0%, rgba(16, 17, 20, 0) 35%);
+}
+.wx-hero-body {
+  position: relative;
+  max-width: 620px;
+}
+.wx-hero h1 {
+  font-size: clamp(2rem, 5vw, 3.6rem);
+  line-height: 1.05;
+  margin: 0 0 12px;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.6);
+}
+.wx-tagline {
+  font-style: italic;
+  color: var(--wx-dim);
+  margin: 0 0 8px;
+}
+.wx-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 14px;
+  font-size: 0.95rem;
+  color: #d6d7da;
+  margin-bottom: 12px;
+}
+.wx-cert {
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  padding: 0 6px;
+  border-radius: 3px;
+  font-size: 0.8rem;
+}
+.wx-score {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-weight: 700;
+}
+.wx-badge-imdb {
+  background: #f5c518;
+  color: #000;
+  font-weight: 900;
+  font-size: 0.72rem;
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+.wx-badge-tmdb {
+  background: #0d9fbf;
+  color: #fff;
+  font-weight: 900;
+  font-size: 0.72rem;
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+.wx-badge-rt {
+  background: #fa320a;
+  color: #fff;
+  font-weight: 900;
+  font-size: 0.72rem;
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+.wx-overview {
+  font-size: 1.05rem;
+  line-height: 1.5;
+  margin: 0 0 20px;
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.6);
+}
+.wx-overview.clamp {
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.wx-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+}
+.wx-resume-bar {
+  width: 220px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-top: 14px;
+}
+.wx-resume-bar > div {
+  height: 100%;
+  background: var(--wx-accent);
+}
+
+/* ---- Rows */
+.wx-rows {
+  position: relative;
+  margin-top: -40px;
+  padding-bottom: 60px;
+}
+.wx-row {
+  margin: 0 0 34px;
+}
+.wx-row h2 {
+  font-size: 1.25rem;
+  margin: 0 var(--wx-gutter) 10px;
+}
+.wx-row-strip {
+  position: relative;
+}
+.wx-row-scroll {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-padding: 0 var(--wx-gutter);
+  padding: 6px var(--wx-gutter) 14px;
+  scrollbar-width: none;
+}
+.wx-row-scroll::-webkit-scrollbar {
+  display: none;
+}
+.wx-row-arrow {
+  position: absolute;
+  top: 6px;
+  bottom: 14px;
+  width: var(--wx-gutter);
+  min-width: 36px;
+  border: 0;
+  background: rgba(16, 17, 20, 0.6);
+  color: #fff;
+  cursor: pointer;
+  z-index: 2;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.wx-row-strip:hover .wx-row-arrow {
+  opacity: 1;
+}
+.wx-row-arrow.left {
+  left: 0;
+}
+.wx-row-arrow.right {
+  right: 0;
+}
+
+/* Poster cards */
+.wx-card {
+  position: relative;
+  flex: 0 0 auto;
+  width: clamp(120px, 14vw, 190px);
+  scroll-snap-align: start;
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--wx-panel);
+  cursor: pointer;
+  transition: transform 0.2s;
+  border: 0;
+  padding: 0;
+  color: inherit;
+  text-align: left;
+}
+.wx-card:hover,
+.wx-card:focus-visible {
+  transform: scale(1.06);
+  z-index: 3;
+}
+.wx-card img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 2 / 3;
+  object-fit: cover;
+}
+.wx-card-fallback {
+  aspect-ratio: 2 / 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px;
+  text-align: center;
+  font-weight: 700;
+}
+
+/* Wide cards (Continue Watching, episodes) */
+.wx-card.wide {
+  width: clamp(220px, 24vw, 320px);
+}
+.wx-card.wide img,
+.wx-card.wide .wx-card-fallback {
+  aspect-ratio: 16 / 9;
+}
+.wx-card-caption {
+  position: absolute;
+  inset: auto 0 0 0;
+  padding: 26px 10px 10px;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.9), rgba(0, 0, 0, 0));
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+.wx-card-caption small {
+  display: block;
+  font-weight: 400;
+  color: var(--wx-dim);
+}
+.wx-card-progress {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.25);
+}
+.wx-card-progress > div {
+  height: 100%;
+  background: var(--wx-accent);
+}
+
+/* Search results and "More like this": a grid */
+.wx-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(clamp(120px, 14vw, 180px), 1fr));
+  gap: 14px 10px;
+}
+.wx-grid .wx-card {
+  width: auto;
+}
+.wx-page {
+  padding: 90px var(--wx-gutter) 60px;
+}
+.wx-page h2 {
+  font-size: 1.3rem;
+  margin: 34px 0 14px;
+}
+
+/* ---- Title page */
+.wx-facts {
+  max-width: 760px;
+  color: #d6d7da;
+}
+.wx-facts p {
+  margin: 0 0 6px;
+}
+.wx-facts span {
+  color: var(--wx-dim);
+}
+.wx-seasons {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin: 34px 0 14px;
+}
+.wx-seasons h2 {
+  margin: 0;
+}
+.wx-seasons select {
+  background: var(--wx-panel);
+  color: var(--wx-text);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 1rem;
+}
+.wx-episodes {
+  display: flex;
+  flex-direction: column;
+}
+.wx-ep {
+  display: grid;
+  grid-template-columns: 34px clamp(130px, 18vw, 220px) minmax(0, 1fr);
+  gap: 18px;
+  align-items: center;
+  padding: 16px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  background: transparent;
+  border-left: 0;
+  border-right: 0;
+  border-top: 0;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.wx-ep:hover,
+.wx-ep:focus-visible {
+  background: var(--wx-panel);
+}
+.wx-ep.unaired {
+  cursor: default;
+  opacity: 0.5;
+}
+.wx-ep-num {
+  font-size: 1.5rem;
+  color: var(--wx-dim);
+  text-align: center;
+}
+.wx-ep-thumb {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  border-radius: 4px;
+  overflow: hidden;
+  background: var(--wx-panel);
+}
+.wx-ep-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.wx-ep-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+.wx-ep-head span {
+  font-weight: 400;
+  color: var(--wx-dim);
+  white-space: nowrap;
+}
+.wx-ep p {
+  margin: 0;
+  color: #c9cace;
+  font-size: 0.92rem;
+  line-height: 1.45;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+@media (max-width: 640px) {
+  .wx-ep {
+    grid-template-columns: 120px minmax(0, 1fr);
+  }
+  .wx-ep-num {
+    display: none;
+  }
+}
+
+/* ---- Player */
+.wx-player {
+  position: fixed;
+  inset: 0;
+  background: #000;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.wx-player video {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: #000;
+}
+.wx-player-top {
+  position: absolute;
+  inset: 0 0 auto 0;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 20px;
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0));
+  transition: opacity 0.3s;
+  z-index: 2;
+}
+.wx-player.idle .wx-player-top {
+  opacity: 0;
+  pointer-events: none;
+}
+.wx-player-title {
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+.wx-player-title small {
+  display: block;
+  font-weight: 400;
+  color: var(--wx-dim);
+  font-size: 0.85rem;
+}
+.wx-player-center {
+  position: absolute;
+  text-align: center;
+  max-width: 520px;
+  padding: 20px;
+  z-index: 2;
+}
+.wx-spinner {
+  width: 54px;
+  height: 54px;
+  border: 4px solid rgba(255, 255, 255, 0.25);
+  border-top-color: var(--wx-accent);
+  border-radius: 50%;
+  margin: 0 auto 14px;
+  animation: wx-spin 0.9s linear infinite;
+}
+@keyframes wx-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.wx-next {
+  position: absolute;
+  right: 24px;
+  bottom: 90px;
+  width: min(360px, 80vw);
+  background: rgba(20, 20, 22, 0.95);
+  border-radius: 8px;
+  overflow: hidden;
+  z-index: 3;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6);
+}
+.wx-next img {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  display: block;
+}
+.wx-next-body {
+  padding: 12px 14px 14px;
+}
+.wx-next-body small {
+  color: var(--wx-dim);
+}
+.wx-next-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+.wx-error {
+  color: #ff8a80;
+}
+.wx-dim {
+  color: var(--wx-dim);
+}
+.wx-skeleton {
+  background: linear-gradient(90deg, #1b1d22 0%, #24262c 50%, #1b1d22 100%);
+  background-size: 200% 100%;
+  animation: wx-shimmer 1.4s infinite;
+  border-radius: 6px;
+}
+@keyframes wx-shimmer {
+  to {
+    background-position: -200% 0;
+  }
+}

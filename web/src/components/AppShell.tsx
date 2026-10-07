@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { NavLink, Outlet, useLocation } from 'react-router-dom'
+import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
 import { scrollToTop } from '../scrollTop'
 import { api, isAdmin, type WatchLink } from '../api'
 import { MEDIA_SERVER_BRAND, MediaServerMark } from './mediaServerBrand'
@@ -230,6 +230,9 @@ export default function AppShell() {
           {pageHasHeading ? <p className="top-title">{heading}</p> : <h1 className="top-title">{heading}</h1>}
           <SearchBox />
           <div className="top-actions">
+            <Link className="top-link" to="/watch" title="Browse and stream anything, Netflix style">
+              <Icon name="play" size={15} /> <span>Watch</span>
+            </Link>
             {booksOn && (
               <a
                 className="top-link"

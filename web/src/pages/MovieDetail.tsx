@@ -189,8 +189,8 @@ function MoviePage() {
         actions={
           inLibrary ? (
             <>
-              {can(me, 'play') && movie.libraryId && (
-                <button className="primary btn-with-icon big" onClick={() => navigate(`/watch/movie/${movie.libraryId}`)}>
+              {can(me, 'play') && (
+                <button className="primary btn-with-icon big" onClick={() => navigate(`/watch/play/movie/${movie.tmdbId}`)}>
                   <Icon name="play" size={18} /> Play
                 </button>
               )}
@@ -212,9 +212,16 @@ function MoviePage() {
               )}
             </>
           ) : (
-            <button className="primary btn-with-icon big" onClick={() => setAdding(true)}>
-              <Icon name="plus" size={18} /> Add to library
-            </button>
+            <>
+              {can(me, 'play') && (
+                <button className="primary btn-with-icon big" onClick={() => navigate(`/watch/play/movie/${movie.tmdbId}`)}>
+                  <Icon name="play" size={18} /> Play
+                </button>
+              )}
+              <button className="btn-with-icon big" onClick={() => setAdding(true)}>
+                <Icon name="plus" size={18} /> Add to library
+              </button>
+            </>
           )
         }
       >

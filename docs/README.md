@@ -14,6 +14,7 @@ The screenshots in these pages come from demo mode: the movies, shows, artists, 
 | Add movies and shows you already have on disk (Import existing in the Library) | [import-library.md](./import-library.md) |
 | Find something to add (Discover): more like your library, browse more, older titles, and the Add dialog | [discover.md](./discover.md) |
 | Open the torrent port (58264), seeding, how many downloads run at once, cleaning up the downloads folder, what removing a title deletes | [downloads.md](./downloads.md) |
+| Watch: browse and stream anything with Premiumize, Continue Watching, My List, IMDb ratings, the API for TV apps | [watch.md](./watch.md) |
 | Send torrent traffic through the built-in WireGuard VPN, and what the kill switch does | [vpn.md](./vpn.md) |
 | Add indexers: Usenet and torrent APIs, sites from the definition list, private sites, Cloudflare and FlareSolverr | [indexers.md](./indexers.md) |
 | Give family members their own login, see what members can do, reset a password | [accounts.md](./accounts.md) |
