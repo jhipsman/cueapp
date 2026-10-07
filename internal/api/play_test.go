@@ -177,3 +177,65 @@ func TestNormalizeHash(t *testing.T) {
 		t.Fatal("accepted junk")
 	}
 }
+
+func TestPlaySaysWhyNothingPlays(t *testing.T) {
+	cases := []struct {
+		st   playStats
+		want string
+	}{
+		{playStats{}, "No indexers are set up"},
+		{playStats{indexers: 2, failed: []string{"A", "B"}}, "None of your indexers answered (A, B)"},
+		{playStats{indexers: 1}, "they're all Usenet indexers"},
+		{playStats{indexers: 2, torrentIndexers: 2, failed: []string{"X"}}, "found nothing for Film (X didn't answer)"},
+		{playStats{indexers: 1, torrentIndexers: 1, results: 4}, "none are torrents"},
+		{playStats{indexers: 1, torrentIndexers: 1, results: 4, torrents: 4}, "none were for Film"},
+		{playStats{indexers: 1, torrentIndexers: 1, results: 4, torrents: 4, matching: 3}, "Premiumize doesn't have any of them ready"},
+	}
+	for _, c := range cases {
+		checked := 0
+		if c.st.matching > 0 {
+			checked = c.st.matching
+		}
+		if got := c.st.message("Film", checked); !strings.Contains(got, c.want) {
+			t.Errorf("%+v: %q, want it to say %q", c.st, got, c.want)
+		}
+	}
+}
+
+func TestPlayFallsBackWhenTheProfileRefusesAll(t *testing.T) {
+	m := library.Movie{Title: "Some Movie", Year: 2020}
+	results := []indexers.Result{
+		{Title: "Some.Movie.2020.HDCAM.x264-GRP", Seeders: 900},
+		{Title: "Some.Movie.2020.720p.WEB.x264-GRP", Seeders: 10},
+		{Title: "Some.Movie.2020.2160p.WEB-DL.x265-GRP", Seeders: 5},
+		{Title: "Some.Movie.1999.1080p.BluRay.x264-GRP", Seeders: 50},
+	}
+	got := rankAnyWatchable(results, playTarget{movie: &m})
+	if len(got) != 2 || !strings.Contains(got[0].Title, "2160p") || !strings.Contains(got[1].Title, "720p") {
+		titles := []string{}
+		for _, r := range got {
+			titles = append(titles, r.Title)
+		}
+		t.Fatalf("ranked %q; want 2160p then 720p, no cam, no other year", titles)
+	}
+}
+
+func TestPlayWithNoIndexersExplains(t *testing.T) {
+	s := newBareServer(t)
+	s.premiumizeBase = fakePremiumizeCache(t).URL
+	if err := s.Settings.Set(settings.KeyPremiumizeAPIKey, "k", true); err != nil {
+		t.Fatal(err)
+	}
+	m, _ := s.MovieRepo.Add(library.Movie{TMDBID: 7, Title: "Some Movie", Year: 2020, Status: library.StatusMissing})
+	playCache = playLists{}
+	r := httptest.NewRequest(http.MethodGet, "/", nil)
+	r.SetPathValue("id", fmt.Sprint(m.ID))
+	w := httptest.NewRecorder()
+	s.handlePlayMovie(w, r)
+	if w.Code != http.StatusNotFound || !strings.Contains(w.Body.String(), "No indexers are set up") {
+		t.Fatalf("%d %s", w.Code, w.Body)
+	}
+	if _, ok := playCache.get("movie:7"); ok {
+		t.Fatal("an empty answer was kept: adding an indexer wouldn't help for 15 minutes")
+	}
+}

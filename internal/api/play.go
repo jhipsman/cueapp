@@ -60,7 +60,10 @@ type playCandidate struct {
 type playEntry struct {
 	at         time.Time
 	candidates []playCandidate
-	found      int // torrent releases found before the cache check
+	// nothing says, in plain words, why there is nothing to play (no
+	// indexers, nothing found, no torrents, nothing cached); set only when
+	// candidates is empty.
+	nothing string
 }
 
 // playLists keeps the streamable releases per title ("movie:12", "ep:4:1:2").
@@ -257,14 +260,14 @@ func (s *Server) servePlay(w http.ResponseWriter, r *http.Request, t playTarget)
 			writeError(w, http.StatusBadGateway, "Couldn't look for something to play right now. Try again in a moment.")
 			return
 		}
-		playCache.put(t.key, entry)
+		if len(entry.candidates) > 0 {
+			// "Nothing yet" isn't kept: after adding an indexer, or once
+			// Premiumize has it, pressing Play again looks again.
+			playCache.put(t.key, entry)
+		}
 	}
 	if len(entry.candidates) == 0 {
-		msg := fmt.Sprintf("Nothing to play for %s yet: no torrent release was found.", t.label)
-		if entry.found > 0 {
-			msg = fmt.Sprintf("Nothing to play for %s yet: %d releases were found, but Premiumize doesn't have any of them ready.", t.label, entry.found)
-		}
-		writeError(w, http.StatusNotFound, msg)
+		writeError(w, http.StatusNotFound, entry.nothing)
 		return
 	}
 	if option > len(entry.candidates) {
@@ -318,18 +321,52 @@ func (s *Server) findStreamable(ctx context.Context, pm *premiumize.Client, t pl
 	}
 	blocked := s.blockedKeys()
 
-	var ranked []indexers.Result
+	var st playStats
+	for _, inst := range instances {
+		if inst.Enabled {
+			st.indexers++
+			if inst.Protocol == indexers.ProtocolTorrent {
+				st.torrentIndexers++
+			}
+		}
+	}
+	var outcomes []indexers.Outcome
 	if t.movie != nil {
-		outcomes := indexers.SearchAll(ctx, instances, t.movie.Title, movieCategory)
-		results := torrentResults(matchingResults(dropBlocked(indexers.MergeResults(outcomes), blocked), *t.movie))
-		ranked = rankMovieResults(results, profiles.resolve(t.movie.ProfileID), t.movie.Year)
+		outcomes = indexers.SearchAll(ctx, instances, t.movie.Title, movieCategory)
 	} else {
-		outcomes := indexers.SearchAll(ctx, instances, tvSearchQuery(t.series.Title, t.season, t.episode), tvCategory)
+		outcomes = indexers.SearchAll(ctx, instances, tvSearchQuery(t.series.Title, t.season, t.episode), tvCategory)
 		for _, q := range s.extraTVQueries(*t.series, t.season, t.episode) {
 			outcomes = append(outcomes, indexers.SearchAll(ctx, instances, q, tvCategory)...)
 		}
-		results := torrentResults(dropBlocked(indexers.MergeResults(outcomes), blocked))
-		ranked = rankTVResults(results, *t.series, t.season, t.episode, profiles.resolve(t.series.ProfileID), s.releaseMapper(*t.series))
+	}
+	for _, o := range outcomes {
+		if o.Err != nil {
+			st.failed = append(st.failed, o.IndexerName)
+		}
+	}
+	all := dropBlocked(indexers.MergeResults(outcomes), blocked)
+	torrents := torrentResults(all)
+	st.results, st.torrents = len(all), len(torrents)
+
+	var matching, ranked []indexers.Result
+	if t.movie != nil {
+		matching = matchingResults(torrents, *t.movie)
+		ranked = rankMovieResults(matching, profiles.resolve(t.movie.ProfileID), t.movie.Year)
+	} else {
+		mapper := s.releaseMapper(*t.series)
+		for _, r := range torrents {
+			if matchesShow(r.Title, *t.series) && coversTarget(parseFor(mapper, r.Title), t.season, t.episode) {
+				matching = append(matching, r)
+			}
+		}
+		ranked = rankTVResults(matching, *t.series, t.season, t.episode, profiles.resolve(t.series.ProfileID), mapper)
+	}
+	st.matching = len(matching)
+	if len(ranked) == 0 {
+		// The quality profile turned every release down (too big, a codec it
+		// avoids, a language rule). For streaming, any watchable version
+		// beats nothing: everything but cinema recordings, best first.
+		ranked = rankAnyWatchable(matching, t)
 	}
 	if len(ranked) > playMaxCandidates {
 		ranked = ranked[:playMaxCandidates]
@@ -350,8 +387,9 @@ func (s *Server) findStreamable(ctx context.Context, pm *premiumize.Client, t pl
 		items = append(items, h)
 		cands = append(cands, playCandidate{Release: res.Title, Hash: h, Size: res.SizeBytes, Tier: quality.Classify(parser.Parse(res.Title))})
 	}
-	entry := playEntry{found: len(ranked)}
+	entry := playEntry{}
 	if len(items) == 0 {
+		entry.nothing = st.message(t.label, 0)
 		return entry, nil
 	}
 	cached, err := pm.CacheCheck(ctx, items)
@@ -363,7 +401,81 @@ func (s *Server) findStreamable(ctx context.Context, pm *premiumize.Client, t pl
 			entry.candidates = append(entry.candidates, cands[i])
 		}
 	}
+	if len(entry.candidates) == 0 {
+		entry.nothing = st.message(t.label, len(items))
+	}
 	return entry, nil
+}
+
+// playStats counts what one search for something to play found, to say
+// plainly why there is nothing to play.
+type playStats struct {
+	indexers, torrentIndexers int      // enabled ones
+	failed                    []string // indexers that didn't answer
+	results                   int      // releases found
+	torrents                  int      // of which torrents
+	matching                  int      // torrents of this very title
+}
+
+const addTorrentSite = "Add a torrent site in Settings > Indexers & Search (the Torrent tab), for example The Pirate Bay, YTS or EZTV."
+
+// message is why there is nothing to play for label; checked is how many
+// releases were checked with Premiumize.
+func (st playStats) message(label string, checked int) string {
+	failed := ""
+	if len(st.failed) > 0 {
+		failed = fmt.Sprintf(" (%s didn't answer)", strings.Join(st.failed, ", "))
+	}
+	switch {
+	case st.indexers == 0:
+		return "No indexers are set up yet, so there's nowhere to look. " + addTorrentSite
+	case st.results == 0 && len(st.failed) >= st.indexers:
+		return fmt.Sprintf("None of your indexers answered (%s). Check them in Settings > Indexers & Search.", strings.Join(st.failed, ", "))
+	case st.results == 0 && st.torrentIndexers == 0:
+		return fmt.Sprintf("Your indexers found nothing for %s, and they're all Usenet indexers. Playing straight away needs torrents. %s", label, addTorrentSite)
+	case st.results == 0:
+		return fmt.Sprintf("Your indexers found nothing for %s%s. Try a site with more releases. %s", label, failed, addTorrentSite)
+	case st.torrents == 0:
+		return fmt.Sprintf("Your indexers found %s for %s, but none are torrents: Usenet releases can't be played straight away. %s", plural(st.results, "release"), label, addTorrentSite)
+	case st.matching == 0:
+		return fmt.Sprintf("Your indexers found %s, but none were for %s (they were other titles).", plural(st.torrents, "torrent"), label)
+	case checked == 0:
+		return fmt.Sprintf("Found %s of %s, but couldn't read which torrent each one is.", plural(st.matching, "torrent"), label)
+	}
+	return fmt.Sprintf("Found %s of %s, but Premiumize doesn't have any of them ready to stream yet.", plural(st.matching, "torrent"), label)
+}
+
+// rankAnyWatchable orders releases with no quality profile: best quality
+// first, then most seeders, leaving out cinema recordings and, for a movie,
+// releases of another year.
+func rankAnyWatchable(results []indexers.Result, t playTarget) []indexers.Result {
+	type scored struct {
+		r    indexers.Result
+		rank int
+	}
+	var list []scored
+	for _, r := range results {
+		rel := parser.Parse(r.Title)
+		tier := quality.Classify(rel)
+		if tier == quality.TierPreRelease {
+			continue
+		}
+		if t.movie != nil && t.movie.Year != 0 && rel.Year != 0 && rel.Year != t.movie.Year {
+			continue
+		}
+		list = append(list, scored{r, quality.Rank(tier)})
+	}
+	sort.SliceStable(list, func(i, j int) bool {
+		if list[i].rank != list[j].rank {
+			return list[i].rank > list[j].rank
+		}
+		return list[i].r.Seeders > list[j].r.Seeders
+	})
+	out := make([]indexers.Result, len(list))
+	for i, x := range list {
+		out[i] = x.r
+	}
+	return out
 }
 
 // torrentResults keeps the torrent releases: only those can be streamed
