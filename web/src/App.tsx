@@ -14,6 +14,7 @@ import Splash from './components/Splash'
 import Library from './pages/Library'
 import Login from './pages/Login'
 import MovieDetail from './pages/MovieDetail'
+import Watch from './pages/Watch'
 import Onboarding from './pages/Onboarding'
 import Profile from './pages/Profile'
 import Queue from './pages/Queue'
@@ -110,6 +111,8 @@ function Gate() {
         <Route path="/music/import" element={<AdminOnly fallback="/library"><MusicImport /></AdminOnly>} />
         <Route path="/title/:tmdbId" element={<MovieDetail />} />
         <Route path="/series/:id" element={<SeriesDetail />} />
+        <Route path="/watch/movie/:id" element={<Watch />} />
+        <Route path="/watch/series/:id/:season/:episode" element={<Watch />} />
         <Route path="/show/:tmdbId" element={<ShowDetail />} />
         <Route path="/wanted" element={<Upcoming tab="wanted" />} />
         <Route path="/calendar" element={<Upcoming tab="calendar" />} />

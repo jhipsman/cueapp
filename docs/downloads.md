@@ -28,6 +28,48 @@ The page has four cards.
 
 If Premiumize can't fetch a release (no seeds, a broken NZB, a timeout), the release is blocklisted and another one is tried, exactly as with the built-in downloaders. Removing the key goes back to the built-in downloaders at once.
 
+## Play (streaming from Premiumize)
+
+With Premiumize set up, movies and episodes in your library have a **Play** button. Pressing it plays the title at once, streamed straight from Premiumize to your browser or TV. Nothing is downloaded to your server, and it works whether or not the title has been downloaded.
+
+What happens when you press Play:
+
+1. Mediarium searches your indexers for the movie or episode, as a download would.
+2. It ranks the torrent releases found with the title's quality profile (and its fallbacks), best first.
+3. It asks Premiumize which of the best 40 it already has, all in one call.
+4. It plays the best one Premiumize has. For an episode inside a season pack, it plays that episode's file. Sample files are skipped.
+
+The list of playable versions is kept for 15 minutes, so pressing Play again, or moving to another version, is instant. If a version won't play in your browser, the player tries the next one by itself. **Try another version** and **Search again** are there if you want them.
+
+Only torrents can be played this way: Premiumize has to download a Usenet release before it can stream it. If none of the releases found is on Premiumize yet, Play says so.
+
+Browsers can't open every video file (MKV with HEVC or DTS audio, for example). When Premiumize has made a converted MP4 copy, the browser player uses that. A TV app can ask for the original file instead.
+
+### For apps
+
+A TV or phone app gets the same answer from the API (signed in with an API key from Settings > Profile, as the `X-API-Key` header):
+
+- `GET /api/play/movies/{id}`
+- `GET /api/play/series/{id}/{season}/{episode}`
+
+Add `?option=2` (3, ...) for the next version, or `&fresh=1` to search again. The answer:
+
+```jsonc
+{
+  "title": "Some Movie (2020)",
+  "url": "https://...",          // the original file, for players that open anything (VLC, ExoPlayer)
+  "streamUrl": "https://...",    // Premiumize's MP4 copy, when it has one (browsers, Apple TV)
+  "fileName": "Some.Movie.2020.1080p.BluRay.x264-GRP.mkv",
+  "sizeBytes": 9663676416,
+  "release": "Some.Movie.2020.1080p.BluRay.x264-GRP",
+  "quality": "Bluray-1080p",
+  "option": 1,
+  "options": 3
+}
+```
+
+The links come from Premiumize and stop working after a while, so ask again each time playback starts.
+
 ## Torrent port (58264)
 
 All torrents run in one built-in engine that listens on **port 58264, TCP and UDP**. The port is in the range never assigned to any service (49152 to 65535), so it's unlikely to clash with anything else, and it's easy to remember next to the web interface's 8264.

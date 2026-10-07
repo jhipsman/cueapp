@@ -189,6 +189,11 @@ function MoviePage() {
         actions={
           inLibrary ? (
             <>
+              {can(me, 'play') && movie.libraryId && (
+                <button className="primary btn-with-icon big" onClick={() => navigate(`/watch/movie/${movie.libraryId}`)}>
+                  <Icon name="play" size={18} /> Play
+                </button>
+              )}
               {can(me, 'manage') && (
                 <button className="primary btn-with-icon" onClick={searchNow} disabled={searchingNow || movie.status === 'downloading'}>
                   <Icon name="search" size={16} /> {searchingNow ? 'Searching…' : movie.status === 'downloaded' ? 'Look for a better copy' : 'Find and download now'}

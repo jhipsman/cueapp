@@ -452,6 +452,8 @@ func (s *Server) protectedRoutes() *routeTable {
 	member.HandleFunc("GET /api/movies/{id}/events", s.handleMovieEvents)
 	member.HandleFunc("GET /api/series/{id}/events", s.handleSeriesEvents)
 	play.HandleFunc("GET /api/files/stream", s.handleStreamFile)
+	play.HandleFunc("GET /api/play/movies/{id}", s.handlePlayMovie)
+	play.HandleFunc("GET /api/play/series/{id}/{season}/{episode}", s.handlePlayEpisode)
 
 	// "Watch in Plex/Jellyfin/Emby" and "Open my media server" links.
 	member.HandleFunc("GET /api/media-servers/links", s.handleMediaServerLinks)

@@ -84,6 +84,19 @@ const put = <T>(path: string, body?: unknown) =>
   request<T>(path, { method: 'PUT', body: body !== undefined ? JSON.stringify(body) : undefined })
 const del = <T>(path: string) => request<T>(path, { method: 'DELETE' })
 
+// One-click play: the best release Premiumize can stream at once.
+export interface PlayAnswer {
+  title: string
+  url: string // the original file
+  streamUrl?: string // Premiumize's converted MP4, when it has one
+  fileName: string
+  sizeBytes: number
+  release: string
+  quality: string
+  option: number // 1 = the best
+  options: number
+}
+
 // Premiumize.me, the cloud downloader (Settings > Downloading > Premiumize).
 export type PremiumizeUseFor = 'torrents' | 'usenet' | 'both'
 export interface PremiumizeState {
@@ -1972,6 +1985,9 @@ export const api = {
   unfollowSeries: (source: string, key: string) => del<null>(`/book-series/${source}/${encodeURIComponent(key)}/follow`),
   getHardcover: () => get<{ set: boolean; username?: string }>('/settings/hardcover'),
   putHardcover: (token: string) => put<{ set: boolean; username?: string }>('/settings/hardcover', { token }),
+  playMovie: (id: number, option = 1, fresh = false) => get<PlayAnswer>(`/play/movies/${id}?option=${option}${fresh ? '&fresh=1' : ''}`),
+  playEpisode: (seriesId: number, season: number, episode: number, option = 1, fresh = false) =>
+    get<PlayAnswer>(`/play/series/${seriesId}/${season}/${episode}?option=${option}${fresh ? '&fresh=1' : ''}`),
   getPremiumize: () => get<PremiumizeState>('/settings/premiumize'),
   putPremiumize: (body: { apiKey?: string; useFor?: PremiumizeUseFor }) => put<PremiumizeState>('/settings/premiumize', body),
   bookWork: (key: string) => get<BookWork>(`/book-works/${encodeURIComponent(key)}`),

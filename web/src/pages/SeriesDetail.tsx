@@ -16,7 +16,7 @@ import SubtitlesOffNote from '../components/SubtitlesOffNote'
 import SubtitlesPanel from '../components/SubtitlesPanel'
 import { useAuth } from '../AuthContext'
 import { useModules } from '../ModulesContext'
-import { api, isAdmin, type Episode, type SearchResult, type SeriesDetail as SeriesDetailData, type TVDetail } from '../api'
+import { api, can, isAdmin, type Episode, type SearchResult, type SeriesDetail as SeriesDetailData, type TVDetail } from '../api'
 import { qualityText } from '../format'
 import { useLive } from '../useLive'
 import { useConfirm } from '../components/ConfirmProvider'
@@ -44,7 +44,9 @@ export default function SeriesDetail() {
 
 function SeriesPage() {
   const confirm = useConfirm()
-  const admin = isAdmin(useAuth().user)
+  const me = useAuth().user
+  const admin = isAdmin(me)
+  const canPlay = can(me, 'play')
   const { subtitlesOn } = useModules()
   const { id } = useParams()
   const seriesId = Number(id)
@@ -383,6 +385,11 @@ function SeriesPage() {
                       </td>
                       <td>{qualityText(e.quality)}</td>
                       <td>
+                        {canPlay && !unaired && (
+                          <button className="primary" onClick={() => navigate(`/watch/series/${seriesId}/${season}/${e.episode}`)}>
+                            Play
+                          </button>
+                        )}{' '}
                         {season > 0 && (
                           <button
                             disabled={unaired && e.status === 'missing'}

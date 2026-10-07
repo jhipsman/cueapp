@@ -12,7 +12,9 @@ const contentSecurityPolicy = "default-src 'self'; " +
 	"style-src 'self' 'unsafe-inline' blob:; " +
 	"img-src 'self' data: blob: https://image.tmdb.org https://coverartarchive.org https://archive.org https://*.archive.org https://covers.openlibrary.org; " +
 	"font-src 'self' blob:; " +
-	"media-src 'self' blob:; " +
+	// https: lets the player stream straight from Premiumize, whose files
+	// are served from changing CDN hosts.
+	"media-src 'self' blob: https:; " +
 	"connect-src 'self'; " +
 	"object-src 'none'; " +
 	"base-uri 'self'; " +

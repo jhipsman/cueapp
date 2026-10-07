@@ -102,6 +102,9 @@ type File struct {
 	Path string // relative path, with / between folders
 	Size int64
 	Link string
+	// StreamLink is Premiumize's converted copy (MP4) when it made one, for
+	// players that can't open the original (browsers, Apple TV with MKV).
+	StreamLink string
 }
 
 // envelope is the part every answer shares.
@@ -197,9 +200,10 @@ func (c *Client) AccountInfo(ctx context.Context) (Account, error) {
 func (c *Client) DirectDL(ctx context.Context, src string) ([]File, error) {
 	var out struct {
 		Content []struct {
-			Path string      `json:"path"`
-			Size json.Number `json:"size"`
-			Link string      `json:"link"`
+			Path       string      `json:"path"`
+			Size       json.Number `json:"size"`
+			Link       string      `json:"link"`
+			StreamLink string      `json:"stream_link"`
 		} `json:"content"`
 	}
 	if err := c.postForm(ctx, "/transfer/directdl", url.Values{"src": {src}}, &out); err != nil {
@@ -215,12 +219,30 @@ func (c *Client) DirectDL(ctx context.Context, src string) ([]File, error) {
 			continue
 		}
 		size, _ := f.Size.Int64()
-		files = append(files, File{Path: f.Path, Size: size, Link: f.Link})
+		files = append(files, File{Path: f.Path, Size: size, Link: f.Link, StreamLink: f.StreamLink})
 	}
 	if len(files) == 0 {
 		return nil, ErrNotCached
 	}
 	return files, nil
+}
+
+// CacheCheck reports, for each torrent info hash (or link), whether
+// Premiumize already has it, so it can be streamed at once.
+func (c *Client) CacheCheck(ctx context.Context, items []string) ([]bool, error) {
+	if len(items) == 0 {
+		return nil, nil
+	}
+	var out struct {
+		Response []bool `json:"response"`
+	}
+	if err := c.get(ctx, "/cache/check", url.Values{"items[]": items}, &out); err != nil {
+		return nil, err
+	}
+	if len(out.Response) != len(items) {
+		return nil, fmt.Errorf("premiumize answered for %d of %d releases", len(out.Response), len(items))
+	}
+	return out.Response, nil
 }
 
 // CreateTransfer starts fetching src (a magnet link or a link to a .torrent

@@ -9,6 +9,7 @@ under [Unreleased]. How releases are cut: [docs/RELEASING.md](docs/RELEASING.md)
 ## [Unreleased]
 
 ### Added
+- **Play.** With Premiumize set up, a **Play** button on every movie and episode starts it straight away, streamed from Premiumize, with nothing downloaded to your server. Mediarium searches your indexers, ranks the releases with the title's quality profile, checks which ones Premiumize already has in one go, and plays the best of those. If a version won't play, the next one starts by itself. For apps, the same answer comes from `GET /api/play/movies/{id}` and `GET /api/play/series/{id}/{season}/{episode}`. See [docs/downloads.md](docs/downloads.md#play-streaming-from-premiumize).
 - **Premiumize.me as a downloader.** Add your Premiumize API key in Settings > Downloading > Usenet and torrents, under Cloud downloader, and torrents (or Usenet, or both, your choice) are downloaded by Premiumize on its own servers instead of by the built-in client. Releases Premiumize already has are ready at once. Mediarium then fetches the finished files over HTTPS, picks up where it stopped after a pause, and removes the transfer and its files from your Premiumize cloud once they are home. Torrents fetched this way need no VPN and don't seed. See [docs/downloads.md](docs/downloads.md#premiumize).
 
 ## [2.1.9] - 2026-10-07
