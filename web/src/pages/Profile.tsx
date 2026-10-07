@@ -507,7 +507,7 @@ function AddAccountForm({ onAdded }: { onAdded: (a: Account) => void }) {
             <span>
               Name <small style={{ color: 'var(--text-dim)' }}>(optional)</small>
             </span>
-            <input value={name} onChange={(e) => setName(e.target.value)} autoComplete="off" placeholder="Mediarium Admin" {...v.bind('name', name, setName)} />
+            <input value={name} onChange={(e) => setName(e.target.value)} autoComplete="off" placeholder="Cue Admin" {...v.bind('name', name, setName)} />
             <FieldError v={v} name="name" />
           </label>
           <label>

@@ -1,6 +1,6 @@
 # Downloads
 
-How Mediarium's built-in downloaders use your network and disk: the torrent port, seeding, what happens to downloaded files after they're imported, the clean-up, and what removing a title deletes.
+How Cue's built-in downloaders use your network and disk: the torrent port, seeding, what happens to downloaded files after they're imported, the clean-up, and what removing a title deletes.
 
 ![The Usenet and torrents page: where to download from, the built-in Usenet downloader and the built-in torrent client](images/settings-downloads.png)
 
@@ -17,11 +17,11 @@ The page has four cards.
 
 ## Premiumize
 
-[Premiumize.me](https://www.premiumize.me) is a paid cloud downloader. With your Premiumize API key saved under **Settings > Downloading > Usenet and torrents**, under **Cloud downloader**, Mediarium hands releases to Premiumize instead of downloading them itself:
+[Premiumize.me](https://www.premiumize.me) is a paid cloud downloader. With your Premiumize API key saved under **Settings > Downloading > Usenet and torrents**, under **Cloud downloader**, Cue hands releases to Premiumize instead of downloading them itself:
 
-1. The torrent (magnet link or `.torrent` file) or NZB is sent to Premiumize. Indexer links are fetched by Mediarium first, so your indexer keys and logins are never shared with Premiumize. If Premiumize already has a torrent cached, this step is skipped.
+1. The torrent (magnet link or `.torrent` file) or NZB is sent to Premiumize. Indexer links are fetched by Cue first, so your indexer keys and logins are never shared with Premiumize. If Premiumize already has a torrent cached, this step is skipped.
 2. Premiumize downloads it on its own servers. Its progress fills the first half of the progress bar in Activity.
-3. Mediarium downloads the finished files from Premiumize over HTTPS into the download's working folder (the second half of the bar). The speed limit applies, and a paused download carries on from where it stopped.
+3. Cue downloads the finished files from Premiumize over HTTPS into the download's working folder (the second half of the bar). The speed limit applies, and a paused download carries on from where it stopped.
 4. Repair, unpacking and import then run as for any other download, and the transfer and its files are removed from your Premiumize cloud so they don't use up its storage.
 
 **Use Premiumize for** chooses which releases go through it: **Torrents** (the default), **Usenet**, or **Both**. Anything not chosen still uses the built-in downloaders. With torrents going through Premiumize, no peers connect to your server, nothing seeds, and the VPN isn't needed for them, so the VPN warnings on the dashboard are not shown. With Usenet going through it, you don't need a Usenet provider of your own.
@@ -34,7 +34,7 @@ With Premiumize set up, movies and episodes in your library have a **Play** butt
 
 What happens when you press Play:
 
-1. Mediarium searches your indexers for the movie or episode, as a download would.
+1. Cue searches your indexers for the movie or episode, as a download would.
 2. It ranks the torrent releases found with the title's quality profile (and its fallbacks), best first.
 3. It asks Premiumize which of the best 40 it already has, all in one call.
 4. It plays the best one Premiumize has. For an episode inside a season pack, it plays that episode's file. Sample files are skipped.
@@ -74,7 +74,7 @@ The links come from Premiumize and stop working after a while, so ask again each
 
 All torrents run in one built-in engine that listens on **port 58264, TCP and UDP**. The port is in the range never assigned to any service (49152 to 65535), so it's unlikely to clash with anything else, and it's easy to remember next to the web interface's 8264.
 
-- **It's optional.** Torrents download without it, because Mediarium connects out to peers either way. Publishing the port lets other peers connect **to you** too. That finds more peers (faster downloads, fewer stalled torrents) and lets you seed properly.
+- **It's optional.** Torrents download without it, because Cue connects out to peers either way. Publishing the port lets other peers connect **to you** too. That finds more peers (faster downloads, fewer stalled torrents) and lets you seed properly.
 - **Docker:** the compose files in this repository publish it for you:
   ```yaml
   ports:
@@ -83,7 +83,7 @@ All torrents run in one built-in engine that listens on **port 58264, TCP and UD
     - "58264:58264/udp"
   ```
   With `docker run`, add `-p 58264:58264/tcp -p 58264:58264/udp`. Keep the same number on both sides of the colon.
-- **Router:** for peers on the internet to reach you, forward port 58264 (TCP and UDP) on your router to the machine running Mediarium, as you would for any torrent client.
+- **Router:** for peers on the internet to reach you, forward port 58264 (TCP and UDP) on your router to the machine running Cue, as you would for any torrent client.
 - **Changing it:** Settings > Downloading > Usenet and torrents > Client settings > Listen port (stored as `torrent.listen_port`). If you change it, publish the new number instead (for example `51413:51413/tcp` and `/udp`). `0` means 58264 (the box says "0 = the default, 58264"). Installs that had saved `0` (which used to mean "any port") now use 58264. A port you saved yourself is kept.
 - **If the port is taken** by another program on the same machine, the engine falls back to a port the system picks and says so in the log. `GET /api/downloads/status` then reports the port in use as `torrent.activePort`.
 - **Is it working?** The Client card says so in plain words: whether the port is open right now, and whether another peer has connected to you yet. The same facts are in `GET /api/downloads/status` (`torrent.listenPort`, `torrent.listening`, `torrent.activePort`, `torrent.activeTorrents`, `torrent.incomingSeen` and `torrent.lastIncomingAt`). The engine only listens while a torrent is downloading or seeding, and a peer only connects when it wants a torrent you have. So "not seen yet" right after starting is normal. If it still says that after a while of seeding, the port is probably not reachable: it isn't published, it isn't forwarded, or a firewall is blocking it.
@@ -91,9 +91,9 @@ All torrents run in one built-in engine that listens on **port 58264, TCP and UD
 
 ## Usenet connections
 
-Your Usenet provider lets each login open only so many connections at once, and your plan says how many. Mediarium keeps to the number you set on the server for all downloads together, so two downloads at once share it. A new server starts at 10. Raise it once you know your plan allows more.
+Your Usenet provider lets each login open only so many connections at once, and your plan says how many. Cue keeps to the number you set on the server for all downloads together, so two downloads at once share it. A new server starts at 10. Raise it once you know your plan allows more.
 
-If the provider says "too many connections" (usually because another program, like SABnzbd, uses the same login), Mediarium lowers the number for the rest of the session, waits a little and tries again, so the download carries on. After several minutes of being refused it stops, and the queue says: "Your Usenet provider says there are too many connections on this login. If another program (like SABnzbd) uses the same account, stop it or lower the number of connections here." The **Test** button says the same. The number it settled on is in the report from **Copy for support** (Settings > System > Server and backup > Help and support).
+If the provider says "too many connections" (usually because another program, like SABnzbd, uses the same login), Cue lowers the number for the rest of the session, waits a little and tries again, so the download carries on. After several minutes of being refused it stops, and the queue says: "Your Usenet provider says there are too many connections on this login. If another program (like SABnzbd) uses the same account, stop it or lower the number of connections here." The **Test** button says the same. The number it settled on is in the report from **Copy for support** (Settings > System > Server and backup > Help and support).
 
 Connections close when a download finishes, fails or is cancelled, and when you remove or switch off a server or change its address or login. Lowering the number of connections takes effect at once, even for a download that's running.
 
@@ -111,30 +111,30 @@ Only what you change is checked, so a value an older version saved never stops y
 
 ## Seeding
 
-A finished torrent is imported straight away and keeps seeding in the background until its **seeding goal** is met: the seed ratio limit (`torrent.seed_ratio_limit`, uploaded divided by size, for example 2.0) or the seed time limit (`torrent.seed_time_limit_h`, hours), whichever comes first. With both at 0, a torrent seeds until Mediarium stops or torrents are switched off. Seeding doesn't survive a restart. When the goal is met the torrent stops and its data is deleted from the downloads folder (see below).
+A finished torrent is imported straight away and keeps seeding in the background until its **seeding goal** is met: the seed ratio limit (`torrent.seed_ratio_limit`, uploaded divided by size, for example 2.0) or the seed time limit (`torrent.seed_time_limit_h`, hours), whichever comes first. With both at 0, a torrent seeds until Cue stops or torrents are switched off. Seeding doesn't survive a restart. When the goal is met the torrent stops and its data is deleted from the downloads folder (see below).
 
 ## Downloads at the same time (the download line)
 
 Downloads run in a line. **Downloads at the same time** (Settings > Downloading > Usenet and torrents, saved as `downloads.concurrent`) is 1 to 5 and starts at **1**, the safest choice. Usenet and torrents share the number, so 1 means one download in total.
 
 - **A download keeps its place for the whole trip:** downloading, repairing (PAR2), unpacking and moving into your library. When it's done, or fails, the next one in line starts. A failed download waits in Activity to retry and doesn't stop the line.
-- **Releases that cannot be finished stop early:** Usenet posts lose articles over time. If articles are missing on all your servers and the release has no PAR2 repair files, or too few to rebuild what is gone, Mediarium stops at once instead of downloading the rest. The release goes on the blocklist and, when automation is on, the next-best release is tried. The reason shows in Activity and in Logs and errors as "Parts of a download are missing". A second Usenet provider from a different company often has the missing pieces.
-- **Obfuscated releases:** many releases are posted with random file names (`wFvDJHhDrbESDBLq.mkv`, `-Bz4tuzCT0GRU49jgjrQx.par2`). Before repairing, Mediarium reads the real names from the PAR2 files, which also hold a fingerprint of the start of each file, and gives every matching file its real name back. Repair, unpacking and import then work as with any other release. par2 is also given every file in the download, so it finds the data and recovery files whatever they're called. When a release truly can't be repaired, the reason says how many recovery blocks are short.
-- **Folders Mediarium can't write to are caught first:** before a download starts, Mediarium checks it may write to the folder the file will go in (or the closest folder above it that exists). If not, nothing is downloaded and the reason says which folder and why, instead of finding out after the whole download.
+- **Releases that cannot be finished stop early:** Usenet posts lose articles over time. If articles are missing on all your servers and the release has no PAR2 repair files, or too few to rebuild what is gone, Cue stops at once instead of downloading the rest. The release goes on the blocklist and, when automation is on, the next-best release is tried. The reason shows in Activity and in Logs and errors as "Parts of a download are missing". A second Usenet provider from a different company often has the missing pieces.
+- **Obfuscated releases:** many releases are posted with random file names (`wFvDJHhDrbESDBLq.mkv`, `-Bz4tuzCT0GRU49jgjrQx.par2`). Before repairing, Cue reads the real names from the PAR2 files, which also hold a fingerprint of the start of each file, and gives every matching file its real name back. Repair, unpacking and import then work as with any other release. par2 is also given every file in the download, so it finds the data and recovery files whatever they're called. When a release truly can't be repaired, the reason says how many recovery blocks are short.
+- **Folders Cue can't write to are caught first:** before a download starts, Cue checks it may write to the folder the file will go in (or the closest folder above it that exists). If not, nothing is downloaded and the reason says which folder and why, instead of finding out after the whole download.
 - **A torrent that's only seeding after it was imported doesn't hold a place.** The next download starts while it seeds.
 - **Who goes first.** Everything a person starts (**Choose release**, **Search now**, adding a title with a search, a bulk search, **Retry**) goes before everything the automatic searches added. Inside each group it's first come, first served. [Activity](activity.md#the-download-line) shows the line as "Waiting in line", "Next in line", "3rd in line".
 - **Paused and stopped downloads don't hold a place.** **Resume** puts a paused download back at the front of its group, and it starts when a place is free.
 - **Changing the number.** Raising it starts waiting downloads at once. Lowering it never stops a running download. The running ones finish, and nothing new starts until fewer than the new number are running.
-- **After a restart** the downloads that were waiting are still waiting and start about a minute after Mediarium starts. A download that was running comes back paused (see [Activity](activity.md#after-a-restart)).
+- **After a restart** the downloads that were waiting are still waiting and start about a minute after Cue starts. A download that was running comes back paused (see [Activity](activity.md#after-a-restart)).
 - **Safe mode** (`MEDIARIUM_PAUSE_AUTOMATION`) starts nothing by itself. Waiting downloads come back paused, and a download you start yourself still runs.
 
 ### Limits on the automatic searches
 
-The automatic search and the RSS check only add to the line, so a big library can't fill it in a minute. They add at most **ten downloads in any hour**, and none while **ten** downloads are already waiting or running. What's left waits for a later run, so it's slower, never lost. Downloads you start yourself are never held back and don't count toward these limits. The automatic loops also wait a minute after Mediarium starts. To start with all of them switched off, see safe mode in the [troubleshooting section](./INSTALL.md#troubleshooting).
+The automatic search and the RSS check only add to the line, so a big library can't fill it in a minute. They add at most **ten downloads in any hour**, and none while **ten** downloads are already waiting or running. What's left waits for a later run, so it's slower, never lost. Downloads you start yourself are never held back and don't count toward these limits. The automatic loops also wait a minute after Cue starts. To start with all of them switched off, see safe mode in the [troubleshooting section](./INSTALL.md#troubleshooting).
 
 ## Stalled torrents
 
-A torrent that gets no data at all for 2 hours counts as stalled: usually no one is sharing it any more. Mediarium stops it, puts the release on the blocklist and, when automation is on, looks for another release, the same as for a broken Usenet post. Activity shows the reason.
+A torrent that gets no data at all for 2 hours counts as stalled: usually no one is sharing it any more. Cue stops it, puts the release on the blocklist and, when automation is on, looks for another release, the same as for a broken Usenet post. Activity shows the reason.
 
 ## Speed and space
 
@@ -202,7 +202,7 @@ Removing a title from the library leaves nothing behind in the downloads folder.
 
 ### The recycle bin
 
-Files removed this way are not deleted straight away. They move into a hidden folder, `.mediarium-trash`, inside the same library folder (the movie, TV or music folder they came from). Moving them is instant because they stay on the same disk. Media servers and Mediarium's own scans skip hidden folders, so nothing in the bin shows up anywhere.
+Files removed this way are not deleted straight away. They move into a hidden folder, `.mediarium-trash`, inside the same library folder (the movie, TV or music folder they came from). Moving them is instant because they stay on the same disk. Media servers and Cue's own scans skip hidden folders, so nothing in the bin shows up anywhere.
 
 - **Activity > Recycle bin** lists what is there, with its size and when it will be deleted for good. **Put back** returns the files to where they were; it refuses, and changes nothing, if something new is already in that place. Putting files back does not add the title to the library again: use **Import** in the Library, or add the title again. **Delete now** and **Empty the recycle bin** delete for good, after a confirmation.
 - Files stay **7 days** by default. Change it under **Settings > System > Clean up** ("Keep removed titles' files in the recycle bin for"); 0 deletes removed files straight away, as before. The daily clean-up empties what is older. Stored as `library.trash_days`; scripts use `trashDays` in `PUT /api/settings`.

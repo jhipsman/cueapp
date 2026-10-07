@@ -13,8 +13,8 @@ import (
 // Bazarr is read with GET /api/system/status (version), /api/system/languages
 // (the enabled languages) and /api/system/settings (the enabled subtitle
 // providers), the key in the X-API-KEY header. Its enabled languages replace
-// Mediarium's subtitle languages, only when the owner includes them.
-// Mediarium fetches subtitles from OpenSubtitles only, so every other
+// Cue's subtitle languages, only when the owner includes them.
+// Cue fetches subtitles from OpenSubtitles only, so every other
 // provider is reported as having no equivalent.
 
 type bazarrLanguage struct {
@@ -97,7 +97,7 @@ func fetchBazarr(ctx context.Context, hc *http.Client, c Conn) (bazarrData, erro
 
 var langCodePattern = regexp.MustCompile(`^[a-z]{2,3}(-[a-z]{2,4})?$`)
 
-// bazarrCode maps a Bazarr language to Mediarium's (OpenSubtitles) code.
+// bazarrCode maps a Bazarr language to Cue's (OpenSubtitles) code.
 func bazarrCode(l bazarrLanguage) (string, bool) {
 	code := strings.ToLower(strings.TrimSpace(l.Code2))
 	switch code {
@@ -114,7 +114,7 @@ func bazarrCode(l bazarrLanguage) (string, bool) {
 	return code, true
 }
 
-// providerEquivalent names the Mediarium provider doing a Bazarr
+// providerEquivalent names the Cue provider doing a Bazarr
 // provider's job.
 func providerEquivalent(id string) string {
 	switch strings.ToLower(strings.TrimSpace(id)) {
@@ -124,7 +124,7 @@ func providerEquivalent(id string) string {
 	return ""
 }
 
-// subtitlePlan is the subtitle languages Mediarium would end up with.
+// subtitlePlan is the subtitle languages Cue would end up with.
 type subtitlePlan struct {
 	languages []string
 	same      bool
@@ -150,7 +150,7 @@ func (im *Importer) planBazarr(p *plan, sp *SubtitlesPreview, d *bazarrData, inc
 		code, ok := bazarrCode(l)
 		switch {
 		case !ok:
-			item.Action, item.Reason = ActionSkip, "Bazarr gives no two-letter code Mediarium can use for it"
+			item.Action, item.Reason = ActionSkip, "Bazarr gives no two-letter code Cue can use for it"
 		case mapped[strings.ToLower(code)]:
 			item.MapsTo, item.Action, item.Reason = code, ActionSkip, "another Bazarr language maps to the same code"
 		case have[strings.ToLower(code)]:
@@ -166,7 +166,7 @@ func (im *Importer) planBazarr(p *plan, sp *SubtitlesPreview, d *bazarrData, inc
 		sp.Languages = append(sp.Languages, item)
 	}
 
-	// Languages Mediarium already has keep their place (the first one is
+	// Languages Cue already has keep their place (the first one is
 	// the default for a manual search); the others follow in Bazarr's order.
 	sp.New = []string{}
 	for _, c := range current {
@@ -183,7 +183,7 @@ func (im *Importer) planBazarr(p *plan, sp *SubtitlesPreview, d *bazarrData, inc
 	for _, id := range d.Providers {
 		pr := SubtitleProvider{Name: id, Equivalent: providerEquivalent(id)}
 		if pr.Equivalent == "" {
-			pr.Reason = "Mediarium has no equivalent: it gets subtitles from OpenSubtitles only"
+			pr.Reason = "Cue has no equivalent: it gets subtitles from OpenSubtitles only"
 		}
 		sp.Providers = append(sp.Providers, pr)
 	}
@@ -193,7 +193,7 @@ func (im *Importer) planBazarr(p *plan, sp *SubtitlesPreview, d *bazarrData, inc
 	}
 }
 
-// importSubtitleLanguages replaces Mediarium's subtitle languages with the
+// importSubtitleLanguages replaces Cue's subtitle languages with the
 // ones Bazarr has enabled.
 func (im *Importer) importSubtitleLanguages(sp *subtitlePlan) (outcome, reason string) {
 	list := strings.Join(sp.languages, ", ")

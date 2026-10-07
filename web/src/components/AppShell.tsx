@@ -149,7 +149,7 @@ export default function AppShell() {
       <nav className={`sidebar${menuOpen ? ' open' : ''}${collapsed ? ' collapsed' : ''}`} aria-label="Main">
         <div className="brand">
           <BrandMark />
-          <span className="brand-name">Mediarium</span>
+          <span className="brand-name">Cue</span>
           <button className="collapse-btn" onClick={toggleCollapsed} aria-label={collapsed ? 'Expand the menu' : 'Collapse the menu'} title={collapsed ? 'Expand the menu' : 'Collapse to icons'}>
             <span style={{ display: 'inline-flex', transform: collapsed ? 'none' : 'rotate(180deg)' }}>
               <Icon name="open" size={15} />
@@ -241,7 +241,7 @@ export default function AppShell() {
                   e.preventDefault()
                   openBookApp()
                 }}
-                title="Read and listen in Mediarium Books (opens in its own window)"
+                title="Read and listen in Cue Books (opens in its own window)"
               >
                 <Icon name="book" size={15} /> <span>eBooks/Audiobooks Player</span>
               </a>
@@ -252,7 +252,7 @@ export default function AppShell() {
               </a>
             ))}
             {admin && showSupport && (
-              <a className="top-link icon-only support" href="https://ko-fi.com/ryanborg" target="_blank" rel="noreferrer" title="Support Mediarium" aria-label="Support Mediarium">
+              <a className="top-link icon-only support" href="https://ko-fi.com/ryanborg" target="_blank" rel="noreferrer" title="Support Cue" aria-label="Support Cue">
                 <Icon name="heart" size={15} />
               </a>
             )}
@@ -263,16 +263,16 @@ export default function AppShell() {
             )}
             {version &&
               (admin ? (
-                <NavLink to="/settings/system" className="version-chip" title={updateReady ? `Mediarium ${version}. A newer version is available.` : `Mediarium ${version}`}>
-                  <span className="version-name">Mediarium</span>
+                <NavLink to="/settings/system" className="version-chip" title={updateReady ? `Cue ${version}. A newer version is available.` : `Cue ${version}`}>
+                  <span className="version-name">Cue</span>
                   <span className="version-num">
                     v{version}
                     {updateReady && <span className="version-dot" aria-label="A newer version is available" />}
                   </span>
                 </NavLink>
               ) : (
-                <span className="version-chip" title={`Mediarium ${version}`}>
-                  <span className="version-name">Mediarium</span>
+                <span className="version-chip" title={`Cue ${version}`}>
+                  <span className="version-name">Cue</span>
                   <span className="version-num">v{version}</span>
                 </span>
               ))}

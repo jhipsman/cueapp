@@ -26,7 +26,7 @@ import (
 // The files a release carries (see .github/workflows/release.yml and
 // docs/RELEASING.md). sha256sums.txt lists the SHA-256 of every archive and is
 // signed with the maintainer's private key; the signature is the only thing
-// Mediarium trusts, so a changed file on GitHub or a changed download cannot
+// Cue trusts, so a changed file on GitHub or a changed download cannot
 // pass for a real release.
 const (
 	SumsName = "sha256sums.txt"

@@ -148,7 +148,7 @@ func (s *Server) definitionFor(ctx context.Context, w http.ResponseWriter, id st
 		writeError(w, http.StatusBadGateway, "Could not download the list of indexers (check that this server can reach github.com): "+err.Error())
 		return sum, false
 	case !sum.Supported:
-		writeError(w, http.StatusBadRequest, fmt.Sprintf("%s uses something Mediarium can't run yet (%s).", sum.Name, sum.Problem))
+		writeError(w, http.StatusBadRequest, fmt.Sprintf("%s uses something Cue can't run yet (%s).", sum.Name, sum.Problem))
 		return sum, false
 	}
 	return sum, true

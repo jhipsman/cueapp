@@ -1,13 +1,13 @@
 import { useEffect, useSyncExternalStore } from 'react'
 
-// The browser tab says which page you are on ("Library · Mediarium"), so tabs,
+// The browser tab says which page you are on ("Library · Cue"), so tabs,
 // history and bookmarks are told apart. The app shell sets it from the page
 // name; a page that knows more (a movie's name) offers it with
 // useDocumentTitle and the shell uses it instead.
 
-export const APP_NAME = 'Mediarium'
+export const APP_NAME = 'Cue'
 
-// "Library · Mediarium". An empty name is just the app name.
+// "Library · Cue". An empty name is just the app name.
 export function titleFor(name: string): string {
   const n = name.trim()
   return n && n !== APP_NAME ? `${n} · ${APP_NAME}` : APP_NAME

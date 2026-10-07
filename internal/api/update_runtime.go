@@ -44,7 +44,7 @@ type updateRuntime struct {
 
 	// Test hooks (see update_export_test.go).
 	pushMax      int64  // the biggest program file accepted; zero means selfupdate.MaxBinaryBytes
-	supervisorIs string // pretends this is what starts Mediarium again
+	supervisorIs string // pretends this is what starts Cue again
 }
 
 // stuckRestart is what the previous run left behind when the watchdog

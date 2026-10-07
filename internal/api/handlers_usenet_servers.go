@@ -12,7 +12,7 @@ import (
 )
 
 // A "Usenet server" is the news-server account from a Usenet provider
-// (Newshosting, Eweka, ...). Mediarium's built-in downloader connects to it
+// (Newshosting, Eweka, ...). Cue's built-in downloader connects to it
 // directly — there is no separate download client program to set up, the
 // way Sonarr/Radarr need SABnzbd. Torrents need nothing at all: the
 // built-in torrent client has no server to configure.

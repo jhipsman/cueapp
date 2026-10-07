@@ -34,7 +34,7 @@ type LoginConn struct {
 }
 
 // JackettConn is Jackett's address and API key, plus the Jackett indexer
-// ids to add as sites directly (from Mediarium's own site list) instead of
+// ids to add as sites directly (from Cue's own site list) instead of
 // through Jackett.
 type JackettConn struct {
 	Conn

@@ -30,7 +30,7 @@
   font-display: swap;
 }
 
-/* Mediarium brand + UI tokens (branding/Mediarium-Brand-Guide.pdf,
+/* Cue brand + UI tokens (branding/Mediarium-Brand-Guide.pdf,
    branding/mediarium-tokens.css) — dark is the default theme; the in-app
    ThemeToggle sets data-theme="light"/"dark" explicitly, otherwise it
    follows the OS via prefers-color-scheme. */
@@ -349,7 +349,7 @@ button:focus-visible {
 
 
 /* Status colors follow the brand guide's own mapping (branding/
-   Mediarium-Brand-Guide.pdf p.3): success = imported/complete, warning =
+   Cue-Brand-Guide.pdf p.3): success = imported/complete, warning =
    wanted/stalled, info = downloading/queued, danger = failed/delete.
    Non-status badges (protocol tags, notification type, etc.) use the
    unmodified .badge base color and are unaffected. */

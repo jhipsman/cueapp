@@ -28,7 +28,7 @@ import (
 
 // One-click play.
 //
-// Press play on a movie or an episode and Mediarium picks what to stream, the
+// Press play on a movie or an episode and Cue picks what to stream, the
 // way it picks what to download: it searches every indexer, ranks the
 // releases with the title's quality profile, asks Premiumize which of them it
 // already has (one call for all of them), and answers with a link to the best

@@ -31,7 +31,7 @@ function startingKind(asked: string | null): Kind {
 }
 
 // Import an existing library: point at a folder that already holds movies or
-// TV, review what Mediarium recognised (and fix any wrong match), then
+// TV, review what Cue recognised (and fix any wrong match), then
 // confirm. Confirming only writes the titles down, at once; the details
 // (posters, summaries, episode lists) are filled in by the server in the
 // background, so leaving this page is safe and coming back picks up where
@@ -252,7 +252,7 @@ export default function ImportLibrary() {
     <div>
       <h1 style={{ marginTop: 0 }}>Import existing library</h1>
       <p style={{ color: 'var(--text-dim)' }}>
-        Point Mediarium at a folder of movies or TV shows. It matches the file and folder names to the right titles and lets you review before anything is
+        Point Cue at a folder of movies or TV shows. It matches the file and folder names to the right titles and lets you review before anything is
         added. Your files stay where they are, and nothing is moved, renamed or deleted.
       </p>
 
@@ -282,7 +282,7 @@ export default function ImportLibrary() {
           </p>
           {runningHere && (
             <p style={{ margin: 0 }}>
-              A {what} import is already running. It carries on in the background, so you can keep using Mediarium.{' '}
+              A {what} import is already running. It carries on in the background, so you can keep using Cue.{' '}
               <Link to={`/import?kind=${kind}&batch=${active?.batches.find((b) => b.running && b.kind === kind)?.id}`}>See how it is going</Link>
             </p>
           )}

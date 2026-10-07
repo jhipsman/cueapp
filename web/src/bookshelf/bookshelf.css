@@ -1,5 +1,5 @@
-/* Mediarium Books: the shelf, the reader and the player. Full window, no
-   Mediarium sidebar. */
+/* Cue Books: the shelf, the reader and the player. Full window, no
+   Cue sidebar. */
 .bks { min-height: 100vh; min-height: 100dvh; background: var(--bg); color: var(--text); }
 .bks-loading { display: grid; place-items: center; min-height: 100vh; min-height: 100dvh; color: var(--text-dim); }
 .bks-message { display: grid; justify-items: center; gap: 12px; text-align: center; padding: 18vh 24px 40px; max-width: 560px; margin: 0 auto; color: var(--text-dim); }

@@ -144,7 +144,7 @@ func (s *cgSession) formLogin(ctx context.Context, vars *tmplVars, headers map[s
 	}
 	if c := l.Captcha; c != nil && c.Selector != "" {
 		if sel, err := CompileSelector(c.Selector); err == nil && sel.First(doc) != nil {
-			return fmt.Errorf("%s: login failed: the site asks for a CAPTCHA, which Mediarium can't solve. If the site offers a cookie-based setup, use that instead", s.name)
+			return fmt.Errorf("%s: login failed: the site asks for a CAPTCHA, which Cue can't solve. If the site offers a cookie-based setup, use that instead", s.name)
 		}
 	}
 	formSelStr := l.Form

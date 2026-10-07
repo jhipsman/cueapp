@@ -119,7 +119,7 @@ func TestScriptRunsAfterImport(t *testing.T) {
 		}
 	}
 	if strings.Contains(got, "SOME_SECRET") {
-		t.Fatalf("Mediarium's own environment reached the script:\n%s", got)
+		t.Fatalf("Cue's own environment reached the script:\n%s", got)
 	}
 }
 

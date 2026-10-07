@@ -126,7 +126,7 @@ func TestFilesystemCheckUsesTheNearestExistingFolder(t *testing.T) {
 	}
 }
 
-// The folder check says whether Mediarium runs in a container, which decides
+// The folder check says whether Cue runs in a container, which decides
 // whether the wizard offers a compose line.
 func TestFolderCheckReportsInDocker(t *testing.T) {
 	base, client := newFolderTestServer(t)

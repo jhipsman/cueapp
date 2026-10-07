@@ -52,7 +52,7 @@ export default function BookImport({ format, folder, onDone }: { format: BookFor
         <div>
           <h2>Import the {word} you already have</h2>
           <p className="hint">
-            Mediarium reads <code>{folder || `your ${word} folder`}</code>, looks each book up on Open Library and adds it to your library where it is. Nothing is moved or renamed. Folders named
+            Cue reads <code>{folder || `your ${word} folder`}</code>, looks each book up on Open Library and adds it to your library where it is. Nothing is moved or renamed. Folders named
             Author/Title work best.
           </p>
         </div>

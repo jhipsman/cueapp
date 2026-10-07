@@ -12,7 +12,7 @@ type Tab = 'all' | BookFormat
 // The shelf: what you were reading or listening to last, then every book
 // that is downloaded, with Read and Listen.
 export default function Shelf() {
-  useDocumentTitle('Mediarium Books')
+  useDocumentTitle('Cue Books')
   const [books, setBooks] = useState<Book[] | null>(null)
   const [progress, setProgress] = useState<BookProgress[]>([])
   const [error, setError] = useState('')
@@ -39,7 +39,7 @@ export default function Shelf() {
     <div className="bks-shelf">
       <header className="bks-top">
         <span className="bks-brand">
-          <BrandMark className="" /> <strong>Mediarium</strong> Books
+          <BrandMark className="" /> <strong>Cue</strong> Books
         </span>
         <div className="seg">
           {(['all', 'ebook', 'audiobook'] as Tab[]).map((t) => (
@@ -49,7 +49,7 @@ export default function Shelf() {
           ))}
         </div>
         <input type="search" placeholder="Find a book" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Find a book" />
-        <a className="bks-back" href="/library?kind=ebook" target="_blank" rel="noreferrer" title="Open Mediarium to add more books">
+        <a className="bks-back" href="/library?kind=ebook" target="_blank" rel="noreferrer" title="Open Cue to add more books">
           <Icon name="plus" size={15} /> Get more books
         </a>
       </header>
@@ -92,7 +92,7 @@ export default function Shelf() {
         ) : shelf.length === 0 ? (
           <div className="empty-state">
             <Icon name="book" size={44} />
-            <p>{needle ? 'No book matches that.' : 'No books downloaded yet. Add some in Mediarium and they appear here once they are downloaded.'}</p>
+            <p>{needle ? 'No book matches that.' : 'No books downloaded yet. Add some in Cue and they appear here once they are downloaded.'}</p>
           </div>
         ) : (
           <div className="bks-grid">

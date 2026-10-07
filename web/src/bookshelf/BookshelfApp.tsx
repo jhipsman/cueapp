@@ -7,8 +7,8 @@ import './bookshelf.css'
 const Reader = lazy(() => import('./Reader'))
 const Player = lazy(() => import('./Player'))
 
-// Mediarium Books: reading and listening, as an app of its own. It has no
-// Mediarium sidebar, its own name and icon when installed (its own web app
+// Cue Books: reading and listening, as an app of its own. It has no
+// Cue sidebar, its own name and icon when installed (its own web app
 // manifest, scoped to /bookshelf/), and opens in a window of its own.
 export default function BookshelfApp() {
   useEffect(() => {

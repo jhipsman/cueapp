@@ -168,7 +168,7 @@ func decodeOptionalJSON(r *http.Request, v any) error {
 	return nil
 }
 
-// handleDiscoverMediaServers looks for Plex, Jellyfin and Emby servers on the local network: broadcasts, plus a scan of private networks (subnets, or Mediarium's own networks and common home ones). Public networks are refused.
+// handleDiscoverMediaServers looks for Plex, Jellyfin and Emby servers on the local network: broadcasts, plus a scan of private networks (subnets, or Cue's own networks and common home ones). Public networks are refused.
 func (s *Server) handleDiscoverMediaServers(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		Subnets []string `json:"subnets"`

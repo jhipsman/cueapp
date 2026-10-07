@@ -127,7 +127,7 @@ const genericServerError = "Something went wrong on the server. An administrator
 // errorScrubber replaces the message of a 5xx JSON error with a generic one
 // for accounts that are not administrators. Handlers put the text of the
 // underlying error in those responses (SQL, folder paths, URLs of upstream
-// services), which is useful when setting Mediarium up and not something a
+// services), which is useful when setting Cue up and not something a
 // family member, or anyone who got hold of one account, should see. The
 // original goes to the log.
 type errorScrubber struct {
@@ -176,7 +176,7 @@ func (e *errorScrubber) ReadFrom(r io.Reader) (int64, error) {
 
 // sessionOnlyMessage is the 403 body when an API key is used for something that
 // needs a signed-in browser.
-const sessionOnlyMessage = "This can only be done from the Mediarium web page while you are signed in. It can't be done with an API key."
+const sessionOnlyMessage = "This can only be done from the Cue web page while you are signed in. It can't be done with an API key."
 
 // requireSession refuses a request made with an API key (X-API-Key), writing
 // the 403 itself. It guards the few things that would let a stolen key outlive

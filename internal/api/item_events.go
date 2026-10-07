@@ -105,7 +105,7 @@ func (s *Server) retryEvent(movieID, seriesID int64, message string) {
 
 // retryPausedMessage explains that the retry budget is spent.
 func retryPausedMessage(failed int) string {
-	return fmt.Sprintf("%d releases failed in the last day, so Mediarium isn't retrying right away. It will try again at the next scheduled search.", failed)
+	return fmt.Sprintf("%d releases failed in the last day, so Cue isn't retrying right away. It will try again at the next scheduled search.", failed)
 }
 
 // queueEvent is itemEvent for the movie or show a queue item belongs to,

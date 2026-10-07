@@ -36,7 +36,7 @@ func (s *Server) handleMetrics(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "text/plain; version=0.0.4")
-	fmt.Fprintln(w, "# HELP mediarium_up Whether the Mediarium API is up.")
+	fmt.Fprintln(w, "# HELP mediarium_up Whether the Cue API is up.")
 	fmt.Fprintln(w, "# TYPE mediarium_up gauge")
 	fmt.Fprintln(w, "mediarium_up 1")
 

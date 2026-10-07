@@ -35,7 +35,7 @@ func newFakePlexTV(t *testing.T, clientID string) *fakePlexTV {
 }
 
 func (f *fakePlexTV) serve(w http.ResponseWriter, r *http.Request) {
-	if r.Header.Get("X-Plex-Client-Identifier") != f.clientID || r.Header.Get("X-Plex-Product") != "Mediarium" {
+	if r.Header.Get("X-Plex-Client-Identifier") != f.clientID || r.Header.Get("X-Plex-Product") != "Cue" {
 		http.Error(w, "bad client", http.StatusBadRequest)
 		return
 	}
@@ -132,7 +132,7 @@ func TestPlexTVUnreachable(t *testing.T) {
 
 func TestPlexAuthURL(t *testing.T) {
 	got := PlexAuthURL("id 1", "CODE")
-	want := "https://app.plex.tv/auth#?clientID=id+1&code=CODE&context%5Bdevice%5D%5Bproduct%5D=Mediarium"
+	want := "https://app.plex.tv/auth#?clientID=id+1&code=CODE&context%5Bdevice%5D%5Bproduct%5D=Cue"
 	if got != want {
 		t.Fatalf("got %s\nwant %s", got, want)
 	}
@@ -188,7 +188,7 @@ func TestConnectPlex(t *testing.T) {
 		t.Fatalf("wrong token: %v", err)
 	}
 	r.AccessToken = ""
-	if _, _, err := c.ConnectPlex(context.Background(), r, ""); err == nil || !strings.Contains(err.Error(), "did not give Mediarium access") {
+	if _, _, err := c.ConnectPlex(context.Background(), r, ""); err == nil || !strings.Contains(err.Error(), "did not give Cue access") {
 		t.Fatalf("no token: %v", err)
 	}
 }

@@ -21,7 +21,7 @@ try {
   // ignore — worst case is one flash of the OS-default theme
 }
 
-// Mediarium has no service worker. One left behind by another app that once
+// Cue has no service worker. One left behind by another app that once
 // ran on the same address would answer API calls from its own cache and
 // show stale data, so remove any we find and reload once.
 if ('serviceWorker' in navigator) {

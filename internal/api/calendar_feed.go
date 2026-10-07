@@ -104,7 +104,7 @@ func renderICS(entries []calendarEntryPayload, now time.Time) string {
 	line("PRODID:-//Mediarium//Calendar//EN")
 	line("CALSCALE:GREGORIAN")
 	line("METHOD:PUBLISH")
-	line("X-WR-CALNAME:Mediarium")
+	line("X-WR-CALNAME:Cue")
 	stamp := now.UTC().Format("20060102T150405Z")
 	for _, e := range entries {
 		day, err := time.Parse("2006-01-02", e.ReleaseDate)

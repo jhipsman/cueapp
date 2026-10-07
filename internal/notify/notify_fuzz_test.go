@@ -48,7 +48,7 @@ func FuzzRenderTemplate(f *testing.F) {
 // FuzzBuildMessage: text from an event or a setting can never add a header
 // line to an e-mail.
 func FuzzBuildMessage(f *testing.F) {
-	f.Add("Mediarium <me@example.com>", "you@example.com", "Grabbed\r\nBcc: evil@example.com", "body\r\n.\r\nQUIT")
+	f.Add("Cue <me@example.com>", "you@example.com", "Grabbed\r\nBcc: evil@example.com", "body\r\n.\r\nQUIT")
 	f.Add("a@b", "c@d, e@f", "\u2028 x", "")
 	f.Add("\r\nX: y", "z", "t", "m")
 	f.Fuzz(func(t *testing.T, from, to, title, message string) {

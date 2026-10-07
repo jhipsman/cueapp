@@ -8,7 +8,7 @@ import { capitalizeFirst } from '../components/SearchBox'
 import { resultState } from '../components/state'
 
 // Search the movie and TV databases as you type, like Radarr's and Sonarr's
-// "Add New": pick a title, choose how to add it, and Mediarium then searches
+// "Add New": pick a title, choose how to add it, and Cue then searches
 // the indexers for releases of that title. Titles you already own are listed
 // first and say where they stand.
 export default function Search() {

@@ -109,8 +109,8 @@ export function stateNote(q: Pick<QueueItem, 'status' | 'interrupted' | 'keptFil
   if (q.status === 'paused') {
     if (q.interrupted) {
       return q.keptFiles
-        ? 'Mediarium was restarted while this was downloading. Press Resume to carry on from what is already saved.'
-        : 'Mediarium was restarted before this started downloading. Press Resume to start it.'
+        ? 'Cue was restarted while this was downloading. Press Resume to carry on from what is already saved.'
+        : 'Cue was restarted before this started downloading. Press Resume to start it.'
     }
     return q.keptFiles || q.progressPct > 0 ? 'Paused. What is downloaded so far is kept. Press Resume to carry on.' : 'Paused. Press Resume to start it.'
   }

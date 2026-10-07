@@ -78,8 +78,8 @@ function IntervalField({ id, before, unit, field, fallback, min, max, saved }: {
 export default function AutomationIntervals() {
   return (
     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px 32px', marginTop: 16 }}>
-      <IntervalField id="hunt-hours" before="Look for missing items every" unit="hours" field="huntIntervalHours" fallback={6} min={1} max={168} saved="Saved: Mediarium looks for missing items every {n} hours." />
-      <IntervalField id="release-minutes" before="Check for new releases every" unit="minutes" field="releaseCheckMinutes" fallback={15} min={5} max={1440} saved="Saved: Mediarium checks for new releases every {n} minutes." />
+      <IntervalField id="hunt-hours" before="Look for missing items every" unit="hours" field="huntIntervalHours" fallback={6} min={1} max={168} saved="Saved: Cue looks for missing items every {n} hours." />
+      <IntervalField id="release-minutes" before="Check for new releases every" unit="minutes" field="releaseCheckMinutes" fallback={15} min={5} max={1440} saved="Saved: Cue checks for new releases every {n} minutes." />
     </div>
   )
 }

@@ -17,8 +17,8 @@ import (
 )
 
 // Sign in with Plex uses plex.tv's PIN flow, the one other Plex apps use:
-// Mediarium asks plex.tv for a PIN, the person approves it on app.plex.tv
-// while signed in to their Plex account, and Mediarium then receives a token
+// Cue asks plex.tv for a PIN, the person approves it on app.plex.tv
+// while signed in to their Plex account, and Cue then receives a token
 // for that account. With it, it lists the account's servers; each server
 // comes with its own access token, and that one is what gets saved. The
 // account token is only held in memory for the duration of the sign-in.
@@ -93,16 +93,16 @@ func (p *PlexTV) call(ctx context.Context, method, path string, query url.Values
 	}
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("User-Agent", "Mediarium/"+p.Version)
-	req.Header.Set("X-Plex-Product", "Mediarium")
+	req.Header.Set("X-Plex-Product", "Cue")
 	req.Header.Set("X-Plex-Version", p.Version)
 	req.Header.Set("X-Plex-Client-Identifier", p.ClientID)
-	req.Header.Set("X-Plex-Device-Name", "Mediarium")
+	req.Header.Set("X-Plex-Device-Name", "Cue")
 	if token != "" {
 		req.Header.Set("X-Plex-Token", token)
 	}
 	resp, err := p.httpClient().Do(req)
 	if err != nil {
-		return userErr(err, "Could not reach plex.tv. Check that Mediarium can reach the internet, then try again.")
+		return userErr(err, "Could not reach plex.tv. Check that Cue can reach the internet, then try again.")
 	}
 	defer resp.Body.Close()
 	switch {
@@ -114,13 +114,13 @@ func (p *PlexTV) call(ctx context.Context, method, path string, query url.Values
 		return userErr(errUnauthorized, "plex.tv refused the sign-in. Start again.")
 	case resp.StatusCode == http.StatusTooManyRequests:
 		_, _ = io.Copy(io.Discard, io.LimitReader(resp.Body, 64<<10))
-		return userErr(&statusError{code: resp.StatusCode}, "plex.tv is asking Mediarium to slow down. Wait a minute and try again.")
+		return userErr(&statusError{code: resp.StatusCode}, "plex.tv is asking Cue to slow down. Wait a minute and try again.")
 	case resp.StatusCode < 200 || resp.StatusCode > 299:
 		_, _ = io.Copy(io.Discard, io.LimitReader(resp.Body, 64<<10))
 		return userErr(&statusError{code: resp.StatusCode}, "plex.tv answered with an error (HTTP %d). Try again in a moment.", resp.StatusCode)
 	}
 	if err := json.NewDecoder(io.LimitReader(resp.Body, 8<<20)).Decode(out); err != nil {
-		return userErr(fmt.Errorf("%w: %v", errUnrecognised, err), "plex.tv sent an answer Mediarium did not understand. Try again in a moment.")
+		return userErr(fmt.Errorf("%w: %v", errUnrecognised, err), "plex.tv sent an answer Cue did not understand. Try again in a moment.")
 	}
 	return nil
 }
@@ -132,7 +132,7 @@ func (p *PlexTV) CreatePIN(ctx context.Context) (PlexPIN, error) {
 		return PlexPIN{}, err
 	}
 	if pin.ID == 0 || pin.Code == "" {
-		return PlexPIN{}, userErr(errUnrecognised, "plex.tv sent an answer Mediarium did not understand. Try again in a moment.")
+		return PlexPIN{}, userErr(errUnrecognised, "plex.tv sent an answer Cue did not understand. Try again in a moment.")
 	}
 	return pin, nil
 }
@@ -184,7 +184,7 @@ func provides(list, what string) bool {
 func PlexAuthURL(clientID, code string) string {
 	return "https://app.plex.tv/auth#?clientID=" + url.QueryEscape(clientID) +
 		"&code=" + url.QueryEscape(code) +
-		"&context%5Bdevice%5D%5Bproduct%5D=Mediarium"
+		"&context%5Bdevice%5D%5Bproduct%5D=Cue"
 }
 
 // Candidates lists the addresses to try for this server, best first:
@@ -244,7 +244,7 @@ func (r PlexResource) Addresses() []PlexAddress {
 // token and returns the first one that works, as a server ready to save.
 func (c *Client) ConnectPlex(ctx context.Context, r PlexResource, preferred string) (Server, TestResult, error) {
 	if r.AccessToken == "" {
-		return Server{}, TestResult{}, userErr(nil, "plex.tv did not give Mediarium access to %q. Only servers you own or that are shared with you can be added.", r.Name)
+		return Server{}, TestResult{}, userErr(nil, "plex.tv did not give Cue access to %q. Only servers you own or that are shared with you can be added.", r.Name)
 	}
 	cands := r.Candidates(preferred)
 	if len(cands) == 0 {
@@ -274,7 +274,7 @@ func (c *Client) ConnectPlex(ctx context.Context, r PlexResource, preferred stri
 		}
 		tried, lastErr = append(tried, u), err
 	}
-	return Server{}, TestResult{}, userErr(lastErr, "Could not connect to %q at any of its addresses (%s). Check that Mediarium can reach it on your network, or add it by address instead.", r.Name, strings.Join(tried, ", "))
+	return Server{}, TestResult{}, userErr(lastErr, "Could not connect to %q at any of its addresses (%s). Check that Cue can reach it on your network, or add it by address instead.", r.Name, strings.Join(tried, ", "))
 }
 
 // HasAddress reports whether u is one of the addresses Candidates lists.

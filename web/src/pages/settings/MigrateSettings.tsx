@@ -298,7 +298,7 @@ export default function MigrateSettings() {
                 <Icon name="folder" size={14} /> 2. Check your folders
               </legend>
               <p style={{ marginTop: 0, color: 'var(--text-dim)' }}>
-                Your other apps may see your folders under different paths than Mediarium ({preview.moviesPath} for movies, {preview.tvPath} for TV). Point each of their
+                Your other apps may see your folders under different paths than Cue ({preview.moviesPath} for movies, {preview.tvPath} for TV). Point each of their
                 folders at the same place here. Green means found.
               </p>
               <table className="mig-roots">
@@ -306,7 +306,7 @@ export default function MigrateSettings() {
                   <tr>
                     <th>App</th>
                     <th>Their folder</th>
-                    <th>Same folder in Mediarium</th>
+                    <th>Same folder in Cue</th>
                     <th>Found</th>
                   </tr>
                 </thead>
@@ -456,7 +456,7 @@ export default function MigrateSettings() {
               <Icon name="download" size={14} /> 4. Import
             </legend>
             <p style={{ marginTop: 0 }}>
-              Files stay where they are, and nothing is moved, copied or downloaded. Pause automatic searching until you switch over, so your old apps and Mediarium don&apos;t grab the same title.
+              Files stay where they are, and nothing is moved, copied or downloaded. Pause automatic searching until you switch over, so your old apps and Cue don&apos;t grab the same title.
             </p>
             {automationOn !== null && (
               <Switch
@@ -555,7 +555,7 @@ function SimpleCard({ label, ok, error, summary, on, onToggle, children }: { lab
 }
 
 // Bazarr: only its language choice can move over, and it replaces the
-// subtitle languages in Mediarium, so it starts switched off.
+// subtitle languages in Cue, so it starts switched off.
 function BazarrCard({ p, on, onToggle }: { p: MigrateBazarr; on: boolean; onToggle: (v: boolean) => void }) {
   const [open, setOpen] = useState(false)
   if (!p.ok)

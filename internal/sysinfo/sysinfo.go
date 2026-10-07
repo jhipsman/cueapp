@@ -1,5 +1,5 @@
 // Package sysinfo reports how busy the server is: CPU use, memory, load and
-// uptime of the machine Mediarium runs on, and Mediarium's own memory and CPU.
+// uptime of the machine Cue runs on, and Cue's own memory and CPU.
 // It reads Linux's /proc and cgroup files (what a Docker container or NAS
 // sees); on other systems the machine figures are left out.
 package sysinfo
@@ -32,13 +32,13 @@ type Memory struct {
 	TotalBytes uint64 `json:"totalBytes"`
 }
 
-// App is Mediarium's own share of the machine.
+// App is Cue's own share of the machine.
 type App struct {
 	MemoryBytes   uint64  `json:"memoryBytes"`          // the container's memory in use when known, else the Go heap
 	LimitBytes    uint64  `json:"limitBytes,omitempty"` // the container's memory limit, when one is set
 	UptimeSeconds float64 `json:"uptimeSeconds"`
 	Goroutines    int     `json:"goroutines"`
-	// CPUPercent is Mediarium's own CPU use as a share of ONE core: 100 means
+	// CPUPercent is Cue's own CPU use as a share of ONE core: 100 means
 	// one core fully busy, 250 two and a half cores. Absent where the system
 	// does not expose it.
 	CPUPercent *float64 `json:"cpuPercent,omitempty"`
@@ -64,7 +64,7 @@ const (
 	// few milliseconds the kernel counters (10 ms ticks) say nothing.
 	minWindow = time.Second
 	// clockTicks is USER_HZ, the unit of the times in /proc/<pid>/stat. It is
-	// 100 on every Linux Mediarium runs on.
+	// 100 on every Linux Cue runs on.
 	clockTicks = 100
 )
 

@@ -1,4 +1,4 @@
-// Package selfupdate installs a new Mediarium program file next to the
+// Package selfupdate installs a new Cue program file next to the
 // container image's own, without Docker access and without extra privileges.
 //
 // The container image starts /app/app. When a newer program file sits in
@@ -70,7 +70,7 @@ var (
 	ErrEmpty            = errors.New("the file is empty")
 	ErrChecksumFormat   = errors.New("the checksum is not a 64-character hex SHA-256")
 	ErrChecksumMismatch = errors.New("the file does not match the checksum")
-	ErrNotMediarium     = errors.New("the file is not a Mediarium program")
+	ErrNotMediarium     = errors.New("the file is not a Cue program")
 	ErrWrongPlatform    = errors.New("the file is for another system")
 	ErrBadVersion       = errors.New("the version number cannot be compared")
 	ErrNotNewer         = errors.New("the version is not newer than the running one")
@@ -250,7 +250,7 @@ func (l *limitedBuffer) Write(p []byte) (int, error) {
 	return len(p), nil
 }
 
-// Inspect makes sure path is a Mediarium program for this system by looking
+// Inspect makes sure path is a Cue program for this system by looking
 // at its header and then running it once with --version-check, which only
 // prints the version and platform and exits. It is run with an empty
 // environment, from its own folder, and gives up after ten seconds.

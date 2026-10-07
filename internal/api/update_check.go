@@ -36,7 +36,7 @@ const (
 // that it failed, and why, in plain words.
 func couldNotCheckBecause(err error) string {
 	if errors.Is(err, updatecheck.ErrRateLimited) {
-		return couldNotCheck + " GitHub is limiting requests for now. Mediarium tries again later."
+		return couldNotCheck + " GitHub is limiting requests for now. Cue tries again later."
 	}
 	return couldNotCheck + " " + plainerror.Message(err)
 }
@@ -104,9 +104,9 @@ func (s *Server) notice() noticePayload {
 		ok, why := updatecheck.Installable(*latest, runtime.GOOS, runtime.GOARCH)
 		switch {
 		case !s.canInstallUpdates():
-			n.InstallNote = "Update the way you installed Mediarium, using the steps below."
+			n.InstallNote = "Update the way you installed Cue, using the steps below."
 		case len(pub) == 0:
-			n.InstallNote = "This build of Mediarium has no update key, so it can't install updates by itself."
+			n.InstallNote = "This build of Cue has no update key, so it can't install updates by itself."
 		case !ok:
 			n.InstallNote = why
 		default:
@@ -175,7 +175,7 @@ func (s *Server) announceUpdate(rel updatecheck.Release) {
 		return // better silent than the same message every day
 	}
 	s.notifyEvent("update",
-		fmt.Sprintf("Mediarium %s is available", rel.Version),
+		fmt.Sprintf("Cue %s is available", rel.Version),
 		fmt.Sprintf("You are running %s. See what's new and how to update: %s", s.version, rel.URL))
 }
 

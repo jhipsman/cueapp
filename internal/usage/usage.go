@@ -1,6 +1,6 @@
 // Package usage keeps a rolling 24-hour record of how much each third-party
 // service (TMDB, Trakt, OpenSubtitles) is used and how often it refused a
-// request because a limit was reached. Mediarium ships shared keys for these
+// request because a limit was reached. Cue ships shared keys for these
 // services, so the record lets it tell the person when the shared key is busy
 // and a free personal key would help.
 //

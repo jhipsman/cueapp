@@ -1,5 +1,5 @@
 // The plain-language pieces of the update card: the steps for each way of
-// running Mediarium, and the short sentences about where the running program
+// running Cue, and the short sentences about where the running program
 // came from. No React in here so they can be tested.
 
 export interface Steps {
@@ -7,7 +7,7 @@ export interface Steps {
   steps: string[]
 }
 
-// Steps for updating the way the person installed Mediarium. Docker installs
+// Steps for updating the way the person installed Cue. Docker installs
 // get Synology Container Manager, Unraid and plain Compose; the -full image gets
 // one extra line about keeping its tag.
 export function installSteps(install: { kind: 'docker' | 'native'; full: boolean }): { groups: Steps[]; notes: string[] } {
@@ -15,19 +15,19 @@ export function installSteps(install: { kind: 'docker' | 'native'; full: boolean
     return {
       groups: [
         {
-          title: 'Update Mediarium',
+          title: 'Update Cue',
           steps: [
             'Download a backup first (Settings, System).',
             'Download the new version from the release page and unpack it.',
-            'Stop Mediarium, replace the program file with the new one, and start it again.',
+            'Stop Cue, replace the program file with the new one, and start it again.',
           ],
         },
       ],
-      notes: ['Your settings and library are kept. Mediarium updates its database when it starts.'],
+      notes: ['Your settings and library are kept. Cue updates its database when it starts.'],
     }
   }
   const tag = install.full ? 'latest-full' : 'latest'
-  const notes = ['Your settings and library are kept. Mediarium updates its database when it starts. Download a backup first (Settings, System).']
+  const notes = ['Your settings and library are kept. Cue updates its database when it starts. Download a backup first (Settings, System).']
   if (install.full) {
     notes.push(`You use the image with the Cloudflare helper built in. Keep its tag ending in -full, for example ghcr.io/rdborg/mediarium:${tag}.`)
   }
@@ -44,7 +44,7 @@ export function installSteps(install: { kind: 'docker' | 'native'; full: boolean
       },
       {
         title: 'Unraid',
-        steps: ['Open the Docker tab and click Check for Updates.', 'When Mediarium says update ready, click it and choose Update.'],
+        steps: ['Open the Docker tab and click Check for Updates.', 'When Cue says update ready, click it and choose Update.'],
       },
       {
         title: 'Docker Compose',
@@ -57,14 +57,14 @@ export function installSteps(install: { kind: 'docker' | 'native'; full: boolean
 
 // Where the running program comes from, for the Updates card.
 export function programSummary(s: { running: string; image: string; pushed: { version: string; running: boolean } | null }): string {
-  if (!s.image) return `You are running Mediarium ${s.running}.`
+  if (!s.image) return `You are running Cue ${s.running}.`
   if (s.pushed && s.pushed.running) {
-    return `You are running Mediarium ${s.running}, installed on top of the Docker image, which has ${s.image}.`
+    return `You are running Cue ${s.running}, installed on top of the Docker image, which has ${s.image}.`
   }
   if (s.pushed) {
-    return `You are running Mediarium ${s.running}. An installed update (${s.pushed.version}) is waiting for the next restart. The Docker image has ${s.image}.`
+    return `You are running Cue ${s.running}. An installed update (${s.pushed.version}) is waiting for the next restart. The Docker image has ${s.image}.`
   }
-  return `You are running Mediarium ${s.running}.`
+  return `You are running Cue ${s.running}.`
 }
 
 // The sentence about the last check.
@@ -74,7 +74,7 @@ export function checkedText(n: { enabled: boolean; checkedAt?: string; error?: s
   return n.enabled ? 'Not checked yet.' : 'Checking is switched off. Press Check now to look.'
 }
 
-// How the page waits for Mediarium to come back after it restarts.
+// How the page waits for Cue to come back after it restarts.
 export interface WaitOptions {
   expectVersion?: string
   fetchVersion: () => Promise<string | null> // the running version, null while it does not answer

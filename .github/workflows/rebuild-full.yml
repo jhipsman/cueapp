@@ -1,6 +1,6 @@
 # Rebuilds the "full" image (the one with the Cloudflare helper) every week from
 # the latest release, so security fixes for the browser and the operating system
-# underneath it reach people without waiting for a new Mediarium version. The
+# underneath it reach people without waiting for a new Cue version. The
 # app itself is the same code as the release; only the layers below it are fresh.
 # Runs nothing until the first release exists.
 

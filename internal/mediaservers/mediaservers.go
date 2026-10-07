@@ -77,7 +77,7 @@ func ParseMediaKind(s string) (MediaKind, bool) {
 	return "", false
 }
 
-// PathMapping rewrites a folder as Mediarium sees it (From) into the same
+// PathMapping rewrites a folder as Cue sees it (From) into the same
 // folder as the media server sees it (To), for when the two run in
 // different containers or machines with the library mounted in different
 // places.
@@ -91,7 +91,7 @@ type Server struct {
 	ID                 int64
 	Name               string
 	Kind               Kind
-	BaseURL            string // how Mediarium reaches the server
+	BaseURL            string // how Cue reaches the server
 	PublicURL          string // what people open in their browser; empty means BaseURL
 	Token              string // Plex token or Jellyfin/Emby API key (plain text in memory only)
 	Enabled            bool
@@ -166,7 +166,7 @@ func NormalizePathMap(in []PathMapping) ([]PathMapping, error) {
 			continue
 		}
 		if from == "" || to == "" {
-			return nil, fmt.Errorf("each path mapping needs both a Mediarium folder and a media server folder")
+			return nil, fmt.Errorf("each path mapping needs both a Cue folder and a media server folder")
 		}
 		out = append(out, PathMapping{From: from, To: to})
 	}
@@ -240,7 +240,7 @@ func within(path, dir string) (rest string, ok bool) {
 	return rest, true
 }
 
-// MapPath rewrites path from Mediarium's view to the media server's using
+// MapPath rewrites path from Cue's view to the media server's using
 // the longest matching mapping. Without a match it returns path unchanged.
 // The rest of the path takes the separator style of the mapping's target, so
 // a Windows Plex server gets backslashes.

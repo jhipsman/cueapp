@@ -6,7 +6,7 @@ import ReleaseTable from '../components/ReleaseTable'
 import { useToast } from '../components/Toast'
 
 // Search every indexer for a release by name, the way you would on the
-// indexer's own site, and download one. Mediarium works out the movie or show
+// indexer's own site, and download one. Cue works out the movie or show
 // from the release name, adds it to the library if it isn't there yet, and
 // files the download as usual.
 export default function ReleaseSearch() {
@@ -54,7 +54,7 @@ export default function ReleaseSearch() {
         </Link>
       </div>
       <p style={{ color: 'var(--text-dim)', marginTop: 0 }}>
-        Type a release name, or part of one, and Mediarium asks all your indexers. Pick one to download: the movie or show it belongs to is added to your library if it isn&apos;t there yet.
+        Type a release name, or part of one, and Cue asks all your indexers. Pick one to download: the movie or show it belongs to is added to your library if it isn&apos;t there yet.
       </p>
       <form
         className="toolbar"

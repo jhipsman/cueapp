@@ -16,7 +16,7 @@ import (
 )
 
 // Automatic backups: every night (on unless switched off) and before every
-// update, Mediarium saves a backup zip in /config/backups and keeps the newest
+// update, Cue saves a backup zip in /config/backups and keeps the newest
 // few. Each is a normal backup that Restore accepts.
 
 const (

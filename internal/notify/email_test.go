@@ -200,7 +200,7 @@ func (f *fakeSMTP) finishAuth(say func(string), ok bool) {
 func (f *fakeSMTP) sender(security string) *notify.EmailSender {
 	return &notify.EmailSender{
 		Host: f.host, Port: f.port, Security: security, Username: f.user, Password: f.pass,
-		From: "Mediarium <mediarium@example.com>", To: []string{"a@example.com", "b@example.com"},
+		From: "Cue <mediarium@example.com>", To: []string{"a@example.com", "b@example.com"},
 		TLSConfig: &tls.Config{InsecureSkipVerify: true}, Timeout: 5 * time.Second,
 	}
 }
@@ -230,7 +230,7 @@ func checkDelivered(t *testing.T, f *fakeSMTP, wantTLS bool) {
 			subject, _ = new(mime.WordDecoder).DecodeHeader(strings.TrimPrefix(l, "Subject: "))
 		}
 	}
-	if !strings.HasPrefix(subject, "[Mediarium] Movie échec Injected: header") {
+	if !strings.HasPrefix(subject, "[Cue] Movie échec Injected: header") {
 		t.Fatalf("unexpected subject %q", subject)
 	}
 	if !strings.Contains(head, "To: a@example.com, b@example.com") || !strings.Contains(head, "quoted-printable") {

@@ -1,4 +1,4 @@
-// Package monitor keeps an eye on the things Mediarium depends on (Usenet
+// Package monitor keeps an eye on the things Cue depends on (Usenet
 // servers, indexers) by checking each one on a schedule, remembering the last
 // result, and raising a notification only when something changes state, so a
 // server that stays down is reported once, not every cycle.

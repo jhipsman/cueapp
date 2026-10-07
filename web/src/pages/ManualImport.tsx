@@ -10,7 +10,7 @@ const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim()
 
 // Import a file by hand: video files in the downloads folder that were not
 // matched, each with a guess of what it is. Pick the movie or the episode
-// and Mediarium names it and moves it into the library.
+// and Cue names it and moves it into the library.
 export default function ManualImport() {
   const [files, setFiles] = useState<ManualFile[] | null>(null)
   const [folder, setFolder] = useState('')
@@ -41,7 +41,7 @@ export default function ManualImport() {
         </Link>
       </div>
       <p style={{ color: 'var(--text-dim)', marginTop: 0 }}>
-        Video files in the downloads folder{folder ? ` (${folder})` : ''}, biggest first. Choose what each one is, and Mediarium names it and puts it in your library. The title must be in your library already; add it first if it isn&apos;t.
+        Video files in the downloads folder{folder ? ` (${folder})` : ''}, biggest first. Choose what each one is, and Cue names it and puts it in your library. The title must be in your library already; add it first if it isn&apos;t.
       </p>
       {error && <p className="error-text">{error}</p>}
       {files === null && !error && <Loading height={140} />}

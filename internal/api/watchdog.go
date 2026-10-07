@@ -97,7 +97,7 @@ func (s *Server) StartWatchdog() (stop func()) {
 		s.upd.mu.Lock()
 		s.upd.stuck = stuckRestart{At: at, Reason: reason}
 		s.upd.mu.Unlock()
-		slog.Warn("Mediarium restarted itself because it stopped answering", "reason", reason, "at", at.Format(time.RFC3339))
+		slog.Warn("Cue restarted itself because it stopped answering", "reason", reason, "at", at.Format(time.RFC3339))
 		noteRestartedItself(reason, at)
 	}
 	ctx, cancel := context.WithCancel(context.Background())
@@ -128,15 +128,15 @@ func (s *Server) watchdogLoop(ctx context.Context, every time.Duration) {
 			continue
 		}
 		if !s.control().CanRestart {
-			// Exiting would leave Mediarium stopped with nothing to start it.
+			// Exiting would leave Cue stopped with nothing to start it.
 			if !warned {
 				warned = true
-				slog.Error("Mediarium has not answered for 3 minutes, but nothing here would start it again, so it is left running")
+				slog.Error("Cue has not answered for 3 minutes, but nothing here would start it again, so it is left running")
 			}
 			continue
 		}
 		reason := fmt.Sprintf("the database answered: %t, the web server answered: %t", dbOK, webOK)
-		slog.Error("Mediarium has not answered for 3 minutes, so it is restarting itself", "database", dbOK, "web", webOK)
+		slog.Error("Cue has not answered for 3 minutes, so it is restarting itself", "database", dbOK, "web", webOK)
 		if err := selfupdate.WriteStuck(s.updateDir(), reason); err != nil {
 			slog.Warn("watchdog: could not leave a note for the next start", "err", err)
 		}

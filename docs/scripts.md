@@ -1,17 +1,17 @@
 # Running a script after each import
 
-Mediarium can run a script of your own each time it imports something: a movie, episodes, an album, an ebook or an audiobook, and also when a better version replaces one you had. Use it for extra steps Mediarium doesn't do itself, such as telling another app, copying a file somewhere, or writing a line to your own log.
+Cue can run a script of your own each time it imports something: a movie, episodes, an album, an ebook or an audiobook, and also when a better version replaces one you had. Use it for extra steps Cue doesn't do itself, such as telling another app, copying a file somewhere, or writing a line to your own log.
 
 It is off until you pick a script.
 
 ## Setting it up
 
-1. Put the script in the `scripts` folder inside your config folder. In the container that is `/config/scripts`; on the host it is the folder you mapped to `/config`, for example `/volume1/docker/mediarium/config/scripts` on a Synology. Mediarium creates the folder the first time you open the page.
-2. Make it executable: `chmod +x /path/to/config/scripts/myscript.sh`. It must also be readable by the user Mediarium runs as (`PUID`/`PGID`).
+1. Put the script in the `scripts` folder inside your config folder. In the container that is `/config/scripts`; on the host it is the folder you mapped to `/config`, for example `/volume1/docker/mediarium/config/scripts` on a Synology. Cue creates the folder the first time you open the page.
+2. Make it executable: `chmod +x /path/to/config/scripts/myscript.sh`. It must also be readable by the user Cue runs as (`PUID`/`PGID`).
 3. Start it with a line naming what runs it. The container has a plain shell, so `#!/bin/sh` works. It has no Python or Bash; a script that needs them won't start.
-4. In Mediarium go to **Settings > System > Run a script after each import**, pick the script, and press **Save**. **Try it** runs it once straight away with a made-up movie, so you can see that it works.
+4. In Cue go to **Settings > System > Run a script after each import**, pick the script, and press **Save**. **Try it** runs it once straight away with a made-up movie, so you can see that it works.
 
-Only files in that folder can be picked, and only from that page while signed in. An API key can't choose or run a script, because choosing what runs is the same as being able to run anything as Mediarium's user. Files whose name starts with a dot, folders, and links that lead out of the folder are not offered.
+Only files in that folder can be picked, and only from that page while signed in. An API key can't choose or run a script, because choosing what runs is the same as being able to run anything as Cue's user. Files whose name starts with a dot, folders, and links that lead out of the folder are not offered.
 
 ## What the script is told
 
@@ -29,9 +29,9 @@ Everything comes in environment variables. A variable is left out when there's n
 | `MEDIARIUM_FOLDER` | The folder the files are in |
 | `MEDIARIUM_RELEASE` | The name of the release that was downloaded |
 | `MEDIARIUM_SIZE` | The size in bytes |
-| `MEDIARIUM_PAGE` | The title's page in Mediarium, for example `/title/597` |
+| `MEDIARIUM_PAGE` | The title's page in Cue, for example `/title/597` |
 
-Besides these it gets only `PATH`, `HOME`, `TZ` and `LANG`. Nothing else from Mediarium's own environment reaches it. It starts in the scripts folder.
+Besides these it gets only `PATH`, `HOME`, `TZ` and `LANG`. Nothing else from Cue's own environment reaches it. It starts in the scripts folder.
 
 A small example that keeps a list of everything imported:
 

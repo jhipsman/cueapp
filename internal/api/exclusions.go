@@ -8,7 +8,7 @@ import (
 )
 
 // "Not interested": movies and shows you never want to see again on Discover.
-// The list is shared by everyone using this Mediarium, kept in the database,
+// The list is shared by everyone using this Cue, kept in the database,
 // and can be undone from Settings or the API.
 
 type exclusionPayload struct {

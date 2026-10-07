@@ -27,7 +27,7 @@ type Permissions struct {
 	Retry bool `json:"retry"`
 	// Subtitles: find and download subtitles.
 	Subtitles bool `json:"subtitles"`
-	// Play: play videos, preview files, read and listen in Mediarium Books.
+	// Play: play videos, preview files, read and listen in Cue Books.
 	Play bool `json:"play"`
 }
 

@@ -23,7 +23,7 @@ import (
 //
 //   - Broadcast: Jellyfin and Emby answer "who is JellyfinServer?" / "who is
 //     EmbyServer?" on UDP 7359, and Plex answers a GDM "M-SEARCH" on UDP
-//     32414. Quick and exact, but only works when Mediarium shares the
+//     32414. Quick and exact, but only works when Cue shares the
 //     network with them (not from Docker's default bridge network).
 //   - Scan: try the usual ports (32400 for Plex, 8096 for Jellyfin and Emby)
 //     on every address of a few private networks, then ask whatever answers
@@ -60,7 +60,7 @@ type Probe struct {
 // DefaultProbes are Plex's and Jellyfin/Emby's standard http ports.
 var DefaultProbes = []Probe{{Port: 32400, Scheme: "http", Plex: true}, {Port: 8096, Scheme: "http"}}
 
-// CommonSubnets are home networks scanned besides Mediarium's own.
+// CommonSubnets are home networks scanned besides Cue's own.
 var CommonSubnets = []string{"192.168.0.0/24", "192.168.1.0/24", "10.0.0.0/24", "10.0.1.0/24", "172.16.0.0/24"}
 
 // MaxSubnets is how many networks one search covers at most.
@@ -83,8 +83,8 @@ type Discoverer struct {
 	allow      func(net.IP) bool                               // which addresses may be contacted; default PrivateIPv4
 	gateway    func() net.IP                                   // the host's default gateway; default read from the routing table
 	lookup     func(ctx context.Context, name string) []net.IP // resolves a host name; default the system resolver
-	inDocker   func() bool                                     // whether Mediarium runs in a container; default looks for the marker files
-	interfaces func() ([]*net.IPNet, error)                    // Mediarium's own networks; default the host's interfaces
+	inDocker   func() bool                                     // whether Cue runs in a container; default looks for the marker files
+	interfaces func() ([]*net.IPNet, error)                    // Cue's own networks; default the host's interfaces
 	dial       func(ctx context.Context, network, addr string) (net.Conn, error)
 }
 
@@ -163,13 +163,13 @@ func (d *Discoverer) ParseSubnets(in []string) ([]*net.IPNet, error) {
 		}
 		_, n, err := net.ParseCIDR(cidr)
 		if err != nil || n.IP.To4() == nil {
-			return nil, userErr(err, "%q is not a network Mediarium can scan. Use an IPv4 network like 192.168.1.0/24.", raw)
+			return nil, userErr(err, "%q is not a network Cue can scan. Use an IPv4 network like 192.168.1.0/24.", raw)
 		}
 		if ones, _ := n.Mask.Size(); ones < 24 {
 			return nil, userErr(nil, "%s is too large to scan. Use a /24 (256 addresses) or smaller, like %s/24.", raw, n.IP.String())
 		}
 		if !d.allowed(n.IP) || !d.allowed(lastIP(n)) {
-			return nil, userErr(nil, "%s is not a private network. Mediarium only looks for media servers on private networks (10.x.x.x, 172.16.x.x to 172.31.x.x, 192.168.x.x and 100.64.x.x to 100.127.x.x).", raw)
+			return nil, userErr(nil, "%s is not a private network. Cue only looks for media servers on private networks (10.x.x.x, 172.16.x.x to 172.31.x.x, 192.168.x.x and 100.64.x.x to 100.127.x.x).", raw)
 		}
 		if seen[n.String()] {
 			continue
@@ -183,9 +183,9 @@ func (d *Discoverer) ParseSubnets(in []string) ([]*net.IPNet, error) {
 	return out, nil
 }
 
-// DefaultSubnets is what a search without networks covers: Mediarium's own
-// private networks (a larger one narrowed to the /24 around Mediarium's own
-// address), then CommonSubnets, then Mediarium's own Docker-range networks
+// DefaultSubnets is what a search without networks covers: Cue's own
+// private networks (a larger one narrowed to the /24 around Cue's own
+// address), then CommonSubnets, then Cue's own Docker-range networks
 // (172.16.0.0/12), at most MaxSubnets in all. Docker networks come last
 // because a machine that runs Docker has many of them and they would crowd
 // the home network out.
@@ -397,7 +397,7 @@ func (d *Discoverer) extraHosts(ctx context.Context, covered []*net.IPNet) []net
 	return out
 }
 
-// looksLikeDockerBridge reports whether Mediarium seems to sit on Docker's
+// looksLikeDockerBridge reports whether Cue seems to sit on Docker's
 // own network: it runs in a container and every private network it is on is
 // in Docker's 172.16.0.0/12 range. With host networking it would be on the
 // machine's real network instead.
@@ -471,7 +471,7 @@ func (d *Discoverer) Discover(ctx context.Context, subnets []*net.IPNet) Discove
 	case unchecked > 0:
 		res.Note = fmt.Sprintf("The search stopped after %d seconds with %d addresses not checked. Search fewer networks to check them all.", int(d.budget().Seconds()), unchecked)
 	case len(res.Found) == 0 && d.looksLikeDockerBridge():
-		res.Note = "Nothing found. Mediarium runs on Docker's own network, so it can't see your home network by itself. Type your home network above (for example 192.168.1) and search again, or add the server by its address. With host networking Mediarium finds servers on its own."
+		res.Note = "Nothing found. Cue runs on Docker's own network, so it can't see your home network by itself. Type your home network above (for example 192.168.1) and search again, or add the server by its address. With host networking Cue finds servers on its own."
 	case len(res.Found) == 0:
 		res.Note = "Nothing found on " + strings.Join(res.Scanned, ", ") + ". If your server is on another network, type it above (for example 10.0.0), or add the server by its address."
 	}
@@ -601,9 +601,9 @@ func getInto(ctx context.Context, hc *http.Client, kind Kind, base, path string,
 	if err != nil {
 		return err
 	}
-	req.Header.Set("User-Agent", "Mediarium")
+	req.Header.Set("User-Agent", "Cue")
 	if kind == KindPlex {
-		req.Header.Set("X-Plex-Product", "Mediarium")
+		req.Header.Set("X-Plex-Product", "Cue")
 	}
 	// what answers is a stranger on the network: a small reply is all it may send
 	c := &Client{HTTP: hc, MaxBytes: 1 << 20}

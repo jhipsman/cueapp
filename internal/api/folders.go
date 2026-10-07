@@ -55,7 +55,7 @@ type folderPayload struct {
 	TotalBytes uint64 `json:"totalBytes"`
 	Mounted    bool   `json:"mounted"`
 	MountKnown bool   `json:"mountKnown"`
-	// InDocker is true when Mediarium runs in a container. Only then does
+	// InDocker is true when Cue runs in a container. Only then does
 	// "map this folder in your compose file" make sense.
 	InDocker bool     `json:"inDocker"`
 	Warnings []string `json:"warnings"`
@@ -77,7 +77,7 @@ func toFolderPayload(f fsinfo.Folder) folderPayload {
 }
 
 // handleFolderCheck inspects one folder for the setup screens: does it
-// exist, can Mediarium write to it, how much room is left and — in Docker —
+// exist, can Cue write to it, how much room is left and — in Docker —
 // was it actually mapped in from the host. It only reads (plus one probe file
 // that is created and removed); it never changes existing files.
 func (s *Server) handleFolderCheck(w http.ResponseWriter, r *http.Request) {
@@ -98,7 +98,7 @@ func (s *Server) folderPayloadFor(path string) folderPayload {
 	if !p.Exists {
 		if parent, ok := creatableParent(path); ok {
 			p.CanCreate = true
-			p.Warnings = []string{fmt.Sprintf("This folder doesn't exist yet. Mediarium can create it inside %s, which is mapped to your device.", parent)}
+			p.Warnings = []string{fmt.Sprintf("This folder doesn't exist yet. Cue can create it inside %s, which is mapped to your device.", parent)}
 		}
 	}
 	if p.Exists && p.Writable && insideWorthChecking(path) {
@@ -111,7 +111,7 @@ func (s *Server) folderPayloadFor(path string) folderPayload {
 
 // insideWarning says which folders inside a library folder can't be written to.
 func insideWarning(bad []string) string {
-	return fmt.Sprintf("%s inside can't be written to, such as %s. Mediarium can't add or upgrade files there. Give the user Mediarium runs as (its PUID and PGID) write access to them, for example by changing their owner.", plural(len(bad), "folder"), bad[0])
+	return fmt.Sprintf("%s inside can't be written to, such as %s. Cue can't add or upgrade files there. Give the user Cue runs as (its PUID and PGID) write access to them, for example by changing their owner.", plural(len(bad), "folder"), bad[0])
 }
 
 // insideWorthChecking is false for the root of the filesystem and the
@@ -218,7 +218,7 @@ func (s *Server) handleCreateFolder(w http.ResponseWriter, r *http.Request) {
 	}
 	parent, ok := creatableParent(path)
 	if !ok {
-		writeError(w, http.StatusConflict, fmt.Sprintf("Mediarium can only create a folder inside one that is mapped to your device and writable, and %s isn't. Map a folder for it in your compose file instead.", parent))
+		writeError(w, http.StatusConflict, fmt.Sprintf("Cue can only create a folder inside one that is mapped to your device and writable, and %s isn't. Map a folder for it in your compose file instead.", parent))
 		return
 	}
 	if err := os.Mkdir(filepath.Clean(path), 0o775); err != nil && !errors.Is(err, os.ErrExist) {
@@ -228,7 +228,7 @@ func (s *Server) handleCreateFolder(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, s.folderPayloadFor(path))
 }
 
-// destWritable checks, before anything is downloaded, that Mediarium may
+// destWritable checks, before anything is downloaded, that Cue may
 // write where the file will go: the destination folder, or the closest folder
 // above it that exists. A folder owned by another user (often one an older
 // app created) used to be found only after the whole download, which was
@@ -248,7 +248,7 @@ func destWritable(destDir string) error {
 	f, err := os.CreateTemp(dir, ".mediarium-write-check-*")
 	if err != nil {
 		if errors.Is(err, os.ErrPermission) {
-			return fmt.Errorf("Mediarium may not write to %s, so nothing was downloaded. The folder belongs to another user: give the user Mediarium runs as (PUID and PGID) write access to it: %w", dir, os.ErrPermission)
+			return fmt.Errorf("Cue may not write to %s, so nothing was downloaded. The folder belongs to another user: give the user Cue runs as (PUID and PGID) write access to it: %w", dir, os.ErrPermission)
 		}
 		return nil
 	}

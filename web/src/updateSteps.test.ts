@@ -25,8 +25,8 @@ test('a native install gets one plain list', () => {
 })
 
 test('the program summary says where the running program came from', () => {
-  assert.equal(programSummary({ running: '1.2.0', image: '', pushed: null }), 'You are running Mediarium 1.2.0.')
-  assert.equal(programSummary({ running: '1.1.0', image: '1.1.0', pushed: null }), 'You are running Mediarium 1.1.0.')
+  assert.equal(programSummary({ running: '1.2.0', image: '', pushed: null }), 'You are running Cue 1.2.0.')
+  assert.equal(programSummary({ running: '1.1.0', image: '1.1.0', pushed: null }), 'You are running Cue 1.1.0.')
   assert.match(programSummary({ running: '1.2.0', image: '1.1.0', pushed: { version: '1.2.0', running: true } }), /installed on top of the Docker image, which has 1\.1\.0/)
   assert.match(programSummary({ running: '1.1.0', image: '1.1.0', pushed: { version: '1.2.0', running: false } }), /waiting for the next restart/)
 })

@@ -21,7 +21,7 @@ const (
 	EventConflict = "conflict" // an import hit a file that already exists
 	EventSubtitle = "subtitle" // a subtitle was downloaded
 	EventHealth   = "health"   // something is wrong with the app (or recovered)
-	EventUpdate   = "update"   // a new version of Mediarium is available
+	EventUpdate   = "update"   // a new version of Cue is available
 	EventRequest  = "request"  // someone asked for a title (see Activity > Requests)
 )
 
@@ -41,7 +41,7 @@ func EventKinds() []EventInfo {
 		{EventConflict, "Needs attention", "An imported file already exists and needs your decision."},
 		{EventSubtitle, "Subtitles", "A subtitle file was downloaded."},
 		{EventHealth, "Health", "A Usenet server or indexer stopped working, or came back."},
-		{EventUpdate, "New version", "A new version of Mediarium is available."},
+		{EventUpdate, "New version", "A new version of Cue is available."},
 		{EventRequest, "Requests", "Someone asked for a movie, show, artist or book."},
 	}
 }
@@ -142,8 +142,8 @@ func Types() []TypeInfo {
 				Help: "Usually your full email address. Empty if no login is needed."},
 			{Name: "password", Label: "Password", Kind: "password",
 				Help: "Gmail and Outlook need an \"app password\" from your account's security settings."},
-			{Name: "fromName", Label: "From name", Kind: "text", Placeholder: "Mediarium", Default: "Mediarium",
-				Help: "The name your emails show as coming from. Leave it empty to use Mediarium."},
+			{Name: "fromName", Label: "From name", Kind: "text", Placeholder: "Cue", Default: "Cue",
+				Help: "The name your emails show as coming from. Leave it empty to use Cue."},
 			{Name: "from", Label: "From address", Kind: "text", Required: true, Placeholder: "you@example.com",
 				Help: "The address emails are sent from. Most providers need your own address."},
 			{Name: "to", Label: "Send to", Kind: "text", Required: true, Placeholder: "you@example.com",
@@ -161,13 +161,13 @@ func Types() []TypeInfo {
 			{Name: "url", Label: "Server URL", Kind: "text", Required: true, Placeholder: "https://gotify.example.com",
 				Help: "The address you open Gotify at."},
 			{Name: "token", Label: "App token", Kind: "password", Required: true,
-				Help: "In Gotify, open Apps, create one called Mediarium and copy its token."},
+				Help: "In Gotify, open Apps, create one called Cue and copy its token."},
 		}},
 		{Type: string(TargetPushover), Label: "Pushover", Fields: []Field{
 			{Name: "userKey", Label: "User key", Kind: "password", Required: true,
 				Help: "Top right of your Pushover dashboard."},
 			{Name: "token", Label: "App token", Kind: "password", Required: true,
-				Help: "On pushover.net choose \"Create an Application/API Token\", name it Mediarium and copy the token."},
+				Help: "On pushover.net choose \"Create an Application/API Token\", name it Cue and copy the token."},
 		}},
 		{Type: string(TargetSlack), Label: "Slack", Fields: []Field{
 			{Name: "url", Label: "Webhook URL", Kind: "password", Required: true, Placeholder: "https://hooks.slack.com/services/...",
@@ -262,7 +262,7 @@ func Validate(typeName string, cfg map[string]string) error {
 			return errors.New("Keep the From name on one line and under 100 characters.")
 		}
 		if a, err := mail.ParseAddress(get("from")); err != nil || !inputcheck.ValidEmail(a.Address) {
-			return errors.New("The From address doesn't look right. It should look like you@example.com or Mediarium <you@example.com>.")
+			return errors.New("The From address doesn't look right. It should look like you@example.com or Cue <you@example.com>.")
 		}
 		if len(SplitAddresses(get("to"))) == 0 {
 			return errors.New("Add at least one email address to send to, for example you@example.com.")

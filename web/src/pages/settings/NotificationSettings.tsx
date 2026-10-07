@@ -16,16 +16,16 @@ const EVENTS: { key: string; label: string; hint: string }[] = [
   { key: 'added', label: 'Download started', hint: 'A release was found and sent to the downloader' },
   { key: 'imported', label: 'Downloaded', hint: 'A download finished and was filed in your library' },
   { key: 'failed', label: 'Failed', hint: 'A download failed' },
-  { key: 'conflict', label: 'Needs a decision', hint: 'A file already exists and Mediarium is asking what to do' },
+  { key: 'conflict', label: 'Needs a decision', hint: 'A file already exists and Cue is asking what to do' },
   { key: 'subtitle', label: 'Subtitles', hint: 'A subtitle was downloaded' },
   { key: 'health', label: 'Something is wrong', hint: 'Your Usenet provider or an indexer stopped working, for example because a subscription expired' },
-  { key: 'update', label: 'New version', hint: 'A new version of Mediarium is available' },
+  { key: 'update', label: 'New version', hint: 'A new version of Cue is available' },
 ]
 
 const FALLBACK_TYPES: NotifyType[] = [
   { type: 'discord', label: 'Discord', fields: [{ name: 'url', label: 'Webhook URL', kind: 'text', required: true, help: 'In Discord: channel settings, Integrations, Webhooks, New Webhook, Copy Webhook URL.' }] },
   { type: 'telegram', label: 'Telegram', fields: [{ name: 'botToken', label: 'Bot token', kind: 'password', required: true, help: 'Message @BotFather on Telegram, send /newbot and copy the token it gives you.' }, { name: 'chatId', label: 'Chat ID', kind: 'text', required: true, help: 'Send your bot a message, then open https://api.telegram.org/bot<token>/getUpdates to find the chat ID.' }] },
-  { type: 'webhook', label: 'Generic webhook', fields: [{ name: 'url', label: 'Webhook URL', kind: 'text', required: true, help: 'Mediarium sends a small JSON message to this address.' }] },
+  { type: 'webhook', label: 'Generic webhook', fields: [{ name: 'url', label: 'Webhook URL', kind: 'text', required: true, help: 'Cue sends a small JSON message to this address.' }] },
 ]
 
 const TAGLINE: Record<string, string> = {
@@ -94,7 +94,7 @@ const NEEDED: Record<string, string> = {
   'webhook.url': 'Add the address to send the messages to, for example https://example.com/hook.',
 }
 
-const MAILBOX_HINT = 'It should look like you@example.com or Mediarium <you@example.com>.'
+const MAILBOX_HINT = 'It should look like you@example.com or Cue <you@example.com>.'
 
 // One email address, either bare or written as: Name <name@example.com>.
 function mailbox(value: string): boolean {
@@ -133,7 +133,7 @@ function fieldProblem(type: string, f: NotifyField, s: FormState, stored: boolea
     case 'chatId':
       return /^-?\d+$/.test(v) || /^@\w+$/.test(v) ? null : 'The chat ID is a number like 123456789 (a group has a minus sign in front, like -1001234567890). A channel name such as @mychannel also works.'
     case 'template': {
-      // The same placeholders Mediarium fills in are swapped for sample text, then the result must be valid JSON.
+      // The same placeholders Cue fills in are swapped for sample text, then the result must be valid JSON.
       try {
         JSON.parse(v.replace(/\{\{(event|title|message|at)\}\}/g, 'x'))
         return null
@@ -473,7 +473,7 @@ function Watch() {
       <p style={{ marginTop: 0, color: 'var(--text-dim)' }}>
         {minutes === 0
           ? 'The checks are off, so nothing tells you when your Usenet provider or an indexer stops working. Turn them back on below. '
-          : `Every ${minutes === null || minutes === 30 ? 'half hour' : minutes === 60 ? 'hour' : `${minutes} minutes`} Mediarium checks that your Usenet provider and indexers still accept your login. `}
+          : `Every ${minutes === null || minutes === 30 ? 'half hour' : minutes === 60 ? 'hour' : `${minutes} minutes`} Cue checks that your Usenet provider and indexers still accept your login. `}
         {minutes !== 0 && (
           <>
             If one stops working (an expired subscription, a changed password, the service being down) it notifies you once, and again when it recovers. Turn on <strong>Something is wrong</strong> on a notification to get these.

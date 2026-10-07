@@ -17,13 +17,13 @@ const META: Record<ItemStateKey, Omit<ItemState, 'key'>> = {
   downloaded: { label: 'Downloaded', icon: 'check', hint: 'The file is in your library.' },
   downloading: { label: 'Downloading', icon: 'download', hint: 'Being downloaded right now.' },
   paused: { label: 'Paused', icon: 'pause', hint: 'The download is paused. Resume it from Activity.' },
-  searching: { label: 'Waiting for a release', icon: 'search', hint: 'Monitored. Mediarium checks regularly and downloads a release as soon as it finds one.' },
+  searching: { label: 'Waiting for a release', icon: 'search', hint: 'Monitored. Cue checks regularly and downloads a release as soon as it finds one.' },
   pending: { label: 'Pending', icon: 'clock', hint: 'Queued and waiting its turn.' },
   added: { label: 'Not monitored', icon: 'bookmark', hint: 'In your library but not monitored, so nothing is downloaded automatically.' },
   failed: { label: 'Failed', icon: 'warning', hint: 'The last download attempt failed.' },
   partial: { label: 'Partial', icon: 'download', hint: 'Some episodes are downloaded.' },
-  details: { label: 'Getting details…', icon: 'refresh', hint: 'Mediarium is still getting the poster, summary and episodes for this title.' },
-  nodetails: { label: 'Details missing', icon: 'warning', hint: "Mediarium couldn't get the details for this title yet. It will try again." },
+  details: { label: 'Getting details…', icon: 'refresh', hint: 'Cue is still getting the poster, summary and episodes for this title.' },
+  nodetails: { label: 'Details missing', icon: 'warning', hint: "Cue couldn't get the details for this title yet. It will try again." },
 }
 
 export function describeState(key: ItemStateKey, extra?: string): ItemState {

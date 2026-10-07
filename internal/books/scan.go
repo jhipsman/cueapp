@@ -13,7 +13,7 @@ import (
 // to the library where they are. Nothing is moved or renamed. Author and title
 // come from the folder layout most tools use:
 //
-//	<root>/<Author>/<Title>/<file or audio files>   (Mediarium, Calibre, Audiobookshelf)
+//	<root>/<Author>/<Title>/<file or audio files>   (Cue, Calibre, Audiobookshelf)
 //	<root>/<Author>/<Title>.epub
 //	<root>/<Author> - <Title>.epub
 //	<root>/<Author>/<Series>/<Title>/<audio files>

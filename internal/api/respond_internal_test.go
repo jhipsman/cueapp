@@ -19,7 +19,7 @@ func TestWriteErrorSpeaksPlainlyOnServerErrors(t *testing.T) {
 		{"sentence stays", http.StatusInternalServerError, "Couldn't save that. Try again.", "", nil},
 		{"dns", http.StatusBadGateway, `Get "https://x.example/api?apikey=SECRET": dial tcp: lookup x.example: no such host`,
 			"The address could not be found. Check the address and your internet connection.", []string{"SECRET", "dial tcp", "lookup"}},
-		{"sqlite", http.StatusInternalServerError, "list movies: sqlite: database is locked", "Something went wrong inside Mediarium.", []string{"sqlite"}},
+		{"sqlite", http.StatusInternalServerError, "list movies: sqlite: database is locked", "Something went wrong inside Cue.", []string{"sqlite"}},
 		{"a 400 is written for people already", http.StatusBadRequest, "sql: not a real validation message", "", nil},
 	}
 	for _, tt := range tests {

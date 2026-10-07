@@ -18,7 +18,7 @@ import (
 	"github.com/rdborg/mediarium/internal/quality"
 )
 
-// Manual import: a video file in the downloads folder that Mediarium could
+// Manual import: a video file in the downloads folder that Cue could
 // not match (a failed download's leftovers, a file you copied there
 // yourself) can be pointed at a movie or an episode in the library. It is
 // then named and moved into the library like any download.

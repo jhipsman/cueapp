@@ -16,7 +16,7 @@ const userContextKey contextKey = "auth_user"
 // is looked up server-side, HttpOnly (scripts cannot read it) and
 // SameSite=Strict (browsers never send it on a request started by another
 // site). secure marks it Secure (HTTPS only); the caller sets it whenever the
-// visitor reached Mediarium over HTTPS, directly or through a trusted proxy.
+// visitor reached Cue over HTTPS, directly or through a trusted proxy.
 func SetSessionCookie(w http.ResponseWriter, token string, expiresAt time.Time, secure bool) {
 	http.SetCookie(w, &http.Cookie{
 		Name:     CookieName,

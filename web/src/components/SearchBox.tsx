@@ -235,7 +235,7 @@ export default function SearchBox() {
     )
   }
 
-  const placeholder = `Search ${[on('movies') && 'movies', on('tv') && (on('movies') ? 'shows' : 'TV shows'), musicOn && 'artists', booksOn && 'books'].filter(Boolean).join(', ').replace(/, ([^,]*)$/, ' and $1') || 'Mediarium'}`
+  const placeholder = `Search ${[on('movies') && 'movies', on('tv') && (on('movies') ? 'shows' : 'TV shows'), musicOn && 'artists', booksOn && 'books'].filter(Boolean).join(', ').replace(/, ([^,]*)$/, ' and $1') || 'Cue'}`
 
   return (
     <div className="searchbox" ref={box}>

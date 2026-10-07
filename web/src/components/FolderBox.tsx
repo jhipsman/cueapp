@@ -15,12 +15,12 @@ function parentOf(path: string): string {
 interface Status {
   check: FolderCheck
   // For a folder that does not exist yet: whether the folder above it is a
-  // real, mapped folder (so Mediarium can create this one when it needs it).
+  // real, mapped folder (so Cue can create this one when it needs it).
   parentMapped: boolean
 }
 
 // One folder box in the setup wizard: the label, the box, a note under it, and
-// what Mediarium found at that path. A folder that is not mapped from the
+// what Cue found at that path. A folder that is not mapped from the
 // server gets the exact compose line to add.
 export default function FolderBox({
   kind,
@@ -160,7 +160,7 @@ export default function FolderBox({
           )}
           {missing && status?.parentMapped && (
             <p className="fbox-calm">
-              This folder isn&apos;t there yet. Mediarium creates it when it&apos;s needed, or{' '}
+              This folder isn&apos;t there yet. Cue creates it when it&apos;s needed, or{' '}
               {r.canCreate ? (
                 <button type="button" className="link-btn" disabled={creating} onClick={() => void createNow(path)}>
                   {creating ? 'creating…' : 'create it now'}
@@ -187,7 +187,7 @@ export default function FolderBox({
           </p>
           <CopyBox text={composeLine(info.hostExample, path || info.fallback)} label={`Compose line for the ${info.label.toLowerCase()}`} />
           <p className="fbox-small">
-            Before the colon is the folder on your server (this one is an example). After it is the name Mediarium uses, which has to
+            Before the colon is the folder on your server (this one is an example). After it is the name Cue uses, which has to
             match the box above. Create the folder first, or Docker won&apos;t start.
           </p>
           {canUseParent && (

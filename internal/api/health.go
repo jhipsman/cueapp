@@ -32,7 +32,7 @@ type healthItem struct {
 
 var healthRank = map[string]int{"error": 0, "warn": 1, "info": 2}
 
-// collectHealth checks everything Mediarium depends on and reports each
+// collectHealth checks everything Cue depends on and reports each
 // missing key, service or folder together with what will not work because of
 // it. The dashboard shows these, so a skipped setup step is never silent.
 func (s *Server) collectHealth() []healthItem {
@@ -148,7 +148,7 @@ func (s *Server) collectHealth() []healthItem {
 				"Subtitles are on but there's no OpenSubtitles key, so none are downloaded.",
 				"Add a key", "/settings/subtitles")
 		} else if s.autoSubtitlesEnabled() {
-			// Only worth mentioning when Mediarium fetches on its own: then the
+			// Only worth mentioning when Cue fetches on its own: then the
 			// small daily limit decides how fast a large library fills in.
 			if !s.Subtitles().HasCredentials() {
 				add("subtitles-anonymous", "info", "No OpenSubtitles account",
@@ -225,7 +225,7 @@ func (s *Server) collectHealth() []healthItem {
 				"Fix folders", "/settings/media")
 		case !info.Writable:
 			add(f.id+"-folder-readonly", f.level, f.label+" folder isn't writable ("+f.path+")",
-				f.impact+" because Mediarium can't write there. Check the folder's permissions, or the PUID and PGID.",
+				f.impact+" because Cue can't write there. Check the folder's permissions, or the PUID and PGID.",
 				"Fix folders", "/settings/media")
 		case info.MountKnown && !info.Mounted:
 			add(f.id+"-folder-unmapped", "warn", f.label+" folder isn't a mapped folder ("+f.path+")",

@@ -199,7 +199,7 @@ func (s *Server) handleFollowedSeries(w http.ResponseWriter, r *http.Request) {
 func seriesFromPath(w http.ResponseWriter, r *http.Request) (source, key string, ok bool) {
 	source, key = r.PathValue("source"), r.PathValue("key")
 	if !books.ValidSeriesKey(source, key) {
-		writeError(w, http.StatusBadRequest, "That isn't a series Mediarium knows.")
+		writeError(w, http.StatusBadRequest, "That isn't a series Cue knows.")
 		return "", "", false
 	}
 	return source, key, true
@@ -240,7 +240,7 @@ func (s *Server) handleFollowSeries(w http.ResponseWriter, r *http.Request) {
 	_ = s.QueueRepo.LogActivity(0, "added", fmt.Sprintf("Following the %s series: its missing and new books are added by themselves%s", f.Name, byline))
 	added, err := s.addSeriesBooks(r.Context(), f, by)
 	if err != nil {
-		writeJSON(w, http.StatusOK, map[string]any{"added": 0, "message": "Following it. The books couldn't be loaded just now; Mediarium tries again later."})
+		writeJSON(w, http.StatusOK, map[string]any{"added": 0, "message": "Following it. The books couldn't be loaded just now; Cue tries again later."})
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"added": added})

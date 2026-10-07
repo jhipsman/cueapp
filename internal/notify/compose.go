@@ -26,7 +26,7 @@ type Item struct {
 	Reason    string // why a download failed, in plain words
 	Language  string // a subtitle's language
 	PosterURL string // a hosted poster image, or empty
-	LinkPath  string // where the title lives in Mediarium, like /title/597
+	LinkPath  string // where the title lives in Cue, like /title/597
 }
 
 // Name is how the item reads in a subject: "Titanic (1997)" or
@@ -48,7 +48,7 @@ func (it Item) withYear() string {
 	return it.Title
 }
 
-// Links holds the addresses the person set for Mediarium. Empty means no
+// Links holds the addresses the person set for Cue. Empty means no
 // links are added to messages.
 type Links struct {
 	Base string // like https://mediarium.example.com, no trailing slash
@@ -91,7 +91,7 @@ func Compose(eventType string, it Item, links Links, at time.Time) Event {
 		rows = append(rows, Detail{"Saved to", it.Path})
 	case EventAdded:
 		ev.Title = "Downloading " + name
-		ev.Lead = fmt.Sprintf("Mediarium found a release for %s and added it to the downloads.", name)
+		ev.Lead = fmt.Sprintf("Cue found a release for %s and added it to the downloads.", name)
 		rows = append(rows, Detail{"Release", it.Release})
 	case EventFailed:
 		ev.Title = "Download failed: " + name
@@ -126,8 +126,8 @@ func Compose(eventType string, it Item, links Links, at time.Time) Event {
 func ComposeTestEmail(it Item, links Links, at time.Time) Event {
 	ev := Compose(string(EventImported), it, links, at)
 	ev.Type = "test"
-	ev.Title = "Mediarium test email"
-	ev.Lead = fmt.Sprintf("If you can read this, emails from Mediarium are working. A real one looks like this, shown here with %s. Nothing was downloaded.", it.Name())
+	ev.Title = "Cue test email"
+	ev.Lead = fmt.Sprintf("If you can read this, emails from Cue are working. A real one looks like this, shown here with %s. Nothing was downloaded.", it.Name())
 	year := ""
 	if it.Year > 0 {
 		year = fmt.Sprint(it.Year)
@@ -146,12 +146,12 @@ func ComposeText(eventType, title, message string, links Links, at time.Time) Ev
 	title = strings.TrimSpace(title)
 	switch {
 	case eventType == "test":
-		ev.Title = "Mediarium test message"
-		ev.Lead = "If you can read this, notifications from Mediarium are working."
+		ev.Title = "Cue test message"
+		ev.Lead = "If you can read this, notifications from Cue are working."
 	case kind == EventHealth && strings.HasSuffix(strings.ToLower(title), "working again"):
-		ev.Title = "Mediarium: " + title
+		ev.Title = "Cue: " + title
 	case kind == EventHealth:
-		ev.Title = "Mediarium needs attention: " + lowerLead(title)
+		ev.Title = "Cue needs attention: " + lowerLead(title)
 		ev.LinkURL = links.to("/settings/logs")
 	default:
 		ev.Title = title

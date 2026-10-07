@@ -1,4 +1,4 @@
-// Package netguard limits where Mediarium's own outgoing connections may go.
+// Package netguard limits where Cue's own outgoing connections may go.
 //
 // Indexer, media server, webhook and download addresses are typed in by
 // people (and, for download links, come from indexers). Without a check a
@@ -70,7 +70,7 @@ func embeddedIPv4(addr netip.Addr) (netip.Addr, bool) {
 	return netip.Addr{}, false
 }
 
-// Blocked reports whether Mediarium refuses to connect to addr: link-local
+// Blocked reports whether Cue refuses to connect to addr: link-local
 // addresses (which include the AWS, Azure, Google Cloud and DigitalOcean
 // metadata address), the other known metadata addresses, the unspecified
 // address (which reaches the local machine), multicast and broadcast.

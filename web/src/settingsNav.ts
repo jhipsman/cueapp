@@ -92,5 +92,5 @@ export function pageTitle(pathname: string, admin = true): string {
   if (pathname.startsWith('/import')) return 'Import'
   if (pathname.startsWith('/wanted') || pathname.startsWith('/calendar')) return 'Upcoming'
   if (pathname.startsWith('/queue')) return 'Activity'
-  return 'Mediarium'
+  return 'Cue'
 }

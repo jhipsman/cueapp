@@ -210,7 +210,7 @@ export function BookCard({ book, onAdd, meta }: { book: BookFound; onAdd: (b: Bo
 }
 
 // Adding a book from Discover: pick ebook, audiobook or both (only the formats
-// that are switched on), and Mediarium starts looking straight away.
+// that are switched on), and Cue starts looking straight away.
 export function BookAddDialog({ target, onClose, prefer }: { target: BookFound | null; onClose: () => void; prefer?: BookFormat }) {
   if (!target) return null
   return <AddDialog target={target} onClose={onClose} prefer={prefer} />
@@ -273,7 +273,7 @@ function AddDialog({ target, onClose, prefer }: { target: BookFound; onClose: ()
         return
       }
       window.dispatchEvent(new CustomEvent('mediarium:book-added', { detail: { key: target.key, id: b.id } }))
-      toast.success(`${b.title} added. Mediarium is looking for it now.`)
+      toast.success(`${b.title} added. Cue is looking for it now.`)
       onClose()
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e))

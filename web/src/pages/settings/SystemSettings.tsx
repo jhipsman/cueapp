@@ -26,7 +26,7 @@ export default function SystemSettings() {
     file: file
       ? /\.zip$/i.test(file.name)
         ? null
-        : "That isn't a Mediarium backup. Choose the .zip you got from Download a backup."
+        : "That isn't a Cue backup. Choose the .zip you got from Download a backup."
       : null,
   }
   const v = useValidation(errors)
@@ -37,7 +37,7 @@ export default function SystemSettings() {
 
   async function restore() {
     if (!file || !v.attempt()) return
-    if (!(await confirm({ title: 'Restore this backup?', body: <p>It replaces your library, accounts and settings with the ones in the file. Your current data goes into a &quot;before-restore&quot; folder in your config folder, and Mediarium restarts.</p>, confirmLabel: 'Restore and restart', danger: true }))) return
+    if (!(await confirm({ title: 'Restore this backup?', body: <p>It replaces your library, accounts and settings with the ones in the file. Your current data goes into a &quot;before-restore&quot; folder in your config folder, and Cue restarts.</p>, confirmLabel: 'Restore and restart', danger: true }))) return
     setRestoring(true)
     try {
       const body = new FormData()
@@ -50,7 +50,7 @@ export default function SystemSettings() {
       } catch {
         // A proxy in front can answer with a web page instead of JSON.
       }
-      if (!res.ok) throw new Error(data?.error ?? `The restore failed (error ${res.status}). If the backup is big, make sure any proxy in front of Mediarium allows large uploads.`)
+      if (!res.ok) throw new Error(data?.error ?? `The restore failed (error ${res.status}). If the backup is big, make sure any proxy in front of Cue allows large uploads.`)
       toast.success('Backup accepted. Restarting…')
       setWaiting(true)
       // Wait for the app to come back, then reload onto the restored data.
@@ -69,7 +69,7 @@ export default function SystemSettings() {
           clearInterval(poll)
           setWaiting(false)
           setRestoring(false)
-          toast.info("Mediarium didn't come back. Start it again and reload this page.")
+          toast.info("Cue didn't come back. Start it again and reload this page.")
         }
       }, 2000)
     } catch (e) {
@@ -94,7 +94,7 @@ export default function SystemSettings() {
           <Icon name="refresh" size={14} /> Restore
         </legend>
         <p style={{ marginTop: 0 }}>
-          Choose a backup file. Mediarium restarts to load it, and your current data moves to a <code>before-restore</code> folder in your config folder.
+          Choose a backup file. Cue restarts to load it, and your current data moves to a <code>before-restore</code> folder in your config folder.
         </p>
         <div className="restore-row">
           <input ref={input} type="file" accept=".zip,application/zip" onChange={(e) => setFile(e.target.files?.[0] ?? null)} {...v.bind('file')} />
@@ -110,7 +110,7 @@ export default function SystemSettings() {
           <Icon name="shield" size={14} /> Legal notice
         </legend>
         <p style={{ marginTop: 0 }}>
-          Mediarium is an automation and organising tool for content you have the legal right to obtain. It doesn't host, index or supply any content. You alone are responsible for what you download and for following the laws of your country and the terms of your providers.
+          Cue is an automation and organising tool for content you have the legal right to obtain. It doesn't host, index or supply any content. You alone are responsible for what you download and for following the laws of your country and the terms of your providers.
         </p>
         <p style={{ margin: 0, color: 'var(--text-dim)' }}>
           {s?.legalAcknowledgedAt ? `You accepted this on ${new Date(s.legalAcknowledgedAt).toLocaleDateString()}.` : 'Not yet accepted.'} The full wording is on the <Link to="/settings/about">About and credits</Link> page.

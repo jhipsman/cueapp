@@ -10,7 +10,7 @@ import (
 	"github.com/rdborg/mediarium/internal/logbuf"
 )
 
-// Step is one line of the log a test message leaves: what Mediarium did, when,
+// Step is one line of the log a test message leaves: what Cue did, when,
 // and whether it worked.
 type Step struct {
 	Time time.Time `json:"time"`

@@ -1,14 +1,14 @@
-# What Mediarium does today
+# What Cue does today
 
-A plain comparison of what Mediarium does **today** against the apps it can replace or sit beside, written from the source code.
+A plain comparison of what Cue does **today** against the apps it can replace or sit beside, written from the source code.
 
 - **Snapshot:** 2026-10-05, version 2.0.0 (database migrations up to `0038`; see the [changelog](../CHANGELOG.md)). Read every "No" as "not found when this was written". If it matters to you, look in `internal/` and `web/src/pages`.
 - **How each row was judged:** Yes = implemented and reachable in the UI or API. Partial = something real exists but it is narrower than the reference app. No = not found. The evidence is a package, file or endpoint you can open.
 - **Reference apps** are described from general knowledge of those projects and may be out of date for their newest versions. Uncertain claims are worded loosely or left out.
 - Abbreviations: **Rad** Radarr, **Son** Sonarr, **Lid** Lidarr, **Pro** Prowlarr, **Sab** SABnzbd, **qB** qBittorrent, **Baz** Bazarr.
-- In Mediarium's screens, indexers are called **Indexers**.
+- In Cue's screens, indexers are called **Indexers**.
 
-## 1. Where Mediarium stands in one paragraph
+## 1. Where Cue stands in one paragraph
 
 Movies and TV both work end to end. That covers TMDB metadata; one search across Newznab/Torznab indexers and definition-based torrent sites (the community Cardigann definitions, downloaded on demand); grabbing; a built-in Usenet client (multiple servers, PAR2, native RAR and ZIP unpacking, `7z` only for `.7z`); and a built-in BitTorrent engine (with an embedded WireGuard VPN and kill switch). It also has hardlink import with naming presets, quality profiles with upgrade hunting, a blocklist with automatic retry, monitoring, a calendar, a wanted list, subtitles from OpenSubtitles (optional), notifications, media server refresh, family accounts, backups, a clean-up of the downloads folder, health checks and a first-run wizard. Music, ebooks and audiobooks work too once you switch them on (see 2.4b and [books.md](./books.md)).
 
@@ -18,7 +18,7 @@ What is thin or missing: the things that make the *arr apps manageable at scale 
 
 ### 2.1 Library, search and automation (Radarr / Sonarr territory)
 
-| Feature | In Mediarium today | Evidence | In reference apps |
+| Feature | In Cue today | Evidence | In reference apps |
 |---|---|---|---|
 | Monitoring (movie, show, season, episode) | **Yes** | `PUT /api/movies/{id}/monitored`, `/api/series/{id}/monitored`, `/seasons/{season}/monitored`, `/episodes/{id}/monitored` | Rad, Son |
 | Quality profiles (ordered tiers, cutoff, upgrade-until) | **Yes** | `internal/quality/profile.go` (15-tier ladder), `/api/quality-profiles` CRUD, per-title profile; five built-in presets: Cinema recordings, Any, 720p, 1080p (default) and 4K & over, all starting with upgrades off (see [quality-profiles.md](./quality-profiles.md)) | Rad, Son |
@@ -29,7 +29,7 @@ What is thin or missing: the things that make the *arr apps manageable at scale 
 | Indexer management (add, test, edit, enable/disable, delete) | **Yes** | `/api/indexers` GET/POST/PUT/DELETE, `/test`, `/{id}/test`, `/{id}/enabled`. Newznab and Torznab APIs, plus sites from the definition list (`kind: cardigann`) with their own settings; passwords, cookies and keys stored encrypted and never returned. A failed test of a definition-based site shows on the dashboard. No priorities | Rad, Son, Pro |
 | Indexer definitions engine (Cardigann / hundreds of trackers) | **Yes** | `internal/indexers/cardigann*.go`, `definitions.go`, `GET /api/indexer-definitions`. Runs the community Prowlarr/Indexers definitions (schema v11, downloaded when the site list is opened, none bundled): login by form, POST, GET or cookie with CSRF inputs and error/test selectors, HTML, JSON and XML results, the template language and the common filters, magnet and `.torrent` downloads through the signed-in session, per-site request delay, optional FlareSolverr for Cloudflare. Almost all of the current definitions pass validation, and the site list marks the rest as unsupported, with the reason. Not supported: CAPTCHA logins, look-around regexes in `regexp` filters (skipped in `re_replace`), a handful of invalid selectors. Tested against local fixture sites; expect some real sites to need fixes | Pro |
 | Indexer priorities, per-indexer tags, seed rules | **Partly** | priority Preferred / Normal / Last resort breaks ties between equal releases (`PUT /api/indexers/{id}/priority`); no tags or per-indexer seed rules | Rad, Son, Pro |
-| Sync indexers to other apps | **n/a** | Mediarium is one app; can import Torznab/Newznab URLs from Prowlarr manually | Pro |
+| Sync indexers to other apps | **n/a** | Cue is one app; can import Torznab/Newznab URLs from Prowlarr manually | Pro |
 | RSS sync | **Partial** | `rss-sync` job (every 15 min by default, a setting; `internal/api/automation.go`) runs an empty-query search on every enabled indexer and matches recent listings to monitored items. It is a listings poll, not a dedicated per-indexer RSS feed; no per-indexer toggle | Rad, Son |
 | Scheduled missing / upgrade hunting | **Yes** | `hunt` job (every 6 h by default, a setting), `series-refresh` 12 h, `genre-backfill` hourly (`internal/api/automation.go`, `automation_tv.go`, `genres_job.go`) | Rad, Son |
 | Manual / interactive search with reject reasons | **Yes** | `GET /api/movies/{id}/search`, `/api/series/{id}/search`, `ReleaseTable.tsx`; "Search now" per row | Rad, Son, Pro |
@@ -74,7 +74,7 @@ What is thin or missing: the things that make the *arr apps manageable at scale 
 
 ### 2.2 Usenet downloader (SABnzbd territory)
 
-| Feature | In Mediarium today | Evidence | In reference apps |
+| Feature | In Cue today | Evidence | In reference apps |
 |---|---|---|---|
 | NZB download via NNTP, SSL, yEnc | **Yes** | `internal/download/nntp.go`, `yenc.go`, `nzb.go`, `downloader.go` | Sab |
 | Multiple servers, primary and backup with priority | **Yes** | `DownloadFromServers` (falls through per article), `usenet_servers` UI, `migrations/0012` | Sab |
@@ -94,7 +94,7 @@ What is thin or missing: the things that make the *arr apps manageable at scale 
 
 ### 2.3 Torrent client (qBittorrent territory)
 
-| Feature | In Mediarium today | Evidence | In reference apps |
+| Feature | In Cue today | Evidence | In reference apps |
 |---|---|---|---|
 | Magnet and .torrent grabs | **Yes** | `internal/torrentclient` (`anacrolix/torrent`), `pipeline.go` `downloadTorrent` | qB |
 | Seeding limits (ratio, time) | **Yes, global only** | `torrent.seed_ratio_limit`, `torrent.seed_time_limit_h`, `SeedUntilGoal` in `internal/torrentclient` (stops the torrent and, once imported, deletes its data) | qB |
@@ -111,7 +111,7 @@ What is thin or missing: the things that make the *arr apps manageable at scale 
 
 ### 2.4 Subtitles (Bazarr territory)
 
-| Feature | In Mediarium today | Evidence | In reference apps |
+| Feature | In Cue today | Evidence | In reference apps |
 |---|---|---|---|
 | Providers | **Partial: one** | OpenSubtitles only (`internal/subtitles/opensubtitles.go`) | Baz (many) |
 | Subtitles that come with the release | **Yes** | `.srt .ass .ssa .sub .idx .sup` files in the finished download are copied next to the video as `<video>.<lang>.<ext>`; language read from the file or folder name, episodes in a pack matched by `SxxEyy` (`internal/subtitles/sidecar.go`, `langdetect.go`) | Baz (reads existing files) |
@@ -132,7 +132,7 @@ What is thin or missing: the things that make the *arr apps manageable at scale 
 
 Switch it on in Settings > Media types ([modules.md](./modules.md), [music.md](./music.md)). Until then every `/api/music/` route answers 404 and nothing runs in the background.
 
-| Feature | In Mediarium today | Evidence | In reference apps |
+| Feature | In Cue today | Evidence | In reference apps |
 |---|---|---|---|
 | Module switchboard (movies, TV, music, ebooks, audiobooks) | **Yes** | `GET`/`PUT /api/modules`, settings `modules.*`, `internal/api/modules.go`; switching a module off stops its automation and refuses new titles (409), deleting nothing | none |
 | Artist search and metadata | **Yes** | metadata client (`internal/music*`): identifying User-Agent, one request per second from a shared bucket, retry with backoff on 503, in-memory cache; `GET /api/music/search?q=` | Lid |
@@ -152,7 +152,7 @@ Switch it on in Settings > Media types ([modules.md](./modules.md), [music.md](.
 
 ### 2.5 Users, requests and the wider ecosystem
 
-| Feature | In Mediarium today | Evidence | Where it exists |
+| Feature | In Cue today | Evidence | Where it exists |
 |---|---|---|---|
 | Multiple users and roles | **Partly** | admin and basic-user roles (`member` in the API), accounts managed by an administrator (`/api/users`); one route table decides who may call what (`internal/api/server.go`, `access.go`); no read-only role, no per-user libraries or quotas | Overseerr, Jellyseerr (users, roles); *arr apps are single-login |
 | Request portal (family asks, admin approves) | **No** | not found | Overseerr, Jellyseerr |
@@ -224,7 +224,7 @@ Each of these could become a module of its own. The projects named are for ideas
 | Module | What it would do | Projects to study |
 |---|---|---|
 | Music | Metadata, release matching, per-track naming and tagging, quality profiles for FLAC/MP3. Everything except writing tags is built (see 2.4b) | Lidarr (the *arr way), Picard (metadata and tagging), beets (tagging and organizing library tool) |
-| Books and audiobooks | Built: ebooks and audiobooks with Open Library details, authors, Discover, import and the Mediarium Books reader and player (see [books.md](./books.md)). Also built: following series, release dates on the calendar, narrators and running times | Readarr (same family), Calibre-Web (library), Audiobookshelf (audiobooks and podcasts server) |
+| Books and audiobooks | Built: ebooks and audiobooks with Open Library details, authors, Discover, import and the Cue Books reader and player (see [books.md](./books.md)). Also built: following series, release dates on the calendar, narrators and running times | Readarr (same family), Calibre-Web (library), Audiobookshelf (audiobooks and podcasts server) |
 | Comics | Volume/issue tracking with a comics metadata source | Mylar3, Kapowarr |
 | Podcasts | Subscribe to feeds, download episodes, retention rules | Audiobookshelf also handles podcasts |
 | Anime specifics | Absolute numbering, AniDB or similar IDs, release-group preferences, dual audio | Sonarr's anime handling, Shoko |

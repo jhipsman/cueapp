@@ -197,7 +197,7 @@ function SeriesPage() {
     const usage = await api.seriesDiskUsage(seriesId).catch(() => null)
     const answer = await confirm({
       title: `Remove ${series.title} from your library?`,
-      body: <p>Mediarium stops tracking this show and cancels anything still downloading for it. You can add it back any time.</p>,
+      body: <p>Cue stops tracking this show and cancels anything still downloading for it. You can add it back any time.</p>,
       confirmLabel: 'Remove',
       danger: true,
       option: removeOption('show', usage),
@@ -330,7 +330,7 @@ function SeriesPage() {
                 {done} / {allEps.length}
               </span>
               {season === 0 ? (
-                <span className="hint">Listed for reference. Mediarium can&apos;t look for specials yet.</span>
+                <span className="hint">Listed for reference. Cue can&apos;t look for specials yet.</span>
               ) : (
                 <>
                   <button onClick={() => runSearch({ season, label: `Season ${season} (packs)` })}>Search season</button>

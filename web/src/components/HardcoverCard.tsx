@@ -5,7 +5,7 @@ import { useToast } from './Toast'
 
 // Settings > Info, lists and subtitles: an optional Hardcover token for better
 // book series and release dates. A Hardcover token belongs to one account and
-// can't be shared, so none comes with Mediarium; without one, Open Library is used.
+// can't be shared, so none comes with Cue; without one, Open Library is used.
 export default function HardcoverCard() {
   const toast = useToast()
   const { on } = useModules()
@@ -63,7 +63,7 @@ export default function HardcoverCard() {
           </a>{' '}
           and copy your token.
         </li>
-        <li>Paste it here and press Save. Mediarium checks it with Hardcover first.</li>
+        <li>Paste it here and press Save. Cue checks it with Hardcover first.</li>
       </ol>
       <div className="grid-form">
         <label>

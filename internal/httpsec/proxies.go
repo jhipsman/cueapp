@@ -1,5 +1,5 @@
 // Package httpsec holds the HTTP-level security pieces that depend on how
-// Mediarium is reached: which reverse proxies are trusted to say who the
+// Cue is reached: which reverse proxies are trusted to say who the
 // caller is (client IP, HTTPS or not, public host name), the cross-site
 // request check, and the security response headers.
 //
@@ -180,7 +180,7 @@ func LimitKey(ip string) string {
 	return a.String()
 }
 
-// IsHTTPS reports whether the caller reached Mediarium over HTTPS: this
+// IsHTTPS reports whether the caller reached Cue over HTTPS: this
 // connection is TLS, or a trusted proxy says the caller's was
 // (X-Forwarded-Proto, or the proto of the Forwarded header).
 func (p *Proxies) IsHTTPS(r *http.Request) bool {
@@ -211,7 +211,7 @@ func (p *Proxies) IsHTTPS(r *http.Request) bool {
 }
 
 // PublicHosts lists the host names (with port when not a default one) the
-// caller may have used to reach Mediarium: the Host header of the request,
+// caller may have used to reach Cue: the Host header of the request,
 // and the X-Forwarded-Host a trusted proxy adds. Lower case.
 func (p *Proxies) PublicHosts(r *http.Request) []string {
 	hosts := []string{strings.ToLower(r.Host)}

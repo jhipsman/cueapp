@@ -162,7 +162,7 @@ func TestSignIn(t *testing.T) {
 			f.mu.Lock()
 			defer f.mu.Unlock()
 			last := f.headers[len(f.headers)-1]
-			if !strings.Contains(last, `DeviceId="install-id"`) || !strings.Contains(last, `Client="Mediarium"`) || !strings.Contains(last, `Version="1.2.3"`) {
+			if !strings.Contains(last, `DeviceId="install-id"`) || !strings.Contains(last, `Client="Cue"`) || !strings.Contains(last, `Version="1.2.3"`) {
 				t.Fatalf("authorization header = %q", last)
 			}
 		})

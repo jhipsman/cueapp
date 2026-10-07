@@ -1,4 +1,4 @@
-// Package backup creates, validates and restores Mediarium backups.
+// Package backup creates, validates and restores Cue backups.
 //
 // A backup is a zip holding exactly three files:
 //
@@ -253,7 +253,7 @@ func Stage(configDir, zipPath string) (Manifest, error) {
 func extractAndValidate(zipPath, dir string) (Manifest, error) {
 	zr, err := zip.OpenReader(zipPath)
 	if err != nil {
-		return Manifest{}, invalidf("This is not a valid Mediarium backup file. It could not be read as a zip.")
+		return Manifest{}, invalidf("This is not a valid Cue backup file. It could not be read as a zip.")
 	}
 	defer zr.Close()
 
@@ -269,7 +269,7 @@ func extractAndValidate(zipPath, dir string) (Manifest, error) {
 		case f.Mode()&os.ModeType != 0 || f.FileInfo().IsDir():
 			return Manifest{}, invalidf("The %s in this backup is not a regular file.", f.Name)
 		case f.Flags&0x1 != 0:
-			return Manifest{}, invalidf("The %s in this backup is password protected, but Mediarium backups never are.", f.Name)
+			return Manifest{}, invalidf("The %s in this backup is password protected, but Cue backups never are.", f.Name)
 		case f.UncompressedSize64 > uint64(limit):
 			return Manifest{}, invalidf("The %s in this backup is too large.", f.Name)
 		}
@@ -318,12 +318,12 @@ func extractEntry(f *zip.File, dest string, limit int64) error {
 	return nil
 }
 
-// requiredTables must exist in any Mediarium database.
+// requiredTables must exist in any Cue database.
 var requiredTables = []string{"users", "settings", "movies", "download_queue", "schema_migrations"}
 
 // validateFiles checks a folder holding app.db, secret.key and optionally
 // manifest.json: the key parses, the database opens read-only, passes an
-// integrity check, has Mediarium's tables, and was not written by a newer
+// integrity check, has Cue's tables, and was not written by a newer
 // version than this binary.
 func validateFiles(dir string) (Manifest, error) {
 	var manifest Manifest
@@ -374,21 +374,21 @@ func validateFiles(dir string) (Manifest, error) {
 	for _, table := range requiredTables {
 		var n int
 		if err := db.QueryRowContext(ctx, `SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name=?`, table).Scan(&n); err != nil || n == 0 {
-			return Manifest{}, invalidf("The %s in this backup does not look like a Mediarium database (table %q is missing).", DBFile, table)
+			return Manifest{}, invalidf("The %s in this backup does not look like a Cue database (table %q is missing).", DBFile, table)
 		}
 	}
 	highest, err := highestMigration(ctx, db)
 	if err != nil {
-		return Manifest{}, invalidf("The %s in this backup does not look like a Mediarium database.", DBFile)
+		return Manifest{}, invalidf("The %s in this backup does not look like a Cue database.", DBFile)
 	}
 	if highest == "" {
 		return Manifest{}, invalidf("The %s in this backup has no schema history.", DBFile)
 	}
 	if highest > latest {
-		return Manifest{}, invalidf("This backup was made by a newer version of Mediarium (schema %s, and this version only knows up to %s). Update Mediarium first.", highest, latest)
+		return Manifest{}, invalidf("This backup was made by a newer version of Cue (schema %s, and this version only knows up to %s). Update Cue first.", highest, latest)
 	}
 	if manifest.Migrations > latest {
-		return Manifest{}, invalidf("This backup was made by a newer version of Mediarium. Update Mediarium first.")
+		return Manifest{}, invalidf("This backup was made by a newer version of Cue. Update Cue first.")
 	}
 	if manifest.Migrations == "" {
 		manifest.Migrations = highest

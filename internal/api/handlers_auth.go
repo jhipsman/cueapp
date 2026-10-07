@@ -42,7 +42,7 @@ type createAdminRequest struct {
 	FirstName string `json:"firstName"` // still accepted (older clients)
 	LastName  string `json:"lastName"`
 	Email     string `json:"email"`
-	// SetupCode is the one-time code from the Mediarium log, needed only when
+	// SetupCode is the one-time code from the Cue log, needed only when
 	// the sign-up is not made from the home network (setup.go).
 	SetupCode string `json:"setupCode"`
 }
@@ -123,7 +123,7 @@ func (s *Server) handleCreateAdmin(w http.ResponseWriter, r *http.Request) {
 	}
 	if err != nil {
 		log.Printf("api: create admin: %v", err)
-		writeError(w, http.StatusInternalServerError, "Couldn't create the account. Check the Mediarium log for details.")
+		writeError(w, http.StatusInternalServerError, "Couldn't create the account. Check the Cue log for details.")
 		return
 	}
 	s.startSession(w, r, user.ID)
@@ -229,7 +229,7 @@ func (s *Server) handleChangePassword(w http.ResponseWriter, r *http.Request) {
 	}
 	if err != nil {
 		log.Printf("api: change password: %v", err)
-		writeError(w, http.StatusInternalServerError, "Couldn't change the password. Check the Mediarium log for details.")
+		writeError(w, http.StatusInternalServerError, "Couldn't change the password. Check the Cue log for details.")
 		return
 	}
 	// Changing the password signed every session out; this browser gets a new one.

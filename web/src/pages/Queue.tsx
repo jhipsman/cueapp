@@ -182,7 +182,7 @@ function QueueRow({ q, admin, busy, act, stop, remove }: RowProps) {
 }
 
 // Activity: what is downloading right now (with the actions you actually want
-// on each entry), a readable history of what Mediarium has done, and the
+// on each entry), a readable history of what Cue has done, and the
 // blocklist of releases it will not grab again.
 export default function Queue() {
   const confirm = useConfirm()
@@ -556,7 +556,7 @@ export default function Queue() {
       {tab === 'blocklist' && admin && (
         <>
           <p style={{ color: 'var(--text-dim)' }}>
-            Releases that failed because they were bad. Mediarium won&apos;t pick them again, but you can still choose one by hand.
+            Releases that failed because they were bad. Cue won&apos;t pick them again, but you can still choose one by hand.
           </p>
           {blocklist.length === 0 ? (
             <div className="empty-state">

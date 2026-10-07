@@ -9,7 +9,7 @@ import (
 )
 
 // PathMapping translates a folder as Radarr/Sonarr see it (From, inside
-// their container) to the same folder as Mediarium sees it (To, inside its
+// their container) to the same folder as Cue sees it (To, inside its
 // own container). /data/media/movies -> /movies turns
 // /data/media/movies/Heat (1995) into /movies/Heat (1995).
 type PathMapping struct {
@@ -18,11 +18,11 @@ type PathMapping struct {
 }
 
 // RootFolder is one of Radarr's or Sonarr's root folders and where it lands
-// in Mediarium.
+// in Cue.
 type RootFolder struct {
 	Path         string `json:"path"`         // as Radarr/Sonarr see it
-	MappedTo     string `json:"mappedTo"`     // as Mediarium sees it, after the path map
-	Exists       bool   `json:"exists"`       // MappedTo is a folder Mediarium can read
+	MappedTo     string `json:"mappedTo"`     // as Cue sees it, after the path map
+	Exists       bool   `json:"exists"`       // MappedTo is a folder Cue can read
 	Suggested    bool   `json:"suggested"`    // the mapping was suggested, not sent in the request
 	Titles       int    `json:"titles"`       // titles in this root folder
 	FoldersFound int    `json:"foldersFound"` // of those, how many title folders exist at the translated path
@@ -130,8 +130,8 @@ func rootsOf(listed []arrRootFolder, titles []string) map[string][]string {
 const suggestSample = 50
 
 // suggestMappings proposes a mapping for every root folder the requested
-// map doesn't cover and that doesn't exist as-is in Mediarium, when
-// Mediarium's library folder (libRoot) is plainly the same place: either
+// map doesn't cover and that doesn't exist as-is in Cue, when
+// Cue's library folder (libRoot) is plainly the same place: either
 // its last path segment matches the root's ("/data/media/movies" and
 // "/movies"), or it holds the same title folders.
 func suggestMappings(roots map[string][]string, requested []PathMapping, libRoot string) []PathMapping {
@@ -150,7 +150,7 @@ func suggestMappings(roots map[string][]string, requested []PathMapping, libRoot
 			continue
 		}
 		if isDir(filepath.FromSlash(root)) {
-			continue // Mediarium sees it at the same path
+			continue // Cue sees it at the same path
 		}
 		if strings.EqualFold(path.Base(root), filepath.Base(libRoot)) {
 			out = append(out, PathMapping{From: root, To: libRoot})

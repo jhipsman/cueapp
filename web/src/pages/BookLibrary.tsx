@@ -230,7 +230,7 @@ function AddBook({ format, onAdded }: { format: BookFormat; onAdded: () => void 
         toast.success(b.message)
         return
       }
-      toast.success(`${b.title} added. Mediarium is looking for it now.`)
+      toast.success(`${b.title} added. Cue is looking for it now.`)
       setResults((r) => r?.map((x) => (x.key === f.key ? { ...x, libraryId: b.id } : x)) ?? r)
       onAdded()
     } catch (e) {

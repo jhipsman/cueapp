@@ -45,7 +45,7 @@ const MODULES: ModuleInfo[] = [
     icon: 'book',
     color: 'var(--c-book)',
     blurb: 'Books for your e-reader, filed by author.',
-    points: ['EPUB first, then AZW3, MOBI or PDF', 'Trending books and the classics on Discover', 'Follow authors for their new books', 'Read them in Mediarium Books'],
+    points: ['EPUB first, then AZW3, MOBI or PDF', 'Trending books and the classics on Discover', 'Follow authors for their new books', 'Read them in Cue Books'],
   },
   {
     key: 'audiobooks',
@@ -53,11 +53,11 @@ const MODULES: ModuleInfo[] = [
     icon: 'headphones',
     color: 'var(--c-audiobook)',
     blurb: 'Audiobooks ready for your player, filed by author.',
-    points: ['M4B first, then MP3 and the rest', 'Chapters kept in order', 'Listen in Mediarium Books, with a sleep timer', 'Your place is saved on every device'],
+    points: ['M4B first, then MP3 and the rest', 'Chapters kept in order', 'Listen in Cue Books, with a sleep timer', 'Your place is saved on every device'],
   },
 ]
 
-// The switchboard: which kinds of media Mediarium looks after. A module that
+// The switchboard: which kinds of media Cue looks after. A module that
 // is off disappears from the menu and does nothing in the background, but
 // nothing is ever deleted, so switching it back on picks up where it left off.
 export default function ModulesSettings() {

@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import Icon, { type IconName } from './Icon'
 
-// A service that already ships with Mediarium: what it is, that it is
+// A service that already ships with Cue: what it is, that it is
 // connected, what its shared limits are, and where to get a personal key if
 // the limits ever get in the way.
 export default function ConnectedServiceCard({

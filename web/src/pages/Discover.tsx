@@ -154,7 +154,7 @@ function PickBar({ onAdded }: { onAdded: () => void }) {
     }
     setBusy(null)
     if (failed === 0 && asked > 0) toast.success(`Asked for ${asked} ${asked === 1 ? 'title' : 'titles'}. An administrator will look at ${asked === 1 ? 'it' : 'them'} under Activity > Requests.`)
-    else if (failed === 0) toast.success(`Added ${list.length} ${list.length === 1 ? 'title' : 'titles'}. Mediarium is looking for them now.`)
+    else if (failed === 0) toast.success(`Added ${list.length} ${list.length === 1 ? 'title' : 'titles'}. Cue is looking for them now.`)
     else toast.error(`${failed} of ${list.length} could not be added.`)
     picks?.setSelecting(false)
     onAdded()

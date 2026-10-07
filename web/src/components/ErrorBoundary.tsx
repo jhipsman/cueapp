@@ -13,7 +13,7 @@ export default class ErrorBoundary extends Component<{ children: ReactNode; rese
 
   componentDidCatch(error: Error, info: ErrorInfo) {
     // The browser console is where a bug report can pick it up.
-    console.error('Mediarium: a page failed to draw.', error, info.componentStack)
+    console.error('Cue: a page failed to draw.', error, info.componentStack)
   }
 
   componentDidUpdate(prev: { resetKey?: string }) {
@@ -28,7 +28,7 @@ export default class ErrorBoundary extends Component<{ children: ReactNode; rese
           <BrandMark className="splash-logo" />
         </div>
         <div className="splash-name">Something went wrong</div>
-        <p className="splash-hint">This page couldn't be shown. Reloading usually fixes it. If it keeps happening, report it on the Mediarium GitHub page and say what you were doing.</p>
+        <p className="splash-hint">This page couldn't be shown. Reloading usually fixes it. If it keeps happening, report it on the Cue GitHub page and say what you were doing.</p>
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'center' }}>
           <button type="button" className="primary" onClick={() => window.location.reload()}>
             Reload the page

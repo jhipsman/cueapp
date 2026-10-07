@@ -6,11 +6,11 @@ A failed download stays in the Queue tab with the reason. **Why did this happen,
 
 ## Import a file by hand
 
-**Activity > Import a file by hand** (administrators) lists the video files in the downloads folder, biggest first, with what each file's name suggests ("looks like Heat (1995)", the quality). For each one, choose **Movie** or **Episode**, pick the title from your library (the best guess is already chosen when the name matches), and for an episode the season and episode number, then press **Import**. Mediarium names the file and puts it in your library as it does for a download, marks the title as downloaded and tells your media server. The title must already be in your library. A file already at the destination is never overwritten. The copy left in the downloads folder is removed by the daily clean-up. Files smaller than 20 MB (samples, extras) and hidden folders are not listed. Scripts: `GET /api/manual-import` and `POST /api/manual-import` with `{"path": "...", "movieId": 12}` or `{"path": "...", "seriesId": 4, "season": 2, "episode": 5}` (the path is relative to the downloads folder).
+**Activity > Import a file by hand** (administrators) lists the video files in the downloads folder, biggest first, with what each file's name suggests ("looks like Heat (1995)", the quality). For each one, choose **Movie** or **Episode**, pick the title from your library (the best guess is already chosen when the name matches), and for an episode the season and episode number, then press **Import**. Cue names the file and puts it in your library as it does for a download, marks the title as downloaded and tells your media server. The title must already be in your library. A file already at the destination is never overwritten. The copy left in the downloads folder is removed by the daily clean-up. Files smaller than 20 MB (samples, extras) and hidden folders are not listed. Scripts: `GET /api/manual-import` and `POST /api/manual-import` with `{"path": "...", "movieId": 12}` or `{"path": "...", "seriesId": 4, "season": 2, "episode": 5}` (the path is relative to the downloads folder).
 
 ## The Wanted page
 
-**Upcoming > Wanted** lists what Mediarium is still looking for (**Missing**) and what is below the quality you asked for (**Upgrades**). Episodes of the same show are folded into one line ("12 episodes missing") with **Show episodes** and **Search show**. **Find a title** narrows the list, the first 50 are shown with **Show more** for the rest, and **Search all** searches every title in the list now, one after another (one search per movie, one per show). Above 25 titles it asks first, because many indexers allow only so many searches a day.
+**Upcoming > Wanted** lists what Cue is still looking for (**Missing**) and what is below the quality you asked for (**Upgrades**). Episodes of the same show are folded into one line ("12 episodes missing") with **Show episodes** and **Search show**. **Find a title** narrows the list, the first 50 are shown with **Show more** for the rest, and **Search all** searches every title in the list now, one after another (one search per movie, one per show). Above 25 titles it asks first, because many indexers allow only so many searches a day.
 
 ## The series page
 
@@ -24,7 +24,7 @@ Every movie, show and album keeps its own log of what happened to it, newest fir
 
 ![Upcoming, Wanted tab: missing movies and episodes with their status, release date, quality and a Search now button](images/upcoming-wanted.png)
 
-*Upcoming > Wanted lists what Mediarium is still looking for. Each row shows the state (Waiting for a release), the release date and quality, and a Search now button. The arrow opens the title and its activity log.*
+*Upcoming > Wanted lists what Cue is still looking for. Each row shows the state (Waiting for a release), the release date and quality, and a Search now button. The arrow opens the title and its activity log.*
 
 ![Upcoming, Calendar tab: a month with episodes and movies on their release days](images/upcoming-calendar.png)
 
@@ -71,7 +71,7 @@ The **History** tab lists the newest 100 events. **Show older lines** loads 200 
 
 **Upcoming > Calendar** shows releases, episode air dates, album releases and book releases on their day. Chips at the top show only movies, TV, music or books (when more than one is switched on), and **Not downloaded yet only** hides what you already have.
 
-**Add to your calendar app** gives you a private address (an `.ics` link) to subscribe to in Google Calendar (*Other calendars > From URL*), on an iPhone (*Settings > Calendar > Accounts > Add Subscribed Calendar*) or in Outlook. Releases then show up in your own calendar and update by themselves. The address works without signing in, so anyone who has it can see your calendar: keep it to yourself. **Make a new address** replaces it (the old one stops working) and **Turn it off** removes it. Each account has its own. The calendar app must be able to reach Mediarium, so for an app on your phone outside your home this needs your reverse proxy. Scripts: `GET`, `POST` and `DELETE /api/calendar/feed`; the feed itself is `GET /api/calendar/feed/{token}.ics`.
+**Add to your calendar app** gives you a private address (an `.ics` link) to subscribe to in Google Calendar (*Other calendars > From URL*), on an iPhone (*Settings > Calendar > Accounts > Add Subscribed Calendar*) or in Outlook. Releases then show up in your own calendar and update by themselves. The address works without signing in, so anyone who has it can see your calendar: keep it to yourself. **Make a new address** replaces it (the old one stops working) and **Turn it off** removes it. Each account has its own. The calendar app must be able to reach Cue, so for an app on your phone outside your home this needs your reverse proxy. Scripts: `GET`, `POST` and `DELETE /api/calendar/feed`; the feed itself is `GET /api/calendar/feed/{token}.ics`.
 
 ## The download line
 
@@ -106,13 +106,13 @@ A download that's unpacking or importing pauses or stops when the current step e
 
 ### After a restart
 
-A paused download is still paused after Mediarium restarts, whatever the mode. That includes safe mode (`MEDIARIUM_PAUSE_AUTOMATION`).
+A paused download is still paused after Cue restarts, whatever the mode. That includes safe mode (`MEDIARIUM_PAUSE_AUTOMATION`).
 
-A download that was only **waiting in line** is still waiting after a restart, in the same order, and starts about a minute after Mediarium starts when a place is free. In safe mode it comes back paused instead, because safe mode starts nothing by itself.
+A download that was only **waiting in line** is still waiting after a restart, in the same order, and starts about a minute after Cue starts when a place is free. In safe mode it comes back paused instead, because safe mode starts nothing by itself.
 
-A download that was running when Mediarium stopped (an update, a crash, the NAS switching off) comes back as **Partly downloaded, stopped**, with the saved part kept. Press **Resume** to carry on, **Stop** to give up, or the remove button.
+A download that was running when Cue stopped (an update, a crash, the NAS switching off) comes back as **Partly downloaded, stopped**, with the saved part kept. Press **Resume** to carry on, **Stop** to give up, or the remove button.
 
-At every start Mediarium also fixes titles that got stuck. A movie, episode or album marked "downloading" with no download behind it goes back to downloaded (if its file is there) or missing. A movie or episode marked missing whose file is on disk is marked downloaded. A waiting download for a title that's downloaded and set to **Leave what I have alone** is removed.
+At every start Cue also fixes titles that got stuck. A movie, episode or album marked "downloading" with no download behind it goes back to downloaded (if its file is there) or missing. A movie or episode marked missing whose file is on disk is marked downloaded. A waiting download for a title that's downloaded and set to **Leave what I have alone** is removed.
 
 ### Turning off better versions
 
@@ -140,4 +140,4 @@ If only part of a Usenet download was saved (it was paused, stopped or cut off),
 
 ## When a release turns out to be bad
 
-When an automatic download fails because of the release itself (corrupt or incomplete: PAR2 can't repair it, the archive can't be unpacked, no video file in it), the release is blocklisted and Mediarium searches once more for another acceptable release. If there's none, the title's log says `No other acceptable release; will try again at the next scheduled search`, and the regular search (see [Automatic searching](./quality-profiles.md#automatic-searching)) keeps looking. If more than a few releases for the same title failed within a day, the immediate retry is skipped (and the log says so) until the next scheduled search.
+When an automatic download fails because of the release itself (corrupt or incomplete: PAR2 can't repair it, the archive can't be unpacked, no video file in it), the release is blocklisted and Cue searches once more for another acceptable release. If there's none, the title's log says `No other acceptable release; will try again at the next scheduled search`, and the regular search (see [Automatic searching](./quality-profiles.md#automatic-searching)) keeps looking. If more than a few releases for the same title failed within a day, the immediate retry is skipped (and the log says so) until the next scheduled search.

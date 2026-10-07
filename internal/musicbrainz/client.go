@@ -11,7 +11,7 @@
 // pauses, and answers are kept in memory for a while so browsing the same
 // artist twice does not ask again.
 //
-// The package depends on nothing else in Mediarium except netguard.
+// The package depends on nothing else in Cue except netguard.
 package musicbrainz
 
 import (
@@ -102,7 +102,7 @@ func UserAgent(version string) string {
 }
 
 // New returns a client for the public MusicBrainz server that identifies
-// itself as this version of Mediarium.
+// itself as this version of Cue.
 func New(version string, opts ...Option) *Client {
 	c := &Client{
 		baseURL:   DefaultBaseURL,

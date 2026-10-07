@@ -32,7 +32,7 @@ export const blankServer = (priority = 0): UsenetServerDraft => ({
 })
 
 // Add/edit form for a Usenet server: the news-server account your Usenet
-// provider gave you. Mediarium's built-in downloader connects to it directly,
+// provider gave you. Cue's built-in downloader connects to it directly,
 // so this is the only thing needed to download from Usenet. The save button
 // unlocks once a connection test with exactly these details has passed.
 export default function UsenetServerForm({

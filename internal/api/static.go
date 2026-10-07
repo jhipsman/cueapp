@@ -26,7 +26,7 @@ func frontendHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if _, err := fs.Stat(sub, trimLeadingSlash(r.URL.Path)); err != nil {
 			if r.URL.Path == "/bookshelf" || strings.HasPrefix(r.URL.Path, "/bookshelf/") {
-				// Mediarium Books installs as an app of its own: the same
+				// Cue Books installs as an app of its own: the same
 				// page, with its own name and web app manifest.
 				if page, err := fs.ReadFile(sub, "index.html"); err == nil {
 					w.Header().Set("Cache-Control", "no-cache")
@@ -65,11 +65,11 @@ func trimLeadingSlash(p string) string {
 	return p
 }
 
-// bookshelfPage is index.html for Mediarium Books: its own web app manifest
+// bookshelfPage is index.html for Cue Books: its own web app manifest
 // and title, so a browser offers to install it as a separate app.
 func bookshelfPage(page []byte) []byte {
 	out := bytes.Replace(page, []byte(`href="/manifest.webmanifest"`), []byte(`href="/bookshelf.webmanifest"`), 1)
-	return titleTag.ReplaceAll(out, []byte("<title>Mediarium Books</title>"))
+	return titleTag.ReplaceAll(out, []byte("<title>Cue Books</title>"))
 }
 
 var titleTag = regexp.MustCompile(`<title>[^<]*</title>`)

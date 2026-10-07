@@ -29,7 +29,7 @@ body:
   - type: input
     id: version
     attributes:
-      label: Mediarium version
+      label: Cue version
       description: Shown under **Settings > System > About and credits**.
     validations:
       required: true

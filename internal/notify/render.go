@@ -64,9 +64,9 @@ func RenderEmailHTML(ev Event) string {
 	b.WriteString(`<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:` + mailPaper + `;"><tr><td align="center" style="padding:24px 12px;">`)
 	b.WriteString(`<table role="presentation" width="680" cellpadding="0" cellspacing="0" style="width:100%;max-width:680px;background:#ffffff;border:1px solid ` + mailBorder + `;border-radius:12px;overflow:hidden;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:` + mailInk + `;">`)
 
-	// Header: the full Mediarium logo (sent inside the email, so nothing is
+	// Header: the full Cue logo (sent inside the email, so nothing is
 	// fetched from anywhere) over a stripe in the colour of the message.
-	b.WriteString(`<tr><td style="padding:22px 32px 18px 32px;background:#ffffff;"><img src="cid:` + logoCID + `" width="200" alt="Mediarium" style="display:block;width:200px;height:auto;border:0;"></td></tr>`)
+	b.WriteString(`<tr><td style="padding:22px 32px 18px 32px;background:#ffffff;"><img src="cid:` + logoCID + `" width="200" alt="Cue" style="display:block;width:200px;height:auto;border:0;"></td></tr>`)
 	b.WriteString(`<tr><td style="height:4px;line-height:4px;font-size:0;background:` + accent + `;">&nbsp;</td></tr>`)
 
 	// Body: the poster on one half, the words and the facts stacked on the other.
@@ -86,7 +86,7 @@ func RenderEmailHTML(ev Event) string {
 
 	// The button.
 	if link := httpsURL(ev.LinkURL); link != "" {
-		b.WriteString(`<tr><td style="padding:18px 32px 8px 32px;"><a href="` + e(link) + `" style="display:inline-block;padding:13px 26px;background:` + accent + `;color:` + buttonInk(accent) + `;text-decoration:none;font-size:15px;font-weight:700;border-radius:8px;">Open in Mediarium</a></td></tr>`)
+		b.WriteString(`<tr><td style="padding:18px 32px 8px 32px;"><a href="` + e(link) + `" style="display:inline-block;padding:13px 26px;background:` + accent + `;color:` + buttonInk(accent) + `;text-decoration:none;font-size:15px;font-weight:700;border-radius:8px;">Open in Cue</a></td></tr>`)
 	}
 
 	// The footer: only says where to change what gets sent.
@@ -94,7 +94,7 @@ func RenderEmailHTML(ev Event) string {
 	if s := httpsURL(ev.SettingsURL); s != "" {
 		b.WriteString(`You can choose which emails you get in <a href="` + e(s) + `" style="color:` + mailMuted + `;">Notification settings</a>.`)
 	} else {
-		b.WriteString(`You can choose which emails you get in Mediarium, under Settings &gt; Connections &gt; Notifications.`)
+		b.WriteString(`You can choose which emails you get in Cue, under Settings &gt; Connections &gt; Notifications.`)
 	}
 	b.WriteString(`</td></tr>`)
 
@@ -125,9 +125,9 @@ func RenderEmailText(ev Event) string {
 		}
 	}
 	if link := httpsURL(ev.LinkURL); link != "" {
-		b.WriteString("\nOpen in Mediarium: " + link + "\n")
+		b.WriteString("\nOpen in Cue: " + link + "\n")
 	}
-	b.WriteString("\n-- \nYou can choose which emails you get in Mediarium, under Settings > Connections > Notifications")
+	b.WriteString("\n-- \nYou can choose which emails you get in Cue, under Settings > Connections > Notifications")
 	if s := httpsURL(ev.SettingsURL); s != "" {
 		b.WriteString(": " + s)
 	}

@@ -9,7 +9,7 @@ export default function Splash({ label = 'Loading', hint, onRetry }: { label?: s
       <div className="splash-mark">
         <BrandMark className="splash-logo" />
       </div>
-      <div className="splash-name">Mediarium</div>
+      <div className="splash-name">Cue</div>
       <div className="splash-label">
         {label}
         <span className="splash-dots" aria-hidden="true">

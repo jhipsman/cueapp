@@ -1,6 +1,6 @@
 {
-  "name": "Mediarium",
-  "short_name": "Mediarium",
+  "name": "Cue",
+  "short_name": "Cue",
   "description": "Movies, TV and music: search, download and organise.",
   "start_url": "/",
   "scope": "/",

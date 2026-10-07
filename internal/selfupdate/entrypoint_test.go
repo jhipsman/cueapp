@@ -14,11 +14,11 @@ import (
 	"testing"
 )
 
-// These tests run the real docker/entrypoint.sh against real Mediarium
+// These tests run the real docker/entrypoint.sh against real Cue
 // programs (built from this tree with different version numbers) in a fake
 // container: a temporary config folder and a temporary "image" folder. They
 // check which program the entrypoint chooses, and that a bad installed update
-// can never keep Mediarium from starting.
+// can never keep Cue from starting.
 
 var (
 	buildOnce sync.Once
@@ -26,7 +26,7 @@ var (
 	buildErr  error
 )
 
-// program returns the path of a Mediarium program built with the version.
+// program returns the path of a Cue program built with the version.
 func program(t *testing.T, version string) string {
 	t.Helper()
 	buildOnce.Do(func() {
@@ -262,19 +262,19 @@ func TestEntrypointIgnoresBadUpdates(t *testing.T) {
 		{"a folder instead of a file", func(e *entry) {
 			os.Mkdir(filepath.Join(e.update, "app"), 0o777)
 		}, "not an executable file"},
-		{"does not answer as Mediarium", func(e *entry) { e.script("echo hello world\n", false) }, "does not answer as a Mediarium program"},
-		{"says nothing", func(e *entry) { e.script("exit 0\n", false) }, "does not answer as a Mediarium program"},
-		{"fails", func(e *entry) { e.script("exit 5\n", false) }, "does not answer as a Mediarium program"},
+		{"does not answer as Cue", func(e *entry) { e.script("echo hello world\n", false) }, "does not answer as a Cue program"},
+		{"says nothing", func(e *entry) { e.script("exit 0\n", false) }, "does not answer as a Cue program"},
+		{"fails", func(e *entry) { e.script("exit 5\n", false) }, "does not answer as a Cue program"},
 		{"another system", func(e *entry) {
 			e.script("echo mediarium 9.9.9 linux/riscv64\n", false)
-		}, "does not answer as a Mediarium program"},
+		}, "does not answer as a Cue program"},
 		{"another program with a version line", func(e *entry) {
 			e.script("echo radarr 9.9.9 linux/"+arch+"\n", false)
-		}, "does not answer as a Mediarium program"},
+		}, "does not answer as a Cue program"},
 		{"not a version number", func(e *entry) {
 			e.script("echo mediarium banana linux/"+arch+"\n", false)
 		}, "not a version number"},
-		{"hangs", func(e *entry) { e.script("sleep 60\n", false) }, "does not answer as a Mediarium program"},
+		{"hangs", func(e *entry) { e.script("sleep 60\n", false) }, "does not answer as a Cue program"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {

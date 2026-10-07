@@ -10,10 +10,10 @@ Every problem on Settings > System > Logs and errors has one of these codes. The
 |---|---|---|---|---|
 | `download.failed` | error | **A download failed.** The download started but did not finish. | Read the message on Activity and try again. If it keeps failing, copy the report for support. | `/queue` |
 | `download.file_failed` | error | **Could not get the download file.** The indexer didn't hand over the file. | Test the indexer in Settings. If it says its limit is reached, try again later. | `/settings/indexers` |
-| `unpack.failed` | error | **Could not unpack a download.** The archive couldn't be opened. It may be damaged. | Mediarium tries another release. If it keeps happening, check the downloads folder has free space. | `/settings/media` |
-| `unpack.password` | error | **A download is locked with a password.** The archive needs a password, so it can't be opened. | Nothing to fix. Mediarium tries another release. |  |
+| `unpack.failed` | error | **Could not unpack a download.** The archive couldn't be opened. It may be damaged. | Cue tries another release. If it keeps happening, check the downloads folder has free space. | `/settings/media` |
+| `unpack.password` | error | **A download is locked with a password.** The archive needs a password, so it can't be opened. | Nothing to fix. Cue tries another release. |  |
 | `unpack.tool_missing` | error | **The 7z tool is missing.** This download is a 7z archive and the 7z tool isn't installed. | The Docker image includes it. On a native install, install 7-Zip and restart. |  |
-| `par2.failed` | error | **Could not repair a download.** The repair files couldn't fix the damaged or missing pieces. | Mediarium tries another release. If the par2 tool is missing, the Health card says so. |  |
+| `par2.failed` | error | **Could not repair a download.** The repair files couldn't fix the damaged or missing pieces. | Cue tries another release. If the par2 tool is missing, the Health card says so. |  |
 
 ## Usenet
 
@@ -21,9 +21,9 @@ Every problem on Settings > System > Logs and errors has one of these codes. The
 |---|---|---|---|---|
 | `usenet.too_many_connections` | warning | **Too many connections to your Usenet provider.** Your provider says this login has too many connections open. | Stop other programs (like SABnzbd) using the account, or lower the connections in Settings > Downloading > Usenet and torrents. | `/settings/downloads` |
 | `usenet.auth_refused` | error | **Your Usenet provider refused the login.** The username and password weren't accepted, or the subscription has ended. | Check the login in Settings > Downloading > Usenet and torrents, and that your subscription is active. | `/settings/downloads` |
-| `usenet.unreachable` | error | **Can't reach your Usenet provider.** Mediarium couldn't connect to the news server. | Check the server name and port, then press Test. | `/settings/downloads` |
+| `usenet.unreachable` | error | **Can't reach your Usenet provider.** Cue couldn't connect to the news server. | Check the server name and port, then press Test. | `/settings/downloads` |
 | `usenet.quota_reached` | error | **Usenet limit reached.** The download limit for your plan is used up, or the account has expired. | Wait for the limit to reset, or change your plan with the provider. | `/settings/downloads` |
-| `usenet.articles_missing` | error | **Parts of a download are missing.** Your Usenet servers no longer have every piece of this release. | Mediarium tries another release. A second provider from a different company often has the missing pieces. | `/settings/downloads` |
+| `usenet.articles_missing` | error | **Parts of a download are missing.** Your Usenet servers no longer have every piece of this release. | Cue tries another release. A second provider from a different company often has the missing pieces. | `/settings/downloads` |
 
 ## Indexers & Search
 
@@ -39,8 +39,8 @@ Every problem on Settings > System > Logs and errors has one of these codes. The
 
 | Code | Level | What it means | What to try | Where |
 |---|---|---|---|---|
-| `mediaserver.unreachable` | warning | **Can't reach your media server.** Mediarium couldn't ask your media server to scan for new files. | Check the server is on and its address is right. New files still appear at its next scan. | `/settings/media-servers` |
-| `mediaserver.auth_refused` | warning | **Your media server refused the sign-in.** The media server didn't accept Mediarium's key or login. | Sign in to the media server again. | `/settings/media-servers` |
+| `mediaserver.unreachable` | warning | **Can't reach your media server.** Cue couldn't ask your media server to scan for new files. | Check the server is on and its address is right. New files still appear at its next scan. | `/settings/media-servers` |
+| `mediaserver.auth_refused` | warning | **Your media server refused the sign-in.** The media server didn't accept Cue's key or login. | Sign in to the media server again. | `/settings/media-servers` |
 | `mediaserver.refresh_failed` | warning | **A media server refresh failed.** The server answered but wouldn't start a scan. | Check the server's own log and press Test. | `/settings/media-servers` |
 
 ## Import
@@ -48,7 +48,7 @@ Every problem on Settings > System > Logs and errors has one of these codes. The
 | Code | Level | What it means | What to try | Where |
 |---|---|---|---|---|
 | `import.move_failed` | error | **Could not move a file into your library.** The download finished but the file couldn't be moved to your library. | Check the library folder exists, has free space and is writable. Then retry in Activity. | `/settings/media` |
-| `import.no_video` | error | **No video in a download.** The download had no movie or episode file inside. | Nothing to fix. Mediarium tries another release. |  |
+| `import.no_video` | error | **No video in a download.** The download had no movie or episode file inside. | Nothing to fix. Cue tries another release. |  |
 | `import.file_exists` | error | **A file is already there.** A file is already in the place this one should go. | Remove the old file, or set what happens with existing files in Settings > Library > Folders and file names. | `/settings/media` |
 | `import.failed` | error | **An import failed.** This couldn't be added to your library. | Read the message on Activity and try again. | `/queue` |
 
@@ -57,8 +57,8 @@ Every problem on Settings > System > Logs and errors has one of these codes. The
 | Code | Level | What it means | What to try | Where |
 |---|---|---|---|---|
 | `disk.full` | error | **The disk is full.** There isn't enough free space. | Free up some space, or run Clean up in Settings > System. Then retry in Activity. | `/settings/system` |
-| `folder.permission_denied` | error | **Mediarium may not write to a folder.** The system refused access to a folder. | Give the PUID and PGID user read and write access to the folder. On a Synology, check the shared folder's permissions. | `/settings/media` |
-| `folder.missing` | error | **A folder is missing.** A folder Mediarium needs isn't there. | Create the folder, or check its drive is connected and mounted. | `/settings/media` |
+| `folder.permission_denied` | error | **Cue may not write to a folder.** The system refused access to a folder. | Give the PUID and PGID user read and write access to the folder. On a Synology, check the shared folder's permissions. | `/settings/media` |
+| `folder.missing` | error | **A folder is missing.** A folder Cue needs isn't there. | Create the folder, or check its drive is connected and mounted. | `/settings/media` |
 | `disk.low` | warning | **Downloads are waiting: the disk is nearly full.** The downloads folder has less free space than the limit you set, so no new download starts. | Free some space, or lower "Keep at least this much free" in Settings > Downloading. Waiting downloads start by themselves once there is room. | `/settings/downloads` |
 
 ## Database
@@ -71,7 +71,7 @@ Every problem on Settings > System > Logs and errors has one of these codes. The
 
 | Code | Level | What it means | What to try | Where |
 |---|---|---|---|---|
-| `tmdb.rate_limited` | warning | **TMDB is limiting requests.** TMDB says Mediarium has asked for too much for now. | It clears in a moment. A free personal TMDB key removes the shared limit. | `/settings/metadata` |
+| `tmdb.rate_limited` | warning | **TMDB is limiting requests.** TMDB says Cue has asked for too much for now. | It clears in a moment. A free personal TMDB key removes the shared limit. | `/settings/metadata` |
 | `tmdb.key_rejected` | error | **TMDB rejected the key.** TMDB didn't accept the API key. | Copy the key again from your TMDB account. | `/settings/metadata` |
 | `subtitles.rate_limited` | warning | **OpenSubtitles limit reached.** Today's OpenSubtitles download limit is used up. | It resets tomorrow. A free OpenSubtitles account raises the limit. | `/settings/subtitles` |
 
@@ -79,7 +79,7 @@ Every problem on Settings > System > Logs and errors has one of these codes. The
 
 | Code | Level | What it means | What to try | Where |
 |---|---|---|---|---|
-| `update.check_failed` | warning | **Could not check for updates.** Mediarium couldn't check for a new version. | It tries again daily. Check the server can reach the internet. | `/settings/system` |
+| `update.check_failed` | warning | **Could not check for updates.** Cue couldn't check for a new version. | It tries again daily. Check the server can reach the internet. | `/settings/system` |
 | `update.install_failed` | error | **The update could not be installed.** The new version was downloaded but couldn't be put in place. The old version keeps running. | Try again from Settings > System, or update the container image. | `/settings/system` |
 
 ## Notifications
@@ -92,5 +92,5 @@ Every problem on Settings > System > Logs and errors has one of these codes. The
 
 | Code | Level | What it means | What to try | Where |
 |---|---|---|---|---|
-| `backup.failed` | error | **The nightly backup was not saved.** Mediarium couldn't save its automatic backup in the backups folder. | Check that the config folder has free space, then press Back up now in Settings > System. | `/settings/system` |
-| `app.restarted_itself` | warning | **Mediarium restarted itself.** It stopped answering for a few minutes. | If it repeats, copy the report for support. Check the settings folder is on a local disk and the NAS has memory to spare. | `/settings/system` |
+| `backup.failed` | error | **The nightly backup was not saved.** Cue couldn't save its automatic backup in the backups folder. | Check that the config folder has free space, then press Back up now in Settings > System. | `/settings/system` |
+| `app.restarted_itself` | warning | **Cue restarted itself.** It stopped answering for a few minutes. | If it repeats, copy the report for support. Check the settings folder is on a local disk and the NAS has memory to spare. | `/settings/system` |

@@ -5,7 +5,7 @@ import Icon from './Icon'
 import Switch from './Switch'
 import { useToast } from './Toast'
 
-// Settings > System > Backup: download one now, and the backups Mediarium
+// Settings > System > Backup: download one now, and the backups Cue
 // saves by itself every night and before each update.
 export default function BackupCard() {
   const toast = useToast()

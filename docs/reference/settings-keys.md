@@ -61,7 +61,7 @@ The keys the app stores in its settings table. You normally change these from th
 | `quality.language` | the audio language wanted, as a name like "English" (the default when unset); a release clearly in another language only is not picked automatically |
 | `scripts.after_import` | JSON: script (a file name in /config/scripts; empty = off) and timeoutSec (default 300). Only a signed-in browser session can set it, not an API key |
 | `scripts.last_run` | what the last run did (JSON; set by the app, not user-editable) |
-| `server.public_url` | the address you open Mediarium at from your own devices (like https://mediarium.example.com); links in notification messages use it; unset = no links |
+| `server.public_url` | the address you open Cue at from your own devices (like https://mediarium.example.com); links in notification messages use it; unset = no links |
 | `subtitles.auto_download` | "1" fetches subtitles automatically; unset or "0" only offers them ("ask me") |
 | `subtitles.enabled` | the master switch: "1" turns downloading subtitles on; unset or "0" leaves it off (upgrades from a version that had subtitles in use are switched on once, by a migration) |
 | `subtitles.languages` | comma-separated OpenSubtitles codes; default "en" |
@@ -69,7 +69,7 @@ The keys the app stores in its settings table. You normally change these from th
 | `subtitles.opensubtitles_password` | encrypted |
 | `subtitles.opensubtitles_username` | optional account for a higher download quota |
 | `subtitles.upgrade` | "0" stops swapping a subtitle for one made for the exact video file later; on by default, and only while subtitles download automatically |
-| `system.auto_restart_when_stuck` | "0" stops Mediarium restarting itself when it has not answered for three minutes; anything else (including unset) leaves it on |
+| `system.auto_restart_when_stuck` | "0" stops Cue restarting itself when it has not answered for three minutes; anything else (including unset) leaves it on |
 | `torrent.enabled` | "0" turns torrents off entirely; anything else (including unset) leaves them on |
 | `torrent.listen_port` | TCP+UDP port for incoming peers; unset or "0" = 58264 |
 | `torrent.seed_ratio_limit` | e.g. "2.0"; "0" = unlimited |

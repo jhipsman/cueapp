@@ -1,6 +1,6 @@
 # What runs where
 
-Docker is the one way to install Mediarium today, and it covers most home servers and NAS systems. The other ways below are coming soon.
+Docker is the one way to install Cue today, and it covers most home servers and NAS systems. The other ways below are coming soon.
 
 ## Available now
 
@@ -30,9 +30,9 @@ The image is `ghcr.io/rdborg/mediarium:latest`, built for `linux/amd64` and `lin
 | Kubernetes | A Helm chart | Coming soon |
 | Raspberry Pi with a 32-bit OS (`armv7`) | An `armv7` image | Not supported yet |
 
-Until then, anything that runs Docker can run Mediarium: see the [Docker install](./INSTALL.md).
+Until then, anything that runs Docker can run Cue: see the [Docker install](./INSTALL.md).
 
-There are no separate Windows or macOS versions: on a Windows PC or a Mac, run Mediarium in Docker Desktop. Each GitHub release also has a plain Linux program, without an installer. It's a barely tested preview and not supported yet. The notes inside the archive say what to set up. Tell us how it goes.
+There are no separate Windows or macOS versions: on a Windows PC or a Mac, run Cue in Docker Desktop. Each GitHub release also has a plain Linux program, without an installer. It's a barely tested preview and not supported yet. The notes inside the archive say what to set up. Tell us how it goes.
 
 ## Raspberry Pi notes
 

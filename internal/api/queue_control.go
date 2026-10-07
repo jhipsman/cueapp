@@ -740,7 +740,7 @@ func (s *Server) recoverAtStartup() {
 		slog.Info("queue: start-up check", "pausedDownloads", paused, "moviesFixed", tidy.Movies, "episodesFixed", tidy.Episodes, "albumsFixed", tidy.Albums, "booksFixed", tidy.Books, "upgradesRemoved", tidy.Upgrades)
 	}
 	if paused > 0 {
-		_ = s.QueueRepo.LogActivity(0, "paused", fmt.Sprintf("Mediarium was restarted, so %s that was downloading is now paused. Press Resume in Activity to carry on.", plural(int(paused), "download")))
+		_ = s.QueueRepo.LogActivity(0, "paused", fmt.Sprintf("Cue was restarted, so %s that was downloading is now paused. Press Resume in Activity to carry on.", plural(int(paused), "download")))
 	}
 }
 

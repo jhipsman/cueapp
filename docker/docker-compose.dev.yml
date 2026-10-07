@@ -1,4 +1,4 @@
-# For people working on Mediarium itself: builds the image from the source
+# For people working on Cue itself: builds the image from the source
 # instead of downloading the published one. Everyone else: use
 # docker/docker-compose.yml (see docs/INSTALL.md).
 #

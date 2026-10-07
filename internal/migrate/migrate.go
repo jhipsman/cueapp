@@ -13,7 +13,7 @@ import (
 	"github.com/rdborg/mediarium/internal/quality"
 )
 
-// Deps is what the importer reads and writes in Mediarium.
+// Deps is what the importer reads and writes in Cue.
 type Deps struct {
 	Library  *library.Repo
 	Indexers *indexers.Repo
@@ -23,7 +23,7 @@ type Deps struct {
 	// TMDB returns the current metadata client (the key can change while
 	// the app runs).
 	TMDB func() *metadata.Client
-	// MoviesRoot and TVRoot are Mediarium's library folders.
+	// MoviesRoot and TVRoot are Cue's library folders.
 	MoviesRoot func() string
 	TVRoot     func() string
 	// DefaultProfileID is the default quality profile's id (0 = none set).
@@ -93,7 +93,7 @@ type Include struct {
 	UsenetServers   *bool `json:"usenetServers,omitempty"`   // SABnzbd, NZBGet
 	QualityProfiles *bool `json:"qualityProfiles,omitempty"` // Radarr, Sonarr
 	Requests        *bool `json:"requests,omitempty"`        // Overseerr/Jellyseerr, Ombi
-	// SubtitleLanguages replaces Mediarium's subtitle languages with
+	// SubtitleLanguages replaces Cue's subtitle languages with
 	// Bazarr's. Unlike the others it is off unless set to true, since it
 	// overwrites a setting.
 	SubtitleLanguages *bool `json:"subtitleLanguages,omitempty"`
@@ -104,12 +104,12 @@ func on(b *bool) bool { return b == nil || *b }
 func optIn(b *bool) bool { return b != nil && *b }
 
 // Options are a preview or import request: the apps to read, how their
-// folders map to Mediarium's, and (for an import) what to bring over.
+// folders map to Cue's, and (for an import) what to bring over.
 type Options struct {
 	Sources
 	PathMap []PathMapping `json:"pathMap"`
 	Include Include       `json:"include"`
-	// ProfileMapping picks a Mediarium profile id by Radarr/Sonarr profile
+	// ProfileMapping picks a Cue profile id by Radarr/Sonarr profile
 	// name, overriding the automatic choice (0 = the default profile).
 	ProfileMapping map[string]int64 `json:"profileMapping"`
 }
@@ -151,11 +151,11 @@ type TitleItem struct {
 	TVDBID    int    `json:"tvdbId,omitempty"`
 	Monitored bool   `json:"monitored"`
 	// ArrPath is the title's folder as Radarr/Sonarr see it, Path the same
-	// folder as Mediarium sees it after the path map.
+	// folder as Cue sees it after the path map.
 	ArrPath         string `json:"arrPath"`
 	Path            string `json:"path"`
 	FolderFound     bool   `json:"folderFound"`
-	InLibraryFolder bool   `json:"inLibraryFolder"` // Path is inside Mediarium's movies/TV folder
+	InLibraryFolder bool   `json:"inLibraryFolder"` // Path is inside Cue's movies/TV folder
 	// Files is how many files Radarr/Sonarr have for it (a movie 0 or 1,
 	// a show its episode files).
 	Files int `json:"files"`
@@ -165,7 +165,7 @@ type TitleItem struct {
 	// monitor (they stay unmonitored).
 	UnmonitoredSeasons []int  `json:"unmonitoredSeasons,omitempty"`
 	ArrProfile         string `json:"arrProfile,omitempty"`
-	ProfileID          int64  `json:"profileId"` // Mediarium profile it gets (0 = default)
+	ProfileID          int64  `json:"profileId"` // Cue profile it gets (0 = default)
 	ProfileName        string `json:"profileName,omitempty"`
 	Action             string `json:"action"`
 	Reason             string `json:"reason,omitempty"`
@@ -185,12 +185,12 @@ type IndexerItem struct {
 	Implementation string `json:"implementation"` // Newznab, Torznab, Cardigann, ...
 	Protocol       string `json:"protocol"`       // usenet or torrent
 	BaseURL        string `json:"baseUrl,omitempty"`
-	DefinitionID   string `json:"definitionId,omitempty"` // Mediarium's site definition, for sites
+	DefinitionID   string `json:"definitionId,omitempty"` // Cue's site definition, for sites
 	Enabled        bool   `json:"enabled"`                // switched on in the other app
 	Categories     []int  `json:"categories,omitempty"`
 	// SourceID is the indexer's id in Jackett (what jackett.direct lists).
 	SourceID string `json:"sourceId,omitempty"`
-	// CanAddDirectly: Mediarium's site list has this Jackett indexer, so it
+	// CanAddDirectly: Cue's site list has this Jackett indexer, so it
 	// can be added as a site directly instead of through Jackett; Direct
 	// says that was chosen.
 	CanAddDirectly bool   `json:"canAddDirectly,omitempty"`
@@ -200,7 +200,7 @@ type IndexerItem struct {
 }
 
 // AggregatedIndexer is one indexer NZBHydra2 searches (for information:
-// Mediarium reaches them all through NZBHydra2).
+// Cue reaches them all through NZBHydra2).
 type AggregatedIndexer struct {
 	Name  string `json:"name"`
 	State string `json:"state,omitempty"`
@@ -281,16 +281,16 @@ type RequestsPreview struct {
 type SubtitleLanguage struct {
 	Name   string `json:"name"`
 	Code   string `json:"code"`   // Bazarr's code
-	MapsTo string `json:"mapsTo"` // Mediarium's (OpenSubtitles) code, "" when none
-	Action string `json:"action"` // add (new to Mediarium), exists (already set), skip
+	MapsTo string `json:"mapsTo"` // Cue's (OpenSubtitles) code, "" when none
+	Action string `json:"action"` // add (new to Cue), exists (already set), skip
 	Reason string `json:"reason,omitempty"`
 }
 
 // SubtitleProvider is one subtitle provider enabled in Bazarr.
 type SubtitleProvider struct {
 	Name string `json:"name"`
-	// Equivalent is the Mediarium provider doing the same job ("" when
-	// Mediarium has none).
+	// Equivalent is the Cue provider doing the same job ("" when
+	// Cue has none).
 	Equivalent string `json:"equivalent,omitempty"`
 	Reason     string `json:"reason,omitempty"`
 }
@@ -303,7 +303,7 @@ type SubtitlesPreview struct {
 	// import change the languages.
 	Included  bool               `json:"included"`
 	Languages []SubtitleLanguage `json:"languages"`
-	// Current are Mediarium's subtitle languages now, New what they become
+	// Current are Cue's subtitle languages now, New what they become
 	// when include.subtitleLanguages is true (empty: nothing usable).
 	Current   []string           `json:"current"`
 	New       []string           `json:"new"`

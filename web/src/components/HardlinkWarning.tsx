@@ -108,7 +108,7 @@ export default function HardlinkWarning({
         <summary>How to make it instant</summary>
         <p>
           Keep your downloads and your library inside one shared folder, and map only that folder. For example, on a Synology map <code>/volume1/Media</code> as{' '}
-          <code>/data</code>. Inside it you have Movies, tv and downloads, and Mediarium sees them as <code>/data/Movies</code>, <code>/data/tv</code> and{' '}
+          <code>/data</code>. Inside it you have Movies, tv and downloads, and Cue sees them as <code>/data/Movies</code>, <code>/data/tv</code> and{' '}
           <code>/data/downloads</code>. The line for your compose file:
         </p>
         <CopyBox text="- /volume1/Media:/data" label="Compose line for one shared folder" />

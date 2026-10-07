@@ -37,7 +37,7 @@ function UpdateBody({ notice, onNotice }: { notice: UpdateNotice; onNotice: (n: 
   const waiting = useRef(false)
 
   // While the update runs, look at how it is going. Once it says it is
-  // restarting, wait for Mediarium to come back with the new version.
+  // restarting, wait for Cue to come back with the new version.
   useEffect(() => {
     if (!job?.active || job.state === 'restarting') return
     const t = setInterval(() => {
@@ -52,7 +52,7 @@ function UpdateBody({ notice, onNotice }: { notice: UpdateNotice; onNotice: (n: 
     void reloadWhenBack(job.version).then((back) => {
       if (!back) {
         waiting.current = false
-        toast.info("Mediarium didn't come back. Start it again, then reload this page.")
+        toast.info("Cue didn't come back. Start it again, then reload this page.")
       }
     })
   }, [job?.state, job?.version, toast])
@@ -66,7 +66,7 @@ function UpdateBody({ notice, onNotice }: { notice: UpdateNotice; onNotice: (n: 
       title: `Update to ${latest?.version}?`,
       body: (
         <p>
-          Mediarium downloads the new version, checks it's signed by the Mediarium project and restarts. That takes about a minute, and downloads in progress stop and can be resumed afterwards. Your settings and library are kept.
+          Cue downloads the new version, checks it's signed by the Cue project and restarts. That takes about a minute, and downloads in progress stop and can be resumed afterwards. Your settings and library are kept.
         </p>
       ),
       confirmLabel: 'Update now',
@@ -110,7 +110,7 @@ function UpdateBody({ notice, onNotice }: { notice: UpdateNotice; onNotice: (n: 
       {job?.state === 'failed' && (
         <div className="update-box warn" role="alert">
           <p>
-            <strong>{job.message}</strong> {job.error} Nothing was changed. Try again, or update the way you installed Mediarium (steps below).
+            <strong>{job.message}</strong> {job.error} Nothing was changed. Try again, or update the way you installed Cue (steps below).
           </p>
         </div>
       )}
@@ -120,7 +120,7 @@ function UpdateBody({ notice, onNotice }: { notice: UpdateNotice; onNotice: (n: 
           <button className="primary btn-with-icon" onClick={() => void install()}>
             <Icon name="download" size={15} /> Update now
           </button>
-          <small style={{ color: 'var(--text-dim)' }}>Signed by the Mediarium project and checked before it is installed.</small>
+          <small style={{ color: 'var(--text-dim)' }}>Signed by the Cue project and checked before it is installed.</small>
         </div>
       )}
       {!notice.canInstall && notice.installNote && !working && <p className="update-sub">{notice.installNote}</p>}
@@ -249,8 +249,8 @@ export function UpdatesCard() {
       title: 'Go back to the version in the image?',
       body: (
         <p>
-          The installed update ({state.pushed.version}) is removed and Mediarium goes back to the version in its Docker image ({state.image || 'the image'}).
-          {restart ? ' It restarts now.' : ' This happens the next time Mediarium starts.'} Your settings and library are kept.
+          The installed update ({state.pushed.version}) is removed and Cue goes back to the version in its Docker image ({state.image || 'the image'}).
+          {restart ? ' It restarts now.' : ' This happens the next time Cue starts.'} Your settings and library are kept.
         </p>
       ),
       confirmLabel: restart ? 'Remove and restart' : 'Remove',
@@ -260,7 +260,7 @@ export function UpdatesCard() {
     setBusy(true)
     try {
       const r = await api.removeUpdate(restart)
-      toast.success(r.restarting ? 'Removed. Restarting…' : 'Removed. The image version is used the next time Mediarium starts.')
+      toast.success(r.restarting ? 'Removed. Restarting…' : 'Removed. The image version is used the next time Cue starts.')
       if (r.restarting) void reloadWhenBack(state.image || undefined)
       else void loadState()
     } catch (e) {
@@ -317,8 +317,8 @@ export function UpdatesCard() {
             <div className="update-box">
               <p>
                 <strong>An update is installed on top of the Docker image.</strong> Version {state.pushed.version}
-                {state.pushed.running ? ' is running now' : ' starts the next time Mediarium restarts'}. The image has {state.image || 'an older version'}.
-                {' '}If you recreate the container from a newer image, Mediarium uses whichever is newer.
+                {state.pushed.running ? ' is running now' : ' starts the next time Cue restarts'}. The image has {state.image || 'an older version'}.
+                {' '}If you recreate the container from a newer image, Cue uses whichever is newer.
               </p>
               <button className="danger-ghost btn-with-icon" onClick={() => void goBack()} disabled={busy}>
                 <Icon name="refresh" size={15} /> Go back to the image's version
@@ -328,7 +328,7 @@ export function UpdatesCard() {
           {state.failed && !state.pushed && (
             <div className="update-box warn" role="alert">
               <p>
-                <strong>An installed update was put aside.</strong> {state.failed.version || 'The update'} kept stopping right after it started (three times in a row), so Mediarium went back to the version in its Docker image.
+                <strong>An installed update was put aside.</strong> {state.failed.version || 'The update'} kept stopping right after it started (three times in a row), so Cue went back to the version in its Docker image.
               </p>
               <button className="btn-with-icon" onClick={() => void clearFailed()} disabled={busy}>
                 <Icon name="trash" size={15} /> Remove it
@@ -338,7 +338,7 @@ export function UpdatesCard() {
           {state.selfRestart && (
             <div className="update-box warn" role="alert">
               <p>
-                <strong>Mediarium restarted itself</strong> {timeAgo(state.selfRestart.at)} because it stopped answering.
+                <strong>Cue restarted itself</strong> {timeAgo(state.selfRestart.at)} because it stopped answering.
               </p>
             </div>
           )}
@@ -359,8 +359,8 @@ export function UpdatesCard() {
               showState
               description={
                 state.canInstall
-                  ? 'Between 2 and 5 in the morning, when nothing is downloading. Only versions signed by the Mediarium project are installed.'
-                  : 'Only works in the Mediarium Docker image.'
+                  ? 'Between 2 and 5 in the morning, when nothing is downloading. Only versions signed by the Cue project are installed.'
+                  : 'Only works in the Cue Docker image.'
               }
             />
           </div>
@@ -388,7 +388,7 @@ export function PushCard() {
         body: (
           <>
             <p>
-              While this is on, an administrator can replace the Mediarium program by sending a new program file with an API key. Anyone who gets an administrator's API key could run their own program on your server.
+              While this is on, an administrator can replace the Cue program by sending a new program file with an API key. Anyone who gets an administrator's API key could run their own program on your server.
             </p>
             <p>Switch it on only when you need it, and off again afterwards.</p>
           </>
@@ -425,17 +425,17 @@ export function PushCard() {
             description={
               state.canInstall
                 ? "For testing, and for people who can't rebuild their container."
-                : 'Only works in the Mediarium Docker image.'
+                : 'Only works in the Cue Docker image.'
             }
           />
           <div className="update-box warn">
             <p style={{ margin: 0 }}>
-              <strong>Be careful.</strong> With this on, an administrator, or a script with an administrator's API key, can replace the Mediarium program. It can only be switched on here while you&apos;re signed in, never with an API key.
+              <strong>Be careful.</strong> With this on, an administrator, or a script with an administrator's API key, can replace the Cue program. It can only be switched on here while you&apos;re signed in, never with an API key.
             </p>
           </div>
           {state.options.allowPush && (
             <p style={{ color: 'var(--text-dim)', marginBottom: 0 }}>
-              To push an update, send the program file to <code>POST /api/system/update</code> with its SHA-256 in the <code>X-Update-SHA256</code> header. Mediarium checks the file, installs it and restarts. See{' '}
+              To push an update, send the program file to <code>POST /api/system/update</code> with its SHA-256 in the <code>X-Update-SHA256</code> header. Cue checks the file, installs it and restarts. See{' '}
               <a href={`${DOCS_URL}/INSTALL.md`} target="_blank" rel="noopener noreferrer">
                 the install guide
               </a>
@@ -473,8 +473,8 @@ export function RestartCard() {
             confirmLabel: 'Restart paused',
           }
         : {
-            title: 'Restart Mediarium?',
-            body: <p>Mediarium is unavailable for about half a minute. Downloads in progress stop and can be resumed afterwards.</p>,
+            title: 'Restart Cue?',
+            body: <p>Cue is unavailable for about half a minute. Downloads in progress stop and can be resumed afterwards.</p>,
             confirmLabel: 'Restart',
           },
     )
@@ -486,7 +486,7 @@ export function RestartCard() {
       const back = await reloadWhenBack()
       if (!back) {
         setWaiting(false)
-        toast.info("Mediarium didn't come back. Start it again, then reload this page.")
+        toast.info("Cue didn't come back. Start it again, then reload this page.")
       }
     } catch (e) {
       toast.error(e instanceof Error ? e.message : String(e))
@@ -495,15 +495,15 @@ export function RestartCard() {
 
   async function shutDown() {
     const ok = await confirm({
-      title: 'Shut down Mediarium?',
-      body: <p>Mediarium stops, and nothing starts it again. To use it again, start it yourself.</p>,
+      title: 'Shut down Cue?',
+      body: <p>Cue stops, and nothing starts it again. To use it again, start it yourself.</p>,
       confirmLabel: 'Shut down',
       danger: true,
     })
     if (!ok) return
     try {
       await api.shutdownApp()
-      toast.success('Mediarium is shutting down.')
+      toast.success('Cue is shutting down.')
     } catch (e) {
       toast.error(e instanceof Error ? e.message : String(e))
     }
@@ -532,7 +532,7 @@ export function RestartCard() {
           <p style={{ marginTop: 0 }}>{c.note}</p>
           <div className="control-actions">
             <button className="primary btn-with-icon" onClick={() => void restart(false)} disabled={!c.canRestart || waiting}>
-              <Icon name="refresh" size={15} /> {waiting ? 'Restarting…' : 'Restart Mediarium'}
+              <Icon name="refresh" size={15} /> {waiting ? 'Restarting…' : 'Restart Cue'}
             </button>
             <button className="btn-with-icon" onClick={() => void restart(true)} disabled={!c.canRestart || waiting}>
               <Icon name="pause" size={15} /> Restart with automation paused
@@ -543,7 +543,7 @@ export function RestartCard() {
               </button>
             )}
           </div>
-          {!c.canRestart && <p className="error-text" style={{ marginTop: 0 }}>Restart isn't available here. Start Mediarium again yourself.</p>}
+          {!c.canRestart && <p className="error-text" style={{ marginTop: 0 }}>Restart isn't available here. Start Cue again yourself.</p>}
           <Switch
             checked={state.options.autoRestartWhenStuck}
             onChange={(v) => void setStuck(v)}

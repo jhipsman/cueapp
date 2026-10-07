@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-// Backups Mediarium makes by itself (every night, and before an update) are
+// Backups Cue makes by itself (every night, and before an update) are
 // kept in a folder inside the config folder. They are the same zip as a
 // downloaded backup, so any of them can be restored the usual way.
 

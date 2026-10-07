@@ -16,7 +16,7 @@ import (
 
 // Hardcover (hardcover.app) is a book catalogue with good series lists and
 // release dates. Its API needs a personal token, so it is only used when
-// someone pastes their own under Settings; without one Mediarium uses Open
+// someone pastes their own under Settings; without one Cue uses Open
 // Library alone. Tokens belong to an account and are never shared or built in.
 
 const hardcoverAPI = "https://api.hardcover.app/v1/graphql"

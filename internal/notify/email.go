@@ -21,7 +21,7 @@ type EmailSender struct {
 	Username string
 	Password string
 	From     string   // "you@example.com" or "Name <you@example.com>"
-	FromName string   // the name emails show as coming from; "" = the name in From, else Mediarium
+	FromName string   // the name emails show as coming from; "" = the name in From, else Cue
 	To       []string // one or more addresses
 
 	// TLSConfig overrides the TLS settings (tests use it to trust a
@@ -46,7 +46,7 @@ func (s *EmailSender) chooseAuth(c *smtp.Client) (smtp.Auth, error) {
 	case upper == "":
 		return nil, errors.New("This server does not support logging in (it offered no AUTH). Leave Username and Password empty, or check the security mode.")
 	}
-	return nil, fmt.Errorf("The server only offers login methods Mediarium doesn't support (%s).", mechs)
+	return nil, fmt.Errorf("The server only offers login methods Cue doesn't support (%s).", mechs)
 }
 
 type plainAuth struct{ user, pass string }
@@ -86,11 +86,11 @@ func oneLine(s string) string {
 // senderName is shown as who an email is from when neither the From name
 // field nor the From address names anyone, so mail programs don't show the
 // part before the @.
-const senderName = "Mediarium"
+const senderName = "Cue"
 
 // fromHeader is the From header: the From name field when it is filled in,
 // else the name written in the address ("Home <you@example.com>"), else
-// Mediarium.
+// Cue.
 func fromHeader(from, name string) string {
 	a, err := mail.ParseAddress(oneLine(from))
 	if err != nil {
@@ -112,7 +112,7 @@ func buildMessage(from string, to []string, ev Event) []byte {
 	h := func(k, v string) { b.WriteString(k + ": " + v + "\r\n") }
 	h("From", oneLine(from))
 	h("To", oneLine(strings.Join(to, ", ")))
-	h("Subject", mime.QEncoding.Encode("utf-8", "[Mediarium] "+oneLine(ev.Title)))
+	h("Subject", mime.QEncoding.Encode("utf-8", "[Cue] "+oneLine(ev.Title)))
 	ts := ev.Timestamp
 	if ts.IsZero() {
 		ts = time.Now()

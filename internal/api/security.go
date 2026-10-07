@@ -61,7 +61,7 @@ func (s *Server) clientIP(r *http.Request) string {
 	return s.sec().proxies.ClientIP(r)
 }
 
-// isHTTPS reports whether the caller reached Mediarium over HTTPS, directly
+// isHTTPS reports whether the caller reached Cue over HTTPS, directly
 // or through a trusted proxy.
 func (s *Server) isHTTPS(r *http.Request) bool {
 	return s.sec().proxies.IsHTTPS(r)

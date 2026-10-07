@@ -52,7 +52,7 @@ type ListKind = MediaKind | 'book'
 const KIND_ICON: Record<ListKind, IconName> = { movie: 'film', tv: 'tv', music: 'music', book: 'book' }
 const LIST_LABEL = (k: ListKind) => (k === 'book' ? 'Books' : KIND_LABEL[k])
 
-// Wanted: what Mediarium is still hunting for. "Missing" is monitored movies
+// Wanted: what Cue is still hunting for. "Missing" is monitored movies
 // with nothing downloaded and aired episodes without a file; "Upgrades" is
 // downloaded items still below their profile's cutoff; "Subtitles" is
 // downloaded titles missing a language you asked for.
@@ -547,7 +547,7 @@ export default function Wanted() {
               </div>
               <div className="wmeta">
                 {b.releaseDate && b.releaseDate > today ? (
-                  <span className="state-tag st-upcoming" title="Mediarium starts looking for it on the day it comes out.">
+                  <span className="state-tag st-upcoming" title="Cue starts looking for it on the day it comes out.">
                     <Icon name="calendar" size={12} /> Out {releaseLabel(b.releaseDate)}
                   </span>
                 ) : (

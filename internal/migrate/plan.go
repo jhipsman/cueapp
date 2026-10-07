@@ -122,7 +122,7 @@ type plan struct {
 	profiles  []ProfileMapping
 }
 
-// state is Mediarium as it is before the import.
+// state is Cue as it is before the import.
 type state struct {
 	movies      map[int]library.Movie
 	series      map[int]library.Series
@@ -275,12 +275,12 @@ func (im *Importer) plan(ctx context.Context, snap snapshot, opts Options) (*pla
 	return p, nil
 }
 
-// libraryNote explains a folder outside Mediarium's library folder.
+// libraryNote explains a folder outside Cue's library folder.
 func libraryNote(item *TitleItem, root, what string) {
 	if item.Action == ActionSkip || !item.FolderFound || item.InLibraryFolder || root == "" {
 		return
 	}
-	item.Reason += fmt.Sprintf("; the folder is outside Mediarium's %s folder (%s): its files stay where they are, new downloads go to the %s folder", what, root, what)
+	item.Reason += fmt.Sprintf("; the folder is outside Cue's %s folder (%s): its files stay where they are, new downloads go to the %s folder", what, root, what)
 }
 
 func (im *Importer) planMovies(p *plan, tp *TitlesPreview, d *radarrData, st state, maps []PathMapping, override map[string]int64, useProfiles bool) {
@@ -446,8 +446,8 @@ func normURL(u string) string {
 }
 
 // newznabBase turns Prowlarr's baseUrl + apiPath (it calls the two joined)
-// into the address Mediarium stores (it appends /api itself). ok is false
-// for an API path that doesn't end in /api, which Mediarium can't call.
+// into the address Cue stores (it appends /api itself). ok is false
+// for an API path that doesn't end in /api, which Cue can't call.
 func newznabBase(base, apiPath string) (string, bool) {
 	base = strings.TrimRight(strings.TrimSpace(base), "/")
 	apiPath = "/" + strings.Trim(strings.TrimSpace(apiPath), "/")
@@ -461,7 +461,7 @@ func newznabBase(base, apiPath string) (string, bool) {
 	return base + apiPath, false
 }
 
-// seenIndexers are the indexers Mediarium has, or has just planned to add,
+// seenIndexers are the indexers Cue has, or has just planned to add,
 // by address (API indexers) and by site definition id.
 type seenIndexers struct{ url, def map[string]bool }
 
@@ -516,7 +516,7 @@ func (im *Importer) planIndexer(ctx context.Context, x prowlarrIndexer, seenURL,
 		case strings.TrimSpace(base) == "":
 			item.Action, item.Reason = ActionSkip, "Prowlarr gave no address for it"
 		case !ok:
-			item.Action, item.Reason = ActionSkip, fmt.Sprintf("its API path %q doesn't end in /api, which Mediarium can't call; add it by hand", apiPath)
+			item.Action, item.Reason = ActionSkip, fmt.Sprintf("its API path %q doesn't end in /api, which Cue can't call; add it by hand", apiPath)
 		case seenURL[normURL(addr)]:
 			item.Action, item.Reason = ActionExists, "already added (same address)"
 		default:
@@ -540,7 +540,7 @@ func (im *Importer) planIndexer(ctx context.Context, x prowlarrIndexer, seenURL,
 }
 
 // planSiteIndexer maps an indexer Prowlarr runs from a community definition
-// (or one of its own built-in ones) to Mediarium's definition of the same
+// (or one of its own built-in ones) to Cue's definition of the same
 // id, copying the settings that fit.
 func (im *Importer) planSiteIndexer(ctx context.Context, x prowlarrIndexer, item *IndexerItem, ipl *indexerPlan, notes *[]string, seenDef map[string]bool) {
 	defID := strings.TrimSpace(x.DefinitionName)
@@ -557,13 +557,13 @@ func (im *Importer) planSiteIndexer(ctx context.Context, x prowlarrIndexer, item
 	}
 	switch {
 	case errors.Is(err, indexers.ErrDefinitionNotFound):
-		item.Action, item.Reason = ActionSkip, fmt.Sprintf("Mediarium's site list has no %q. Add it by hand", defID)
+		item.Action, item.Reason = ActionSkip, fmt.Sprintf("Cue's site list has no %q. Add it by hand", defID)
 		return
 	case err != nil:
-		item.Action, item.Reason = ActionSkip, "couldn't load Mediarium's site list: "+err.Error()
+		item.Action, item.Reason = ActionSkip, "couldn't load Cue's site list: "+err.Error()
 		return
 	case !sum.Supported:
-		item.Action, item.Reason = ActionSkip, fmt.Sprintf("Mediarium can't run the %s definition yet (%s)", sum.Name, sum.Problem)
+		item.Action, item.Reason = ActionSkip, fmt.Sprintf("Cue can't run the %s definition yet (%s)", sum.Name, sum.Problem)
 		return
 	}
 	item.DefinitionID = sum.ID
@@ -583,7 +583,7 @@ func (im *Importer) planSiteIndexer(ctx context.Context, x prowlarrIndexer, item
 		base = strings.TrimSpace(base)
 	case len(sum.Links) > 0:
 		if base != "" {
-			*notes = append(*notes, fmt.Sprintf("its address %s isn't one Mediarium's definition lists, so %s is used", base, sum.Links[0]))
+			*notes = append(*notes, fmt.Sprintf("its address %s isn't one Cue's definition lists, so %s is used", base, sum.Links[0]))
 		}
 		base = sum.Links[0]
 	default:
@@ -623,7 +623,7 @@ func (im *Importer) planSiteIndexer(ctx context.Context, x prowlarrIndexer, item
 	ipl.secret = sum.IsSecret
 }
 
-// siteSetting converts one Prowlarr value to the text Mediarium stores for
+// siteSetting converts one Prowlarr value to the text Cue stores for
 // a definition setting. Prowlarr keeps a select's choice as its position in
 // the option list and a checkbox as true/false.
 func siteSetting(s indexers.SettingSummary, raw string) (string, bool) {
@@ -667,7 +667,7 @@ type newsServer struct {
 
 type serverKey struct{ host, user string }
 
-// knownServers are the Usenet servers Mediarium already has, by host and
+// knownServers are the Usenet servers Cue already has, by host and
 // username.
 func knownServers(st state) map[serverKey]bool {
 	seen := map[serverKey]bool{}
@@ -698,7 +698,7 @@ func planServers(p *plan, sp *ServersPreview, d *sabData, seen map[serverKey]boo
 }
 
 // planServer plans one Usenet server of app (SABnzbd or NZBGet): skipped
-// without a usable host, "exists" when Mediarium has the same host and
+// without a usable host, "exists" when Cue has the same host and
 // username, otherwise added (switched off when the app had it off or hid its
 // password).
 func planServer(p *plan, sp *ServersPreview, app string, s newsServer, seen map[serverKey]bool) {
@@ -739,7 +739,7 @@ func planServer(p *plan, sp *ServersPreview, app string, s newsServer, seen map[
 			notes = append(notes, app+" did not reveal the password: added switched off, enter it under Settings > Downloading > Usenet and torrents")
 		}
 		if item.Optional {
-			notes = append(notes, "optional in "+app+"; Mediarium tries servers in priority order")
+			notes = append(notes, "optional in "+app+"; Cue tries servers in priority order")
 		}
 		item.Reason = strings.Join(notes, "; ")
 	}

@@ -12,7 +12,7 @@ import (
 )
 
 // Audiobookshelf and Kavita: the apps people read and listen to their books
-// with. Mediarium tests the connection, asks them to scan the library a new
+// with. Cue tests the connection, asks them to scan the library a new
 // book landed in, and finds a book on them so its page can link to it
 // ("Listen in Audiobookshelf", "Read in Kavita").
 //
@@ -139,7 +139,7 @@ func (c *Client) kavitaAuth(ctx context.Context, s Server) (Server, error) {
 		var res struct {
 			Token string `json:"token"`
 		}
-		q := url.Values{"apiKey": {s.Token}, "pluginName": {"Mediarium"}}
+		q := url.Values{"apiKey": {s.Token}, "pluginName": {"Cue"}}
 		if err := c.do(ctx, anon, http.MethodPost, "/api/Plugin/authenticate", q, nil, &res); err != nil {
 			return s, explain(s, err)
 		}

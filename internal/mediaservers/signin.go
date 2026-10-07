@@ -114,7 +114,7 @@ func serverFromAuth(kind Kind, base string, info PublicInfo, res authResult) (Se
 		return Server{}, userErr(errUnrecognised, "%s accepted the sign-in but sent no access token back. Use an API key instead.", kind.Label())
 	}
 	if !res.User.Policy.IsAdministrator {
-		return Server{}, userErr(nil, "Signed in, but %q is not an administrator on this %s server. Mediarium needs an administrator account to ask the server to rescan its libraries. Sign in with an administrator account instead.", res.User.Name, kind.Label())
+		return Server{}, userErr(nil, "Signed in, but %q is not an administrator on this %s server. Cue needs an administrator account to ask the server to rescan its libraries. Sign in with an administrator account instead.", res.User.Name, kind.Label())
 	}
 	name := info.Name
 	if name == "" {
@@ -169,7 +169,7 @@ var (
 
 // QuickConnectStart asks a Jellyfin server for a Quick Connect code. The
 // person enters code in a Jellyfin app they are signed in to; secret is how
-// Mediarium then asks whether they did, and must stay on the server side.
+// Cue then asks whether they did, and must stay on the server side.
 func (c *Client) QuickConnectStart(ctx context.Context, baseURL, deviceID string) (base, code, secret string, err error) {
 	base, err = NormalizeURL(baseURL)
 	if err != nil {

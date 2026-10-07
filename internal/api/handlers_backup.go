@@ -24,7 +24,7 @@ const defaultRestartDelay = 1500 * time.Millisecond
 // opened. main wires this to a graceful shutdown (the process exits 0 and
 // the container's restart policy, e.g. `restart: unless-stopped`, starts it
 // again). The default is a plain os.Exit(0). On a setup with no restart
-// policy the user has to start Mediarium again by hand; the restore is
+// policy the user has to start Cue again by hand; the restore is
 // applied on that next start either way. Tests replace it so they do not
 // exit.
 func (s *Server) SetExitFunc(fn func()) { s.exitFn = fn }
@@ -34,7 +34,7 @@ func (s *Server) exit() {
 		s.exitFn()
 		return
 	}
-	log.Println("Mediarium is exiting to apply a restore; start it again if it is not restarted automatically")
+	log.Println("Cue is exiting to apply a restore; start it again if it is not restarted automatically")
 	os.Exit(0)
 }
 
@@ -45,7 +45,7 @@ func requireAdmin(w http.ResponseWriter, r *http.Request) bool {
 	if u := auth.UserFromContext(r.Context()); u != nil && u.IsAdmin {
 		return true
 	}
-	writeError(w, http.StatusForbidden, "Only an administrator can back up or restore Mediarium.")
+	writeError(w, http.StatusForbidden, "Only an administrator can back up or restore Cue.")
 	return false
 }
 
@@ -99,7 +99,7 @@ func (s *Server) handleBackup(w http.ResponseWriter, r *http.Request) {
 	if err := backup.Create(r.Context(), s.db, s.cfg.ConfigDir, s.version, now, out); err != nil {
 		log.Printf("backup: create failed: %v", err)
 		if !out.started {
-			writeError(w, http.StatusInternalServerError, "Couldn't create the backup. Check the Mediarium log for details.")
+			writeError(w, http.StatusInternalServerError, "Couldn't create the backup. Check the Cue log for details.")
 			return
 		}
 		// Part of the zip is already on its way: cut the connection so the
@@ -135,7 +135,7 @@ func (s *Server) handleRestore(w http.ResponseWriter, r *http.Request) {
 		var tooBig *http.MaxBytesError
 		switch {
 		case errors.Is(err, errBackupTooLarge) || errors.As(err, &tooBig):
-			writeError(w, http.StatusRequestEntityTooLarge, "That file is too large to be a Mediarium backup (limit 1 GB).")
+			writeError(w, http.StatusRequestEntityTooLarge, "That file is too large to be a Cue backup (limit 1 GB).")
 		case errors.Is(err, errNoBackupFile):
 			writeError(w, http.StatusBadRequest, "No backup file was uploaded. Choose the backup zip and try again.")
 		default:
@@ -153,7 +153,7 @@ func (s *Server) handleRestore(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		log.Printf("backup: stage restore failed: %v", err)
-		writeError(w, http.StatusInternalServerError, "Couldn't prepare the restore. Your data hasn't been changed. Check the Mediarium log for details.")
+		writeError(w, http.StatusInternalServerError, "Couldn't prepare the restore. Your data hasn't been changed. Check the Cue log for details.")
 		return
 	}
 	log.Println("backup: restore staged; restarting to apply it")

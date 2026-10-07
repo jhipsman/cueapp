@@ -55,7 +55,7 @@ export default function PremiumizeCard({ onChange }: { onChange?: () => void }) 
         )}
       </h2>
       <p style={{ color: 'var(--text-dim)' }}>
-        Premiumize.me downloads torrents and NZBs on its own servers, often instantly when it already has them. Mediarium then fetches the finished files from
+        Premiumize.me downloads torrents and NZBs on its own servers, often instantly when it already has them. Cue then fetches the finished files from
         Premiumize over HTTPS. For torrents that means no peers connect to your server, no seeding and no VPN needed.
       </p>
       {set && state && (
@@ -80,7 +80,7 @@ export default function PremiumizeCard({ onChange }: { onChange?: () => void }) 
             .
           </li>
           <li style={{ marginBottom: 4 }}>Copy the API key shown there.</li>
-          <li>Paste it here and press Save. Mediarium checks it with Premiumize first.</li>
+          <li>Paste it here and press Save. Cue checks it with Premiumize first.</li>
         </ol>
       )}
       <div className="grid-form">

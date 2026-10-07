@@ -77,7 +77,7 @@ func FuzzNormalizeURL(f *testing.F) {
 }
 
 // FuzzDiscoveryReplies: what a stranger on the network sends back can only
-// ever point Mediarium at an allowed (private) address.
+// ever point Cue at an allowed (private) address.
 func FuzzDiscoveryReplies(f *testing.F) {
 	f.Add([]byte(`{"Address":"http://192.168.1.5:8096","Id":"abc","Name":"Home"}`), "192.168.1.5")
 	f.Add([]byte(`{"Address":"http://169.254.169.254:80","Id":"abc"}`), "192.168.1.6")
@@ -95,7 +95,7 @@ func FuzzDiscoveryReplies(f *testing.F) {
 				t.Fatalf("address %q: %v", found.Address, err)
 			}
 			if h := net.ParseIP(host); h == nil || (!PrivateIPv4(h) && !h.Equal(ip)) {
-				t.Fatalf("reply from %v pointed Mediarium at %q", ip, found.Address)
+				t.Fatalf("reply from %v pointed Cue at %q", ip, found.Address)
 			}
 		}
 		if found, ok := parseGDM(data, ip); ok {

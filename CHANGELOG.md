@@ -8,6 +8,9 @@ under [Unreleased]. How releases are cut: [docs/RELEASING.md](docs/RELEASING.md)
 
 ## [Unreleased]
 
+### Changed
+- **Mediarium is now Cue**, with a new icon (a C around a play button). Settings, the library, your downloads and everything else carry over as they are.
+
 ### Added
 - **Watch**, a streaming-service view of everything: a banner and rows of artwork (Continue Watching, My List, trending, popular, genres), search across every movie and show, title pages with backdrops, IMDb and Rotten Tomatoes ratings, cast and More like this, and for shows a season picker with episode thumbnails and descriptions. Play works on any title, in your library or not, resumes where you stopped (saved per account), and offers the next episode at the end. Open it with **Watch** at the top of the page. See [docs/watch.md](docs/watch.md).
 - **IMDb ratings** in Watch, with a free OMDb key in Settings > Info, lists and subtitles.

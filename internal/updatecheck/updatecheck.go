@@ -1,4 +1,4 @@
-// Package updatecheck asks GitHub which release of Mediarium is the newest, so
+// Package updatecheck asks GitHub which release of Cue is the newest, so
 // the app can tell an administrator that an update is out.
 //
 // It only reads. The request goes to the public GitHub Releases API of the

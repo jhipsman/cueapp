@@ -118,7 +118,7 @@ function Health({ items, showOptional, errors = 0 }: { items: HealthItem[]; show
                   <strong>
                     {errors === 1 ? '1 new error' : `${errors} new errors`} in the last 24 hours
                   </strong>
-                  <span>Something went wrong that Mediarium could not sort out by itself. The log says what happened and what to try.</span>
+                  <span>Something went wrong that Cue could not sort out by itself. The log says what happened and what to try.</span>
                 </div>
                 <Link to="/settings/logs" className="health-action">
                   Open the log <Icon name="open" size={14} />
@@ -381,7 +381,7 @@ export default function Dashboard() {
               <Icon name="warning" size={15} /> {problems} to fix
             </a>
           ) : (
-            <span className="hero-pill" style={{ ['--pc' as string]: 'var(--success)' }} title="Everything Mediarium needs is set up and working.">
+            <span className="hero-pill" style={{ ['--pc' as string]: 'var(--success)' }} title="Everything Cue needs is set up and working.">
               <Icon name="check" size={15} /> All good
             </span>
           )}
@@ -404,8 +404,8 @@ export default function Dashboard() {
           <p>
             {empty
               ? admin
-                ? 'Welcome to Mediarium. Search for a movie or show in the bar above, or import what you already have.'
-                : 'Welcome to Mediarium. Search for a movie or show in the bar above to add it.'
+                ? 'Welcome to Cue. Search for a movie or show in the bar above, or import what you already have.'
+                : 'Welcome to Cue. Search for a movie or show in the bar above to add it.'
               : running > 0
                 ? `${running} ${running === 1 ? 'download is' : 'downloads are'} in progress right now${inLine > 0 ? `, ${inLine} waiting in line` : ''}.`
                 : inLine > 0

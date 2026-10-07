@@ -87,7 +87,7 @@ const (
 	KeyHuntIntervalHours   = "automation.hunt_interval_hours"   // hours between searches for missing items and better versions: 1 to 168; unset = 6
 	KeyReleaseCheckMinutes = "automation.release_check_minutes" // minutes between checks of each indexer's newest releases: 5 to 1440; unset = 15
 
-	KeyPublicURL = "server.public_url" // the address you open Mediarium at from your own devices (like https://mediarium.example.com); links in notification messages use it; unset = no links
+	KeyPublicURL = "server.public_url" // the address you open Cue at from your own devices (like https://mediarium.example.com); links in notification messages use it; unset = no links
 
 	KeyNotifyOnProblems = "notify.on_problems" // "1" sends a notification (to the targets that listen for Health) when a new error is added to the problem log; unset or "0" sends none
 
@@ -152,7 +152,7 @@ const (
 	KeyUpdatesLatest      = "updates.latest"                 // the newest release the last check found (JSON; set by the app, not user-editable)
 	KeyUpdatesCheckedAt   = "updates.last_checked_at"        // when the last check ran (RFC 3339; set by the app, not user-editable)
 	KeyUpdatesNotified    = "updates.notified_version"       // the version the "new version" message was last sent for (set by the app, not user-editable)
-	KeyAutoRestartStuck   = "system.auto_restart_when_stuck" // "0" stops Mediarium restarting itself when it has not answered for three minutes; anything else (including unset) leaves it on
+	KeyAutoRestartStuck   = "system.auto_restart_when_stuck" // "0" stops Cue restarting itself when it has not answered for three minutes; anything else (including unset) leaves it on
 
 	// Watched status and cleanup rules (Settings > Connections > Media servers). Both off by default.
 	KeyWatchedSync   = "watched.sync"   // "1" reads what's been watched from Plex, Jellyfin and Emby every six hours; unset or "0" leaves it off

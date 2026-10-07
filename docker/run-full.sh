@@ -1,5 +1,5 @@
 #!/bin/bash
-# Starts the Cloudflare helper (FlareSolverr) and Mediarium side by side in the
+# Starts the Cloudflare helper (FlareSolverr) and Cue side by side in the
 # "full" image. The helper only listens on 127.0.0.1, so nothing outside the
 # container can reach it. If either one stops, this script stops too, and Docker
 # restarts the container.
@@ -13,7 +13,7 @@ mkdir -p "$HOME"
 HOST=127.0.0.1 PORT=8191 /usr/local/bin/python -u /app/flaresolverr.py &
 helper=$!
 
-# Give the helper up to a minute to come up, so Mediarium does not start by
+# Give the helper up to a minute to come up, so Cue does not start by
 # reporting it as down.
 for _ in $(seq 1 60); do
   if curl -fsS -o /dev/null --max-time 2 http://127.0.0.1:8191/ 2>/dev/null; then

@@ -1,6 +1,6 @@
 {
   "id": "/bookshelf/",
-  "name": "Mediarium Books",
+  "name": "Cue Books",
   "short_name": "Books",
   "description": "Read your ebooks and listen to your audiobooks.",
   "start_url": "/bookshelf/",

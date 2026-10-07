@@ -10,7 +10,7 @@ const ROWS: { key: Permission; label: string; hint: string }[] = [
   { key: 'manage', label: 'Search now and monitoring', hint: 'Start searches, change what is monitored and tags, follow authors and series.' },
   { key: 'retry', label: 'Retry downloads', hint: 'Try a failed or stopped download again.' },
   { key: 'subtitles', label: 'Subtitles', hint: 'Find and download subtitles.' },
-  { key: 'play', label: 'Play, read and listen', hint: 'Play videos, preview files, and read and listen in Mediarium Books.' },
+  { key: 'play', label: 'Play, read and listen', hint: 'Play videos, preview files, and read and listen in Cue Books.' },
 ]
 
 export default function PermissionsChoice({ value, onChange, disabled }: { value: Permissions | undefined; onChange: (p: Permissions) => void; disabled?: boolean }) {

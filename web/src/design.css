@@ -1,4 +1,4 @@
-/* Mediarium design layer: section colours, app chrome, bento layout, grouped
+/* Cue design layer: section colours, app chrome, bento layout, grouped
    panels. Loaded after index.css so it wins where the two overlap.
 
    Colour logic: every colour is a hue-rotated sibling of the brand teal at
@@ -2506,7 +2506,7 @@ main.content:focus { outline: none; }
 /* Text for screen readers only. */
 .sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
 
-/* Version in the top bar: "Mediarium" on the first line, the number under it */
+/* Version in the top bar: "Cue" on the first line, the number under it */
 .version-chip { flex-direction: column; align-items: flex-start; justify-content: center; gap: 0; height: 38px; padding: 0 12px; border-radius: 12px; line-height: 1.15; }
 .version-name { font-size: 0.68rem; font-weight: 600; letter-spacing: 0.04em; color: var(--text-dim); }
 .version-num { display: inline-flex; align-items: center; gap: 6px; font-size: 0.8rem; font-weight: 700; color: var(--text); }

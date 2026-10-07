@@ -21,7 +21,7 @@ import (
 // state; caching lives in Finder and Refresher.
 type Client struct {
 	HTTP    *http.Client
-	Version string // Mediarium's version, sent to Jellyfin in its auth header
+	Version string // Cue's version, sent to Jellyfin in its auth header
 	// MaxBytes is the most of an answer that is read; 0 means maxAnswerBytes.
 	MaxBytes int64
 }
@@ -168,7 +168,7 @@ func (c *Client) authorize(req *http.Request, s Server) {
 	req.Header.Set("User-Agent", "Mediarium/"+c.Version)
 	switch s.Kind {
 	case KindPlex:
-		req.Header.Set("X-Plex-Product", "Mediarium")
+		req.Header.Set("X-Plex-Product", "Cue")
 		req.Header.Set("X-Plex-Client-Identifier", "mediarium")
 		if s.Token != "" {
 			req.Header.Set("X-Plex-Token", s.Token)
@@ -194,9 +194,9 @@ func (c *Client) authorize(req *http.Request, s Server) {
 // mediaBrowserAuth is the Authorization header Jellyfin and Emby expect
 // from an app: who is asking and, once signed in, the access token.
 func mediaBrowserAuth(deviceID, version, token string) string {
-	h := fmt.Sprintf(`MediaBrowser Client="Mediarium", Device="Mediarium", DeviceId=%q, Version=%q`, deviceID, version)
+	h := fmt.Sprintf(`MediaBrowser Client="Cue", Device="Cue", DeviceId=%q, Version=%q`, deviceID, version)
 	if token != "" {
-		h = fmt.Sprintf(`MediaBrowser Token=%q, Client="Mediarium", Device="Mediarium", DeviceId=%q, Version=%q`, token, deviceID, version)
+		h = fmt.Sprintf(`MediaBrowser Token=%q, Client="Cue", Device="Cue", DeviceId=%q, Version=%q`, token, deviceID, version)
 	}
 	return h
 }
@@ -210,7 +210,7 @@ func unreachable(s Server, base string, err error) error {
 	if strings.Contains(err.Error(), "certificate") || strings.Contains(err.Error(), "tls:") {
 		return userErr(err, "Could not make a secure connection to %s at %s (certificate problem). Try the http:// address on your local network instead.", s.Kind.Label(), base)
 	}
-	return userErr(err, "Could not reach %s at %s. Check the address and port, and that the server is running and reachable from Mediarium.", s.Kind.Label(), base)
+	return userErr(err, "Could not reach %s at %s. Check the address and port, and that the server is running and reachable from Cue.", s.Kind.Label(), base)
 }
 
 func tokenWord(k Kind) string {
@@ -296,7 +296,7 @@ func (c *Client) RefreshAll(ctx context.Context, s Server) error {
 	return userErr(nil, "Unknown server type %q.", s.Kind)
 }
 
-// RefreshFolders asks the server to scan the given folders (as Mediarium
+// RefreshFolders asks the server to scan the given folders (as Cue
 // sees them; the server's path mapping is applied here). It returns a short
 // description of each scan it started, for the log.
 func (c *Client) RefreshFolders(ctx context.Context, s Server, kind MediaKind, folders []string) ([]string, error) {

@@ -63,7 +63,7 @@ func (s *Server) handleMigratePreview(w http.ResponseWriter, r *http.Request) {
 	pv, err := s.migrator.Preview(r.Context(), req)
 	if err != nil {
 		slog.Error("migrate: preview", "err", err)
-		writeError(w, http.StatusInternalServerError, "Couldn't read Mediarium's own library: "+err.Error())
+		writeError(w, http.StatusInternalServerError, "Couldn't read Cue's own library: "+err.Error())
 		return
 	}
 	writeJSON(w, http.StatusOK, pv)
@@ -176,11 +176,11 @@ func checkMigrateOptions(req migrate.Options) string {
 			continue
 		}
 		if from == "" || to == "" {
-			return "Fill in both sides of each folder mapping: the folder as the other app sees it, and where it is in Mediarium."
+			return "Fill in both sides of each folder mapping: the folder as the other app sees it, and where it is in Cue."
 		}
 		if p := firstProblem(
 			checkNoControl(from, "The other app's folder"), checkMaxLen(from, "The other app's folder", maxPathLen),
-			checkAbsPath(to, "/media/movies"), checkMaxLen(to, "The Mediarium folder", maxPathLen),
+			checkAbsPath(to, "/media/movies"), checkMaxLen(to, "The Cue folder", maxPathLen),
 		); p != "" {
 			return p
 		}

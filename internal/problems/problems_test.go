@@ -611,7 +611,7 @@ func TestTextFile(t *testing.T) {
 	entries := list(t, l, problems.Filter{})
 	out := problems.Text(entries, c.now())
 	for _, want := range []string{
-		"Mediarium problem log", "Problems: 1", "ERROR", "Downloads", "unpack.failed", "Could not unpack a download",
+		"Cue problem log", "Problems: 1", "ERROR", "Downloads", "unpack.failed", "Could not unpack a download",
 		"Happened 2 times", "For: The Matrix", "Download: 3", "    bad header", "    second line",
 	} {
 		if !strings.Contains(out, want) {

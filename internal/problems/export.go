@@ -40,7 +40,7 @@ func Times(n int) string {
 // support request. entries are written in the order given.
 func Text(entries []Entry, now time.Time) string {
 	var b strings.Builder
-	fmt.Fprintf(&b, "Mediarium problem log\nWritten: %s\nProblems: %d\n", now.Format("2006-01-02 15:04:05 MST"), len(entries))
+	fmt.Fprintf(&b, "Cue problem log\nWritten: %s\nProblems: %d\n", now.Format("2006-01-02 15:04:05 MST"), len(entries))
 	if len(entries) == 0 {
 		b.WriteString("\nNo problems.\n")
 		return b.String()

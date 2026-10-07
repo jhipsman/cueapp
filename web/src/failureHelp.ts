@@ -15,7 +15,7 @@ export function failureHelp(error: string | undefined, protocol: 'usenet' | 'tor
     return {
       why: 'This release is no longer complete on your Usenet provider. Older posts lose parts over time, or are taken down, and this one has no repair files left to fill the gaps.',
       tips: [
-        'Press Blocklist & search again: Mediarium skips this release and picks the next best one. With automatic searching on, it does this by itself.',
+        'Press Blocklist & search again: Cue skips this release and picks the next best one. With automatic searching on, it does this by itself.',
         'If no other release is found, the quality profile may be too narrow. Open the title and choose a profile that accepts more qualities (for example 720p as well as 1080p), so there are more releases to pick from.',
         'If this happens often, add a second Usenet provider from a different company (a "backup" in Settings > Downloading). It often still has the missing parts.',
         'If torrents are switched on, the title can also be found that way.',

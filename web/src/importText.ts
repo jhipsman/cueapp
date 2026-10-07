@@ -57,27 +57,27 @@ export function etaText(b: BatchCounts): string {
   return 'More than an hour left.'
 }
 
-// What Mediarium goes on to do once the import is done, for the choices made.
+// What Cue goes on to do once the import is done, for the choices made.
 export function afterText(kind: ImportKind, monitor: boolean, monitorMissing: boolean): string {
   if (kind === 'movie') {
     return monitor
-      ? "Mediarium may replace movies that are below your quality profile's target with a better version."
+      ? "Cue may replace movies that are below your quality profile's target with a better version."
       : 'Nothing will be downloaded. Your files stay where they are.'
   }
   if (monitor && monitorMissing) {
-    return "Episodes you are missing will be searched for and downloaded, including new ones as they come out. Mediarium may also replace episodes that are below your quality profile's target."
+    return "Episodes you are missing will be searched for and downloaded, including new ones as they come out. Cue may also replace episodes that are below your quality profile's target."
   }
   if (monitorMissing) {
     return 'Episodes you are missing will be searched for and downloaded, including new ones as they come out. The episodes you have are left alone.'
   }
   if (monitor) {
-    return "New episodes will be downloaded as they come out, and Mediarium may replace episodes that are below your quality profile's target. Episodes you are missing now are left alone."
+    return "New episodes will be downloaded as they come out, and Cue may replace episodes that are below your quality profile's target. Episodes you are missing now are left alone."
   }
   return 'Nothing will be downloaded for these shows. Your files stay where they are.'
 }
 
 // The short version for the banner: what starts once the details are in
-// (or, for a finished import, what Mediarium does from now on).
+// (or, for a finished import, what Cue does from now on).
 export function upNextText(b: BatchCounts, finished = false): string {
   const wanted: string[] = []
   if (b.kind === 'tv' && b.monitorMissing) wanted.push('the episodes you are missing')
@@ -85,14 +85,14 @@ export function upNextText(b: BatchCounts, finished = false): string {
   if (b.monitor && !b.noUpgrade) wanted.push('better versions of what you already have')
   if (wanted.length === 0) return finished ? 'They are not monitored, so nothing will be downloaded.' : 'Nothing will be downloaded.'
   const list = wanted.join(' and ')
-  return finished ? `From now on, Mediarium looks for ${list}.` : `When it's done, Mediarium starts looking for ${list}.`
+  return finished ? `From now on, Cue looks for ${list}.` : `When it's done, Cue starts looking for ${list}.`
 }
 
 // What the report says was set on the titles of a finished import.
 export function setText(b: BatchCounts): string {
   const these = b.kind === 'tv' ? 'shows' : 'movies'
   if (!b.monitor && !(b.kind === 'tv' && b.monitorMissing)) {
-    return `These ${these} were added without monitoring, and Mediarium leaves what you have alone. Nothing will be downloaded until you start monitoring them.`
+    return `These ${these} were added without monitoring, and Cue leaves what you have alone. Nothing will be downloaded until you start monitoring them.`
   }
   return `These ${these} are monitored. ${afterText(b.kind, b.monitor, b.monitorMissing)}`
 }

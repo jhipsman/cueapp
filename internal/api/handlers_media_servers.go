@@ -159,7 +159,7 @@ func buildMediaServer(req mediaServerRequest, base mediaservers.Server) (mediase
 	if req.PathMap != nil {
 		pm, err := mediaservers.NormalizePathMap(req.PathMap)
 		if err != nil {
-			return out, errors.New("Each folder mapping needs a folder in Mediarium and the same folder as your media server sees it.")
+			return out, errors.New("Each folder mapping needs a folder in Cue and the same folder as your media server sees it.")
 		}
 		// Folders an older version saved can stay; anything new must be a full path.
 		had := map[mediaservers.PathMapping]bool{}

@@ -18,7 +18,7 @@ import (
 var readDeadline = 10 * time.Second
 
 // busyMessage is what a page gets when its data could not be read in time.
-const busyMessage = "Mediarium is busy right now. Try again in a moment."
+const busyMessage = "Cue is busy right now. Try again in a moment."
 
 // deadlinePrefixes are the GET routes that only read the database, and so
 // get the deadline. Routes that talk to other services (search, discover,

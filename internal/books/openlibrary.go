@@ -13,7 +13,7 @@ import (
 )
 
 // Open Library (openlibrary.org) is a free, open catalogue of books run by
-// the Internet Archive. It needs no account or key. Mediarium uses it to
+// the Internet Archive. It needs no account or key. Cue uses it to
 // find books, their authors, first publication year, cover and description.
 
 const openLibraryBase = "https://openlibrary.org"

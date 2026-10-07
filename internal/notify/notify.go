@@ -35,8 +35,8 @@ type Event struct {
 	Lead        string   // the sentence under the subject
 	Details     []Detail // the rows of the small table
 	PosterURL   string   // a hosted poster image, or empty
-	LinkURL     string   // where the title is in Mediarium, or empty
-	SettingsURL string   // the notification settings in Mediarium, or empty
+	LinkURL     string   // where the title is in Cue, or empty
+	SettingsURL string   // the notification settings in Cue, or empty
 }
 
 // rich reports whether the event carries the structure Compose adds.
@@ -279,7 +279,7 @@ func discordEmbed(ev Event) map[string]any {
 		"title":       clip(ev.Title, 250),
 		"description": clip(ev.Lead, 2000),
 		"color":       eventColor(ev),
-		"footer":      map[string]any{"text": "Mediarium"},
+		"footer":      map[string]any{"text": "Cue"},
 	}
 	if !ev.Timestamp.IsZero() {
 		embed["timestamp"] = ev.Timestamp.UTC().Format(time.RFC3339)
@@ -354,7 +354,7 @@ func telegramHTML(ev Event) string {
 		}
 	}
 	if u := httpsURL(ev.LinkURL); u != "" {
-		b.WriteString("\n\n<a href=\"" + e(u) + "\">Open in Mediarium</a>")
+		b.WriteString("\n\n<a href=\"" + e(u) + "\">Open in Cue</a>")
 	}
 	return b.String()
 }

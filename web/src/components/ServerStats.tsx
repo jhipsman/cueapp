@@ -117,7 +117,7 @@ const exact = (n: number) => `${n.toLocaleString()} bytes`
 
 // The compact "Server" card on the dashboard: a heading, then CPU, memory and
 // storage each with its figures and a small coloured bar, and a status dot.
-// Pressing it opens the details in place (load, uptimes, what Mediarium itself
+// Pressing it opens the details in place (load, uptimes, what Cue itself
 // uses, one bar per folder); pressing again closes them. Nothing is shown for
 // accounts that may not see the server (members).
 export function ServerInfoCard({ stats, denied, to }: { stats: SystemStats | null; denied: boolean; to?: string }) {
@@ -126,7 +126,7 @@ export function ServerInfoCard({ stats, denied, to }: { stats: SystemStats | nul
   if (!stats) return <div className="skeleton info-card" style={{ minHeight: 150 }} />
   const s = summarize(stats)
   const tip = [
-    s.cpu !== undefined ? `CPU: ${stats.cpu?.percent.toFixed(1)}% of ${stats.cpu?.cores} ${stats.cpu?.cores === 1 ? 'core' : 'cores'}${stats.app.cpuPercent !== undefined ? `, Mediarium ${stats.app.cpuPercent.toFixed(1)}%` : ''}` : '',
+    s.cpu !== undefined ? `CPU: ${stats.cpu?.percent.toFixed(1)}% of ${stats.cpu?.cores} ${stats.cpu?.cores === 1 ? 'core' : 'cores'}${stats.app.cpuPercent !== undefined ? `, Cue ${stats.app.cpuPercent.toFixed(1)}%` : ''}` : '',
     s.mem ? `Memory: ${exact(s.mem.usedBytes)} in use, ${exact(s.mem.totalBytes - s.mem.usedBytes)} available, ${exact(s.mem.totalBytes)} in all` : '',
     s.store ? `Storage: ${exact(s.store.usedBytes)} in use, ${exact(s.store.freeBytes)} free, ${exact(s.store.totalBytes)} in all` : '',
   ]
@@ -148,7 +148,7 @@ export function ServerInfoCard({ stats, denied, to }: { stats: SystemStats | nul
         <div className="info-rows">
           <div className="info-row">
             <span className="info-label">CPU</span>
-            <span className="info-value">{s.cpu !== undefined ? `${s.cpu}%${s.appCpu !== undefined ? ` (Mediarium ${s.appCpu}%)` : ''}` : 'Not available'}</span>
+            <span className="info-value">{s.cpu !== undefined ? `${s.cpu}%${s.appCpu !== undefined ? ` (Cue ${s.appCpu}%)` : ''}` : 'Not available'}</span>
             {s.cpu !== undefined && <MiniBar value={s.cpu} />}
           </div>
           <div className="info-row">
@@ -178,11 +178,11 @@ export function ServerInfoCard({ stats, denied, to }: { stats: SystemStats | nul
               </p>
             ) : null}
             <p>
-              Mediarium up <b>{uptime(stats.app.uptimeSeconds)}</b>
+              Cue up <b>{uptime(stats.app.uptimeSeconds)}</b>
             </p>
           </div>
           <div className="info-block">
-            <h4>Mediarium itself</h4>
+            <h4>Cue itself</h4>
             <p>
               Memory <b>{formatBytes(stats.app.memoryBytes)}</b>
               {stats.app.limitBytes ? ` of a ${formatBytes(stats.app.limitBytes)} limit` : ''}
@@ -226,7 +226,7 @@ export function ServerInfoCard({ stats, denied, to }: { stats: SystemStats | nul
 }
 
 // Settings, System → Server: CPU, memory and storage side by side, with the
-// smaller facts (load, uptimes, what Mediarium itself uses, each folder's
+// smaller facts (load, uptimes, what Cue itself uses, each folder's
 // disk) in a row underneath. Updated live.
 export default function ServerStatsCard() {
   const { stats, denied } = useServerStats(5000)
@@ -248,7 +248,7 @@ export default function ServerStatsCard() {
                 total={100}
                 label="CPU"
                 detail={`${s.cpu}% of ${stats.cpu.cores} ${stats.cpu.cores === 1 ? 'core' : 'cores'}`}
-                sub={s.appCpu !== undefined ? `Mediarium uses ${s.appCpu}%` : undefined}
+                sub={s.appCpu !== undefined ? `Cue uses ${s.appCpu}%` : undefined}
               />
             ) : (
               <small>CPU use isn't available on this system.</small>
@@ -272,10 +272,10 @@ export default function ServerStatsCard() {
               </span>
             ) : null}
             <span>
-              Mediarium up <b>{uptime(stats.app.uptimeSeconds)}</b>
+              Cue up <b>{uptime(stats.app.uptimeSeconds)}</b>
             </span>
             <span>
-              Mediarium memory <b>{formatBytes(stats.app.memoryBytes)}</b>
+              Cue memory <b>{formatBytes(stats.app.memoryBytes)}</b>
               {stats.app.limitBytes ? ` of a ${formatBytes(stats.app.limitBytes)} limit` : ''}
             </span>
             {uniqueDisks(stats).map((d) => (

@@ -98,7 +98,7 @@ func usageNote(label string, shared bool, requests, hits int) string {
 	return fmt.Sprintf("%s hasn't been used in the last 24 hours.", label)
 }
 
-// handleUsage reports, per third-party service, how much Mediarium used it in
+// handleUsage reports, per third-party service, how much Cue used it in
 // the last 24 hours and whether it refused because a limit was reached.
 func (s *Server) handleUsage(w http.ResponseWriter, r *http.Request) {
 	out := []serviceUsagePayload{}

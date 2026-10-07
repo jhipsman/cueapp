@@ -99,7 +99,7 @@ export function FindServers({ onPick, onManual }: { onPick: (s: FoundMediaServer
   )
 }
 
-// Sign in with Plex: plex.tv confirms who you are and hands Mediarium a key,
+// Sign in with Plex: plex.tv confirms who you are and hands Cue a key,
 // then lists your Plex servers to pick from. No token to copy.
 export function PlexSignIn({ onAdded }: { onAdded: () => void }) {
   const toast = useToast()
@@ -199,14 +199,14 @@ export function PlexSignIn({ onAdded }: { onAdded: () => void }) {
       </button>
       {pin && (
         <small className="ms-find-hint">
-          A plex.tv window opened. Sign in there and approve Mediarium. No window?{' '}
+          A plex.tv window opened. Sign in there and approve Cue. No window?{' '}
           <a href={pin.authUrl} target="_blank" rel="noreferrer">
             Open it here
           </a>{' '}
           (code {pin.code}).
         </small>
       )}
-      {!pin && <small className="ms-find-hint">This is the easiest way. There's no token to find or copy, and Mediarium lists your Plex servers for you.</small>}
+      {!pin && <small className="ms-find-hint">This is the easiest way. There's no token to find or copy, and Cue lists your Plex servers for you.</small>}
       {error && <p className="error-text" style={{ margin: 0 }}>{error}</p>}
     </div>
   )
@@ -292,7 +292,7 @@ export function JellyfinEmbySignIn({ kind, baseUrl, checkAddress, onAdded }: { k
             <ol className="ms-way-steps">
               <li>Type the address of your Jellyfin server above.</li>
               <li>Press <strong>Use Quick Connect</strong>. A 6-digit code shows up here.</li>
-              <li>Open Jellyfin in your browser, click your profile picture (top right), choose <strong>Quick Connect</strong>, type the code and confirm. Mediarium is added by itself a few seconds later.</li>
+              <li>Open Jellyfin in your browser, click your profile picture (top right), choose <strong>Quick Connect</strong>, type the code and confirm. Cue is added by itself a few seconds later.</li>
             </ol>
             <button className="primary btn-with-icon" onClick={() => void quickConnect()} disabled={!!qc}>
               <Icon name="key" size={15} /> {qc ? 'Waiting for approval…' : 'Use Quick Connect'}
@@ -328,7 +328,7 @@ export function JellyfinEmbySignIn({ kind, baseUrl, checkAddress, onAdded }: { k
           {busy ? 'Signing in…' : `Sign in to ${label}`}
         </button>
         <small className="ms-find-hint" style={{ display: 'block', marginTop: 6 }}>
-          Used once to get a key for Mediarium. The password isn't stored.
+          Used once to get a key for Cue. The password isn't stored.
         </small>
       </div>
       <FormProblem v={v} verb="sign in" />

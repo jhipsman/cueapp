@@ -115,7 +115,7 @@ func gateExtras(src *Sources, inc Include) {
 }
 
 // sharedPlan is what the extra apps' planning shares with the first four:
-// the Mediarium state and the servers and indexers already planned.
+// the Cue state and the servers and indexers already planned.
 type sharedPlan struct {
 	st        state
 	maps      []PathMapping

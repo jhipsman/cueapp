@@ -1,6 +1,6 @@
 # Music
 
-Mediarium can look after a music collection: artists, their albums and the tracks on them. It finds them with the same indexers, and downloads them with the same Usenet and torrent downloaders, as your movies and shows. Music is a module you switch on. Until you do, nothing about music appears or runs.
+Cue can look after a music collection: artists, their albums and the tracks on them. It finds them with the same indexers, and downloads them with the same Usenet and torrent downloaders, as your movies and shows. Music is a module you switch on. Until you do, nothing about music appears or runs.
 
 ## Switching it on
 
@@ -56,7 +56,7 @@ With the module on, music shows up next to movies and TV. Basic users can browse
 
 ## Adding an artist
 
-Search for the artist by name. A short description ("jazz", "UK rock band") tells artists with the same name apart. When you add one, Mediarium lists its **albums, EPs and singles**. Live albums, compilations, remixes, soundtracks and DJ mixes are left out, so the list is the artist's own studio releases.
+Search for the artist by name. A short description ("jazz", "UK rock band") tells artists with the same name apart. When you add one, Cue lists its **albums, EPs and singles**. Live albums, compilations, remixes, soundtracks and DJ mixes are left out, so the list is the artist's own studio releases.
 
 The Add dialog is the same everywhere you can add an artist (Discover and the header search), with these choices:
 
@@ -69,11 +69,11 @@ The Add dialog is the same everywhere you can add an artist (Discover and the he
 
 You can switch any album on or off later. Only albums that are monitored and already released are searched for automatically, and each album has its own switch. Basic users can add artists and albums and grab releases just like movies. Removing an artist is for administrators.
 
-Adding a large discography can take a few seconds, because the music database allows only about one lookup a second. Mediarium remembers answers for a few hours. Where the data comes from is listed under [Sources](#sources).
+Adding a large discography can take a few seconds, because the music database allows only about one lookup a second. Cue remembers answers for a few hours. Where the data comes from is listed under [Sources](#sources).
 
 ## How albums are found
 
-Mediarium searches your indexers for **"Artist Album"** in the audio categories (3000 audio, 3010 MP3, 3040 lossless, 3050 other). For every result it reads the release name: artist, album, year, format (FLAC, ALAC, MP3, AAC), bitrate (320, V0, 256, 192), bit depth (16 or 24 bit) and source (WEB, CD, vinyl). Both common styles are understood:
+Cue searches your indexers for **"Artist Album"** in the audio categories (3000 audio, 3010 MP3, 3040 lossless, 3050 other). For every result it reads the release name: artist, album, year, format (FLAC, ALAC, MP3, AAC), bitrate (320, V0, 256, 192), bit depth (16 or 24 bit) and source (WEB, CD, vinyl). Both common styles are understood:
 
 - `Artist - Album (2020) [FLAC 24bit-96kHz]`
 - `Artist_Name-Album_Title-(CAT001)-WEB-2020-GROUP`
@@ -84,7 +84,7 @@ Wanted albums are searched on the same schedule as movies and shows (see [Automa
 
 ### Following an artist
 
-An artist is either **followed** or not (`monitored` on the artist). Following decides one thing: whether releases that come out **later** are picked up. Every 12 hours (while the music module is on) Mediarium checks the releases of each followed artist again. A new album is added and monitored, so it's searched for as soon as it's out, and an announced album that now has a release date gets it. Unfollowing an artist stops that. **It never changes the monitored switch of any album already listed.** Those keep deciding, one by one, what is searched for, so an unfollowed artist's monitored albums are still wanted.
+An artist is either **followed** or not (`monitored` on the artist). Following decides one thing: whether releases that come out **later** are picked up. Every 12 hours (while the music module is on) Cue checks the releases of each followed artist again. A new album is added and monitored, so it's searched for as soon as it's out, and an announced album that now has a release date gets it. Unfollowing an artist stops that. **It never changes the monitored switch of any album already listed.** Those keep deciding, one by one, what is searched for, so an unfollowed artist's monitored albums are still wanted.
 
 Administrators change it, and the quality profile, with `PUT /api/music/artists/{id}` and `{monitored?: bool, profileId?: number}` (`profileId` 0 puts the artist back on the default profile; a field left out changes nothing). The answer is the artist with its albums, like `GET /api/music/artists/{id}`.
 
@@ -105,7 +105,7 @@ MP3 is the default because it's the most common format. With the Lossless profil
 
 ## Where files go
 
-After the download is repaired and unpacked (as for movies), Mediarium finds the audio files (`.flac`, `.mp3`, `.m4a`, `.aac`, `.ogg`, `.opus`, `.alac`), matches them to the album's tracklist from the metadata service, and places them like this:
+After the download is repaired and unpacked (as for movies), Cue finds the audio files (`.flac`, `.mp3`, `.m4a`, `.aac`, `.ogg`, `.opus`, `.alac`), matches them to the album's tracklist from the metadata service, and places them like this:
 
 ```
 <music folder>/<Artist>/<Album> (<Year>)/01 - Title.flac        one disc
@@ -124,7 +124,7 @@ Administrators can make, change and delete music profiles, and choose which one 
 
 ### Tags and real quality
 
-Mediarium reads the tags inside audio files (ID3, Vorbis comments, MP4) with the [dhowden/tag](https://github.com/dhowden/tag) library: title, artist, album artist, album, track and disc number, year and whether a picture is embedded. **It only reads. Your files and their tags are never rewritten.** After a download the tags identify each file first (track and disc number, title), then the file and folder names fill in what the tags lack.
+Cue reads the tags inside audio files (ID3, Vorbis comments, MP4) with the [dhowden/tag](https://github.com/dhowden/tag) library: title, artist, album artist, album, track and disc number, year and whether a picture is embedded. **It only reads. Your files and their tags are never rewritten.** After a download the tags identify each file first (track and disc number, title), then the file and folder names fill in what the tags lack.
 
 The quality of the files is read from their headers, so it's what the files are and not what the release was called:
 
@@ -155,7 +155,7 @@ Albums appear on the calendar (`GET /api/calendar`, entries with `kind: "album"`
 
 ## Media servers
 
-After an album is imported, Plex, Jellyfin and Emby are asked to scan its folder, with the same short wait, path mapping and settings as for movies and shows ([media-servers.md](./media-servers.md)). Albums found by scanning an existing folder aren't announced, because the files were already there. Point your media server's music library at the same folder as Mediarium's music folder.
+After an album is imported, Plex, Jellyfin and Emby are asked to scan its folder, with the same short wait, path mapping and settings as for movies and shows ([media-servers.md](./media-servers.md)). Albums found by scanning an existing folder aren't announced, because the files were already there. Point your media server's music library at the same folder as Cue's music folder.
 
 ## Discover
 
@@ -181,13 +181,13 @@ Covers on these lists never come from an outside host. `coverUrl` is `/api/music
 
 ## Cover art
 
-Covers are the 500 pixel front cover of the album, fetched **once** per album and kept in the `music-covers` folder inside your config folder, so the app never loads images from an outside site and your browser only talks to Mediarium. `GET /api/music/albums/{id}/cover` and `GET /api/music/artists/{id}/cover` (any account) serve the image with cache headers so browsers keep it for a day. An artist's picture is the cover of its first album that has one. If there's no cover the answer is a plain 404, and Mediarium doesn't look again for a day.
+Covers are the 500 pixel front cover of the album, fetched **once** per album and kept in the `music-covers` folder inside your config folder, so the app never loads images from an outside site and your browser only talks to Cue. `GET /api/music/albums/{id}/cover` and `GET /api/music/artists/{id}/cover` (any account) serve the image with cache headers so browsers keep it for a day. An artist's picture is the cover of its first album that has one. If there's no cover the answer is a plain 404, and Cue doesn't look again for a day.
 
 When an album is imported after a download and its folder has no `cover.jpg`, `folder.jpg` or `cover.png`, the cover is saved there as `cover.jpg` (`cover.png` for a PNG) so Plex, Jellyfin and Navidrome show it too. **An existing cover is never replaced**, and a cover file already in the album folder is also what the cover routes serve. Scanning an existing collection writes nothing into your folders.
 
 ## Importing an existing collection
 
-If your music is already in the music folder as `Artist/Album/tracks` (a year in the album folder name helps: `Album (1997)`, `1997 - Album`), an administrator can have Mediarium find it. `POST /api/music/import/scan` reads the folder in the background, looks every artist and album up in the music database by name (and year), and registers what matches **where it is**. No file is moved, renamed or changed.
+If your music is already in the music folder as `Artist/Album/tracks` (a year in the album folder name helps: `Album (1997)`, `1997 - Album`), an administrator can have Cue find it. `POST /api/music/import/scan` reads the folder in the background, looks every artist and album up in the music database by name (and year), and registers what matches **where it is**. No file is moved, renamed or changed.
 
 - A matched artist is added to the library with its albums, EPs and singles. Only the albums found in your folder are monitored, so nothing else starts downloading.
 - A matched album is marked downloaded, its folder recorded and each track linked to its file.
@@ -204,7 +204,7 @@ Removing an artist (administrators) always cancels its downloads and deletes the
 
 ## Sources
 
-Album, artist and release information, cover art and the popular and new-release lists on Discover all come from free public music services. They ask apps to make at most one request per second and to say who they are, and Mediarium does both. The services are named and credited on the **About and credits** page in the app and in [LEGAL.md](./LEGAL.md).
+Album, artist and release information, cover art and the popular and new-release lists on Discover all come from free public music services. They ask apps to make at most one request per second and to say who they are, and Cue does both. The services are named and credited on the **About and credits** page in the app and in [LEGAL.md](./LEGAL.md).
 
 ## API
 

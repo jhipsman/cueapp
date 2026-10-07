@@ -21,7 +21,7 @@ import (
 // Watched status and cleanup rules (Settings > Connections > Media servers).
 // Both are off until an administrator switches them on.
 //
-// With "Read what's been watched" on, Mediarium asks Plex, Jellyfin and Emby
+// With "Read what's been watched" on, Cue asks Plex, Jellyfin and Emby
 // every six hours what has been played, and shows it in the library. With
 // cleanup rules on, once a day it deletes the files of titles that match
 // them (watched a while ago, or never watched long after being added), stops

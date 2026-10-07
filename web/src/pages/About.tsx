@@ -22,7 +22,7 @@ interface Credit {
   licence?: string
 }
 
-// Only things Mediarium really uses: services it talks to, code it is built
+// Only things Cue really uses: services it talks to, code it is built
 // with or runs, and the fonts and icons you see.
 const CREDITS: { group: string; items: Credit[] }[] = [
   {
@@ -43,7 +43,7 @@ const CREDITS: { group: string; items: Credit[] }[] = [
   {
     group: 'Software',
     items: [
-      { name: 'anacrolix/torrent', href: 'https://github.com/anacrolix/torrent', used: 'Torrent client', desc: 'The BitTorrent engine inside Mediarium: peers, DHT, magnet links and seeding.', licence: 'MPL-2.0' },
+      { name: 'anacrolix/torrent', href: 'https://github.com/anacrolix/torrent', used: 'Torrent client', desc: 'The BitTorrent engine inside Cue: peers, DHT, magnet links and seeding.', licence: 'MPL-2.0' },
       { name: 'wireguard-go and gVisor', href: 'https://www.wireguard.com/', used: 'Built-in VPN', desc: 'A WireGuard tunnel that runs inside the app, with no special container permissions.', licence: 'MIT, Apache-2.0' },
       { name: 'rardecode', href: 'https://github.com/nwaples/rardecode', used: 'Unpacking', desc: 'Opens RAR archives, including multi-part ones, from Usenet downloads.', licence: 'BSD-2-Clause' },
       { name: 'dhowden/tag', href: 'https://github.com/dhowden/tag', used: 'Music tags', desc: 'Reads artist, album and track information from music files.', licence: 'BSD-2-Clause' },
@@ -51,10 +51,10 @@ const CREDITS: { group: string; items: Credit[] }[] = [
       { name: 'par2cmdline', href: 'https://github.com/Parchive/par2cmdline', used: 'Repair', desc: 'Checks and repairs Usenet downloads that arrive with missing pieces. Included in the Docker image.', licence: 'GPL-2.0' },
       { name: 'SQLite (modernc.org/sqlite)', href: 'https://gitlab.com/cznic/sqlite', used: 'Database', desc: 'Stores your library, settings and history in one file, without any extra software.', licence: 'BSD-3-Clause' },
       { name: 'Go x/crypto and x/net', href: 'https://pkg.go.dev/golang.org/x/crypto', used: 'Security and web pages', desc: 'Password hashing, VPN keys, and reading torrent site pages.', licence: 'BSD-3-Clause' },
-      { name: 'epub.js', href: 'https://github.com/futurepress/epub.js', used: 'Ebook reader', desc: 'Draws EPUB books page by page in Mediarium Books.', licence: 'BSD-2-Clause' },
+      { name: 'epub.js', href: 'https://github.com/futurepress/epub.js', used: 'Ebook reader', desc: 'Draws EPUB books page by page in Cue Books.', licence: 'BSD-2-Clause' },
       { name: 'go-yaml', href: 'https://github.com/go-yaml/yaml', used: 'Site definitions', desc: 'Reads the torrent site definition files.', licence: 'MIT, Apache-2.0' },
       { name: 'React and React Router', href: 'https://react.dev/', used: 'Web interface', desc: "The screens you're looking at.", licence: 'MIT' },
-      { name: 'FlareSolverr', href: 'https://github.com/FlareSolverr/FlareSolverr', used: 'Optional helper', desc: 'Runs next to Mediarium if you add it, to get past Cloudflare checks on some sites.', licence: 'MIT' },
+      { name: 'FlareSolverr', href: 'https://github.com/FlareSolverr/FlareSolverr', used: 'Optional helper', desc: 'Runs next to Cue if you add it, to get past Cloudflare checks on some sites.', licence: 'MIT' },
     ],
   },
   {
@@ -66,7 +66,7 @@ const CREDITS: { group: string; items: Credit[] }[] = [
   },
 ]
 
-// What Mediarium is, where it comes from, and the credits and legal wording
+// What Cue is, where it comes from, and the credits and legal wording
 // that the services it uses ask for.
 export default function About() {
   const [version, setVersion] = useState('')
@@ -81,7 +81,7 @@ export default function About() {
         <div>
           <h1 style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
             <BrandMark className="brand-mark" />
-            <span>Mediarium</span>
+            <span>Cue</span>
           </h1>
           <p>One app that finds, downloads and organises your movies, shows and music, and keeps them up to date. Self-hosted, open source, and it runs as a single container.</p>
         </div>
@@ -127,9 +127,9 @@ export default function About() {
         </div>
         <div className="legal-cols">
           <div className="legal-col">
-            <h3>What Mediarium is</h3>
+            <h3>What Cue is</h3>
             <p>
-              Mediarium is a general-purpose automation and organising tool, provided for educational and personal use. It does not host, index, link to or supply any content, and it is not affiliated with TMDB, Trakt, OpenSubtitles or any indexer, Usenet or torrent provider.
+              Cue is a general-purpose automation and organising tool, provided for educational and personal use. It does not host, index, link to or supply any content, and it is not affiliated with TMDB, Trakt, OpenSubtitles or any indexer, Usenet or torrent provider.
             </p>
           </div>
           <div className="legal-col">
@@ -160,7 +160,7 @@ export default function About() {
       <div className="about-stack" style={{ marginTop: 22 }}>
         <fieldset className="group folders">
           <legend>
-            <Icon name="heart" size={14} /> Credits: what Mediarium is built with
+            <Icon name="heart" size={14} /> Credits: what Cue is built with
           </legend>
           <div className="credit-cols">
           {CREDITS.map((g) => (

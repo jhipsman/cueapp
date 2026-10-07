@@ -38,7 +38,7 @@ type Config struct {
 	AllowedOrigins string
 
 	// BundledFlareSolverr is true in the "-full" image, which runs FlareSolverr
-	// next to Mediarium on 127.0.0.1:8191. The image sets it; users do not.
+	// next to Cue on 127.0.0.1:8191. The image sets it; users do not.
 	BundledFlareSolverr bool
 
 	// PauseAutomation is the safe mode: MEDIARIUM_PAUSE_AUTOMATION=1 starts the
@@ -54,7 +54,7 @@ type Config struct {
 	// install. The image sets it; users do not.
 	ImageVersion string
 
-	// Supervised is true when something restarts Mediarium after it exits, so
+	// Supervised is true when something restarts Cue after it exits, so
 	// the Restart button can work. Docker (with a restart policy), systemd and
 	// launchd are recognised by themselves; MEDIARIUM_SUPERVISED=1 says so for
 	// any other service manager.

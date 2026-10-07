@@ -33,7 +33,7 @@ test('a busy port is called out', () => {
   const s = portStatus({ ...base, state: 'ready', listening: true, activePort: 41234, incomingSeen: false })
   assert.equal(s?.title, 'Listening on port 41234.')
   assert.equal(s?.tone, 'warn')
-  assert.match(s?.text ?? '', /Port 58264 was already in use, so Mediarium is using 41234 instead/)
+  assert.match(s?.text ?? '', /Port 58264 was already in use, so Cue is using 41234 instead/)
 })
 
 test('with a VPN on, the port is not used', () => {

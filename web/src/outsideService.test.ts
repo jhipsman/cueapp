@@ -22,7 +22,7 @@ test('reads that wait on an outside service are named', () => {
   for (const [path, name] of rows) assert.equal(outsideService(path), name, path)
 })
 
-test("Mediarium's own reads are not", () => {
+test("Cue's own reads are not", () => {
   for (const path of ['/queue', '/movies', '/movies/12', '/books', '/books/3', '/books/3/progress?format=ebook', '/books/progress', '/dashboard', '/music/artists', '/searchable', '/subtitles/quota']) {
     assert.equal(outsideService(path), '', path)
   }

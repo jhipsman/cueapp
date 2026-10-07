@@ -60,7 +60,7 @@ func (f *fakeGitHub) count() int {
 func releaseJSON(items ...string) string { return "[" + strings.Join(items, ",") + "]" }
 
 func oneRelease(tag string, pre bool, body string) string {
-	b, _ := json.Marshal(map[string]any{"tag_name": tag, "name": "Mediarium " + tag, "body": body, "prerelease": pre, "draft": false, "published_at": "2026-10-01T10:00:00Z"})
+	b, _ := json.Marshal(map[string]any{"tag_name": tag, "name": "Cue " + tag, "body": body, "prerelease": pre, "draft": false, "published_at": "2026-10-01T10:00:00Z"})
 	return string(b)
 }
 
@@ -247,7 +247,7 @@ func TestNewVersionMessageIsSentOncePerVersion(t *testing.T) {
 
 	e.server.TestUpdateTick(ctx, now)
 	waitForDeliveries(t, rec, 1)
-	if !strings.Contains(rec.bodies[0], `"event":"update"`) || !strings.Contains(rec.bodies[0], "Mediarium 1.2.0 is available") || !strings.Contains(rec.bodies[0], "releases/tag/v1.2.0") {
+	if !strings.Contains(rec.bodies[0], `"event":"update"`) || !strings.Contains(rec.bodies[0], "Cue 1.2.0 is available") || !strings.Contains(rec.bodies[0], "releases/tag/v1.2.0") {
 		t.Fatalf("message = %s", rec.bodies[0])
 	}
 	// The same version found again, on later days: no second message.

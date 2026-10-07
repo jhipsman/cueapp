@@ -50,8 +50,8 @@ export default function ProxySignIn() {
       </legend>
       <p style={{ color: 'var(--text-dim)', marginTop: 0 }}>
         Only for a proxy that asks for the login itself, such as Authelia, Authentik or Cloudflare Access. It can pass the signed-in user name on in a
-        header, and Mediarium signs that account in without its own sign-in page. A plain reverse proxy (like the one on a Synology) doesn&apos;t need
-        this: leave it off. Mediarium only believes the header when it comes straight from your proxy's address, and the name has to match an account here.{' '}
+        header, and Cue signs that account in without its own sign-in page. A plain reverse proxy (like the one on a Synology) doesn&apos;t need
+        this: leave it off. Cue only believes the header when it comes straight from your proxy's address, and the name has to match an account here.{' '}
         <a href={`${DOCS_URL}/security.md#sign-in-through-your-reverse-proxy`} target="_blank" rel="noreferrer">
           How to set it up
         </a>
@@ -81,12 +81,12 @@ export default function ProxySignIn() {
       {state && (
         <p className="hint" style={{ marginBottom: 0 }}>
           {!state.viaTrustedProxy
-            ? `This page came from ${state.from}${on ? ", which isn't the proxy address above, so the header is ignored for you right now" : ''}. Open Mediarium through your proxy to see its address here.`
+            ? `This page came from ${state.from}${on ? ", which isn't the proxy address above, so the header is ignored for you right now" : ''}. Open Cue through your proxy to see its address here.`
             : on
               ? state.seen
                 ? `Your proxy sent ${state.header}: ${state.seen}.`
                 : `Your proxy did not send ${state.header} with this page.`
-              : 'Off. Everyone signs in with their Mediarium password.'}
+              : 'Off. Everyone signs in with their Cue password.'}
         </p>
       )}
       {error && <p className="error-text">{error}</p>}

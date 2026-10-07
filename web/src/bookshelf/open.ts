@@ -1,4 +1,4 @@
-// Opening Mediarium Books: in a window of its own, like a separate app. When
+// Opening Cue Books: in a window of its own, like a separate app. When
 // the browser won't open a window (a blocked pop-up, or a phone), the page
 // goes there instead.
 export function openBookApp(path = '/bookshelf') {

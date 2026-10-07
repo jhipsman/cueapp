@@ -64,7 +64,7 @@ func (k *releaseKit) listJSON() string {
 	for _, n := range k.assets {
 		assets = append(assets, map[string]any{"name": n, "size": 100})
 	}
-	b, _ := json.Marshal(map[string]any{"tag_name": "v" + k.version, "name": "Mediarium " + k.version, "body": "notes", "assets": assets, "published_at": "2026-10-01T10:00:00Z"})
+	b, _ := json.Marshal(map[string]any{"tag_name": "v" + k.version, "name": "Cue " + k.version, "body": "notes", "assets": assets, "published_at": "2026-10-01T10:00:00Z"})
 	return "[" + string(b) + "]"
 }
 
@@ -219,7 +219,7 @@ func TestUpdateNowRefusals(t *testing.T) {
 			k.files[updatecheck.SumsName] = []byte(sumOf(buf.Bytes()) + "  " + archiveNameFor("9.9.9") + "\n")
 			k.files[updatecheck.SigName] = []byte(base64.StdEncoding.EncodeToString(ed25519.Sign(priv, k.files[updatecheck.SumsName])))
 			return k
-		}, "", "doesn't contain Mediarium", nil},
+		}, "", "doesn't contain Cue", nil},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {

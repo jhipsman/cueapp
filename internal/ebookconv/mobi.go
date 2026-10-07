@@ -1,5 +1,5 @@
 // Package ebookconv turns Kindle books (MOBI, AZW, AZW3) into EPUB, so
-// Mediarium's own reader, which shows EPUB, can open them. It reads DRM-free
+// Cue's own reader, which shows EPUB, can open them. It reads DRM-free
 // files only. Older MOBI files keep their text as one HTML document that is
 // split at its page breaks; KF8 files (AZW3, and the newer half of "both"
 // MOBI files) are rebuilt from their skeleton and fragment index, the way the
@@ -18,7 +18,7 @@ import (
 var (
 	ErrNotMobi     = errors.New("not a MOBI or AZW3 book")
 	ErrDRM         = errors.New("the book is locked with DRM")
-	ErrUnsupported = errors.New("this MOBI file uses a compression Mediarium can't read")
+	ErrUnsupported = errors.New("this MOBI file uses a compression Cue can't read")
 )
 
 // pdb is a Palm database: the container of every MOBI-family book.

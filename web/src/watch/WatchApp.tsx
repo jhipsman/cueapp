@@ -8,8 +8,8 @@ import TitlePage from './TitlePage'
 import PlayerPage from './PlayerPage'
 import './watch.css'
 
-// Watch: the streaming side of Mediarium. Browse anything TMDB knows, press
-// Play, and it streams from Premiumize. It has no Mediarium sidebar: the
+// Watch: the streaming side of Cue. Browse anything TMDB knows, press
+// Play, and it streams from Premiumize. It has no Cue sidebar: the
 // library manager is one click away ("Manage").
 export default function WatchApp() {
   useEffect(() => {
@@ -76,7 +76,7 @@ function TopBar() {
   return (
     <nav className={`wx-nav${solid ? ' solid' : ''}`}>
       <Link to="/watch" className="wx-brand">
-        Mediarium
+        Cue
       </Link>
       <div className="wx-links">
         <NavLink to="/watch" end>

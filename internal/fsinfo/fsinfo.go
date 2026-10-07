@@ -1,4 +1,4 @@
-// Package fsinfo inspects the folders Mediarium is pointed at (movies, TV,
+// Package fsinfo inspects the folders Cue is pointed at (movies, TV,
 // downloads): do they exist, can the app write to them, how much room is
 // left, and — when running in Docker — are they actually folders mapped in
 // from the host rather than part of the container's own disposable layer.
@@ -81,7 +81,7 @@ func Inspect(path string) Folder {
 	f.Exists, f.IsDir = true, true
 
 	if err := CheckWritable(path); err != nil {
-		f.Warnings = append(f.Warnings, "Mediarium can't write to this folder. Check its permissions, or set the PUID and PGID to a user that owns it.")
+		f.Warnings = append(f.Warnings, "Cue can't write to this folder. Check its permissions, or set the PUID and PGID to a user that owns it.")
 	} else {
 		f.Writable = true
 	}

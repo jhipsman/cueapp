@@ -1,6 +1,6 @@
 # VPN protection
 
-Mediarium has a WireGuard VPN client built in, for torrent traffic. It runs inside the app, so the container needs no extra privileges: no `NET_ADMIN` and no `/dev/net/tun`.
+Cue has a WireGuard VPN client built in, for torrent traffic. It runs inside the app, so the container needs no extra privileges: no `NET_ADMIN` and no `/dev/net/tun`.
 
 Find it under **Settings > Downloading > VPN protection**. It's optional: nothing goes through a VPN until you add a connection and activate it. From then on, all torrent traffic goes through it while it's connected.
 
@@ -12,7 +12,7 @@ Find it under **Settings > Downloading > VPN protection**. It's optional: nothin
 ## Add a connection
 
 1. Pick your provider in **Add a VPN connection**: Mullvad, ProtonVPN, Private Internet Access, Surfshark, NordVPN, Windscribe, or **Custom / other provider**. The list only changes the hint and the link shown. Every provider ends up with the same fields, and a WireGuard server of your own works too.
-2. Get your WireGuard details from your provider, using the link and short notes on the page. Mediarium never asks for your VPN account login. You copy the values from your provider's own page.
+2. Get your WireGuard details from your provider, using the link and short notes on the page. Cue never asks for your VPN account login. You copy the values from your provider's own page.
 3. The quickest way: paste your whole WireGuard `.conf` file into **Paste your .conf file**, or press **Or choose the file**. Every field below is filled in from it, including the preshared key, DNS servers and allowed IPs. Only the first `[Peer]` is used. Or fill in the form by hand:
 
 | Field | What to enter |
@@ -41,7 +41,7 @@ The status only says **Connected** while the tunnel is up and the VPN server has
 | **Disconnected (label)** | The connection is switched on, but not working. The reason is shown under the status, for example that the server address could not be found or that the server stopped answering. |
 | **Disconnected** | No connection is switched on. |
 
-After a restart, Mediarium switches the connection that was on back on by itself, and keeps trying (every few seconds at first, then every minute) if the network is not ready yet. While a switched-on connection is not working, its row shows **Reconnect** instead of **Activate**, so you can also retry by hand. **Disconnect** turns it off for good.
+After a restart, Cue switches the connection that was on back on by itself, and keeps trying (every few seconds at first, then every minute) if the network is not ready yet. While a switched-on connection is not working, its row shows **Reconnect** instead of **Activate**, so you can also retry by hand. **Disconnect** turns it off for good.
 
 While a connection is switched on but not working, torrents wait instead of connecting directly, whatever the kill switch says, so your home address is never shown by accident. Press **Disconnect** if you would rather download without the VPN. Removing the connection that is switched on also disconnects it.
 

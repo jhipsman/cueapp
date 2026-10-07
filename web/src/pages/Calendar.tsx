@@ -118,7 +118,7 @@ function FeedPanel() {
               Turn it off
             </button>
           </div>
-          {!window.location.protocol.startsWith('https') && <p className="field-hint">Calendar apps on the internet can only reach this address if Mediarium is reachable from outside, for example through your reverse proxy.</p>}
+          {!window.location.protocol.startsWith('https') && <p className="field-hint">Calendar apps on the internet can only reach this address if Cue is reachable from outside, for example through your reverse proxy.</p>}
         </>
       ) : (
         <>

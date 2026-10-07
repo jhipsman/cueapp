@@ -1,8 +1,8 @@
-# Contributing to Mediarium
+# Contributing to Cue
 
 Thanks for thinking about helping. Bug reports, testing on your NAS, documentation fixes and code are all welcome.
 
-Mediarium is licensed under AGPL-3.0. By submitting a change you agree that it is licensed under the same terms as the rest of the project.
+Cue is licensed under AGPL-3.0. By submitting a change you agree that it is licensed under the same terms as the rest of the project.
 
 ## Ways to help without writing code
 
@@ -86,7 +86,7 @@ Add `--load` with a single `--platform` to get an image in your local `docker im
 
 ## Versions and releases
 
-Mediarium uses [Semantic Versioning](https://semver.org/). The current version is in [`VERSION`](../VERSION); contributors do not change it, maintainers do when they cut a release. See [docs/RELEASING.md](../docs/RELEASING.md).
+Cue uses [Semantic Versioning](https://semver.org/). The current version is in [`VERSION`](../VERSION); contributors do not change it, maintainers do when they cut a release. See [docs/RELEASING.md](../docs/RELEASING.md).
 
 ## Code of conduct
 

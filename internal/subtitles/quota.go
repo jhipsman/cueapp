@@ -27,7 +27,7 @@ type QuotaReport struct {
 	ObservedAt  time.Time
 }
 
-// QuotaState is Mediarium's best knowledge of today's download allowance.
+// QuotaState is Cue's best knowledge of today's download allowance.
 type QuotaState struct {
 	Limit     int
 	Used      int
@@ -44,7 +44,7 @@ const (
 )
 
 // ComputeQuota works out the allowance now. downloads are the times of the
-// downloads Mediarium made in the last QuotaWindow; report is the last figure
+// downloads Cue made in the last QuotaWindow; report is the last figure
 // OpenSubtitles gave (nil when never). A report still describes the current
 // window while its reset time (or, when none was given, 24 hours after it was
 // observed) lies ahead; downloads made after it are subtracted. Otherwise the
@@ -96,7 +96,7 @@ func ComputeQuota(now time.Time, hasAccount bool, report *QuotaReport, downloads
 	return st
 }
 
-// QuotaRepo remembers the downloads Mediarium made and the last quota report.
+// QuotaRepo remembers the downloads Cue made and the last quota report.
 type QuotaRepo struct {
 	db *sql.DB
 }

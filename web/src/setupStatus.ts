@@ -10,7 +10,7 @@ export interface SetupFacts {
   torrentsReady: boolean // torrent client on and a torrent indexer enabled
   mediaServers: number
   // Folders (of the kinds of media that are switched on) that are missing or
-  // that Mediarium cannot write to.
+  // that Cue cannot write to.
   foldersBroken: string[]
 }
 
@@ -42,7 +42,7 @@ export function setupGaps(f: SetupFacts): SetupGap[] {
     gaps.push({
       key: 'sources',
       title: 'Add an indexer',
-      detail: "Indexers are the sites Mediarium searches for releases. Without one it can't find anything.",
+      detail: "Indexers are the sites Cue searches for releases. Without one it can't find anything.",
       to: '/settings/indexers',
       button: 'Add an indexer',
     })
@@ -78,7 +78,7 @@ export function setupGaps(f: SetupFacts): SetupGap[] {
   return gaps
 }
 
-// The gaps that stop Mediarium from working. A missing media server is not one.
+// The gaps that stop Cue from working. A missing media server is not one.
 export function requiredGaps(gaps: SetupGap[]): SetupGap[] {
   return gaps.filter((g) => !g.optional)
 }

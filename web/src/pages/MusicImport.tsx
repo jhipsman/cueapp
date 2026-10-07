@@ -34,7 +34,7 @@ function ResultRow({ r }: { r: MusicImportResult }) {
   )
 }
 
-// Importing a music collection you already have: Mediarium reads the music
+// Importing a music collection you already have: Cue reads the music
 // folder as Artist/Album, looks each one up on MusicBrainz, and registers what
 // it finds where it is. No file is moved, renamed or changed.
 export default function MusicImport() {
@@ -105,7 +105,7 @@ export default function MusicImport() {
         <div className="mi-start-text">
           <h2>Find the music you already have</h2>
           <p>
-            Mediarium reads your music folder, expecting <code>Artist/Album/tracks</code> (a year in the album folder name helps, like <code>Album (1997)</code>), looks up each artist and album, and adds them <strong>right where they are</strong>. Nothing is moved, renamed or changed, and only the albums in your folder are monitored.
+            Cue reads your music folder, expecting <code>Artist/Album/tracks</code> (a year in the album folder name helps, like <code>Album (1997)</code>), looks up each artist and album, and adds them <strong>right where they are</strong>. Nothing is moved, renamed or changed, and only the albums in your folder are monitored.
           </p>
           <p className="mi-folder-line">
             <Icon name="folder" size={15} /> Music folder: <code>{job?.root || root || '(not set yet)'}</code>{' '}

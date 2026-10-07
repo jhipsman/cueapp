@@ -4,7 +4,7 @@ import BrandMark from './BrandMark'
 import Icon, { type IconName } from './Icon'
 import type { ItemState } from './state'
 
-// Shown when a title has no poster (or its image fails to load): the Mediarium
+// Shown when a title has no poster (or its image fails to load): the Cue
 // mark on a soft gradient, with no text, so every card stays the same shape.
 export function PosterFallback() {
   return (

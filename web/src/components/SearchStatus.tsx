@@ -31,7 +31,7 @@ export default function SearchStatus({ kind, id }: { kind: 'movie' | 'series' | 
         <p>{last.message.replace(/^Searched: /, '')}</p>
         {nothing && (
           <p className="search-status-hint">
-            Mediarium keeps looking and grabs it when a release you accept turns up.
+            Cue keeps looking and grabs it when a release you accept turns up.
             {cinema && " Only cinema recordings exist so far, which your quality profile doesn't accept."}
             {isAdmin(user) && (
               <>

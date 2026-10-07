@@ -27,7 +27,7 @@ import (
 // release apart from a problem with the local setup.
 var (
 	// ErrPasswordProtected: the archive (or a file inside it) is encrypted.
-	// Mediarium never has a password, so the release is unusable.
+	// Cue never has a password, so the release is unusable.
 	ErrPasswordProtected = errors.New("archive is password protected")
 	// ErrUnsafeArchive: an entry would land outside the destination folder
 	// (path traversal, absolute path, or a link pointing outside).
@@ -410,7 +410,7 @@ func (e *Extractor) extractZip(archivePath, destDir string) error {
 
 // extract7z shells out to 7z; only .7z archives need it.
 //
-// The external tool is the one place where Mediarium does not control what is
+// The external tool is the one place where Cue does not control what is
 // written, and 7z can recreate the symbolic links stored in an archive. So the
 // archive is first listed and refused if it names a link, a special file, an
 // unsafe path or more data than allowed; then it is unpacked into a private

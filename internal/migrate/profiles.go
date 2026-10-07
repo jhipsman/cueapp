@@ -8,13 +8,13 @@ import (
 	"github.com/rdborg/mediarium/internal/quality"
 )
 
-// ProfileMapping says which Mediarium quality profile a Radarr/Sonarr
+// ProfileMapping says which Cue quality profile a Radarr/Sonarr
 // profile's titles get.
 type ProfileMapping struct {
 	App         string `json:"app"` // "radarr" or "sonarr"
 	ArrID       int    `json:"arrId"`
 	ArrName     string `json:"arrName"`
-	ProfileID   int64  `json:"profileId"`   // 0 = Mediarium's default profile
+	ProfileID   int64  `json:"profileId"`   // 0 = Cue's default profile
 	ProfileName string `json:"profileName"` // the profile's name, or "Default (<name>)"
 	How         string `json:"how"`         // why this one, in plain words
 	Titles      int    `json:"titles"`      // titles using the arr profile
@@ -101,7 +101,7 @@ func closestPreset(p arrProfile) (key, why string) {
 	}
 }
 
-// profileChoice resolves every arr profile to a Mediarium profile.
+// profileChoice resolves every arr profile to a Cue profile.
 type profileChoice struct {
 	byArrID map[int]ProfileMapping
 }
@@ -109,7 +109,7 @@ type profileChoice struct {
 func (pc profileChoice) forArr(id int) ProfileMapping { return pc.byArrID[id] }
 
 // mapProfiles maps an app's profiles: an explicit choice in override (by
-// arr profile name, to a Mediarium profile id) wins; otherwise the preset
+// arr profile name, to a Cue profile id) wins; otherwise the preset
 // with the closest resolution, found by its built-in name among stored
 // profiles; otherwise the default profile.
 func mapProfiles(app string, arr []arrProfile, stored []quality.Profile, defaultName string, override map[string]int64, titles map[int]int) (profileChoice, []ProfileMapping) {
@@ -169,10 +169,10 @@ func lookupOverride(override map[string]int64, name string) (int64, bool) {
 	return 0, false
 }
 
-// tierFromArr turns a Radarr/Sonarr quality name into Mediarium's tier of
-// the same name (Mediarium's ladder uses the same names), for files whose
+// tierFromArr turns a Radarr/Sonarr quality name into Cue's tier of
+// the same name (Cue's ladder uses the same names), for files whose
 // own name says nothing about their quality. WEBRip counts as WEBDL, as it
-// does in Mediarium.
+// does in Cue.
 func tierFromArr(name string) quality.Tier {
 	name = strings.TrimSpace(name)
 	if strings.HasPrefix(name, "WEBRip-") {

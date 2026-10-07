@@ -141,7 +141,7 @@ func (s *PushoverSender) Send(ctx context.Context, ev Event) error {
 		}
 		body["message"], body["html"] = msg.String(), 1
 		if u := httpsURL(ev.LinkURL); u != "" {
-			body["url"], body["url_title"] = u, "Open in Mediarium"
+			body["url"], body["url_title"] = u, "Open in Cue"
 		}
 	}
 	return doJSONPost(ctx, s.Client, s.baseURL+"/1/messages.json", body)
@@ -186,9 +186,9 @@ func slackBlocks(ev Event) map[string]any {
 	}
 	if u := httpsURL(ev.LinkURL); u != "" {
 		blocks = append(blocks, map[string]any{"type": "actions", "elements": []any{
-			map[string]any{"type": "button", "text": map[string]any{"type": "plain_text", "text": "Open in Mediarium"}, "url": u},
+			map[string]any{"type": "button", "text": map[string]any{"type": "plain_text", "text": "Open in Cue"}, "url": u},
 		}})
 	}
-	blocks = append(blocks, map[string]any{"type": "context", "elements": []any{map[string]any{"type": "mrkdwn", "text": "Mediarium"}}})
+	blocks = append(blocks, map[string]any{"type": "context", "elements": []any{map[string]any{"type": "mrkdwn", "text": "Cue"}}})
 	return map[string]any{"text": ev.Title, "blocks": blocks}
 }

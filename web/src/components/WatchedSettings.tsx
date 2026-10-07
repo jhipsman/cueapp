@@ -77,7 +77,7 @@ export default function WatchedSettings() {
           <Icon name="eye" size={14} /> What&apos;s been watched
         </legend>
         <p style={{ color: 'var(--text-dim)', marginTop: 0 }}>
-          Mediarium can ask Plex, Jellyfin and Emby what has been played, every six hours, and show it on title pages. Plex tells it what the account
+          Cue can ask Plex, Jellyfin and Emby what has been played, every six hours, and show it on title pages. Plex tells it what the account
           connected above has watched; Jellyfin and Emby tell it about all their users. Nothing is changed on your media servers.
         </p>
         <Switch
@@ -88,7 +88,7 @@ export default function WatchedSettings() {
               const s = await api.putWatchedSettings({ sync: v })
               setSt(s)
               setRules(s.cleanup)
-              toast.success(v ? 'Mediarium reads what has been watched now and every six hours.' : 'No longer reading what has been watched. Cleanup is off too.')
+              toast.success(v ? 'Cue reads what has been watched now and every six hours.' : 'No longer reading what has been watched. Cleanup is off too.')
               if (v) {
                 await api.syncWatched()
                 load()
@@ -129,7 +129,7 @@ export default function WatchedSettings() {
           </legend>
           <p style={{ color: 'var(--text-dim)', marginTop: 0 }}>
             Free up space by removing what has been watched. Once a day the files of titles matching a rule are deleted (into the recycle bin when it is
-            on), the title stays in your library, and Mediarium stops looking for it. Every removal is listed under Activity. Check the preview before
+            on), the title stays in your library, and Cue stops looking for it. Every removal is listed under Activity. Check the preview before
             you switch it on.
           </p>
           <DaysRule
@@ -193,7 +193,7 @@ export default function WatchedSettings() {
               disabled={!!busy || !anyRule}
               onChange={(v) =>
                 void run('enable', async () => {
-                  if (v && !(await confirm({ title: 'Switch cleanup on?', body: 'Once a day Mediarium deletes the files of titles that match these rules. Check the preview first.', confirmLabel: 'Switch on', danger: true })))
+                  if (v && !(await confirm({ title: 'Switch cleanup on?', body: 'Once a day Cue deletes the files of titles that match these rules. Check the preview first.', confirmLabel: 'Switch on', danger: true })))
                     return
                   const s = await api.putWatchedSettings({ cleanup: { ...draft(), enabled: v } })
                   setSt(s)

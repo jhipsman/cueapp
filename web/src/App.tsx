@@ -46,7 +46,7 @@ import SettingsLayout from './pages/settings/SettingsLayout'
 import SubtitleSettings from './pages/settings/SubtitleSettings'
 import VPNSettings from './pages/settings/VPNSettings'
 
-// Mediarium Books (reader and player), an app of its own, loaded when opened.
+// Cue Books (reader and player), an app of its own, loaded when opened.
 const BookshelfApp = lazy(() => import('./bookshelf/BookshelfApp'))
 const WatchApp = lazy(() => import('./watch/WatchApp'))
 
@@ -65,13 +65,13 @@ function Gate() {
     if (slow) {
       return (
         <Splash
-          label="Mediarium is slow to answer"
+          label="Cue is slow to answer"
           hint="It may be busy with a download or an import. It keeps trying by itself."
           onRetry={() => void refresh()}
         />
       )
     }
-    return <Splash label={offline ? "Reconnecting to Mediarium" : "Loading"} />
+    return <Splash label={offline ? "Reconnecting to Cue" : "Loading"} />
   }
   if (firstRunNeeded) {
     return <Onboarding />

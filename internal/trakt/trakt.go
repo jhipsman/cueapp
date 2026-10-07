@@ -91,7 +91,7 @@ func (c *Client) Ping(ctx context.Context) error {
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("trakt-api-version", "2")
 	req.Header.Set("trakt-api-key", c.clientID)
-	req.Header.Set("User-Agent", "Mediarium (+https://github.com/rdborg/Mediarium)")
+	req.Header.Set("User-Agent", "Cue (+https://github.com/rdborg/Mediarium)")
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return fmt.Errorf("trakt request: %w", err)
@@ -137,7 +137,7 @@ func ParseListURL(rawURL string) (user, listID string, err error) {
 	if parts[1] == "" || parts[3] == "" {
 		return "", "", fmt.Errorf("not a Trakt list URL : the user or list is missing in %q", rawURL)
 	}
-	// The two names become parts of a request Mediarium makes with its own
+	// The two names become parts of a request Cue makes with its own
 	// Trakt key: only what a Trakt name can be, so "users/../..." cannot reach
 	// some other part of the Trakt API.
 	if !slugRe.MatchString(parts[1]) || !slugRe.MatchString(parts[3]) {
@@ -182,7 +182,7 @@ func (c *Client) ListMovies(ctx context.Context, user, listID string) ([]ListIte
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("trakt-api-version", "2")
 	req.Header.Set("trakt-api-key", c.clientID)
-	req.Header.Set("User-Agent", "Mediarium (+https://github.com/rdborg/Mediarium)")
+	req.Header.Set("User-Agent", "Cue (+https://github.com/rdborg/Mediarium)")
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {

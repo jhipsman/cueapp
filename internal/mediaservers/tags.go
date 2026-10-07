@@ -9,10 +9,10 @@ import (
 	"strings"
 )
 
-// Tags from Mediarium ("Kids", "4K") show up on the media servers as
+// Tags from Cue ("Kids", "4K") show up on the media servers as
 // collections, which is how people browse and filter there. Plex gets them
 // as the title's collection field; Jellyfin and Emby as collections (box
-// sets) named after the tag. Only the tags Mediarium is told to add or remove
+// sets) named after the tag. Only the tags Cue is told to add or remove
 // are touched: collections made by hand are left alone.
 
 // SyncTags adds the title (found by its TMDB id) to the collections in add

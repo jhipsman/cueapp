@@ -13,7 +13,7 @@ const FIELD: Record<KeyService, 'tmdbApiKey' | 'openSubtitlesApiKey' | 'traktCli
   trakt: 'traktClientId',
 }
 
-// One card per third-party service Mediarium can use: what it is, what stops
+// One card per third-party service Cue can use: what it is, what stops
 // working without it, and how to get the key. On an official release that
 // ships its own key the card just says so and asks for nothing.
 export default function ServiceKeyCard({
@@ -125,7 +125,7 @@ export default function ServiceKeyCard({
                 </>
               ) : (
                 <>
-                  Connected with the key that comes with Mediarium. If you hit its shared limit, use your own free key below.
+                  Connected with the key that comes with Cue. If you hit its shared limit, use your own free key below.
                 </>
               )}
             </div>
@@ -156,7 +156,7 @@ export default function ServiceKeyCard({
             </details>
           </>
         ) : (
-          <div className="notice notice-info">This version of Mediarium includes a key for {title}.</div>
+          <div className="notice notice-info">This version of Cue includes a key for {title}.</div>
         )
       ) : (
         <>

@@ -90,7 +90,7 @@ export default function MusicLibrary({
     const usage = await api.artistDiskUsage(a.id).catch(() => null)
     const answer = await confirm({
       title: `Remove ${a.name} from your library?`,
-      body: <p>Mediarium stops tracking this artist and cancels anything still downloading for them. You can add them back any time.</p>,
+      body: <p>Cue stops tracking this artist and cancels anything still downloading for them. You can add them back any time.</p>,
       confirmLabel: 'Remove',
       danger: true,
       option: removeOption('artist', usage),
@@ -155,7 +155,7 @@ export default function MusicLibrary({
             <strong>{nameList(chosen.map((a) => a.name))}</strong>
           </p>
           <p>
-            Mediarium stops tracking {n === 1 ? 'them' : `all ${n}`} and cancels anything still downloading for them. You can add them back any time.
+            Cue stops tracking {n === 1 ? 'them' : `all ${n}`} and cancels anything still downloading for them. You can add them back any time.
           </p>
           <p>
             <strong>Your music files stay where they are</strong> unless you tick the box below.

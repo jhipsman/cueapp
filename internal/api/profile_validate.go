@@ -34,7 +34,7 @@ func checkProfileBasics(name string, allowed []string, cutoff string, validTier 
 	seen := map[string]bool{}
 	for _, t := range allowed {
 		if !validTier(t) {
-			return fmt.Sprintf("%q isn't a quality Mediarium knows. Pick from the list.", t)
+			return fmt.Sprintf("%q isn't a quality Cue knows. Pick from the list.", t)
 		}
 		seen[t] = true
 	}

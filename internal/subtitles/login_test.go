@@ -78,7 +78,7 @@ func TestDownloadWithAccountLogsInOnceAndSendsTheToken(t *testing.T) {
 	if got := f.lastAuth.Load().(string); got != "Bearer token-1" {
 		t.Fatalf("expected the login token on the download, got %q", got)
 	}
-	if got := f.lastUA.Load().(string); got != "Mediarium v1" {
+	if got := f.lastUA.Load().(string); got != "Cue v1" {
 		t.Fatalf("OpenSubtitles requires a User-Agent, got %q", got)
 	}
 }

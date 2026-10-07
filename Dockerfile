@@ -62,19 +62,19 @@ ARG TRAKT_CLIENT_ID=
 RUN set -e; \
     v="${VERSION}"; \
     if [ -z "$v" ] || [ "$v" = "dev" ]; then v="$(tr -d ' \r\n' < VERSION)"; fi; \
-    echo "Building Mediarium version $v"; \
+    echo "Building Cue version $v"; \
     CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} \
     go build -trimpath -ldflags="-s -w -X main.version=${v} -X main.defaultTMDBAPIKey=${TMDB_API_KEY} -X main.defaultOpenSubtitlesAPIKey=${OPENSUBTITLES_API_KEY} -X main.defaultTraktClientID=${TRAKT_CLIENT_ID}" -o /out/app ./cmd/app
 
-# ---- "Full" image: Mediarium with the Cloudflare helper built in ----
+# ---- "Full" image: Cue with the Cloudflare helper built in ----
 # Build it with `--target full`. The plain build (no --target) ends at the
 # small Alpine stage below and stays exactly as it was. This one starts from the
 # official FlareSolverr image (Debian, Python, Chromium; MIT licence), unchanged,
-# and adds Mediarium next to it. FlareSolverr keeps its own files in /app.
+# and adds Cue next to it. FlareSolverr keeps its own files in /app.
 FROM ${FLARESOLVERR_IMAGE} AS full
 USER root
 ARG VERSION=
-LABEL org.opencontainers.image.version="${VERSION}"       org.opencontainers.image.source="https://github.com/rdborg/mediarium"       org.opencontainers.image.licenses="AGPL-3.0"       org.opencontainers.image.description="Mediarium with a built-in Cloudflare helper (FlareSolverr)"
+LABEL org.opencontainers.image.version="${VERSION}"       org.opencontainers.image.source="https://github.com/rdborg/mediarium"       org.opencontainers.image.licenses="AGPL-3.0"       org.opencontainers.image.description="Cue with a built-in Cloudflare helper (FlareSolverr)"
 RUN apt-get update  && apt-get install -y --no-install-recommends ca-certificates tzdata par2 p7zip-full  && rm -rf /var/lib/apt/lists/*
 ENV PUID=1000     PGID=1000     TZ=Etc/UTC     APP_PORT=8264     BUNDLED_FLARESOLVERR=1
 # The program inside this image. The entrypoint may start a newer installed one

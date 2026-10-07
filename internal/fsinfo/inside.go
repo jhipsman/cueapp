@@ -8,7 +8,7 @@ import (
 )
 
 // UnwritableInside looks at the folders inside a library folder, a title's
-// folder and the season folders in it, and lists the ones Mediarium may not
+// folder and the season folders in it, and lists the ones Cue may not
 // write to. A library folder can be writable while folders an older app
 // created inside it belong to another user; files can't be added or upgraded
 // there. It looks at most at limit folders and only checks permissions: no

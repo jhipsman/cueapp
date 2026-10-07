@@ -59,7 +59,7 @@ type diagnosticsUpdate struct {
 	AllowPush   bool   `json:"allowPush"`
 	AutoRestart bool   `json:"autoRestartWhenStuck"`
 	Supervisor  string `json:"supervisor"`
-	SelfRestart string `json:"selfRestart,omitempty"` // this run began after Mediarium restarted itself
+	SelfRestart string `json:"selfRestart,omitempty"` // this run began after Cue restarted itself
 }
 
 type diagnosticsPayload struct {

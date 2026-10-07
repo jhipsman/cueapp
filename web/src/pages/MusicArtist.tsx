@@ -181,7 +181,7 @@ function ArtistPage() {
     let grabbed = 0
     try {
       for (const a of todo) grabbed += (await api.searchNowAlbum(a.id)).grabbed
-      toast.success(grabbed > 0 ? `Started ${grabbed} download${grabbed === 1 ? '' : 's'}. Follow them in Activity.` : 'Nothing suitable found yet. Mediarium keeps looking.')
+      toast.success(grabbed > 0 ? `Started ${grabbed} download${grabbed === 1 ? '' : 's'}. Follow them in Activity.` : 'Nothing suitable found yet. Cue keeps looking.')
       load()
     } catch (e) {
       toast.error(e instanceof Error ? e.message : String(e))
@@ -195,7 +195,7 @@ function ArtistPage() {
     const usage = await api.artistDiskUsage(artist.id).catch(() => null)
     const answer = await confirm({
       title: `Remove ${artist.name} from your library?`,
-      body: <p>Mediarium stops tracking this artist and cancels anything still downloading for them. You can add them back any time.</p>,
+      body: <p>Cue stops tracking this artist and cancels anything still downloading for them. You can add them back any time.</p>,
       confirmLabel: 'Remove',
       danger: true,
       option: removeOption('artist', usage),
@@ -549,7 +549,7 @@ function ReleasesPanel({ album, onChanged }: { album: MusicAlbum; onChanged: () 
   return (
     <div className="album-releases">
       <p className="album-empty">
-        {results.length} release{results.length === 1 ? '' : 's'} found. Releases Mediarium would skip are marked with the reason, and you can still pick any of them.
+        {results.length} release{results.length === 1 ? '' : 's'} found. Releases Cue would skip are marked with the reason, and you can still pick any of them.
       </p>
       <ReleaseNotice className="album-empty" sources={answered.sources} unanswered={answered.unanswered} results={results.length} />
       <div className="table-scroll">

@@ -1,6 +1,6 @@
 # Accounts and roles
 
-Give the people you live with their own login. They can find and add movies and shows without being able to change how Mediarium is set up.
+Give the people you live with their own login. They can find and add movies and shows without being able to change how Cue is set up.
 
 There are two roles:
 
@@ -33,7 +33,7 @@ Accounts that existed before roles were added became admins, so nobody lost acce
 | Dismiss subtitles, run the subtitle sweep, see the OpenSubtitles quota | No | Yes |
 | Manage accounts | No | Yes |
 
-When a basic user tries something only an admin can do, Mediarium says "Only an administrator can do this." An API key has the rights of the account that made it. A few things need you signed in on the web page, even with an admin key: making API keys, adding or changing accounts, downloading or restoring a backup and switching on pushed updates. That way a leaked key can't open a second way back in.
+When a basic user tries something only an admin can do, Cue says "Only an administrator can do this." An API key has the rights of the account that made it. A few things need you signed in on the web page, even with an admin key: making API keys, adding or changing accounts, downloading or restoring a backup and switching on pushed updates. That way a leaked key can't open a second way back in.
 
 The [HTTP API reference](./reference/api.md) marks every route as **public**, **any account** or **admin**.
 
@@ -47,7 +47,7 @@ When you add or edit a basic user, **Permissions** lets you choose what they may
 - **Search now and monitoring.** Start searches, change what is monitored and the tags, follow authors and series.
 - **Retry downloads.** Try a failed or stopped download again.
 - **Subtitles.** Find and download subtitles.
-- **Play, read and listen.** Play videos, preview files, and read and listen in Mediarium Books.
+- **Play, read and listen.** Play videos, preview files, and read and listen in Cue Books.
 
 Buttons for things an account may not do are hidden, and the server refuses them anyway ("Your account isn't allowed to do this."). Admins can always do everything.
 
@@ -91,7 +91,7 @@ An admin can do the following for any other account, using the buttons on its ca
 - **Edit**, again: set a new password, for example when a basic user has forgotten theirs. That signs the account out everywhere. Leave the field empty to keep the current password. (Changing your own password from your profile also signs out every other browser, but not this one.)
 - **Remove**: delete the account, after a confirmation. Its sessions and API keys stop working at once. Titles it added stay in the library.
 
-If something can't be done (the username is taken, or it would leave no admin), Mediarium shows its message as it is.
+If something can't be done (the username is taken, or it would leave no admin), Cue shows its message as it is.
 
 Two rules stop you from locking yourself out:
 
@@ -100,13 +100,13 @@ Two rules stop you from locking yourself out:
 
 ## Signing in through your reverse proxy
 
-If a proxy such as Authelia or Authentik already asks everyone to log in, Mediarium can take the user name from it so nobody signs in twice. It is off by default and set under **Sign in through your reverse proxy** on this page, with the header name and your proxy's address. The names must match the accounts here. See [security.md](./security.md#sign-in-through-your-reverse-proxy).
+If a proxy such as Authelia or Authentik already asks everyone to log in, Cue can take the user name from it so nobody signs in twice. It is off by default and set under **Sign in through your reverse proxy** on this page, with the header name and your proxy's address. The names must match the accounts here. See [security.md](./security.md#sign-in-through-your-reverse-proxy).
 
 ## A forgotten administrator password
 
 The sign-in page has a **Forgot your password?** line. There's no email reset. Another administrator can set a new password in **Settings > Accounts**, and the command below is for the only administrator.
 
-If the only admin has forgotten their password, reset it from the command line on the machine running Mediarium. There is deliberately no way to do this over the web.
+If the only admin has forgotten their password, reset it from the command line on the machine running Cue. There is deliberately no way to do this over the web.
 
 In Docker (use your own PUID:PGID, so the database files keep the right owner):
 
@@ -116,7 +116,7 @@ docker exec -it -u 1000:1000 mediarium /app/app reset-password <username>
 
 On the `-full` image the program is at `/opt/mediarium/app` instead of `/app/app`.
 
-Running natively, with the same environment variables Mediarium normally runs with:
+Running natively, with the same environment variables Cue normally runs with:
 
 ```sh
 mediarium reset-password <username>

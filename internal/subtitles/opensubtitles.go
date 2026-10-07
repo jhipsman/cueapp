@@ -39,9 +39,9 @@ var ErrInvalidKey = fmt.Errorf("OpenSubtitles rejected the API key")
 // is wrong.
 var ErrLoginFailed = fmt.Errorf("OpenSubtitles login failed: check the username and password")
 
-// userAgent identifies Mediarium to OpenSubtitles, which requires every API
+// userAgent identifies Cue to OpenSubtitles, which requires every API
 // client to send one.
-const userAgent = "Mediarium v1"
+const userAgent = "Cue v1"
 
 // tokenLifetime is how long a login token is reused (OpenSubtitles issues
 // tokens valid for 24 hours).

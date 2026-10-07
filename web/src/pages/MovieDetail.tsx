@@ -142,7 +142,7 @@ function MoviePage() {
     const usage = await api.movieDiskUsage(movie.libraryId).catch(() => null)
     const answer = await confirm({
       title: `Remove ${movie.title} from your library?`,
-      body: <p>Mediarium stops tracking this movie and cancels anything still downloading for it. You can add it back any time.</p>,
+      body: <p>Cue stops tracking this movie and cancels anything still downloading for it. You can add it back any time.</p>,
       confirmLabel: 'Remove',
       danger: true,
       option: removeOption('movie', usage),

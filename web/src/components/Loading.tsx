@@ -29,7 +29,7 @@ export default function Loading({
   return (
     <div className="slow-note" role="status" style={{ minHeight: Math.min(height, 120) }}>
       <span>
-        <strong>Taking longer than usual.</strong> Mediarium may be busy with a download or import.
+        <strong>Taking longer than usual.</strong> Cue may be busy with a download or import.
       </span>
       <button type="button" className="btn-sm" onClick={onRetry ?? (() => window.location.reload())}>
         Try again

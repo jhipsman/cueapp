@@ -61,7 +61,7 @@ func (s *Server) handleSeriesSearch(w http.ResponseWriter, r *http.Request) {
 	season, _ := strconv.Atoi(r.URL.Query().Get("season"))
 	episode, _ := strconv.Atoi(r.URL.Query().Get("episode"))
 	if season == 0 && r.URL.Query().Get("season") == "0" {
-		writeError(w, http.StatusBadRequest, "Mediarium can't search for specials yet.")
+		writeError(w, http.StatusBadRequest, "Cue can't search for specials yet.")
 		return
 	}
 	if season <= 0 {

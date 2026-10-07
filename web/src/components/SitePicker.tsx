@@ -128,7 +128,7 @@ export default function SitePicker({ protocol, onAdded }: { protocol: 'torrent' 
         ))}
         <div className="form-cols">
           <label>
-            Name in Mediarium
+            Name in Cue
             <input value={name} onChange={(e) => setName(e.target.value)} {...v.bind('name', name, setName)} />
             <FieldError v={v} name="name" />
           </label>

@@ -184,7 +184,7 @@ func TestProblemLogDownloadAsTextFile(t *testing.T) {
 		t.Fatalf("headers: %d %v", resp.StatusCode, resp.Header)
 	}
 	text := string(body)
-	for _, want := range []string{"Mediarium problem log", "Problems: 1", "disk.full", "The disk is full", "For: Alien", "no space left on device"} {
+	for _, want := range []string{"Cue problem log", "Problems: 1", "disk.full", "The disk is full", "For: Alien", "no space left on device"} {
 		if !strings.Contains(text, want) {
 			t.Errorf("the file lacks %q:\n%s", want, text)
 		}
@@ -248,7 +248,7 @@ func TestErrorsCanBeSentToNotificationTargets(t *testing.T) {
 	if rec.count() != 1 {
 		t.Fatalf("want exactly one notification, got %d: %v", rec.count(), rec.bodies)
 	}
-	if !strings.Contains(rec.bodies[0], "Mediarium needs attention: the disk is full") || !strings.Contains(rec.bodies[0], "Free up some space") {
+	if !strings.Contains(rec.bodies[0], "Cue needs attention: the disk is full") || !strings.Contains(rec.bodies[0], "Free up some space") {
 		t.Errorf("the notification should say what happened and what to try: %s", rec.bodies[0])
 	}
 }

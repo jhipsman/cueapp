@@ -39,7 +39,7 @@ export default function SupportCard() {
       {error && <p className="error-text">{error}</p>}
       {state === 'failed' && (
         <>
-          <p style={{ color: 'var(--text-dim)' }}>Your browser did not let Mediarium copy it. Select the text below and copy it yourself.</p>
+          <p style={{ color: 'var(--text-dim)' }}>Your browser did not let Cue copy it. Select the text below and copy it yourself.</p>
           <textarea readOnly value={report} rows={10} style={{ width: '100%', fontFamily: 'monospace', fontSize: '0.8rem' }} onFocus={(e) => e.currentTarget.select()} />
         </>
       )}

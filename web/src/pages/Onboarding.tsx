@@ -398,10 +398,10 @@ export default function Onboarding({ startStep = 0 }: { startStep?: number }) {
 
   return (
     <main className="wizard" ref={top}>
-      {step !== S.done && <h1 className="sr-only">Set up Mediarium: {STEPS[step]}</h1>}
+      {step !== S.done && <h1 className="sr-only">Set up Cue: {STEPS[step]}</h1>}
       <div className="auth-logo wizard-logo">
         <BrandMark className="auth-mark" />
-        <span>Mediarium</span>
+        <span>Cue</span>
       </div>
       <div className="wizard-steps">
         {STEPS.map((label, i) => (
@@ -465,13 +465,13 @@ export default function Onboarding({ startStep = 0 }: { startStep?: number }) {
           <div className="legal-box">
             <strong>Before you start</strong>
             <p>
-              Mediarium is an automation and organising tool. It does not host, index or supply any content. It is meant for material you have the legal
+              Cue is an automation and organising tool. It does not host, index or supply any content. It is meant for material you have the legal
               right to get: your own backups, public-domain and freely licensed works, and content you are licensed to use. You alone are responsible for
               what you download and for following your country&apos;s laws and your providers&apos; terms. It comes for educational and personal use
               with no warranty.
             </p>
             <label className="check-row">
-              <input type="checkbox" checked={legalOk} onChange={(e) => setLegalOk(e.target.checked)} {...adminCheck.bind('legal')} />I have read this and accept responsibility for how I use Mediarium.
+              <input type="checkbox" checked={legalOk} onChange={(e) => setLegalOk(e.target.checked)} {...adminCheck.bind('legal')} />I have read this and accept responsibility for how I use Cue.
             </label>
             <FieldError v={adminCheck} name="legal" />
           </div>
@@ -511,7 +511,7 @@ export default function Onboarding({ startStep = 0 }: { startStep?: number }) {
             inUse={svc ? foldersInUse(svc) : {}}
             v={pathCheck}
           />
-          <p className="wizard-small">Mediarium only adds files to these folders. It never deletes or overwrites what&apos;s already there unless you tell it to.</p>
+          <p className="wizard-small">Cue only adds files to these folders. It never deletes or overwrites what&apos;s already there unless you tell it to.</p>
           <div className="wizard-nav">
             {backButton}
             <button className="primary" onClick={submitLibraryPath} disabled={busy}>
@@ -589,7 +589,7 @@ export default function Onboarding({ startStep = 0 }: { startStep?: number }) {
         <div className="card grid-form">
           <h2>Add your indexers</h2>
           <p className="wizard-lead">
-            Indexers are the sites Mediarium searches for downloads. Add at least one: choose Usenet or torrent, pick the indexer, paste its API key and click Add.
+            Indexers are the sites Cue searches for downloads. Add at least one: choose Usenet or torrent, pick the indexer, paste its API key and click Add.
           </p>
           <div className="wizard-indexers">
             <IndexerForm onAdded={loadIndexers} />
@@ -642,7 +642,7 @@ export default function Onboarding({ startStep = 0 }: { startStep?: number }) {
               }}
             >
               <p>
-                Without an indexer, Mediarium can&apos;t find anything to download.
+                Without an indexer, Cue can&apos;t find anything to download.
               </p>
               <p>Add one any time under Settings &gt; Indexers &amp; Search. The dashboard will remind you.</p>
             </ConfirmDialog>
@@ -654,7 +654,7 @@ export default function Onboarding({ startStep = 0 }: { startStep?: number }) {
         <div className="card grid-form">
           <h2>Add your Usenet provider</h2>
           <p className="wizard-lead">
-            Mediarium downloads by itself, so all it needs is the news-server login from your Usenet provider. Skip this if you only use torrents.
+            Cue downloads by itself, so all it needs is the news-server login from your Usenet provider. Skip this if you only use torrents.
           </p>
           <div className="wizard-indexers">
             <UsenetServerForm
@@ -819,7 +819,7 @@ export default function Onboarding({ startStep = 0 }: { startStep?: number }) {
           </div>
           <BrandMark className="finish-mark" />
           <h1>
-            Welcome to <span>Mediarium</span>
+            Welcome to <span>Cue</span>
           </h1>
           {gaps === null ? (
             <p>Checking your setup…</p>
@@ -828,7 +828,7 @@ export default function Onboarding({ startStep = 0 }: { startStep?: number }) {
               Everything is set up for {mediaPhrase(chosen)}. Search for something to add, browse Discover, or import what you already have.
             </p>
           ) : (
-            <p>Your account is ready, but Mediarium can&apos;t find or download anything yet. Here&apos;s what&apos;s left, or do it later from the dashboard.</p>
+            <p>Your account is ready, but Cue can&apos;t find or download anything yet. Here&apos;s what&apos;s left, or do it later from the dashboard.</p>
           )}
           {gaps !== null && gaps.length > 0 && <SetupGaps gaps={gaps} onGo={(to) => void finish(to)} />}
           <div className="finish-points">
@@ -845,7 +845,7 @@ export default function Onboarding({ startStep = 0 }: { startStep?: number }) {
           <div className="wizard-nav">
             {backButton}
             <button className="primary big" onClick={() => void finish()} disabled={busy}>
-              Open Mediarium
+              Open Cue
             </button>
           </div>
         </div>

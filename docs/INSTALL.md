@@ -1,14 +1,14 @@
-# Installing Mediarium
+# Installing Cue
 
-Mediarium runs in **Docker**, the one supported way to install it today. It works on any 64-bit Linux computer or NAS (Intel/AMD `amd64` or ARM `arm64`, including a Raspberry Pi 3, 4 or 5 with a 64-bit system). Windows and macOS installers, Linux packages and one-click app-store entries are coming soon: see [What runs where](./PLATFORMS.md).
+Cue runs in **Docker**, the one supported way to install it today. It works on any 64-bit Linux computer or NAS (Intel/AMD `amd64` or ARM `arm64`, including a Raspberry Pi 3, 4 or 5 with a 64-bit system). Windows and macOS installers, Linux packages and one-click app-store entries are coming soon: see [What runs where](./PLATFORMS.md).
 
 It takes about ten minutes. You don't need to know Docker well: you copy one file, change a few lines, and run one command.
 
 Using a NAS? There are step-by-step guides for [Synology](./synology.md) (including running it next to Radarr, Sonarr and SABnzbd), [Unraid](./unraid.md) and [QNAP](./qnap.md). Plain Linux: [linux.md](./linux.md).
 
-**On a NAS, create every folder you map before you start Mediarium.** If a mapped folder doesn't exist, Docker stops with an error like `Bind mount failed: '/volume1/Media/downloads' does not exist`.
+**On a NAS, create every folder you map before you start Cue.** If a mapped folder doesn't exist, Docker stops with an error like `Bind mount failed: '/volume1/Media/downloads' does not exist`.
 
-Mediarium does not host or provide any content. See [LEGAL.md](./LEGAL.md).
+Cue does not host or provide any content. See [LEGAL.md](./LEGAL.md).
 
 ## Contents
 
@@ -36,7 +36,7 @@ Mediarium does not host or provide any content. See [LEGAL.md](./LEGAL.md).
 ## Quick start
 
 1. **Install Docker** with the Compose plugin: follow [docs.docker.com/engine/install](https://docs.docker.com/engine/install/) for your system. Check it works with `docker compose version`. (On a NAS, use its own Docker app instead: see the NAS guides above.)
-2. **Make a folder for Mediarium** and go into it:
+2. **Make a folder for Cue** and go into it:
    ```bash
    mkdir mediarium
    cd mediarium
@@ -49,14 +49,14 @@ Mediarium does not host or provide any content. See [LEGAL.md](./LEGAL.md).
    The first start downloads the image, which takes a minute.
 5. **Open `http://<your-server-ip>:8264`** in your browser (for example `http://192.168.1.20:8264`, or `http://localhost:8264` on the same machine) and follow the [setup wizard](#the-setup-wizard).
 
-That's it. With the file exactly as below, Mediarium keeps its settings in `mediarium/config` and your downloads, movies and TV in `mediarium/data`. To use folders you already have, read [Choosing your folders](#choosing-your-folders).
+That's it. With the file exactly as below, Cue keeps its settings in `mediarium/config` and your downloads, movies and TV in `mediarium/data`. To use folders you already have, read [Choosing your folders](#choosing-your-folders).
 
 ## The compose file
 
 This is the same file as [`docker/docker-compose.yml`](../docker/docker-compose.yml) in the repository.
 
 ```yaml
-# Mediarium: movies, TV shows and music, from search to your library, in one app.
+# Cue: movies, TV shows and music, from search to your library, in one app.
 #
 # How to use this file
 #   1. Put it in an empty folder, for example "mediarium".
@@ -111,7 +111,7 @@ services:
       # - AUDIOBOOKS_DIR=/data/audiobooks
     volumes:
       # CHANGE the left side of each line (the right side must stay as it is).
-      # Mediarium's own settings and database. Keep it on a local disk and back it up.
+      # Cue's own settings and database. Keep it on a local disk and back it up.
       - ./config:/config
       # ONE folder that holds downloads, movies and TV. With a single mapping,
       # finished downloads move into your library instantly and use no extra
@@ -126,7 +126,7 @@ services:
   # Optional: only needed for torrent sites that show a Cloudflare
   # "checking your browser" page. Start everything with:
   #   docker compose --profile cloudflare up -d
-  # then enter http://flaresolverr:8191 in Mediarium under Settings > Indexers & Search.
+  # then enter http://flaresolverr:8191 in Cue under Settings > Indexers & Search.
   flaresolverr:
     image: ghcr.io/flaresolverr/flaresolverr:latest
     restart: unless-stopped
@@ -139,7 +139,7 @@ services:
 #
 # The shared folder "Media" holds four folders: Movies, tv, Music and
 # downloads. Create them first in File Station, and a "docker/mediarium" folder
-# for Mediarium's settings. Then use these lines in place of the environment
+# for Cue's settings. Then use these lines in place of the environment
 # and volumes above:
 #
 #     environment:
@@ -157,15 +157,15 @@ services:
 # Step by step: https://github.com/rdborg/Mediarium/blob/main/docs/synology.md
 ```
 
-In a `volumes` line, the part **before** the colon is the folder on your server and the part **after** it is where Mediarium sees it. Only ever change the part before the colon.
+In a `volumes` line, the part **before** the colon is the folder on your server and the part **after** it is where Cue sees it. Only ever change the part before the colon.
 
 ## Choosing your folders
 
-Mediarium needs two folders on your server:
+Cue needs two folders on your server:
 
 | Mapped as | What it is | Tips |
 |---|---|---|
-| `/config` | Mediarium's own settings, database and encryption key. Small. | Keep it on a local disk (an SSD is nice), never on a network share. Back it up. |
+| `/config` | Cue's own settings, database and encryption key. Small. | Keep it on a local disk (an SSD is nice), never on a network share. Back it up. |
 | `/data` | **One** folder that contains your downloads, movies and TV. | Put all three inside it, so finished downloads can be [hardlinked](#why-one-data-folder-hardlinks). |
 
 Music, ebooks and audiobooks are optional and have folders of their own (see [Optional folders](#optional-folders-music-ebooks-and-audiobooks) below). The setup wizard asks only for the kinds of media you choose.
@@ -175,7 +175,7 @@ A good layout looks like this:
 ```
 /your/storage/data/            ->  mapped as /data
 ├── downloads/                     DOWNLOADS_DIR=/data/downloads
-│   ├── incomplete/                (Mediarium creates these two)
+│   ├── incomplete/                (Cue creates these two)
 │   └── complete/
 ├── movies/                        MOVIES_DIR=/data/movies
 ├── tv/                            TV_DIR=/data/tv
@@ -184,7 +184,7 @@ A good layout looks like this:
 /your/storage/mediarium-config/ ->  mapped as /config
 ```
 
-- **Brand-new setup:** if the `data` folder and the three folders in it don't exist yet, Mediarium creates them on first start, owned by your `PUID`/`PGID` user.
+- **Brand-new setup:** if the `data` folder and the three folders in it don't exist yet, Cue creates them on first start, owned by your `PUID`/`PGID` user.
 - **You already have a library:** map the folder *above* your movies and TV as `/data`, and set `MOVIES_DIR`, `TV_DIR` and `DOWNLOADS_DIR` to match what is inside it. For example, a layout of `/volume1/data/media/movies`, `/volume1/data/media/tv` and `/volume1/data/downloads` becomes:
   ```yaml
       environment:
@@ -195,8 +195,8 @@ A good layout looks like this:
         - /volume1/docker/mediarium:/config
         - /volume1/data:/data
   ```
-  Folder names are case sensitive (`Movies` is not `movies`). You can add what is already in your library, and Mediarium never deletes or overwrites existing files on its own.
-- **Other download apps use the same downloads folder?** (SABnzbd, NZBGet, qBittorrent, Transmission...) Give Mediarium a folder of its own inside it, like `DOWNLOADS_DIR=/data/downloads/mediarium` above. Mediarium tidies up leftover files in its own `incomplete` folder, so it must not share that folder with another app. Hardlinks still work, because it is all inside `/data`.
+  Folder names are case sensitive (`Movies` is not `movies`). You can add what is already in your library, and Cue never deletes or overwrites existing files on its own.
+- **Other download apps use the same downloads folder?** (SABnzbd, NZBGet, qBittorrent, Transmission...) Give Cue a folder of its own inside it, like `DOWNLOADS_DIR=/data/downloads/mediarium` above. Cue tidies up leftover files in its own `incomplete` folder, so it must not share that folder with another app. Hardlinks still work, because it is all inside `/data`.
 - **Use full paths** on a real server (`/srv/data`, `/volume1/data`, `/mnt/user/data`). The `./config` and `./data` in the example mean "next to the compose file", which is handy for a first try.
 - **Disk format:** the disk must support hardlinks. ext4, XFS, Btrfs, ZFS and NTFS all do; exFAT and FAT (common on USB sticks) do not.
 - Moving over from Radarr, Sonarr, Prowlarr or SABnzbd? Use the same folders they use: see [Move from Radarr, Sonarr, Prowlarr, SABnzbd and other apps](./migrate.md).
@@ -222,13 +222,13 @@ The compose file above has these as commented lines you can switch on. After cha
 
 1. Create the folder on your server (on a NAS, before the next step).
 2. Add the `environment` line or the `volumes` line as described above, then run `docker compose up -d`. In a NAS app, stop the project, rebuild it and start it again.
-3. In Mediarium, switch the type on under **Settings > Media types** (music today) and check the folder under **Settings > Library > Folders and file names**. The page shows the folder Mediarium really uses and whether it is **Mapped to your device**.
+3. In Cue, switch the type on under **Settings > Media types** (music today) and check the folder under **Settings > Library > Folders and file names**. The page shows the folder Cue really uses and whether it is **Mapped to your device**.
 
 ## Why one /data folder? (hardlinks)
 
-When a download finishes, Mediarium puts it in your library with a **hardlink**: a second name for the same file. It is instant and uses no extra space, and the download can keep seeding from its original place.
+When a download finishes, Cue puts it in your library with a **hardlink**: a second name for the same file. It is instant and uses no extra space, and the download can keep seeding from its original place.
 
-A hardlink only works inside **one** mapped folder. If you map `downloads`, `movies` and `tv` as three separate `volumes` lines, each one is a separate mount inside the container and Mediarium has to **copy** every file instead, which is slower and uses extra space while both copies exist. This is true even when all three folders are on the same disk.
+A hardlink only works inside **one** mapped folder. If you map `downloads`, `movies` and `tv` as three separate `volumes` lines, each one is a separate mount inside the container and Cue has to **copy** every file instead, which is slower and uses extra space while both copies exist. This is true even when all three folders are on the same disk.
 
 Copying is not a disaster, just less tidy. Usenet downloads are deleted once they are copied, so you only lose a little time. Torrents keep seeding from the downloads folder, so a copied file takes double the space until it is done seeding. The setup wizard tells you which case you're in, under the folder boxes.
 
@@ -236,17 +236,17 @@ So: one parent folder, mapped once as `/data`, with `downloads`, `movies` and `t
 
 To check after your first download: on the server run `stat -c '%h %n' /your/storage/data/movies/*/*.mkv`. A `2` at the start of a line means that file is hardlinked. A `1` means it was copied (or the download has since been deleted).
 
-### What Mediarium never does to your folders
+### What Cue never does to your folders
 
-- **Folders inside your library made by another app** may belong to a different user (an older Sonarr or Radarr with another PUID, for example). Mediarium checks the folders inside Movies and TV, each title and its season folders, and warns in setup, in Settings > Library > Folders and file names and on the dashboard when some can't be written to, with an example path. Give the user Mediarium runs as write access to them, or run Mediarium with the same `PUID`/`PGID` as that app.
-- It never changes the owner or permissions of your existing media folders (only of its own `/config`). The one exception is a brand-new, empty folder that Docker made for you because the folder you mapped did not exist: that one folder is handed to your `PUID`/`PGID` user so Mediarium can write to it.
+- **Folders inside your library made by another app** may belong to a different user (an older Sonarr or Radarr with another PUID, for example). Cue checks the folders inside Movies and TV, each title and its season folders, and warns in setup, in Settings > Library > Folders and file names and on the dashboard when some can't be written to, with an example path. Give the user Cue runs as write access to them, or run Cue with the same `PUID`/`PGID` as that app.
+- It never changes the owner or permissions of your existing media folders (only of its own `/config`). The one exception is a brand-new, empty folder that Docker made for you because the folder you mapped did not exist: that one folder is handed to your `PUID`/`PGID` user so Cue can write to it.
 - It never replaces a file that is already in your library unless you say so. **If a file already exists** (Settings > Library > Folders and file names) can skip the new file (the default), ask you each time, always overwrite, or overwrite only if the new file is better. A replacement is written next to the original first and then swapped in, so a failure can't destroy the original. If the new file has a different name (another quality tag or file type), the old one is removed too, but only when you chose to overwrite (or overwrite if better) and only inside your library folder. A file copied to another drive is written under a temporary name (`.mediarium-tmp`) until the copy is complete, so Plex, Jellyfin or Emby never see half a movie.
 - It only deletes library files when you remove a title with its delete-files box ticked, or when a new version replaces a file and **If a file already exists** is set to overwrite. **Also delete everything on disk** starts unticked and shows how many files and how much space would go. The same goes for **Also delete the files of all ... from the disk** when you remove several titles at once. Through the API, files are only deleted when the request says `deleteFiles=true`. Even then they wait in the recycle bin (`.mediarium-trash` in the library folder) for 7 days before they are deleted for good.
 - It only tidies up its own working folder (`incomplete` inside its downloads folder). Torrent data is kept while it seeds.
 
 ## PUID, PGID and TZ
 
-Mediarium writes files as the user and group you give it, so that you (and Plex, Jellyfin or Emby) can use them normally.
+Cue writes files as the user and group you give it, so that you (and Plex, Jellyfin or Emby) can use them normally.
 
 - **PUID and PGID:** the numbers of the user that owns your media folders. On the server, run `id yourusername`. It prints something like `uid=1000(you) gid=1000(you) ...`: the `uid` is your `PUID` and the `gid` is your `PGID`.
   - Unraid usually uses `PUID=99` and `PGID=100`.
@@ -255,7 +255,7 @@ Mediarium writes files as the user and group you give it, so that you (and Plex,
   - Advanced: you can instead start the container as a user directly (`user: "1000:1000"` in the compose file). `PUID` and `PGID` are then ignored, and the folders must already be writable by that user.
 - **TZ:** your timezone, from the [list of tz names](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones), for example `Europe/London`, `Europe/Berlin` or `America/New_York`. It sets the time in logs and schedules.
 
-Mediarium changes the owner of its own `/config` folder, and of a media folder only when that folder is brand new, empty and made by Docker (see above). It never changes the owner or permissions of your existing media folders. If it cannot write to one, the container log says `WARNING: /data/... is not writable by uid ...` and the dashboard shows it; fix the folder on the server, or change `PUID`/`PGID`.
+Cue changes the owner of its own `/config` folder, and of a media folder only when that folder is brand new, empty and made by Docker (see above). It never changes the owner or permissions of your existing media folders. If it cannot write to one, the container log says `WARNING: /data/... is not writable by uid ...` and the dashboard shows it; fix the folder on the server, or change `PUID`/`PGID`.
 
 ## Ports
 
@@ -264,7 +264,7 @@ Mediarium changes the owner of its own `/config` folder, and of a media folder o
 | `8264` | The web page | Change the **left** number to use another port, for example `"8300:8264"`. |
 | `58264` TCP and UDP | Torrent peers connecting to you | Optional. Without it torrents still download, but with it you find more peers and can seed. Keep both numbers the same, and the same as the **Listen port** under Settings > Downloading > Usenet and torrents. Forward it on your router for peers from the internet. It isn't used while the built-in VPN is connected. |
 
-Mediarium serves plain HTTP. **Do not open port 8264 to the internet.** To reach it from outside your home, use a VPN into your network (Tailscale, WireGuard) or a reverse proxy with HTTPS; [security.md](./security.md) has the checklist and examples for Nginx Proxy Manager, Traefik, Caddy, Cloudflare Tunnel and Synology.
+Cue serves plain HTTP. **Do not open port 8264 to the internet.** To reach it from outside your home, use a VPN into your network (Tailscale, WireGuard) or a reverse proxy with HTTPS; [security.md](./security.md) has the checklist and examples for Nginx Proxy Manager, Traefik, Caddy, Cloudflare Tunnel and Synology.
 
 ## Other environment variables
 
@@ -287,9 +287,9 @@ Open `http://<your-server-ip>:8264`. The first time, a short wizard walks you th
 
 1. **Admin account.** The first account you make is the administrator. From outside your home network (through a reverse proxy, or on a server) the page also asks for a one-time setup code. Find it in the log: `docker logs mediarium`, look for `setup_code`. You also tick that you have read the responsible-use notice ([LEGAL.md](./LEGAL.md)).
 2. **Media types.** Pick movies, TV shows, music, ebooks and audiobooks. At least one has to stay on. Later steps only ask about what you picked.
-3. **Library paths.** One box for each kind you picked, plus downloads. They show the folders your compose file maps (from `MOVIES_DIR`, `TV_DIR`, `DOWNLOADS_DIR`, `MUSIC_DIR` and so on) and check each one live: whether it exists, whether Mediarium can write to it, whether it is **Mapped to your device**, and the free space. A folder that isn't mapped shows the exact line to add to your compose file. When your folders share one mapped folder such as `/data`, the wizard suggests a folder inside it (for example `/data/Ebooks`) and can create it for you.
+3. **Library paths.** One box for each kind you picked, plus downloads. They show the folders your compose file maps (from `MOVIES_DIR`, `TV_DIR`, `DOWNLOADS_DIR`, `MUSIC_DIR` and so on) and check each one live: whether it exists, whether Cue can write to it, whether it is **Mapped to your device**, and the free space. A folder that isn't mapped shows the exact line to add to your compose file. When your folders share one mapped folder such as `/data`, the wizard suggests a folder inside it (for example `/data/Ebooks`) and can create it for you.
 4. **Connect services.** Movie and show details, subtitles and lists come from TMDB, OpenSubtitles and Trakt. The official image has these built in, so there is usually nothing to do. If a key is needed, the wizard explains how to get a free one. Subtitles are switched on later, under Settings > Info, lists and subtitles > Subtitles.
-5. **Indexers** (where Mediarium looks for releases) and **Usenet provider** (your Usenet provider's login; skip it if you only use torrents).
+5. **Indexers** (where Cue looks for releases) and **Usenet provider** (your Usenet provider's login; skip it if you only use torrents).
 6. **Quality & naming.** The default quality, and the media player you use (Plex, Jellyfin, Emby, Kodi or something else), which picks the matching file naming style.
 7. **Media server** (optional). Sign in to Plex, Jellyfin or Emby so "Watch in" links work and the server refreshes when something new arrives.
 
@@ -309,11 +309,11 @@ Open `http://<your-server-ip>:8264`. The first time, a short wizard walks you th
 
 *Step 7, Media server. It is optional.*
 
-Indexers, Usenet provider, Quality & naming and Media server have **Skip for now**, and everything can be changed later under **Settings**. If a check fails, the wizard says what to fix. The last screen checks what you set up. If there is no indexer or download provider, it lists what is missing, each with a button to the right settings page (a media server is listed as optional). **Open Mediarium** is there either way. Until those are added, the dashboard shows a **Getting started** card with the same list. It goes away when everything is set up, or when you close it with the x (your browser remembers that).
+Indexers, Usenet provider, Quality & naming and Media server have **Skip for now**, and everything can be changed later under **Settings**. If a check fails, the wizard says what to fix. The last screen checks what you set up. If there is no indexer or download provider, it lists what is missing, each with a button to the right settings page (a media server is listed as optional). **Open Cue** is there either way. Until those are added, the dashboard shows a **Getting started** card with the same list. It goes away when everything is set up, or when you close it with the x (your browser remembers that).
 
 When the wizard is done you land on the dashboard, which also works on a phone:
 
-![The Mediarium dashboard: greeting, what needs attention, a card for each kind of media, and the Server card](images/dashboard.png)
+![The Cue dashboard: greeting, what needs attention, a card for each kind of media, and the Server card](images/dashboard.png)
 
 *The dashboard after setup: what is downloading, wanted and needs attention, one card per kind of media, and the Server card.*
 
@@ -325,7 +325,7 @@ When the wizard is done you land on the dashboard, which also works on a phone:
 
 Some torrent sites show a Cloudflare "checking your browser" page that only a real browser can pass. You only need one of these fixes if a site you use tells you it is behind a Cloudflare check.
 
-**Easiest: use the `-full` version of Mediarium.** It has the helper (FlareSolverr) built in and started for you, in the same container. In your compose file, change the image line to:
+**Easiest: use the `-full` version of Cue.** It has the helper (FlareSolverr) built in and started for you, in the same container. In your compose file, change the image line to:
 
 ```yaml
 image: ghcr.io/rdborg/mediarium:latest-full
@@ -341,7 +341,7 @@ The `-full` download is about 300 MB instead of about 20 MB, takes about 1.2 GB 
 docker compose --profile cloudflare up -d
 ```
 
-Then in Mediarium go to **Settings > Indexers & Search** and enter `http://flaresolverr:8191`. More in [indexers.md](./indexers.md).
+Then in Cue go to **Settings > Indexers & Search** and enter `http://flaresolverr:8191`. More in [indexers.md](./indexers.md).
 
 ## Everyday commands
 
@@ -350,7 +350,7 @@ Run these in the folder with your `docker-compose.yml`:
 | To... | Run |
 |---|---|
 | See the log | `docker compose logs -f mediarium` (Ctrl+C to stop watching) |
-| Stop Mediarium | `docker compose stop` |
+| Stop Cue | `docker compose stop` |
 | Start it again | `docker compose start` |
 | Apply changes to the compose file | `docker compose up -d` |
 | Reset a forgotten password | `docker exec -it -u 1000:1000 mediarium /app/app reset-password yourusername` (use your own `PUID:PGID` instead of `1000:1000`; on the `-full` image the program is `/opt/mediarium/app`) |
@@ -362,7 +362,7 @@ docker compose pull
 docker compose up -d
 ```
 
-That downloads the newest image and restarts Mediarium with it. Your settings and library stay put, and the database updates itself on start. Nothing updates on its own unless you switch on **Install new versions overnight** (see below). A restart pauses running downloads; press **Resume** in Activity.
+That downloads the newest image and restarts Cue with it. Your settings and library stay put, and the database updates itself on start. Nothing updates on its own unless you switch on **Install new versions overnight** (see below). A restart pauses running downloads; press **Resume** in Activity.
 
 - Read the [changelog](../CHANGELOG.md) first, and [back up](#backup-and-restore) `/config` before a big update. There is no way back to an older version once the database has been updated, except restoring a backup.
 - `:latest` always follows the newest release. To stay on a version, use its number instead. Each release has these tags (add `-full` for the [Cloudflare helper version](#optional-getting-past-cloudflare-checks)):
@@ -377,11 +377,11 @@ That downloads the newest image and restarts Mediarium with it. Your settings an
 
 ### Knowing when there is a new version
 
-Once a day Mediarium asks GitHub for the newest release (the first time about two minutes after it starts, and again in an hour after a failed try). If yours is older, administrators see a card on the dashboard and in the **Updates** box under **Settings > System > Server and backup**. It shows what is new and the steps for your kind of install (Synology Container Manager, Unraid or Docker Compose, plus a note for the `-full` image; a program you run yourself gets its own steps). The card has **Hide until the next version**. If a [notification](./notifications.md) target has **New version** ticked, you also get one message per new version. A pre-release is only offered to someone already running one.
+Once a day Cue asks GitHub for the newest release (the first time about two minutes after it starts, and again in an hour after a failed try). If yours is older, administrators see a card on the dashboard and in the **Updates** box under **Settings > System > Server and backup**. It shows what is new and the steps for your kind of install (Synology Container Manager, Unraid or Docker Compose, plus a note for the `-full` image; a program you run yourself gets its own steps). The card has **Hide until the next version**. If a [notification](./notifications.md) target has **New version** ticked, you also get one message per new version. A pre-release is only offered to someone already running one.
 
 - **What it sends:** one plain web request to `api.github.com` with the program name and version (`Mediarium/2.1.0`) and nothing else: no account, no library, no settings. GitHub sees your address, as any website does.
-- **Turning it off:** untick **Look for new versions once a day** in the Updates box (stored as `updates.check`). Then Mediarium never contacts GitHub by itself. **Check now** still works when you press it.
-- If GitHub cannot be reached or is limiting requests, the card says "Couldn't check just now." with the reason (for example that GitHub is limiting requests, or that the address could not be found), and Mediarium tries again later. A failed check (other than one held back by GitHub's limit) is also listed under Settings > System > Logs and errors. Nothing else is affected.
+- **Turning it off:** untick **Look for new versions once a day** in the Updates box (stored as `updates.check`). Then Cue never contacts GitHub by itself. **Check now** still works when you press it.
+- If GitHub cannot be reached or is limiting requests, the card says "Couldn't check just now." with the reason (for example that GitHub is limiting requests, or that the address could not be found), and Cue tries again later. A failed check (other than one held back by GitHub's limit) is also listed under Settings > System > Logs and errors. Nothing else is affected.
 
 ![The Updates, Restart and Updates pushed through the API boxes on Settings > System > Server and backup](images/system-updates.png)
 
@@ -389,24 +389,24 @@ Once a day Mediarium asks GitHub for the newest release (the first time about tw
 
 ### Update now (Docker image)
 
-If the release is signed by the Mediarium project, the card and the Updates box also have an **Update now** button. It asks you to confirm first. Mediarium then downloads the program for your system from the GitHub release, checks the signature of the checksum list against the public key built into your copy, checks the download against that list, starts the new program once to see that it answers as Mediarium, and restarts into it. It takes about a minute. Running downloads are paused, so press **Resume** afterwards. If any step fails, nothing is installed and the card says why (it is also under Settings > System > Logs and errors). A release without a signature never gets the button, so update the way you installed Mediarium.
+If the release is signed by the Cue project, the card and the Updates box also have an **Update now** button. It asks you to confirm first. Cue then downloads the program for your system from the GitHub release, checks the signature of the checksum list against the public key built into your copy, checks the download against that list, starts the new program once to see that it answers as Cue, and restarts into it. It takes about a minute. Running downloads are paused, so press **Resume** afterwards. If any step fails, nothing is installed and the card says why (it is also under Settings > System > Logs and errors). A release without a signature never gets the button, so update the way you installed Cue.
 
-- The new program is kept in `/config/update/`, next to your database, and the previous one is kept beside it. Your image is not changed. **If you later recreate the container from a newer image, Mediarium starts whichever is newer, the image's or the installed one.** So updating this way and updating the image later work together.
-- **Going back:** the Updates box shows what is installed and has **Go back to the image's version**. That removes the installed program; Mediarium uses the version inside the image again after a restart. If you change your mind again, press Update now.
-- **A bad update cannot stop Mediarium from starting.** If an installed program stops within 20 seconds of starting, three times in a row, the container's next start puts it aside (as `/config/update/app.failed`) and starts the program in the image instead. The card tells you when that happened, and has **Remove it** to delete the put-aside file.
+- The new program is kept in `/config/update/`, next to your database, and the previous one is kept beside it. Your image is not changed. **If you later recreate the container from a newer image, Cue starts whichever is newer, the image's or the installed one.** So updating this way and updating the image later work together.
+- **Going back:** the Updates box shows what is installed and has **Go back to the image's version**. That removes the installed program; Cue uses the version inside the image again after a restart. If you change your mind again, press Update now.
+- **A bad update cannot stop Cue from starting.** If an installed program stops within 20 seconds of starting, three times in a row, the container's next start puts it aside (as `/config/update/app.failed`) and starts the program in the image instead. The card tells you when that happened, and has **Remove it** to delete the put-aside file.
 - **Overnight:** the switch **Install new versions overnight** installs a new signed release between 2 and 5 in the morning (server time), when nothing is downloading. It does nothing in safe mode.
-- **Restart:** the restart at the end needs Docker to start Mediarium again by itself, which the `restart: unless-stopped` line in the supplied compose files does. Without a restart policy Mediarium stops after installing, and the installed version runs the next time you start the container.
+- **Restart:** the restart at the end needs Docker to start Cue again by itself, which the `restart: unless-stopped` line in the supplied compose files does. Without a restart policy Cue stops after installing, and the installed version runs the next time you start the container.
 - **Only in the Docker images, on Linux.** A program you run yourself has no entrypoint to start the new file, so it shows the steps instead.
 
-### Restarting Mediarium
+### Restarting Cue
 
-The **Restart** box under **Settings > System > Server and backup** has **Restart Mediarium** and **Restart with automation paused**. The second one starts Mediarium once in [safe mode](#other-environment-variables) (no automatic searching, downloading or refreshing) so the pages load and you can fix a setting. The next restart is normal. Both ask you to confirm and pause running downloads (press **Resume** in Activity afterwards). Both need something that starts Mediarium again after it exits. Docker, systemd and launchd are found automatically (in Docker that means a restart policy such as the `restart: unless-stopped` line in the supplied compose file), and `MEDIARIUM_SUPERVISED=1` covers any other service manager. Where nothing would start it again, the box says "Restart is not available here. Start Mediarium again yourself." and, on a program you run yourself, offers **Shut down** instead. To stop a container, use your container manager.
+The **Restart** box under **Settings > System > Server and backup** has **Restart Cue** and **Restart with automation paused**. The second one starts Cue once in [safe mode](#other-environment-variables) (no automatic searching, downloading or refreshing) so the pages load and you can fix a setting. The next restart is normal. Both ask you to confirm and pause running downloads (press **Resume** in Activity afterwards). Both need something that starts Cue again after it exits. Docker, systemd and launchd are found automatically (in Docker that means a restart policy such as the `restart: unless-stopped` line in the supplied compose file), and `MEDIARIUM_SUPERVISED=1` covers any other service manager. Where nothing would start it again, the box says "Restart is not available here. Start Cue again yourself." and, on a program you run yourself, offers **Shut down** instead. To stop a container, use your container manager.
 
-Mediarium also watches itself. Every 30 seconds it checks that its database and web server answer. If either fails for three minutes in a row it restarts itself (never during a restore, an update or a move from another app). The next start says so in the Updates box, under Logs and errors and in the support report. Switch this off with **Restart by itself if it stops answering**. The Docker images also have a health check on `/api/version`, so Docker, Synology and other tools show healthy or unhealthy.
+Cue also watches itself. Every 30 seconds it checks that its database and web server answer. If either fails for three minutes in a row it restarts itself (never during a restore, an update or a move from another app). The next start says so in the Updates box, under Logs and errors and in the support report. Switch this off with **Restart by itself if it stops answering**. The Docker images also have a health check on `/api/version`, so Docker, Synology and other tools show healthy or unhealthy.
 
 ## Updating without rebuilding the container
 
-This is for testing, and for people who can't rebuild their container. An administrator sends a new program file to the running Mediarium, which restarts into it. It needs no Docker socket and no extra privileges. Leave it off unless you use it: [security.md](./security.md#updating-the-program) explains what it allows.
+This is for testing, and for people who can't rebuild their container. An administrator sends a new program file to the running Cue, which restarts into it. It needs no Docker socket and no extra privileges. Leave it off unless you use it: [security.md](./security.md#updating-the-program) explains what it allows.
 
 1. As an administrator, switch on **Allow updates pushed through the API** in the **Updates pushed through the API** box under **Settings > System > Server and backup**. It asks you to confirm. This can only be switched on here, while you are signed in, never with an API key.
 2. Create an administrator API key under **Settings > Accounts > API keys**.
@@ -419,20 +419,20 @@ This is for testing, and for people who can't rebuild their container. An admini
         -H "Content-Type: application/octet-stream" --data-binary @mediarium
    ```
 
-   The body is the raw Linux program (at most 200 MB) and `X-Update-SHA256` is required. Mediarium refuses the file unless its SHA-256 matches, it is a Mediarium program for the same system (it is started once with `--version-check`, which only prints its version and exits), and its version is newer than the running one. Add `?force=true` to allow the same or an older version, for example to go back; the checksum is still required. A version older than the one inside the image is never accepted, because the image's entrypoint would ignore it. The answer is `202` with `{"version": "...", "restartingIn": 2}`, then Mediarium exits and Docker's restart policy starts it again.
-4. `GET /api/system/update` shows what is running and what is installed. `DELETE /api/system/update` removes the installed program (add `?restart=true` to restart at once); Mediarium then uses the image's own version. Removing works even while pushing is switched off.
+   The body is the raw Linux program (at most 200 MB) and `X-Update-SHA256` is required. Cue refuses the file unless its SHA-256 matches, it is a Cue program for the same system (it is started once with `--version-check`, which only prints its version and exits), and its version is newer than the running one. Add `?force=true` to allow the same or an older version, for example to go back; the checksum is still required. A version older than the one inside the image is never accepted, because the image's entrypoint would ignore it. The answer is `202` with `{"version": "...", "restartingIn": 2}`, then Cue exits and Docker's restart policy starts it again.
+4. `GET /api/system/update` shows what is running and what is installed. `DELETE /api/system/update` removes the installed program (add `?restart=true` to restart at once); Cue then uses the image's own version. Removing works even while pushing is switched off.
 
 Maintainers can use `tools/push-update.sh`, which builds the program from the committed source in Docker, works out the checksum and uploads it: see [RELEASING.md](./RELEASING.md#pushing-a-test-build). The user interface is part of the program, so a pushed program brings its new pages; the browser is told to re-check the page every time, so it never keeps showing the old ones.
 
-**If something goes wrong,** the installed program lives in `/config/update/`. Deleting the `update` folder (with Mediarium stopped) goes back to the image. Starting the container with `MEDIARIUM_SKIP_INSTALLED_UPDATE=1` ignores an installed program without deleting it.
+**If something goes wrong,** the installed program lives in `/config/update/`. Deleting the `update` folder (with Cue stopped) goes back to the image. Starting the container with `MEDIARIUM_SKIP_INSTALLED_UPDATE=1` ignores an installed program without deleting it.
 
 ## Backup and restore
 
 Everything that is not a media file lives in `/config`. The two files that matter are `app.db` (settings, library, history, accounts) and `secret.key`. **Keep the two together:** `secret.key` unlocks the passwords and keys saved in `app.db`. The folder also holds caches (for example music covers and the list of torrent sites) and, if you use one, the `update` folder.
 
-**From the app (easiest):** administrators can download a backup zip with **Download a backup** in the **Backup** box under **Settings > System > Server and backup**. It is safe to make while downloads are running. The zip holds `app.db`, `secret.key` and a small note about the version, and no media files. It contains your encryption key, so keep it as private as a password. To restore, choose the zip in the **Restore** box on the same page and press **Restore this backup**: Mediarium checks it (a backup made by a newer version of Mediarium than yours is refused; a backup can be up to 1 GB), restarts, and keeps your previous files in a `before-restore-<date>` folder inside `/config`. Restoring needs something that starts Mediarium again, like `restart: unless-stopped`; otherwise start it yourself and the restore is applied then.
+**From the app (easiest):** administrators can download a backup zip with **Download a backup** in the **Backup** box under **Settings > System > Server and backup**. It is safe to make while downloads are running. The zip holds `app.db`, `secret.key` and a small note about the version, and no media files. It contains your encryption key, so keep it as private as a password. To restore, choose the zip in the **Restore** box on the same page and press **Restore this backup**: Cue checks it (a backup made by a newer version of Cue than yours is refused; a backup can be up to 1 GB), restarts, and keeps your previous files in a `before-restore-<date>` folder inside `/config`. Restoring needs something that starts Cue again, like `restart: unless-stopped`; otherwise start it yourself and the restore is applied then.
 
-**Automatic backups:** every night, and just before every update, Mediarium saves the same zip in `/config/backups` and keeps the newest 7 (change it to 3, 5, 14 or 30 in the **Backup** box). The box lists them with the time and size, each with **Download**, and has **Back up now**. To restore one, download it and choose it under **Restore**. Switch the nightly backup off with **Save a backup every night** (stored as `backup.auto`; how many are kept is `backup.keep`). The files sit next to your database, so also copy one somewhere else now and then: a backup on the same disk does not help if that disk fails. If a nightly backup can't be saved, it is listed in Logs and errors. Scripts: `GET /api/system/backups`, `POST /api/system/backups` and `GET /api/system/backups/{name}` (the last two need a signed-in administrator, not an API key, because a backup holds every stored secret).
+**Automatic backups:** every night, and just before every update, Cue saves the same zip in `/config/backups` and keeps the newest 7 (change it to 3, 5, 14 or 30 in the **Backup** box). The box lists them with the time and size, each with **Download**, and has **Back up now**. To restore one, download it and choose it under **Restore**. Switch the nightly backup off with **Save a backup every night** (stored as `backup.auto`; how many are kept is `backup.keep`). The files sit next to your database, so also copy one somewhere else now and then: a backup on the same disk does not help if that disk fails. If a nightly backup can't be saved, it is listed in Logs and errors. Scripts: `GET /api/system/backups`, `POST /api/system/backups` and `GET /api/system/backups/{name}` (the last two need a signed-in administrator, not an API key, because a backup holds every stored secret).
 
 **By hand:**
 
@@ -442,9 +442,9 @@ cp -a ./config ./config-backup-$(date +%F)
 docker compose start
 ```
 
-While Mediarium runs, its newest changes sit in two small files next to the database, `app.db-wal` and `app.db-shm`. They belong to `app.db`, so only copy `app.db` on its own with Mediarium stopped. Copying the whole `config` folder as above, or using the in-app backup, always gets everything.
+While Cue runs, its newest changes sit in two small files next to the database, `app.db-wal` and `app.db-shm`. They belong to `app.db`, so only copy `app.db` on its own with Cue stopped. Copying the whole `config` folder as above, or using the in-app backup, always gets everything.
 
-To restore by hand: stop Mediarium, put the backup folder back in place of `config`, start it again.
+To restore by hand: stop Cue, put the backup folder back in place of `config`, start it again.
 
 ## Uninstalling
 
@@ -455,7 +455,7 @@ docker image rm ghcr.io/rdborg/mediarium:latest
 
 This removes the container and the image. Your folders stay on disk:
 
-- Delete the `config` folder to remove Mediarium's settings and database for good.
+- Delete the `config` folder to remove Cue's settings and database for good.
 - Your `data` folder holds your downloads, movies and TV. It is yours: keep it, or delete only what you no longer want.
 
 ## One command instead: docker run
@@ -492,12 +492,12 @@ Many NAS systems and servers have an app for Docker. The same compose file works
 
 One-click entries in these app stores are on the way: see [What runs where](./PLATFORMS.md). Until then, pasting the compose file is the way to go.
 
-**Docker Desktop on Windows or Mac** can run Mediarium too, which is fine for trying it out. For a machine that runs day and night, a NAS or Linux server is the better home: sharing Windows or macOS folders with Docker is slower, and hardlinks may not work there.
+**Docker Desktop on Windows or Mac** can run Cue too, which is fine for trying it out. For a machine that runs day and night, a NAS or Linux server is the better home: sharing Windows or macOS folders with Docker is slower, and hardlinks may not work there.
 
 ## Troubleshooting
 
 **The page does not open.**
-Check that it is running: `docker compose ps` should show `mediarium` as running, and `docker compose logs mediarium` should show a line that starts with `Mediarium listening on :8264`. Then check that your server's or NAS's firewall allows port 8264, and that no other app is already using it (if one is, change the left number of `8264:8264`).
+Check that it is running: `docker compose ps` should show `mediarium` as running, and `docker compose logs mediarium` should show a line that starts with `Cue listening on :8264`. Then check that your server's or NAS's firewall allows port 8264, and that no other app is already using it (if one is, change the left number of `8264:8264`).
 
 **"not writable" in the log, or a folder warning on the dashboard.**
 `PUID`/`PGID` do not match the owner of that folder. Find the owner's numbers with `ls -ln /your/storage/data`, then either set `PUID`/`PGID` to them and run `docker compose up -d`, or give that user write access on the server (on a NAS: the shared folder's permissions page).
@@ -520,21 +520,21 @@ Add at least one indexer under Settings > Indexers & Search and press its **Test
 **A download finished but was not imported.**
 Open the title and look at its activity log: it says what happened in plain words ([activity.md](./activity.md)). Password-protected or damaged releases are blocklisted and the next one is tried.
 
-**Pages do not load, or say "Reconnecting to Mediarium".**
-Update to the newest version first. Then check that the settings folder (`/config`) is on a disk inside your server, not on a network share: the dashboard says so when it isn't. Mediarium logs any database call that takes more than three seconds, and a page that waits more than ten seconds shows "Mediarium is taking longer than usual to answer" with a **Try again** button. If the pages still won't open, start in safe mode: add `MEDIARIUM_PAUSE_AUTOMATION=1` under `environment` and run `docker compose up -d`. Nothing searches, downloads, refreshes or checks connections by itself, so the pages load and you can pause things or read the log. Remove the line and run `docker compose up -d` again to go back to normal. If the pages do open, **Restart with automation paused** (see [Restarting Mediarium](#restarting-mediarium)) does the same for one start.
+**Pages do not load, or say "Reconnecting to Cue".**
+Update to the newest version first. Then check that the settings folder (`/config`) is on a disk inside your server, not on a network share: the dashboard says so when it isn't. Cue logs any database call that takes more than three seconds, and a page that waits more than ten seconds shows "Cue is taking longer than usual to answer" with a **Try again** button. If the pages still won't open, start in safe mode: add `MEDIARIUM_PAUSE_AUTOMATION=1` under `environment` and run `docker compose up -d`. Nothing searches, downloads, refreshes or checks connections by itself, so the pages load and you can pause things or read the log. Remove the line and run `docker compose up -d` again to go back to normal. If the pages do open, **Restart with automation paused** (see [Restarting Cue](#restarting-mediarium)) does the same for one start.
 
 **The time in the log is wrong.**
 Set `TZ` and run `docker compose up -d`.
 
-**Still stuck?** First look at **Settings > System > Logs and errors**: it lists what went wrong, in plain words, with what to try ([Logs and errors](./logs-and-errors.md)). If the pages open, go to **Settings > System > Server and backup**, find the **Help and support** box and press **Copy for support**. It copies your version, how the database is doing, the setup warnings, the latest problems from Logs and errors and the last 500 lines of the log, with passwords, keys and tokens left out. Paste it into an [issue](https://github.com/rdborg/Mediarium/issues/new/choose) together with how you installed Mediarium. If the pages do not open, use the log instead (`docker compose logs mediarium`) and remove API keys, passwords and VPN keys before pasting anything.
+**Still stuck?** First look at **Settings > System > Logs and errors**: it lists what went wrong, in plain words, with what to try ([Logs and errors](./logs-and-errors.md)). If the pages open, go to **Settings > System > Server and backup**, find the **Help and support** box and press **Copy for support**. It copies your version, how the database is doing, the setup warnings, the latest problems from Logs and errors and the last 500 lines of the log, with passwords, keys and tokens left out. Paste it into an [issue](https://github.com/rdborg/Mediarium/issues/new/choose) together with how you installed Cue. If the pages do not open, use the log instead (`docker compose logs mediarium`) and remove API keys, passwords and VPN keys before pasting anything.
 
 ## Building from source
 
-For people working on Mediarium itself. You need Docker and a copy of the source:
+For people working on Cue itself. You need Docker and a copy of the source:
 
 ```bash
 git clone https://github.com/rdborg/Mediarium.git
-cd Mediarium
+cd Cue
 cp docker/.env.example .env
 docker compose up -d --build
 ```

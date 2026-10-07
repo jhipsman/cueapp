@@ -12,7 +12,7 @@ import (
 	"github.com/rdborg/mediarium/internal/subtitles"
 )
 
-// Subtitle upgrades. When Mediarium picks a subtitle by its release name, it
+// Subtitle upgrades. When Cue picks a subtitle by its release name, it
 // is usually in sync but not always. For a month after that, while subtitles
 // download automatically, it looks again every few days for one made for the
 // exact video file (OpenSubtitles matches it by the file's hash) and swaps
@@ -33,7 +33,7 @@ type subtitlePick struct {
 	hashMatch bool   // made for the exact video file
 	chosen    bool   // picked by hand
 	videoHash string // the video's hash, when known
-	upgrade   bool   // replaces a subtitle Mediarium picked before
+	upgrade   bool   // replaces a subtitle Cue picked before
 }
 
 // subtitleUpgradesOn: on unless switched off, and only while subtitles
@@ -72,7 +72,7 @@ func (s *Server) recordSubtitle(it subtitleItem, lang, path string, pick subtitl
 }
 
 // unchangedSubtitle reports whether a saved subtitle is still where and as
-// Mediarium left it, next to the same video file.
+// Cue left it, next to the same video file.
 func unchangedSubtitle(f subtitles.SavedFile, it subtitleItem) bool {
 	if it.filePath == "" || f.Path != fmt.Sprintf("%s.%s.srt", subtitleBase(it.filePath), f.Language) {
 		return false
@@ -89,7 +89,7 @@ type subtitleUpgradeResult struct {
 }
 
 // upgradeSubtitles looks for subtitles made for the exact video file to
-// replace ones Mediarium picked by name in the last month.
+// replace ones Cue picked by name in the last month.
 func (s *Server) upgradeSubtitles(ctx context.Context) (subtitleUpgradeResult, error) {
 	var res subtitleUpgradeResult
 	now := time.Now()
@@ -114,7 +114,7 @@ func (s *Server) upgradeSubtitles(ctx context.Context) (subtitleUpgradeResult, e
 		}
 		if !unchangedSubtitle(f, it) {
 			// Moved in time, edited, removed, or the video was replaced: not
-			// Mediarium's to swap any more.
+			// Cue's to swap any more.
 			_ = s.SubtitleFiles.Forget(f.Kind, f.MediaID, f.Language)
 			continue
 		}

@@ -52,16 +52,16 @@ export default function Reader() {
 
   if (error) return <ReaderMessage title="Couldn't open this book" text={error} />
   if (!book) return <div className="bks-loading">Opening…</div>
-  if (book.ebook.status !== 'downloaded') return <ReaderMessage title={book.title} text="There is no ebook for this book yet. Once Mediarium has downloaded it, it opens here." />
+  if (book.ebook.status !== 'downloaded') return <ReaderMessage title={book.title} text="There is no ebook for this book yet. Once Cue has downloaded it, it opens here." />
   const format = (book.ebook.format ?? '').toLowerCase()
   if (format === 'pdf') return <PdfReader book={book} />
-  // Kindle books open as an EPUB copy Mediarium makes for the reader.
+  // Kindle books open as an EPUB copy Cue makes for the reader.
   if (KINDLE.has(format)) return <EpubReader book={book} src={`${api.bookFileUrl(book.id)}?as=epub`} />
   if (format !== 'epub') {
     return (
       <ReaderMessage
         title={book.title}
-        text={`This ebook is a ${format.toUpperCase() || 'file'} file, which browsers can't show. Download it for your e-reader, or look for an EPUB version in Mediarium.`}
+        text={`This ebook is a ${format.toUpperCase() || 'file'} file, which browsers can't show. Download it for your e-reader, or look for an EPUB version in Cue.`}
         action={
           <a className="primary btn-with-icon" href={api.bookFileUrl(book.id, true)}>
             <Icon name="download" size={16} /> Download

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Build Mediarium from the committed HEAD and push it to a running install.
+# Build Cue from the committed HEAD and push it to a running install.
 #
 # For the maintainer, and for testing. It needs Docker and curl, and the target
 # install must have "Allow updates pushed through the API" switched on under
@@ -16,7 +16,7 @@
 #   2. Works out the file's SHA-256.
 #   3. Uploads it to POST <url>/api/system/update with that checksum in the
 #      X-Update-SHA256 header. The install checks the checksum and that the file
-#      is a Mediarium program for its system and newer than what it runs, then
+#      is a Cue program for its system and newer than what it runs, then
 #      restarts into it.
 #
 # The API key is read from the MEDIARIUM_API_KEY environment variable (or typed
@@ -29,7 +29,7 @@ usage() {
   cat <<'EOF'
 Usage: tools/push-update.sh [options] <url>
 
-  <url>                 where Mediarium is, for example http://192.168.1.10:8264
+  <url>                 where Cue is, for example http://192.168.1.10:8264
   -a, --arch ARCH       amd64 (default) or arm64: the system of the install
   -v, --version X.Y.Z   version to stamp (default: the VERSION file at HEAD)
   -f, --force           let the install accept the same or an older version
@@ -62,7 +62,7 @@ while [ $# -gt 0 ]; do
 done
 
 case "$arch" in amd64|arm64) ;; *) echo "The arch must be amd64 or arm64." >&2; exit 2 ;; esac
-if [ "$upload" = 1 ] && [ -z "$url" ]; then echo "Give the address of your Mediarium." >&2; usage >&2; exit 2; fi
+if [ "$upload" = 1 ] && [ -z "$url" ]; then echo "Give the address of your Cue." >&2; usage >&2; exit 2; fi
 url="${url%/}"
 if [ "$upload" = 1 ]; then
   case "$url" in http://*|https://*) ;; *) echo "The address must start with http:// or https://" >&2; exit 2 ;; esac
@@ -100,7 +100,7 @@ have_keys=()
 for name in TMDB_API_KEY OPENSUBTITLES_API_KEY TRAKT_CLIENT_ID; do
   [ -n "${!name}" ] && have_keys+=("$name")
 done
-echo "Building Mediarium $version for linux/$arch from $(git rev-parse --short HEAD)."
+echo "Building Cue $version for linux/$arch from $(git rev-parse --short HEAD)."
 if [ ${#have_keys[@]} -eq 0 ]; then
   echo "No app-wide keys found in .env: this build will ask for its own keys, like a build from source." >&2
 else

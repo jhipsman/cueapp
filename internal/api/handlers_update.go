@@ -151,7 +151,7 @@ func (s *Server) handlePushUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if r.ContentLength > s.pushLimit() {
-		writeError(w, http.StatusRequestEntityTooLarge, "That file is too large to be Mediarium (limit 200 MB).")
+		writeError(w, http.StatusRequestEntityTooLarge, "That file is too large to be Cue (limit 200 MB).")
 		return
 	}
 	if !s.upd.opMu.TryLock() {
@@ -170,7 +170,7 @@ func (s *Server) handlePushUpdate(w http.ResponseWriter, r *http.Request) {
 		var tooBig *http.MaxBytesError
 		switch {
 		case errors.Is(err, selfupdate.ErrTooLarge) || errors.As(err, &tooBig):
-			writeError(w, http.StatusRequestEntityTooLarge, "That file is too large to be Mediarium (limit 200 MB).")
+			writeError(w, http.StatusRequestEntityTooLarge, "That file is too large to be Cue (limit 200 MB).")
 		case errors.Is(err, selfupdate.ErrEmpty):
 			writeError(w, http.StatusBadRequest, "The upload was empty. Send the program file as the request body.")
 		default:
@@ -232,7 +232,7 @@ func (s *Server) handleRemoveUpdate(w http.ResponseWriter, r *http.Request) {
 	if pushed != nil {
 		removed = pushed.Version
 	}
-	_ = s.QueueRepo.LogActivity(0, "update", "The installed update"+versionSuffix(removed)+" was removed by "+actor+". Mediarium goes back to the version in its Docker image the next time it starts.")
+	_ = s.QueueRepo.LogActivity(0, "update", "The installed update"+versionSuffix(removed)+" was removed by "+actor+". Cue goes back to the version in its Docker image the next time it starts.")
 
 	restart := r.URL.Query().Get("restart") == "true" || r.URL.Query().Get("restart") == "1"
 	restart = restart && s.control().CanRestart

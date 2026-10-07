@@ -653,10 +653,10 @@ func (s *cgSession) checkSiteAddress(raw string) error {
 		return fmt.Errorf("%s: bad address in the site definition: %w", s.name, netguard.CleanError(err))
 	}
 	if u.Scheme != "http" && u.Scheme != "https" {
-		return fmt.Errorf("%s: the site definition wants to use an address that is not a web address, so Mediarium refused", s.name)
+		return fmt.Errorf("%s: the site definition wants to use an address that is not a web address, so Cue refused", s.name)
 	}
 	if !s.siteRelated(u.Hostname()) {
-		return fmt.Errorf("%s: the site definition wants to connect to %s, which is not one of the site's own addresses, so Mediarium refused", s.name, u.Hostname())
+		return fmt.Errorf("%s: the site definition wants to connect to %s, which is not one of the site's own addresses, so Cue refused", s.name, u.Hostname())
 	}
 	return nil
 }

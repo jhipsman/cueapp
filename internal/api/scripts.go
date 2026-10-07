@@ -27,7 +27,7 @@ import (
 // an administrator picks one. Only files placed in the scripts folder inside
 // the config folder (/config/scripts) can be picked, and only from a
 // signed-in browser session, not with an API key: whoever can choose what
-// runs can run anything as Mediarium's user. Scripts run one at a time, with
+// runs can run anything as Cue's user. Scripts run one at a time, with
 // a time limit, and are told about the import in MEDIARIUM_* environment
 // variables.
 
@@ -125,7 +125,7 @@ func scriptPath(dir, name string) (string, error) {
 
 // scriptEnv is what a script is told, in MEDIARIUM_* variables, plus the
 // little it needs to run (PATH, HOME, TZ, LANG). Nothing else from
-// Mediarium's own environment is passed on.
+// Cue's own environment is passed on.
 func scriptEnv(event string, it notify.Item) []string {
 	env := []string{"MEDIARIUM_EVENT=" + event}
 	for _, k := range []string{"PATH", "HOME", "TZ", "LANG"} {

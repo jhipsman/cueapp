@@ -1,6 +1,6 @@
 // Package premiumize talks to Premiumize.me, a cloud downloader: it fetches a
 // torrent or an NZB on its own servers and hands the finished files back as
-// plain HTTPS links. Mediarium uses it in place of its built-in torrent engine
+// plain HTTPS links. Cue uses it in place of its built-in torrent engine
 // (and, if asked, its Usenet downloader): the release is sent to Premiumize,
 // and once Premiumize has it the files are downloaded into the download's
 // working folder like any other download.

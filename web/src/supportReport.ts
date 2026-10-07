@@ -1,4 +1,4 @@
-// The text a person pastes into a support request: what Mediarium reports about
+// The text a person pastes into a support request: what Cue reports about
 // itself (GET /api/system/diagnostics) written out in plain lines. The server
 // has already taken passwords, keys and tokens out of the log lines.
 
@@ -64,7 +64,7 @@ function duration(seconds: number): string {
 export function formatSupportReport(d: Diagnostics): string {
   const db = d.database
   const lines = [
-    'Mediarium support report',
+    'Cue support report',
     `Version: ${d.version} (${d.os}/${d.arch}, ${d.goVersion})`,
     `Time: ${d.now}`,
     `Running for: ${duration(d.uptimeSeconds)}`,

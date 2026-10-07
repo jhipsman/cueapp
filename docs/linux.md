@@ -1,6 +1,6 @@
-# Mediarium on Linux
+# Cue on Linux
 
-On a Linux server (Debian, Ubuntu, Fedora, Raspberry Pi OS 64-bit, and so on) Mediarium runs in Docker. A native install without Docker (a `.deb`/`.rpm` package with a systemd service) is coming soon: see [What runs where](./PLATFORMS.md).
+On a Linux server (Debian, Ubuntu, Fedora, Raspberry Pi OS 64-bit, and so on) Cue runs in Docker. A native install without Docker (a `.deb`/`.rpm` package with a systemd service) is coming soon: see [What runs where](./PLATFORMS.md).
 
 This is the short version, with Linux tips. The full walk-through is in the [install guide](./INSTALL.md).
 
@@ -16,7 +16,7 @@ To run `docker` without `sudo`, add yourself to the `docker` group (`sudo usermo
 
 ## 2. Make the folders
 
-Use one parent folder for downloads, movies and TV so finished downloads are hardlinked (instant, no extra space), and a small folder for Mediarium's settings. For example:
+Use one parent folder for downloads, movies and TV so finished downloads are hardlinked (instant, no extra space), and a small folder for Cue's settings. For example:
 
 ```bash
 sudo mkdir -p /srv/data/downloads /srv/data/movies /srv/data/tv /opt/mediarium/config
@@ -47,7 +47,7 @@ docker compose up -d
 docker compose logs -f mediarium
 ```
 
-When the log says `Mediarium listening on :8264`, open `http://<server-ip>:8264` and follow the setup wizard.
+When the log says `Cue listening on :8264`, open `http://<server-ip>:8264` and follow the setup wizard.
 
 ## Updating
 
@@ -61,7 +61,7 @@ When a new version is out, administrators see a card on the dashboard and on **S
 
 ## Starting at boot
 
-Nothing extra is needed: Docker starts at boot, and `restart: unless-stopped` in the compose file starts Mediarium with it.
+Nothing extra is needed: Docker starts at boot, and `restart: unless-stopped` in the compose file starts Cue with it.
 
 ## Raspberry Pi
 
@@ -71,7 +71,7 @@ Nothing extra is needed: Docker starts at boot, and `restart: unless-stopped` in
 
 ## Firewall
 
-If you use `ufw`: `sudo ufw allow 8264/tcp`, plus `sudo ufw allow 58264` if you publish the torrent port. Do not open port 8264 on your router: to reach Mediarium from outside, use a VPN or a reverse proxy with HTTPS.
+If you use `ufw`: `sudo ufw allow 8264/tcp`, plus `sudo ufw allow 58264` if you publish the torrent port. Do not open port 8264 on your router: to reach Cue from outside, use a VPN or a reverse proxy with HTTPS.
 
 ## Troubleshooting
 

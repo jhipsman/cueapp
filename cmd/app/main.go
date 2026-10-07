@@ -1,4 +1,4 @@
-// Command app is the entrypoint for Mediarium: a single binary
+// Command app is the entrypoint for Cue: a single binary
 // that starts the web UI/API and all background workers (indexer engine,
 // download clients, automation loop, etc.) in one process.
 //
@@ -44,7 +44,7 @@ import (
 var defaultTMDBAPIKey string
 
 // The other two app-wide identifiers are injected the same way. All three
-// are the release maintainer's own registrations of Mediarium with each
+// are the release maintainer's own registrations of Cue with each
 // service, shared by every user of an official build, so nobody has to sign
 // up for TMDB, OpenSubtitles or Trakt themselves. Builds from source leave
 // them empty and the app asks for them instead.
@@ -215,7 +215,7 @@ func run() error {
 
 	serveErr := make(chan error, 1)
 	go func() {
-		log.Printf("Mediarium listening on %s (db: %s)", httpServer.Addr, filepath.Clean(cfg.DBPath))
+		log.Printf("Cue listening on %s (db: %s)", httpServer.Addr, filepath.Clean(cfg.DBPath))
 		serveErr <- httpServer.ListenAndServe()
 	}()
 
@@ -226,7 +226,7 @@ func run() error {
 		}
 		return nil
 	case <-ctx.Done():
-		log.Println("Mediarium shutting down...")
+		log.Println("Cue shutting down...")
 		shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
 		return httpServer.Shutdown(shutdownCtx)

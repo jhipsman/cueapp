@@ -108,7 +108,7 @@ func (s *Server) autoSubtitleSetting() bool {
 	return v == "1"
 }
 
-// autoSubtitlesEnabled reports whether Mediarium fetches subtitles on its own:
+// autoSubtitlesEnabled reports whether Cue fetches subtitles on its own:
 // subtitles are switched on and the person also chose automatic downloading
 // ("1"). By default subtitles are offered, not fetched, so nothing spends
 // OpenSubtitles' small daily download allowance without being asked.
@@ -400,7 +400,7 @@ func (s *Server) fetchSubtitles(ctx context.Context, items []subtitleItem, opts 
 			continue
 		}
 		if _, err := os.Stat(it.filePath); err != nil {
-			res.skipped += len(langs) // file moved or deleted outside Mediarium
+			res.skipped += len(langs) // file moved or deleted outside Cue
 			continue
 		}
 		for _, lang := range langs {

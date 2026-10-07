@@ -53,7 +53,7 @@ func touchFile(t *testing.T, path string) {
 	}
 }
 
-// siteDefinitions stand in for Mediarium's downloaded site list.
+// siteDefinitions stand in for Cue's downloaded site list.
 func siteDefinitions(_ context.Context, id string) (indexers.DefinitionSummary, error) {
 	switch id {
 	case "1337x":
@@ -104,7 +104,7 @@ func newHarness(t *testing.T) *harness {
 		h.profiles[p.Name] = p.ID
 	}
 
-	// The library as Mediarium sees it: /data/media/movies in Radarr is
+	// The library as Cue sees it: /data/media/movies in Radarr is
 	// <tmp>/movies here, /data/media/tv in Sonarr is <tmp>/shows.
 	touchFile(t, filepath.Join(h.moviesRoot, "Inception (2010)", "Inception (2010) Bluray-1080p.mkv"))
 	touchFile(t, filepath.Join(h.moviesRoot, "Inception (2010)", "Inception (2010)-trailer.mkv"))
@@ -117,7 +117,7 @@ func newHarness(t *testing.T) *harness {
 		t.Fatal(err)
 	}
 
-	// The Matrix is already in Mediarium, downloaded.
+	// The Matrix is already in Cue, downloaded.
 	matrix, err := h.lib.Add(library.Movie{TMDBID: 603, Title: "The Matrix", Year: 1999, Monitored: true})
 	if err != nil {
 		t.Fatal(err)
@@ -569,7 +569,7 @@ func TestExplicitPathMapWins(t *testing.T) {
 		t.Fatalf("an explicit mapping must not be second-guessed: %+v / %+v", pv.PathMap, pv.SuggestedPathMap)
 	}
 	inc := titleByName(t, pv.Radarr.Items, "Inception")
-	if inc.Path != filepath.Join(elsewhere, "Inception (2010)") || !inc.FolderFound || inc.InLibraryFolder || !strings.Contains(inc.Reason, "outside Mediarium's movies folder") {
+	if inc.Path != filepath.Join(elsewhere, "Inception (2010)") || !inc.FolderFound || inc.InLibraryFolder || !strings.Contains(inc.Reason, "outside Cue's movies folder") {
 		t.Fatalf("inception: %+v", inc)
 	}
 	if heat := titleByName(t, pv.Radarr.Items, "Heat"); heat.Action != ActionSkip || !strings.Contains(heat.Reason, "folder not found at "+filepath.Join(elsewhere, "Heat (1995)")) {

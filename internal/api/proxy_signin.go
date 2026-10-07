@@ -13,7 +13,7 @@ import (
 
 // Sign-in through a reverse proxy. A proxy that does the login itself
 // (Authelia, Authentik, Cloudflare Access...) can pass the user name on in a
-// header, and Mediarium signs that account in. It is off until an
+// header, and Cue signs that account in. It is off until an
 // administrator names the header and the proxy's own address, it is only
 // believed from that address (not from every trusted proxy: anything else on
 // the network could send the header too), and it only ever signs in an
@@ -134,7 +134,7 @@ func (s *Server) handleGetProxySignIn(w http.ResponseWriter, r *http.Request) {
 }
 
 // validProxyHeader reports whether name can be an HTTP header name, and is not
-// one a browser or Mediarium itself sets.
+// one a browser or Cue itself sets.
 func validProxyHeader(name string) bool {
 	if name == "" || len(name) > 64 {
 		return false
@@ -172,12 +172,12 @@ func (s *Server) handlePutProxySignIn(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if header != "" && !validProxyHeader(header) {
-		writeError(w, http.StatusBadRequest, "That isn't a header name Mediarium can use. It looks like Remote-User: letters, numbers and dashes.")
+		writeError(w, http.StatusBadRequest, "That isn't a header name Cue can use. It looks like Remote-User: letters, numbers and dashes.")
 		return
 	}
 	if header != "" {
 		if _, ok := parseProxyAddresses(addresses); !ok {
-			writeError(w, http.StatusBadRequest, "Enter your proxy's address, for example 172.18.0.5 (or a small range such as 172.18.0.0/24). It's the address this page came from when you open Mediarium through the proxy.")
+			writeError(w, http.StatusBadRequest, "Enter your proxy's address, for example 172.18.0.5 (or a small range such as 172.18.0.0/24). It's the address this page came from when you open Cue through the proxy.")
 			return
 		}
 	} else {

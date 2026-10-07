@@ -19,7 +19,7 @@ import (
 // moved into a hidden folder inside the same library folder instead of being
 // deleted, so a slip can be undone for a few days. Moving within one library
 // folder is a rename on the same disk: instant, whatever the size. Media
-// servers and Mediarium's own scans skip hidden folders, so nothing in the
+// servers and Cue's own scans skip hidden folders, so nothing in the
 // bin shows up anywhere.
 
 // TrashDir is the recycle bin folder inside each library folder.

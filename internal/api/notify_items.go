@@ -12,7 +12,7 @@ import (
 	"github.com/rdborg/mediarium/internal/settings"
 )
 
-// publicLinks is the address the person set for Mediarium; without one,
+// publicLinks is the address the person set for Cue; without one,
 // messages carry no links.
 func (s *Server) publicLinks() notify.Links {
 	v, _ := s.Settings.Get(settings.KeyPublicURL)

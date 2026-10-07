@@ -103,7 +103,7 @@ func TestRefusals(t *testing.T) {
 		{"a whole private key instead of the seed", []string{"-in", in}, base64.StdEncoding.EncodeToString(make([]byte, 64)), "base64 of a 32-byte"},
 		{"missing input", []string{"-in", filepath.Join(dir, "nope")}, seed, "read"},
 		{"empty input", []string{"-in", empty}, seed, "is empty"},
-		{"another key than the app trusts", []string{"-in", in, "-expect-pub", wrongPub}, seed, "not the one Mediarium trusts"},
+		{"another key than the app trusts", []string{"-in", in, "-expect-pub", wrongPub}, seed, "not the one Cue trusts"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {

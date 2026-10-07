@@ -1,4 +1,4 @@
-# Releasing Mediarium
+# Releasing Cue
 
 This page is for whoever publishes a new version. It assumes you have never cut a release before. Nothing here happens by itself: a release is published only when you push a version tag.
 
@@ -13,13 +13,13 @@ The rest of the page explains each step.
 
 ## What the version numbers mean
 
-Mediarium uses [Semantic Versioning](https://semver.org/): three numbers, **MAJOR.MINOR.PATCH**, for example `2.1.2`. The number tells people upgrading how careful they need to be.
+Cue uses [Semantic Versioning](https://semver.org/): three numbers, **MAJOR.MINOR.PATCH**, for example `2.1.2`. The number tells people upgrading how careful they need to be.
 
-| Bump | When | Mediarium examples | Example |
+| Bump | When | Cue examples | Example |
 |---|---|---|---|
 | **PATCH** (third number) | Bug fixes only. Nothing new to learn, nothing to change on the user's side. | A release name that was parsed wrongly; a crash when an indexer returns an empty page; a subtitle saved with the wrong language code; a typo in the interface. | `2.1.2` to `2.1.3` |
 | **MINOR** (second number) | New features, added in a way that keeps everything that already works working. Existing settings, API calls and databases carry on untouched. Reset PATCH to 0. | A new notification service; a new quality preset; a new optional setting; a new API endpoint; a new page in the app; a database migration that the app runs by itself on start. | `2.1.3` to `2.2.0` |
-| **MAJOR** (first number) | A breaking change: something that needs the user to act, or that breaks something they built on top of Mediarium. Reset MINOR and PATCH to 0. | Renaming or removing an environment variable or a volume path in the container; removing or changing the shape of an API endpoint that scripts may use; a database change that cannot be undone or needs a manual step; dropping support for a platform (for example linux/arm64). | `2.2.0` to `3.0.0` |
+| **MAJOR** (first number) | A breaking change: something that needs the user to act, or that breaks something they built on top of Cue. Reset MINOR and PATCH to 0. | Renaming or removing an environment variable or a volume path in the container; removing or changing the shape of an API endpoint that scripts may use; a database change that cannot be undone or needs a manual step; dropping support for a platform (for example linux/arm64). | `2.2.0` to `3.0.0` |
 
 Rules of thumb:
 
@@ -81,7 +81,7 @@ The example releases version `2.1.0`. Replace it with your number.
 6. **Tag that commit and push the tag.** The tag must be `v` + `VERSION`:
 
    ```bash
-   git tag -a v2.1.0 -m "Mediarium 2.1.0"
+   git tag -a v2.1.0 -m "Cue 2.1.0"
    git push origin v2.1.0
    ```
 
@@ -92,7 +92,7 @@ The example releases version `2.1.0`. Replace it with your number.
    - builds the web interface once;
    - builds the app for Linux (amd64, arm64), each packed with the licence, the install notes and the systemd files, plus a `sha256sums.txt`;
    - signs `sha256sums.txt` and adds `sha256sums.txt.sig`, if the `UPDATE_SIGNING_KEY` secret is set (see [Signing releases](#signing-releases));
-   - creates a GitHub Release named "Mediarium v2.1.0" with those files, and notes made from the version's section of `CHANGELOG.md` with install steps on top (`tools/release-notes.sh`; a test build without a section gets GitHub's own list);
+   - creates a GitHub Release named "Cue v2.1.0" with those files, and notes made from the version's section of `CHANGELOG.md` with install steps on top (`tools/release-notes.sh`; a test build without a section gets GitHub's own list);
    - builds the Docker image for linux/amd64 and linux/arm64 and pushes it to `ghcr.io` with the tags `2.1.0`, `2.1` and `latest`;
    - builds the "full" image (with the Cloudflare helper), starts it as a test, and pushes it with the tags `2.1.0-full`, `2.1-full` and `latest-full` (see [The full image](#the-full-image-with-the-cloudflare-helper)).
 
@@ -128,7 +128,7 @@ Administrators are also told about a new release by the app itself. Once a day i
 
 ## Signing releases
 
-Mediarium's **Update now** button installs a release only if the release carries a signature. The release workflow signs the checksum list (`sha256sums.txt`) and attaches the signature (`sha256sums.txt.sig`). The button only exists in the Docker images, on Linux. The app has the matching public key built in (`updatePublicKey` in `cmd/app/main.go`), so a changed download, or a release somebody else published, is refused.
+Cue's **Update now** button installs a release only if the release carries a signature. The release workflow signs the checksum list (`sha256sums.txt`) and attaches the signature (`sha256sums.txt.sig`). The button only exists in the Docker images, on Linux. The app has the matching public key built in (`updatePublicKey` in `cmd/app/main.go`), so a changed download, or a release somebody else published, is refused.
 
 One-time setup:
 
@@ -142,7 +142,7 @@ Losing or replacing the key: releases signed with the old key stop verifying aga
 
 ### Protecting the signing key
 
-Whoever can get the signing key can publish an update that every Mediarium install with **Update now** will run as code. So the key is guarded on the GitHub side too. Do this once, before the first release:
+Whoever can get the signing key can publish an update that every Cue install with **Update now** will run as code. So the key is guarded on the GitHub side too. Do this once, before the first release:
 
 1. **Settings > Environments > New environment**, named `release` (the release job of the workflow already uses it). Move the `UPDATE_SIGNING_KEY` secret there from the repository secrets, so it is only handed to that job.
 2. In the environment, under **Deployment branches and tags**, allow only tags that match `v*`, and add **Required reviewers** (you) so nothing signs without an approval click.
@@ -201,6 +201,6 @@ Copy this into the release pull request or an issue:
 Every release also publishes `ghcr.io/rdborg/mediarium:<version>-full`, `:<major.minor>-full` and `:latest-full` (a pre-release only gets its exact `-full` tag). It comes from the `full` stage of the `Dockerfile` and is built on the official FlareSolverr image.
 
 - The FlareSolverr version is pinned in the `FLARESOLVERR_IMAGE` line at the top of the `Dockerfile`, by version and digest. To update it, pull the new image, copy its digest into that line, run `docker/smoke-full.sh` on a local build (`docker build --target full -t mediarium-full-test .`), and put the change in the changelog. Cloudflare changes its checks all the time, so check the FlareSolverr release notes first.
-- The release job builds the image for amd64 first, runs `docker/smoke-full.sh` (both Mediarium and the helper must answer) and only then pushes amd64 and arm64.
-- `.github/workflows/rebuild-full.yml` rebuilds the latest release's `-full` image every Monday with no cache, so browser and system security fixes get picked up without a new Mediarium version.
+- The release job builds the image for amd64 first, runs `docker/smoke-full.sh` (both Cue and the helper must answer) and only then pushes amd64 and arm64.
+- `.github/workflows/rebuild-full.yml` rebuilds the latest release's `-full` image every Monday with no cache, so browser and system security fixes get picked up without a new Cue version.
 - The plain image (no `-full`) is unchanged and stays the default in the compose files.

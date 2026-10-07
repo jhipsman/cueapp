@@ -12,7 +12,7 @@ const BASE = '/api'
 
 export class ApiError extends Error {
   status: number
-  // True when Mediarium said it is busy, or did not answer in time. The page
+  // True when Cue said it is busy, or did not answer in time. The page
   // can then tell the person it is slow instead of showing an error.
   busy: boolean
   constructor(status: number, message: string, busy = false) {
@@ -24,13 +24,13 @@ export class ApiError extends Error {
 
 // A read that gets no answer at all in this long is given up on.
 const READ_TIMEOUT_MS = 30_000
-const SLOW_MESSAGE = 'Mediarium is slow to answer right now. Try again in a moment.'
-const NO_ANSWER_MESSAGE = 'Could not reach Mediarium. Check that it is running, then try again.'
+const SLOW_MESSAGE = 'Cue is slow to answer right now. Try again in a moment.'
+const NO_ANSWER_MESSAGE = 'Could not reach Cue. Check that it is running, then try again.'
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const isRead = !init?.method || init.method === 'GET'
   // A read that waits on TMDB, Open Library, an indexer and the like says
-  // nothing about Mediarium being busy.
+  // nothing about Cue being busy.
   const service = isRead ? outsideService(path) : ''
   const endRead = isRead && !service ? startRead() : undefined
   let res: Response
@@ -257,7 +257,7 @@ export interface TrashList {
 export interface OnboardingStatus {
   firstRunNeeded: boolean
   // True when the visitor is not on the home network, so creating the first
-  // account needs the one-time setup code from the Mediarium log.
+  // account needs the one-time setup code from the Cue log.
   setupCodeRequired?: boolean
 }
 
@@ -443,7 +443,7 @@ export interface Settings {
   notifyQuietHours?: string
   // How often, in minutes, the connection watch checks your providers and indexers; 0 is off.
   monitorIntervalMinutes?: number
-  publicUrl?: string // the address Mediarium is opened at; links in notification messages use it
+  publicUrl?: string // the address Cue is opened at; links in notification messages use it
   huntIntervalHours?: number // hours between searches for missing items and better versions, 1 to 168
   releaseCheckMinutes?: number // minutes between checks of each indexer's newest releases, 5 to 1440
   downloadsAtOnce?: number // how many downloads run at the same time, 1 to 5 (the rest wait in line)
@@ -647,7 +647,7 @@ export interface Series {
   episodeCount: number
   downloadedCount: number
   genres?: string[]
-  noUpgrade?: boolean // Mediarium does not look for better versions of what is there
+  noUpgrade?: boolean // Cue does not look for better versions of what is there
   detailsState?: 'pending' | 'problem' // an import is still getting the details, or could not
   detailsNote?: string
   seriesType?: SeriesType // how releases number the episodes
@@ -703,7 +703,7 @@ export interface Movie {
   quality?: string
   filePath?: string
   genres?: string[]
-  noUpgrade?: boolean // Mediarium does not look for better versions of what is there
+  noUpgrade?: boolean // Cue does not look for better versions of what is there
   detailsState?: 'pending' | 'problem' // an import is still getting the details, or could not
   detailsNote?: string
 }
@@ -728,7 +728,7 @@ export interface QueueItem {
   progressPct: number
   error?: string
   destPath?: string
-  interrupted?: boolean // paused, but not by a person: Mediarium was restarted while it downloaded
+  interrupted?: boolean // paused, but not by a person: Cue was restarted while it downloaded
   pending?: 'pausing' | 'stopping' // still winding down
   keptFiles?: boolean // the partly downloaded files are still in the downloads folder
   queuePosition?: number // waiting in line: 1 is next
@@ -935,7 +935,7 @@ export interface SystemStats {
   load?: number[]
   uptimeSeconds?: number
   app: { memoryBytes: number; limitBytes?: number; uptimeSeconds: number; goroutines: number; cpuPercent?: number }
-  // All the disks Mediarium uses, each counted once.
+  // All the disks Cue uses, each counted once.
   storage?: { usedBytes: number; freeBytes: number; totalBytes: number }
   os: string
   arch: string
@@ -972,11 +972,11 @@ export interface TitleFile {
   trackId?: number // an album's track file
 }
 
-// A Plex, Jellyfin or Emby server Mediarium tells about new files.
+// A Plex, Jellyfin or Emby server Cue tells about new files.
 export type MediaServerKind = 'plex' | 'jellyfin' | 'emby' | 'audiobookshelf' | 'kavita'
 
 export interface PathMapping {
-  from: string // path as Mediarium sees it, e.g. /movies
+  from: string // path as Cue sees it, e.g. /movies
   to: string // the same folder as the media server sees it, e.g. /data/movies
 }
 
@@ -1317,10 +1317,10 @@ export interface FolderCheck {
   totalBytes: number
   mounted: boolean
   mountKnown: boolean
-  // True when Mediarium runs in a container (only then do compose lines apply).
+  // True when Cue runs in a container (only then do compose lines apply).
   inDocker?: boolean
   warnings: string[]
-  // A missing folder that Mediarium can create safely (inside a mapped, writable one).
+  // A missing folder that Cue can create safely (inside a mapped, writable one).
   canCreate?: boolean
 }
 

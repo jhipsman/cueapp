@@ -209,7 +209,7 @@ func LanguageSatisfied(have map[string]bool, wanted string) bool {
 }
 
 // LanguageLabel is the English name of a language code ("en" is "English"), or
-// the code in capitals when it is not one Mediarium knows.
+// the code in capitals when it is not one Cue knows.
 func LanguageLabel(code string) string {
 	code = strings.ToLower(strings.TrimSpace(code))
 	for _, l := range languageNames {

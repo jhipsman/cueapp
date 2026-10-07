@@ -21,7 +21,7 @@ import (
 )
 
 // The ebooks and audiobooks modules: add a book from Open Library, choose
-// the formats you want, and Mediarium searches your indexers (book and
+// the formats you want, and Cue searches your indexers (book and
 // audiobook categories), downloads the best release and files it.
 
 // Newznab categories: 7000 books, 7020 ebooks; 3030 audiobooks.

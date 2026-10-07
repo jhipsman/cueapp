@@ -41,7 +41,7 @@ export function portStatus(t: TorrentPortInfo | null): PortStatusText | null {
     }
   }
   const port = t.activePort || t.listenPort
-  const moved = t.activePort && t.activePort !== t.listenPort ? ` Port ${t.listenPort} was already in use, so Mediarium is using ${t.activePort} instead.` : ''
+  const moved = t.activePort && t.activePort !== t.listenPort ? ` Port ${t.listenPort} was already in use, so Cue is using ${t.activePort} instead.` : ''
   if (t.incomingSeen) {
     return {
       tone: moved ? 'warn' : 'good',

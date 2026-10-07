@@ -19,7 +19,7 @@ import (
 	"github.com/rdborg/mediarium/internal/watch"
 )
 
-// Watch: the streaming side of Mediarium.
+// Watch: the streaming side of Cue.
 //
 // Everything here is keyed by TMDB id, so any movie or show TMDB knows can be
 // browsed and played, whether it is in the library or not. Artwork, text and

@@ -1,4 +1,4 @@
-// Whether Mediarium is being slow to answer. Every read the app makes reports
+// Whether Cue is being slow to answer. Every read the app makes reports
 // here: one that has been waiting longer than SLOW_MS, or an answer saying the
 // app is busy, turns the state on, and the banner under the top bar says so.
 // It turns off again by itself once the app answers normally.

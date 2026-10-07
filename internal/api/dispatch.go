@@ -46,7 +46,7 @@ const (
 	// grabPicked is a release a person chose (Choose release, Retry). It is
 	// never refused for the automatic checks, and goes before automatic ones.
 	grabPicked grabKind = iota
-	// grabSearchNow is a release Mediarium picked because a person asked it to
+	// grabSearchNow is a release Cue picked because a person asked it to
 	// search (Search now, adding a title, a bulk search). It goes before
 	// automatic ones, but is skipped when the title is already being fetched.
 	grabSearchNow

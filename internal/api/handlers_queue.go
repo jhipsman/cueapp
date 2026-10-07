@@ -38,7 +38,7 @@ type queueItemPayload struct {
 	// naming collision was found at, under the "always ask" import
 	// conflict policy. See handleResolveQueueConflict.
 	DestPath string `json:"destPath,omitempty"`
-	// Interrupted is a paused download nobody paused: Mediarium was restarted
+	// Interrupted is a paused download nobody paused: Cue was restarted
 	// while it was downloading.
 	Interrupted bool `json:"interrupted,omitempty"`
 	// Pending is "pausing" or "stopping" while the download winds down.

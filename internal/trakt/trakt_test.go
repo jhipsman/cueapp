@@ -24,7 +24,7 @@ func TestParseListURL(t *testing.T) {
 		{"https://trakt.tv/users/someone/lists/12345?sort=rank", "someone", "12345", false},
 		{"https://trakt.tv/movies/tron-legacy-2010", "", "", true},
 		{"not a url at all", "", "", true},
-		// The names are put into a request made with Mediarium's own Trakt key.
+		// The names are put into a request made with Cue's own Trakt key.
 		{"https://trakt.tv/users/../lists/x", "", "", true},
 		{"https://trakt.tv/users/me/lists/..", "", "", true},
 		{"https://trakt.tv/users/me%2f..%2fusers/lists/x", "", "", true},

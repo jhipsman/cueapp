@@ -19,7 +19,7 @@ func (x *sysinfoSampler) Snapshot() sysinfo.Snapshot {
 	return x.s.Snapshot()
 }
 
-// statsDisk is the space on the disk holding one of Mediarium's folders.
+// statsDisk is the space on the disk holding one of Cue's folders.
 type statsDisk struct {
 	Label      string `json:"label"` // "Downloads", "Movies", "TV", "Settings and database"
 	Path       string `json:"path"`
@@ -28,7 +28,7 @@ type statsDisk struct {
 	UsedBytes  uint64 `json:"usedBytes"`
 }
 
-// statsStorage is the space on all the disks Mediarium uses together, each
+// statsStorage is the space on all the disks Cue uses together, each
 // disk counted once however many of the folders are on it.
 type statsStorage struct {
 	UsedBytes  uint64 `json:"usedBytes"`
@@ -90,8 +90,8 @@ func sumStorage(paths []string, keys func(string, fsinfo.Usage) []string, usage 
 }
 
 // handleSystemStats reports how busy the server is (CPU, memory, load,
-// uptime, and Mediarium's own CPU as app.cpuPercent), the free space for each
-// folder Mediarium uses, and the space on all the disks together with each
+// uptime, and Cue's own CPU as app.cpuPercent), the free space for each
+// folder Cue uses, and the space on all the disks together with each
 // counted once (storage). Admin only: it shows folder paths.
 func (s *Server) handleSystemStats(w http.ResponseWriter, r *http.Request) {
 	snap := s.stats.Snapshot()

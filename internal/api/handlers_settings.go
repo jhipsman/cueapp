@@ -34,7 +34,7 @@ type settingsPayload struct {
 	// an omitted field leaves it alone.
 	MonitorIntervalMinutes *int `json:"monitorIntervalMinutes,omitempty"`
 
-	// HuntIntervalHours is how often Mediarium looks for missing items and
+	// HuntIntervalHours is how often Cue looks for missing items and
 	// better versions (1 to 168); ReleaseCheckMinutes is how often it checks each
 	// indexer's newest releases (5 to 1440). Pointers so an omitted field
 	// leaves them alone.
@@ -120,7 +120,7 @@ type settingsPayload struct {
 	// used for indexer sites behind a Cloudflare check. A pointer so ""
 	// (remove it) differs from leaving the field out. None by default.
 	FlareSolverrURL *string `json:"flareSolverrUrl,omitempty"`
-	// The address you open Mediarium at (like https://mediarium.example.com).
+	// The address you open Cue at (like https://mediarium.example.com).
 	// Buttons and links in notification messages use it; without one they
 	// carry none. A pointer so "" (remove it) differs from leaving it out.
 	PublicURL *string `json:"publicUrl,omitempty"`
@@ -757,7 +757,7 @@ func (s *Server) handleFilesystemCheck(w http.ResponseWriter, r *http.Request) {
 	) {
 		return
 	}
-	// A folder Mediarium has not made yet is judged by the folder it will be made in.
+	// A folder Cue has not made yet is judged by the folder it will be made in.
 	same, supported, err := organizer.SameFilesystem(nearestExisting(a), nearestExisting(b))
 	payload := filesystemCheckPayload{SameFilesystem: same, Supported: supported}
 	if err != nil {

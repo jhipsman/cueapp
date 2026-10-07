@@ -72,7 +72,7 @@ func run(args []string, getenv func(string) string, stdout, stderr io.Writer) er
 		return err
 	}
 	if *expect != "" && strings.TrimSpace(*expect) != pub {
-		return errors.New("the signing key is not the one Mediarium trusts (the public keys differ), so nothing was signed. Check the UPDATE_SIGNING_KEY secret")
+		return errors.New("the signing key is not the one Cue trusts (the public keys differ), so nothing was signed. Check the UPDATE_SIGNING_KEY secret")
 	}
 	dest := *out
 	if dest == "" {

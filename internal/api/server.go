@@ -307,7 +307,7 @@ func (s *Server) Routes() http.Handler {
 // protectedRoutes is the one table of every signed-in route and who may call
 // it. member routes are open to every account (family members included):
 // finding, adding and following titles. admin routes are everything that
-// shows or changes how Mediarium is set up. A new route has to be put in one
+// shows or changes how Cue is set up. A new route has to be put in one
 // of the two lists; routes_access_test.go fails if the member list changes
 // without the test being updated too.
 func (s *Server) protectedRoutes() *routeTable {

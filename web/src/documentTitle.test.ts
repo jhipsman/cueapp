@@ -4,12 +4,12 @@ import { test } from 'node:test'
 import { titleFor } from './documentTitle.ts'
 
 test('titleFor puts the page first and the app second', () => {
-  assert.equal(titleFor('Library'), 'Library · Mediarium')
-  assert.equal(titleFor('Server and backup'), 'Server and backup · Mediarium')
-  assert.equal(titleFor('  Dashboard '), 'Dashboard · Mediarium')
+  assert.equal(titleFor('Library'), 'Library · Cue')
+  assert.equal(titleFor('Server and backup'), 'Server and backup · Cue')
+  assert.equal(titleFor('  Dashboard '), 'Dashboard · Cue')
 })
 
-test('titleFor never says Mediarium twice', () => {
-  assert.equal(titleFor(''), 'Mediarium')
-  assert.equal(titleFor('Mediarium'), 'Mediarium')
+test('titleFor never says Cue twice', () => {
+  assert.equal(titleFor(''), 'Cue')
+  assert.equal(titleFor('Cue'), 'Cue')
 })

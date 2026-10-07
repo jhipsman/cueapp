@@ -16,7 +16,7 @@ import (
 // started the container. On a server that is already reachable from the
 // internet it could be a stranger, so the sign-up is only open without a
 // code to someone on the home network (see httpsec.Proxies.FromHome). Anyone
-// else needs the one-time setup code Mediarium writes to its log every time
+// else needs the one-time setup code Cue writes to its log every time
 // it starts with no administrator (docker logs mediarium). The code lives only
 // in memory, is new on every start and is worthless once the account exists.
 
@@ -70,7 +70,7 @@ func (s *Server) AnnounceSetup() {
 	if err != nil || !needed {
 		return
 	}
-	slog.Warn("first-run setup: no administrator account exists yet. Open Mediarium in a browser to create it. "+
+	slog.Warn("first-run setup: no administrator account exists yet. Open Cue in a browser to create it. "+
 		"From the home network no code is needed. From anywhere else (for example through a reverse proxy) enter the one-time setup code shown here",
 		"setup_code", s.setupCode())
 }
@@ -97,5 +97,5 @@ func (s *Server) setupCodeMatches(given string) bool {
 }
 
 // setupCodeMessage is the answer to a missing or wrong code.
-const setupCodeMessage = "This Mediarium has no account yet, and you are not on the home network, so it needs its one-time setup code. " +
-	"You'll find it in the Mediarium log (for example, run: docker logs mediarium). Look for \"setup code\"."
+const setupCodeMessage = "This Cue has no account yet, and you are not on the home network, so it needs its one-time setup code. " +
+	"You'll find it in the Cue log (for example, run: docker logs mediarium). Look for \"setup code\"."

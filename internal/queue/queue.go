@@ -75,7 +75,7 @@ type Item struct {
 	Status       Status
 	ProgressPct  float64
 	Error        string
-	// Interrupted marks a paused item that nobody paused: Mediarium was
+	// Interrupted marks a paused item that nobody paused: Cue was
 	// stopped or restarted while it was downloading (see RecoverInterrupted).
 	Interrupted bool
 	// Priority and LineSeq say where a waiting item stands in the download
@@ -269,7 +269,7 @@ func (r *Repo) Get(id int64) (Item, error) {
 	return it, nil
 }
 
-// Pause parks item id as paused. interrupted says nobody paused it: Mediarium
+// Pause parks item id as paused. interrupted says nobody paused it: Cue
 // was stopped or restarted while it was downloading. Its progress is left as
 // it is and its error text is cleared.
 func (r *Repo) Pause(id int64, interrupted bool) error {
@@ -285,7 +285,7 @@ func (r *Repo) Pause(id int64, interrupted bool) error {
 }
 
 // RecoverInterrupted pauses every item that was downloading or importing when
-// Mediarium last stopped: nothing is running it any more, so it would sit
+// Cue last stopped: nothing is running it any more, so it would sit
 // there for ever. They come back paused and marked interrupted, and stay that
 // way until a person resumes them. Items that were only waiting in line stay
 // waiting: nothing was started for them, and the line carries on by itself.

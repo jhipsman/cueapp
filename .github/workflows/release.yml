@@ -234,7 +234,7 @@ jobs:
         run: |
           set -euo pipefail
           if [ -z "${UPDATE_SIGNING_KEY}" ]; then
-            echo "::warning::The UPDATE_SIGNING_KEY secret is not set, so this release is NOT signed. Mediarium will not offer to install it from the Update now button."
+            echo "::warning::The UPDATE_SIGNING_KEY secret is not set, so this release is NOT signed. Cue will not offer to install it from the Update now button."
             exit 0
           fi
           pub="$(sed -n 's/^var updatePublicKey = "\(.*\)"$/\1/p' cmd/app/main.go)"
@@ -264,7 +264,7 @@ jobs:
           fi
           gh release create "${TAG}" release/* \
             --repo "${GITHUB_REPOSITORY}" \
-            --title "Mediarium ${TAG}" \
+            --title "Cue ${TAG}" \
             "${notes[@]}" \
             ${flags}
 

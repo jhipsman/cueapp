@@ -2,23 +2,23 @@
 set -e
 
 # ---- Installed updates ---------------------------------------------------------
-# Mediarium can install a newer program file into <config>/update/app (from the
+# Cue can install a newer program file into <config>/update/app (from the
 # Settings > System page, or pushed through the API; see docs/INSTALL.md). Before
 # starting the app this script decides which program to run: the one inside the
 # image, or the installed one. The installed one is used only when ALL of these hold:
 #   - it is an executable file, and its checksum matches app.sha256 (when present);
-#   - it answers --version-check as a Mediarium program for this same system;
+#   - it answers --version-check as a Cue program for this same system;
 #   - its version is not older than the image's own (the image's program decides);
 #   - it has not stopped right after starting three times in a row.
 # Otherwise it is ignored (one line says why) and the image's program starts, so a
-# bad update can never stop Mediarium from starting. Set
+# bad update can never stop Cue from starting. Set
 # MEDIARIUM_SKIP_INSTALLED_UPDATE=1 to ignore an installed update by hand.
 # The installed program is only ever run as the app user (PUID/PGID), never as root.
 UPDATE_DIR="${CONFIG_DIR:-/config}/update"
 IMAGE_BIN="${MEDIARIUM_IMAGE_BIN:-/app/app}"
 APP_TO_RUN="$IMAGE_BIN"
 
-say() { echo "Mediarium: $*" >&2; }
+say() { echo "Cue: $*" >&2; }
 
 # run_as is redefined below when this script starts as root.
 run_as() { "$@"; }
@@ -84,7 +84,7 @@ choose_app() {
   set -- $line
   set +f
   if [ "$1" != "mediarium" ] || [ -z "$2" ] || [ "$3" != "$img_plat" ]; then
-    say "ignoring the installed update: it does not answer as a Mediarium program for this system."
+    say "ignoring the installed update: it does not answer as a Cue program for this system."
     return 0
   fi
   pver="$2"
@@ -141,7 +141,7 @@ else
   run_as() { setpriv --reuid="${PUID}" --regid="${PGID}" --clear-groups "$@"; }
 fi
 
-# /config is Mediarium's own private state, so it is safe to (re)own it.
+# /config is Cue's own private state, so it is safe to (re)own it.
 mkdir -p /config
 # -h: a link inside /config is changed itself, never what it points at.
 chown -hR "${PUID}:${PGID}" /config 2>/dev/null || true
@@ -196,7 +196,7 @@ for dir in "${DOWNLOADS_DIR:-/downloads}" "${MOVIES_DIR:-/movies}" "${TV_DIR:-/t
     if is_fresh "$dir"; then
       chown "${PUID}:${PGID}" "$dir"
     else
-      echo "WARNING: $dir is not writable by uid ${PUID}/gid ${PGID}. Fix the folder permissions on the host or change PUID/PGID; Mediarium will not touch it." >&2
+      echo "WARNING: $dir is not writable by uid ${PUID}/gid ${PGID}. Fix the folder permissions on the host or change PUID/PGID; Cue will not touch it." >&2
       continue
     fi
   fi

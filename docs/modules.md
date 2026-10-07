@@ -1,6 +1,6 @@
 # Media types (modules)
 
-Mediarium looks after several kinds of media, and each kind is a module. **Settings > Media types** (administrators only) is where you switch them on and off. A module that's off disappears from the menu and does nothing in the background.
+Cue looks after several kinds of media, and each kind is a module. **Settings > Media types** (administrators only) is where you switch them on and off. A module that's off disappears from the menu and does nothing in the background.
 
 | Module | Default | State |
 |---|---|---|
@@ -21,7 +21,7 @@ Mediarium looks after several kinds of media, and each kind is a module. **Setti
 - **Movies**, **TV shows** and **Music** can be switched on and off.
 - **Ebooks** and **Audiobooks** switch on and off like the others (see [books.md](./books.md)).
 - Each card says **On** or **Off**, and its switch reads **Switched on** or **Switched off**.
-- The last module that's on can't be switched off. Its switch is locked, with a note that Mediarium needs at least one kind of media.
+- The last module that's on can't be switched off. Its switch is locked, with a note that Cue needs at least one kind of media.
 - All five cards look alike: an icon, the name, a one-line description and the switch.
 - The music folder and the **Import my existing collection** button are on the **Folders and file names** page, with the movie, TV and downloads folders (see [music.md](./music.md#importing-an-existing-collection)). The music folder shows there even while Music is off, greyed out with a note to switch Music on first. The Ebooks and Audiobooks folders work the same way: greyed out while their format is off, starting from `EBOOKS_DIR` and `AUDIOBOOKS_DIR` (or the one you set in the setup wizard).
 
@@ -55,7 +55,7 @@ Downloads use `DOWNLOADS_DIR` (`/downloads`, setting `library.downloads_path`). 
 
 ### Adding music, ebooks or audiobooks later
 
-**The easy way:** if your movies, TV and downloads already share one mapped folder (for example `/data/Movies`, `/data/tv` and `/data/downloads`), there's nothing to change in your compose file. Under **Settings > Library > Folders and file names**, a folder that isn't found offers **Use /data/Ebooks** (or Music, Audiobooks), which creates it next to the others and fills in the box. Then press **Save**. A missing folder inside a mapped one also gets a **Create this folder** button, and the setup wizard offers **create it now**. Mediarium only creates a folder one level inside a folder that is mapped to your device and writable, so nothing ends up inside the container where an update would lose it.
+**The easy way:** if your movies, TV and downloads already share one mapped folder (for example `/data/Movies`, `/data/tv` and `/data/downloads`), there's nothing to change in your compose file. Under **Settings > Library > Folders and file names**, a folder that isn't found offers **Use /data/Ebooks** (or Music, Audiobooks), which creates it next to the others and fills in the box. Then press **Save**. A missing folder inside a mapped one also gets a **Create this folder** button, and the setup wizard offers **create it now**. Cue only creates a folder one level inside a folder that is mapped to your device and writable, so nothing ends up inside the container where an update would lose it.
 
 **Otherwise:**
 
@@ -65,19 +65,19 @@ Downloads use `DOWNLOADS_DIR` (`/downloads`, setting `library.downloads_path`). 
 
 ## On the dashboard
 
-The top row of the dashboard has a card for every kind of media (Movies, TV shows, Music, Ebooks, Audiobooks) and a compact **Server** card as the last one. A card shows how many you have and opens that Library tab. A kind that's switched off keeps its card, dimmed with an "Off" label and the count it had. The Server card shows the processor (with Mediarium's own share), memory and storage in use, with a small dot that turns amber and then red as any of them fills up. What's downloading and what's wanted are in the greeting card above it. The wanted number is the length of the list on Upcoming > Wanted: monitored titles with no file, and episodes that have already aired. On wide screens all six cards sit in one row, on medium screens in two rows of three, and on phones two by two. Basic users don't see the Server card.
+The top row of the dashboard has a card for every kind of media (Movies, TV shows, Music, Ebooks, Audiobooks) and a compact **Server** card as the last one. A card shows how many you have and opens that Library tab. A kind that's switched off keeps its card, dimmed with an "Off" label and the count it had. The Server card shows the processor (with Cue's own share), memory and storage in use, with a small dot that turns amber and then red as any of them fills up. What's downloading and what's wanted are in the greeting card above it. The wanted number is the length of the list on Upcoming > Wanted: monitored titles with no file, and episodes that have already aired. On wide screens all six cards sit in one row, on medium screens in two rows of three, and on phones two by two. Basic users don't see the Server card.
 
-![The Server card on the dashboard, opened to show load, uptimes, what Mediarium itself uses and the free space of each folder](images/dashboard-server.png)
+![The Server card on the dashboard, opened to show load, uptimes, what Cue itself uses and the free space of each folder](images/dashboard-server.png)
 
-*The Server card opened in place: load and uptimes, what Mediarium itself uses, and one bar per folder. Press it again to close it.*
+*The Server card opened in place: load and uptimes, what Cue itself uses, and one bar per folder. Press it again to close it.*
 
 The full picture (bars for CPU, memory and storage side by side, load, uptimes and the disk of each folder) is on the Server card of the **Server and backup** settings page.
 
 The numbers come from `GET /api/system/stats` (administrators only).
 
 - `cpu.percent` is the whole machine, all cores together (100 means every core busy). In a container limited to fewer cores than the machine has (Docker `--cpus`, a NAS app limit), it's that container's own use of its allowance instead, and `cpu.cores` is the allowance.
-- `app.cpuPercent` is Mediarium's own use as a share of **one** core (100 is one core fully busy, 250 is two and a half), so it can pass 100 on a multi-core machine.
-- On Docker Desktop for Windows or macOS, the container only sees the small Linux virtual machine Docker runs in, not the computer around it. An idle Mediarium then shows about 0% for the machine, while `app.cpuPercent` shows what Mediarium itself uses.
+- `app.cpuPercent` is Cue's own use as a share of **one** core (100 is one core fully busy, 250 is two and a half), so it can pass 100 on a multi-core machine.
+- On Docker Desktop for Windows or macOS, the container only sees the small Linux virtual machine Docker runs in, not the computer around it. An idle Cue then shows about 0% for the machine, while `app.cpuPercent` shows what Cue itself uses.
 - Readings are taken over at least a second, so opening the page twice in a row shows the same figure.
 - `storage` (`{usedBytes, freeBytes, totalBytes}`) adds up the disks that hold the downloads, movies, TV, music (when the music module is on) and settings folders. Each disk is counted once, however many of the folders are on it. Two folders count as one disk when the system gives them the same device or file system id, or when they report exactly the same total, free and used space. That second check catches a NAS volume (Synology Btrfs shares, for example) whose shared folders are separate mounts that all sit on one volume. On Windows a disk is a drive letter. `disks` still lists every folder.
 

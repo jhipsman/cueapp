@@ -19,7 +19,7 @@ import (
 	"github.com/rdborg/mediarium/internal/mediafiles"
 )
 
-// Reading and listening in Mediarium itself (the Books app at /bookshelf):
+// Reading and listening in Cue itself (the Books app at /bookshelf):
 // the ebook file for the reader, an audiobook's tracks for the player, and
 // where each person is in each book.
 

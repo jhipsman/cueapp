@@ -27,7 +27,7 @@ import (
 
 // DefinitionStore keeps a local copy of the community-maintained Cardigann
 // indexer definitions (github.com/Prowlarr/Indexers). Nothing is bundled
-// with Mediarium: the catalogue is downloaded, as one archive of the
+// with Cue: the catalogue is downloaded, as one archive of the
 // repository, only when someone opens the "add a site" list (or adds a
 // site whose definition isn't cached yet), and refreshed at most once a
 // day after that unless asked.
@@ -61,7 +61,7 @@ const DefaultDefinitionsURL = "https://github.com/Prowlarr/Indexers/archive/refs
 // come from, for the UI and docs.
 const (
 	DefinitionsSource  = "Prowlarr/Indexers (https://github.com/Prowlarr/Indexers), community-maintained Cardigann definitions"
-	DefinitionsLicence = "The Prowlarr/Indexers repository publishes no licence file; many definitions are synced from Jackett (GPL-2.0). Mediarium does not ship them: they are downloaded to your own server when you open the site list."
+	DefinitionsLicence = "The Prowlarr/Indexers repository publishes no licence file; many definitions are synced from Jackett (GPL-2.0). Cue does not ship them: they are downloaded to your own server when you open the site list."
 )
 
 // SupportedSchema is the Cardigann definition schema version the engine
@@ -363,7 +363,7 @@ func (s *DefinitionStore) download(ctx context.Context) ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("build definitions request: %w", err)
 	}
-	req.Header.Set("User-Agent", "Mediarium")
+	req.Header.Set("User-Agent", "Cue")
 	resp, err := client.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("could not download the site list: %w", err)
@@ -491,7 +491,7 @@ var predefinedInfo = map[string][2]string{
 	"info_cookie": {"How to get the cookie",
 		"Sign in to the site in your web browser, open the browser's developer tools, reload a page of the site and copy the value of the Cookie request header from the network tab. Paste it into the Cookie field. When the site signs you out, the cookie stops working and has to be copied again."},
 	"info_flaresolverr": {"About Cloudflare protection",
-		"This site may show a Cloudflare check that only a real browser can pass. To use it, run FlareSolverr alongside Mediarium and set its address in Settings > Indexers & Search."},
+		"This site may show a Cloudflare check that only a real browser can pass. To use it, run FlareSolverr alongside Cue and set its address in Settings > Indexers & Search."},
 	"info_useragent": {"About the User-Agent",
 		"Some sites tie your session cookie to the browser it was created in. Copy your browser's User-Agent header together with the cookie."},
 	"info_category_8000": {"About categories",

@@ -4,8 +4,8 @@ import Icon from './Icon'
 import { useToast } from './Toast'
 import { url as urlCheck } from '../validate'
 
-// The address you open Mediarium at. Messages use it for their "Open in
-// Mediarium" button; with none set they carry no link. Saves by itself a
+// The address you open Cue at. Messages use it for their "Open in
+// Cue" button; with none set they carry no link. Saves by itself a
 // moment after you stop typing, or when you leave the box.
 export default function PublicAddress() {
   const toast = useToast()
@@ -36,7 +36,7 @@ export default function PublicAddress() {
       const s = await api.putSettings({ publicUrl: v })
       setStored(s.publicUrl ?? '')
       setText(s.publicUrl ?? '')
-      toast.success(v ? 'Saved: messages now link to Mediarium.' : 'Saved: messages carry no link.')
+      toast.success(v ? 'Saved: messages now link to Cue.' : 'Saved: messages carry no link.')
     } catch (e) {
       toast.error(`Not saved: ${e instanceof Error ? e.message : String(e)}`)
       setText(stored)
@@ -51,7 +51,7 @@ export default function PublicAddress() {
         <Icon name="external" size={14} /> Link in messages
       </legend>
       <label className="field" htmlFor="public-address" style={{ display: 'grid', gap: 6, maxWidth: 480 }}>
-        <span>Address of Mediarium</span>
+        <span>Address of Cue</span>
         <input
           id="public-address"
           value={text}
@@ -66,7 +66,7 @@ export default function PublicAddress() {
           aria-invalid={error ? true : undefined}
         />
       </label>
-      <small style={{ color: error ? 'var(--danger)' : 'var(--text-dim)' }}>{error ?? 'Emails and push messages get an Open in Mediarium button that goes here. Leave it empty for no link.'}</small>
+      <small style={{ color: error ? 'var(--danger)' : 'var(--text-dim)' }}>{error ?? 'Emails and push messages get an Open in Cue button that goes here. Leave it empty for no link.'}</small>
     </fieldset>
   )
 }

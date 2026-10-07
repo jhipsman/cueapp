@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-// SavedFile is a subtitle Mediarium downloaded and saved next to a video.
+// SavedFile is a subtitle Cue downloaded and saved next to a video.
 type SavedFile struct {
 	Kind         string // "movie" or "episode"
 	MediaID      int64
@@ -21,7 +21,7 @@ type SavedFile struct {
 	DownloadedAt time.Time
 }
 
-// FileRepo remembers the subtitles Mediarium saved.
+// FileRepo remembers the subtitles Cue saved.
 type FileRepo struct {
 	db *sql.DB
 }
@@ -85,7 +85,7 @@ func (r *FileRepo) MarkChecked(kind string, mediaID int64, language string) erro
 }
 
 // Forget drops what is known about a subtitle (it was changed or removed
-// outside Mediarium, so it is no longer Mediarium's to replace).
+// outside Cue, so it is no longer Cue's to replace).
 func (r *FileRepo) Forget(kind string, mediaID int64, language string) error {
 	if _, err := r.db.Exec(`DELETE FROM subtitle_files WHERE kind = ? AND media_id = ? AND language = ?`, kind, mediaID, language); err != nil {
 		return fmt.Errorf("forget subtitle file: %w", err)

@@ -12,7 +12,7 @@ import (
 )
 
 // Overseerr/Jellyseerr and Ombi hold what people asked for. Requests that
-// are not downloaded yet become monitored titles in Mediarium (a movie by
+// are not downloaded yet become monitored titles in Cue (a movie by
 // TMDB id; a show by TMDB id with the requested seasons monitored, future
 // episodes included), and the item's own events say who asked. Requests
 // that are already available there are skipped: the files exist and are
@@ -187,7 +187,7 @@ func (im *Importer) planRequests(ctx context.Context, p *plan, rp *RequestsPrevi
 	}
 	wg.Wait()
 
-	// Names: from Mediarium's library when it has the title, otherwise from
+	// Names: from Cue's library when it has the title, otherwise from
 	// TMDB (only for the requests that would be added, to save lookups).
 	for i := range entries {
 		e := &entries[i]

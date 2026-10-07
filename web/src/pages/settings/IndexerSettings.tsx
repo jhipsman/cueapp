@@ -102,7 +102,7 @@ export default function IndexerSettings() {
   return (
     <div className="settings-stack">
       <p className="span-all" style={{ color: 'var(--text-dim)', margin: 0 }}>
-        <strong>Indexers</strong> are the sites Mediarium searches for downloads. Sign up on one, then add its address and API key here.
+        <strong>Indexers</strong> are the sites Cue searches for downloads. Sign up on one, then add its address and API key here.
       </p>
       <div className="indexer-cols span-all">
       <fieldset className="group usenet">
@@ -149,7 +149,7 @@ export default function IndexerSettings() {
         ) : (
           <>
             <p style={{ marginTop: 0 }}>
-              Some sites show a &quot;checking your browser&quot; page that only a real browser can pass. Run the free <strong>FlareSolverr</strong> helper next to Mediarium and enter its address here. The <code>-full</code> version of Mediarium has it built in.
+              Some sites show a &quot;checking your browser&quot; page that only a real browser can pass. Run the free <strong>FlareSolverr</strong> helper next to Cue and enter its address here. The <code>-full</code> version of Cue has it built in.
             </p>
             <details className="how-details" style={{ marginBottom: 12 }}>
               <summary>How to add FlareSolverr to Docker</summary>

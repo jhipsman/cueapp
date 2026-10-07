@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-// apiRequestInterval keeps Mediarium under OpenSubtitles' free limit of 5
+// apiRequestInterval keeps Cue under OpenSubtitles' free limit of 5
 // requests per second per IP address. A sweep over a large library would
 // otherwise burst past it and be told to stop.
 const apiRequestInterval = 250 * time.Millisecond

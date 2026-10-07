@@ -149,7 +149,7 @@ func TestMediaServerFormIsChecked(t *testing.T) {
 		{"name too long", "POST", "/api/media-servers", good(map[string]any{"name": strings.Repeat("n", 101)}), "at most 100"},
 		{"unknown type", "POST", "/api/media-servers", good(map[string]any{"kind": "kodi"}), "Plex, Jellyfin, Emby, Audiobookshelf or Kavita"},
 		{"relative folder mapping", "POST", "/api/media-servers", good(map[string]any{"pathMap": []map[string]string{{"from": "media/movies", "to": "/data/movies"}}}), "isn't complete"},
-		{"half a folder mapping", "POST", "/api/media-servers", good(map[string]any{"pathMap": []map[string]string{{"from": "/media/movies", "to": ""}}}), "needs a folder in Mediarium"},
+		{"half a folder mapping", "POST", "/api/media-servers", good(map[string]any{"pathMap": []map[string]string{{"from": "/media/movies", "to": ""}}}), "needs a folder in Cue"},
 	})
 }
 

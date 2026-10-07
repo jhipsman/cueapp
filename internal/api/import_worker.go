@@ -209,7 +209,7 @@ func describeImportFailure(err error) (note string, permanent, hard bool) {
 		case status.Code == http.StatusNotFound:
 			return "The movie database doesn't have this title. It looks again tomorrow.", true, true
 		case status.Code == http.StatusTooManyRequests:
-			return "The movie database asked Mediarium to slow down. It tries again soon.", false, false
+			return "The movie database asked Cue to slow down. It tries again soon.", false, false
 		default:
 			return "The movie database isn't answering right now. It tries again soon.", false, false
 		}

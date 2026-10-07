@@ -94,7 +94,7 @@ func (s *Server) importRunning(kind libimport.Kind, includeScans bool) string {
 	if !busy {
 		return ""
 	}
-	return fmt.Sprintf("A %s import is already running. It carries on in the background, so you can keep using Mediarium. Start another one when it has finished.", kindLabel(kind))
+	return fmt.Sprintf("A %s import is already running. It carries on in the background, so you can keep using Cue. Start another one when it has finished.", kindLabel(kind))
 }
 
 func boolOr(v *bool, def bool) bool {

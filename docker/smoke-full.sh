@@ -1,5 +1,5 @@
 #!/bin/sh
-# Starts the "full" image and checks that both Mediarium and the built-in
+# Starts the "full" image and checks that both Cue and the built-in
 # Cloudflare helper answer. Usage: docker/smoke-full.sh <image>
 set -eu
 image="${1:?usage: smoke-full.sh <image>}"
@@ -23,4 +23,4 @@ if [ "$app" != 1 ] || [ "$helper" != 1 ]; then
   docker logs "$name" >&2 || true
   exit 1
 fi
-echo "Smoke test passed: Mediarium and the Cloudflare helper both answer."
+echo "Smoke test passed: Cue and the Cloudflare helper both answer."

@@ -18,7 +18,7 @@ function sample(over: Partial<Diagnostics> = {}): Diagnostics {
     downloadsRunning: 2,
     usenet: [{ server: 'news.example.com:563', inUse: 4, limit: 10, configured: 10 }],
     health: [{ id: 'no-vpn', level: 'warn', title: 'Torrenting without a VPN' }],
-    log: ['2026/09/29 18:00:00 Mediarium listening on :8264'],
+    log: ['2026/09/29 18:00:00 Cue listening on :8264'],
     ...over,
   }
 }
@@ -28,7 +28,7 @@ const table: { name: string; input: Diagnostics; has: string[]; lacks?: string[]
     name: 'a normal install',
     input: sample(),
     has: [
-      'Mediarium support report',
+      'Cue support report',
       'Version: 1.2.0 (linux/amd64, go1.27.1)',
       'Running for: 3 hours',
       'Safe mode: off',
@@ -39,7 +39,7 @@ const table: { name: string; input: Diagnostics; has: string[]; lacks?: string[]
       'Usenet news.example.com:563: 4 of 10 connections in use',
       '  [warn] Torrenting without a VPN',
       'Recent log (1 lines):',
-      '2026/09/29 18:00:00 Mediarium listening on :8264',
+      '2026/09/29 18:00:00 Cue listening on :8264',
     ],
   },
   {
@@ -82,7 +82,7 @@ const table: { name: string; input: Diagnostics; has: string[]; lacks?: string[]
   {
     name: 'an older server with no update row',
     input: sample(),
-    has: ['Mediarium support report'],
+    has: ['Cue support report'],
     lacks: ['Updates:'],
   },
   {
@@ -108,7 +108,7 @@ const table: { name: string; input: Diagnostics; has: string[]; lacks?: string[]
   {
     name: 'an older server without a problem log',
     input: sample(),
-    has: ['Mediarium support report'],
+    has: ['Cue support report'],
     lacks: ['Recent problems'],
   },
   {

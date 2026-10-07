@@ -212,7 +212,7 @@ func (im *Importer) run(ctx context.Context, opts Options) {
 	p, err := im.plan(ctx, snap, opts)
 	if err != nil {
 		slog.Error("migrate: plan import", "err", err)
-		im.fail("could not read Mediarium's own library: " + err.Error())
+		im.fail("could not read Cue's own library: " + err.Error())
 		im.finish(StepFailed)
 		return
 	}

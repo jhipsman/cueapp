@@ -5,11 +5,11 @@
 // the type, date and genre tags of release groups by MusicBrainz id. It
 // needs no account or key.
 //
-// Requests identify Mediarium with a User-Agent, go through the netguard
+// Requests identify Cue with a User-Agent, go through the netguard
 // dialer, and every answer is kept in memory for an hour: these lists change
 // slowly and many people can open the same page.
 //
-// The package depends on nothing else in Mediarium except netguard.
+// The package depends on nothing else in Cue except netguard.
 package listenbrainz
 
 import (
@@ -96,7 +96,7 @@ func UserAgent(version string) string {
 }
 
 // New returns a client for the public server that identifies itself as this
-// version of Mediarium.
+// version of Cue.
 func New(version string, opts ...Option) *Client {
 	c := &Client{
 		baseURL:   DefaultBaseURL,

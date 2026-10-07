@@ -203,7 +203,7 @@ Every route the server exposes. Routes marked **public** need no sign-in; all ot
 |---|---|---|---|
 | GET | `/api/media-servers` | admin | lists the Plex, Jellyfin and Emby servers (tokens are never included). |
 | POST | `/api/media-servers` | admin | adds a media server; refreshAfterImport and enabled default to on. |
-| POST | `/api/media-servers/discover` | admin | looks for Plex, Jellyfin and Emby servers on the local network: broadcasts, plus a scan of private networks (subnets, or Mediarium's own networks and common ... |
+| POST | `/api/media-servers/discover` | admin | looks for Plex, Jellyfin and Emby servers on the local network: broadcasts, plus a scan of private networks (subnets, or Cue's own networks and common ... |
 | POST | `/api/media-servers/jellyfin/quickconnect` | admin | starts Jellyfin Quick Connect at baseUrl and answers the code to enter in a Jellyfin app, and an id to poll with. |
 | GET | `/api/media-servers/jellyfin/quickconnect/{id}` | admin | reports whether the Quick Connect code was approved; once it is, the Jellyfin server is saved with the access token it gave and returned as server. |
 | GET | `/api/media-servers/links` | any account | lists where a title can be watched: with tmdbId and kind (movie or tv), the enabled servers that have it; without tmdbId, each enabled server's own home page... |
@@ -405,7 +405,7 @@ Every route the server exposes. Routes marked **public** need no sign-in; all ot
 | GET | `/api/settings` | admin | never echoes the TMDB key back (credentials never logged/exposed in plaintext beyond what's needed); HasTMDBAPIKey tells the UI whether one is already config... |
 | PUT | `/api/settings` | admin | applies a partial update — only non-empty fields are written, so the frontend can PUT just the field(s) a given wizard step/settings form changed. |
 | GET | `/api/settings/filesystem-check` | admin |  |
-| GET | `/api/settings/folder-check` | admin | inspects one folder for the setup screens: does it exist, can Mediarium write to it, how much room is left and — in Docker — was it actually mapped in fr... |
+| GET | `/api/settings/folder-check` | admin | inspects one folder for the setup screens: does it exist, can Cue write to it, how much room is left and — in Docker — was it actually mapped in fr... |
 | POST | `/api/settings/folder-create` | admin | makes a missing library folder (administrators), only where creatableParent allows. |
 | GET | `/api/settings/hardcover` | admin | GET /api/settings/hardcover |
 | PUT | `/api/settings/hardcover` | admin | PUT /api/settings/hardcover {"token": "..."}: checks the token with Hardcover and saves it (encrypted). |
@@ -449,10 +449,10 @@ Every route the server exposes. Routes marked **public** need no sign-in; all ot
 | GET | `/api/system/problems/export` | admin | sends the problems that match the filters as a plain text file, newest first, to attach to a support request. |
 | PUT | `/api/system/problems/notify` | admin | switches the notification for new errors on or off. |
 | POST | `/api/system/problems/read` | admin | marks problems as read: the ones listed, or all of them. |
-| POST | `/api/system/restart` | admin | restarts Mediarium. |
+| POST | `/api/system/restart` | admin | restarts Cue. |
 | POST | `/api/system/restore` | admin | takes a backup zip (form field "file", at most 1 GB), checks it strictly, stages it in <config>/restore-pending/ and restarts the app so main applies it befo... |
-| POST | `/api/system/shutdown` | admin | stops Mediarium for good. |
-| GET | `/api/system/stats` | admin | reports how busy the server is (CPU, memory, load, uptime, and Mediarium's own CPU as app.cpuPercent), the free space for each folder Mediarium uses, and the... |
+| POST | `/api/system/shutdown` | admin | stops Cue for good. |
+| GET | `/api/system/stats` | admin | reports how busy the server is (CPU, memory, load, uptime, and Cue's own CPU as app.cpuPercent), the free space for each folder Cue uses, and the... |
 | DELETE | `/api/system/update` | admin | removes the installed update, so the next start uses the program inside the container image. |
 | GET | `/api/system/update` | admin | reports the update state (administrators only). |
 | POST | `/api/system/update` | admin | takes the raw program file as the request body, and its SHA-256 in the X-Update-SHA256 header, checks both, and restarts into it. |
@@ -495,7 +495,7 @@ Every route the server exposes. Routes marked **public** need no sign-in; all ot
 
 | Method | Path | Access | What it does |
 |---|---|---|---|
-| GET | `/api/usage` | admin | reports, per third-party service, how much Mediarium used it in the last 24 hours and whether it refused because a limit was reached. |
+| GET | `/api/usage` | admin | reports, per third-party service, how much Cue used it in the last 24 hours and whether it refused because a limit was reached. |
 
 ## usenet-servers
 

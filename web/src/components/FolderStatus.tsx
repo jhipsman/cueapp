@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { api, type FolderCheck } from '../api'
 import { formatBytes } from '../format'
 
-// Live check of a folder path as it is typed: does it exist, can Mediarium
+// Live check of a folder path as it is typed: does it exist, can Cue
 // write to it, is it mapped to the device (Docker), and how much room is left.
 // A missing folder can be created when it would sit inside a mapped one, and
 // `suggest` offers a better place next to the other library folders (for

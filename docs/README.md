@@ -1,4 +1,4 @@
-# Mediarium documentation
+# Cue documentation
 
 Start here. The reference pages are generated from the code, and every change to the app updates its page in the same commit.
 
@@ -18,7 +18,7 @@ The screenshots in these pages come from demo mode: the movies, shows, artists, 
 | Send torrent traffic through the built-in WireGuard VPN, and what the kill switch does | [vpn.md](./vpn.md) |
 | Add indexers: Usenet and torrent APIs, sites from the definition list, private sites, Cloudflare and FlareSolverr | [indexers.md](./indexers.md) |
 | Give family members their own login, see what members can do, reset a password | [accounts.md](./accounts.md) |
-| Reach Mediarium from the internet safely (reverse proxy checklist, trusted proxies, what the app protects) | [security.md](./security.md) |
+| Reach Cue from the internet safely (reverse proxy checklist, trusted proxies, what the app protects) | [security.md](./security.md) |
 | Choose a quality profile (the built-in presets, cutoffs, upgrades, fallback profiles) | [quality-profiles.md](./quality-profiles.md) |
 | See why a title has not downloaded, read the Activity page, pause, resume or stop a download, retry without downloading again | [activity.md](./activity.md) |
 | Subtitles: the on/off switch, release subtitles, offers, daily limits, dismissing | [subtitles.md](./subtitles.md) |
@@ -35,7 +35,7 @@ The screenshots in these pages come from demo mode: the movies, shows, artists, 
 | Look up an environment variable | [reference/environment.md](./reference/environment.md) |
 | Look up a stored setting | [reference/settings-keys.md](./reference/settings-keys.md) |
 | Look up a problem code from Logs and errors | [reference/problem-codes.md](./reference/problem-codes.md) |
-| Know when a new version is out, update from inside the app, restart Mediarium, or push a program file to a running install | [INSTALL.md](./INSTALL.md#updating), [INSTALL.md](./INSTALL.md#updating-without-rebuilding-the-container) and [security.md](./security.md#updating-the-program) |
+| Know when a new version is out, update from inside the app, restart Cue, or push a program file to a running install | [INSTALL.md](./INSTALL.md#updating), [INSTALL.md](./INSTALL.md#updating-without-rebuilding-the-container) and [security.md](./security.md#updating-the-program) |
 | Understand version numbers, sign and publish a release, or push a test build | [RELEASING.md](./RELEASING.md) |
 
 ## Keeping the docs current

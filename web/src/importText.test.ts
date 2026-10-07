@@ -61,15 +61,15 @@ test('what happens after the import', () => {
 test('banner note about what starts afterwards', () => {
   const rows: [string, Partial<t.BatchCounts>, string][] = [
     ['shows, safe defaults', {}, 'Nothing will be downloaded.'],
-    ['shows, missing episodes', { monitorMissing: true }, "When it's done, Mediarium starts looking for the episodes you are missing."],
-    ['shows, watched', { monitor: true, noUpgrade: false }, "When it's done, Mediarium starts looking for new episodes and better versions of what you already have."],
-    ['shows, everything', { monitor: true, noUpgrade: false, monitorMissing: true }, "When it's done, Mediarium starts looking for the episodes you are missing and better versions of what you already have."],
+    ['shows, missing episodes', { monitorMissing: true }, "When it's done, Cue starts looking for the episodes you are missing."],
+    ['shows, watched', { monitor: true, noUpgrade: false }, "When it's done, Cue starts looking for new episodes and better versions of what you already have."],
+    ['shows, everything', { monitor: true, noUpgrade: false, monitorMissing: true }, "When it's done, Cue starts looking for the episodes you are missing and better versions of what you already have."],
     ['movies, safe defaults', { kind: 'movie' }, 'Nothing will be downloaded.'],
-    ['movies, watched', { kind: 'movie', monitor: true, noUpgrade: false }, "When it's done, Mediarium starts looking for better versions of what you already have."],
+    ['movies, watched', { kind: 'movie', monitor: true, noUpgrade: false }, "When it's done, Cue starts looking for better versions of what you already have."],
     ['movies, watched but better versions off', { kind: 'movie', monitor: true }, 'Nothing will be downloaded.'],
   ]
   for (const [name, over, want] of rows) assert.equal(t.upNextText(batch(over)), want, name)
-  assert.equal(t.upNextText(batch({ monitorMissing: true }), true), 'From now on, Mediarium looks for the episodes you are missing.')
+  assert.equal(t.upNextText(batch({ monitorMissing: true }), true), 'From now on, Cue looks for the episodes you are missing.')
   assert.equal(t.upNextText(batch(), true), 'They are not monitored, so nothing will be downloaded.')
 })
 

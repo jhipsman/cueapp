@@ -14,7 +14,7 @@ import (
 )
 
 func rel(tag string, pre bool) githubRelease {
-	return githubRelease{TagName: tag, Name: "Mediarium " + tag, Body: "Notes for " + tag, Prerelease: pre, PublishedAt: time.Date(2026, 10, 1, 0, 0, 0, 0, time.UTC)}
+	return githubRelease{TagName: tag, Name: "Cue " + tag, Body: "Notes for " + tag, Prerelease: pre, PublishedAt: time.Date(2026, 10, 1, 0, 0, 0, 0, time.UTC)}
 }
 
 func TestPickAndNewer(t *testing.T) {
@@ -163,8 +163,8 @@ func newFakeGitHub(t *testing.T, body string) *fakeGitHub {
 }
 
 const releaseList = `[
- {"tag_name":"v1.10.0","name":"Mediarium 1.10.0","body":"## Added\n- Faster search\n- Nicer pages","draft":false,"prerelease":false,"published_at":"2026-10-01T10:00:00Z","assets":[{"name":"sha256sums.txt","size":10}]},
- {"tag_name":"v1.9.0","name":"Mediarium 1.9.0","body":"old","draft":false,"prerelease":false,"published_at":"2026-09-01T10:00:00Z"},
+ {"tag_name":"v1.10.0","name":"Cue 1.10.0","body":"## Added\n- Faster search\n- Nicer pages","draft":false,"prerelease":false,"published_at":"2026-10-01T10:00:00Z","assets":[{"name":"sha256sums.txt","size":10}]},
+ {"tag_name":"v1.9.0","name":"Cue 1.9.0","body":"old","draft":false,"prerelease":false,"published_at":"2026-09-01T10:00:00Z"},
  {"tag_name":"v2.0.0-rc.1","name":"rc","body":"soon","draft":false,"prerelease":true,"published_at":"2026-10-02T10:00:00Z"}
 ]`
 

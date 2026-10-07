@@ -51,7 +51,7 @@ func (s *Server) changed(key, v string) bool {
 	return strings.TrimSpace(old) != v
 }
 
-// checkLibraryFolder refuses a media folder that would put Mediarium's own
+// checkLibraryFolder refuses a media folder that would put Cue's own
 // files at risk: the whole disk, the settings folder (holding the database and
 // the encryption key), a folder that contains it or one inside it. Clean-up and
 // "delete the files too" work on these folders, and the settings folder is
@@ -66,7 +66,7 @@ func (s *Server) checkLibraryFolder(v, label string) string {
 		return ""
 	}
 	if clean == cfg || strings.HasPrefix(clean+"/", cfg+"/") || strings.HasPrefix(cfg+"/", clean+"/") {
-		return label + " can't be, hold or sit inside Mediarium's own settings folder (" + s.cfg.ConfigDir + "). Pick a different folder."
+		return label + " can't be, hold or sit inside Cue's own settings folder (" + s.cfg.ConfigDir + "). Pick a different folder."
 	}
 	return ""
 }
@@ -206,7 +206,7 @@ func (s *Server) validateSettings(req *settingsPayload) string {
 		for _, l := range req.SubtitleLanguages {
 			if l = strings.TrimSpace(l); l != "" {
 				if !languageCode.MatchString(l) {
-					return fmt.Sprintf("%q isn't a language code Mediarium can use. Pick your languages from the list.", l)
+					return fmt.Sprintf("%q isn't a language code Cue can use. Pick your languages from the list.", l)
 				}
 				cleaned = append(cleaned, l)
 			}
@@ -273,13 +273,13 @@ func (s *Server) validateSettings(req *settingsPayload) string {
 		*req.FlareSolverrURL = v
 	}
 
-	// The address Mediarium is opened at, for links in notifications.
+	// The address Cue is opened at, for links in notifications.
 	if req.PublicURL != nil {
 		v := strings.TrimRight(strings.TrimSpace(*req.PublicURL), "/")
 		if v != "" {
 			if m := firstProblem(
 				checkHTTPURL(v, "https://mediarium.example.com", true),
-				checkMaxLen(v, "The Mediarium address", 500),
+				checkMaxLen(v, "The Cue address", 500),
 			); m != "" {
 				return m
 			}

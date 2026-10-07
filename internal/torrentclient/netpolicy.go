@@ -23,7 +23,7 @@ import (
 //     address. UDP trackers cannot be tunnelled (they need a socket on the host
 //     network), so they are not used while the VPN is on.
 //   - Without one, they are dialled through the same check as the rest of
-//     Mediarium's outgoing connections (netguard): cloud metadata and other
+//     Cue's outgoing connections (netguard): cloud metadata and other
 //     link-local addresses are refused, even through a redirect or a host name
 //     that resolves there. Local and LAN addresses stay reachable.
 func applyNetworkPolicy(tcfg *torrent.ClientConfig, tunnel TunnelDialer) {

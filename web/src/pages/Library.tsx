@@ -272,7 +272,7 @@ export default function Library() {
     const usage = await (i.kind === 'movie' ? api.movieDiskUsage(i.id) : api.seriesDiskUsage(i.id)).catch(() => null)
     const answer = await confirm({
       title: `Remove ${i.title} from your library?`,
-      body: <p>Mediarium stops tracking it. You can add it back any time.</p>,
+      body: <p>Cue stops tracking it. You can add it back any time.</p>,
       confirmLabel: 'Remove',
       danger: true,
       option: removeOption(i.kind === 'movie' ? 'movie' : 'show', usage),
@@ -383,7 +383,7 @@ export default function Library() {
             <strong>{nameList(chosen.map((i) => i.title))}</strong>
           </p>
           <p>
-            Mediarium stops tracking {n === 1 ? 'it' : `all ${n}`} and cancels anything still downloading for {n === 1 ? 'it' : 'them'}. You can add {n === 1 ? 'it' : 'them'} back any time.
+            Cue stops tracking {n === 1 ? 'it' : `all ${n}`} and cancels anything still downloading for {n === 1 ? 'it' : 'them'}. You can add {n === 1 ? 'it' : 'them'} back any time.
           </p>
           <p>
             <strong>Your files stay where they are</strong> unless you tick the box below.

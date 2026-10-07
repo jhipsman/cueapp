@@ -106,7 +106,7 @@ func TestStuckDatabaseGivesAClearBusyAnswer(t *testing.T) {
 			Error string `json:"error"`
 			Busy  bool   `json:"busy"`
 		}
-		if err := json.Unmarshal(body, &payload); err != nil || payload.Error != "Mediarium is busy right now. Try again in a moment." || !payload.Busy {
+		if err := json.Unmarshal(body, &payload); err != nil || payload.Error != "Cue is busy right now. Try again in a moment." || !payload.Busy {
 			t.Fatalf("GET %s: unexpected busy body %q (%v)", path, body, err)
 		}
 		if ct := resp.Header.Get("Content-Type"); !strings.HasPrefix(ct, "application/json") {

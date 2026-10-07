@@ -42,10 +42,10 @@ export default function Login() {
   return (
     <main className="auth-page">
       <form className="auth-card" onSubmit={onSubmit}>
-        <h1 className="sr-only">Sign in to Mediarium</h1>
+        <h1 className="sr-only">Sign in to Cue</h1>
         <div className="auth-logo">
           <BrandMark className="auth-mark" />
-          <span>Mediarium</span>
+          <span>Cue</span>
         </div>
         <p className="auth-sub">Sign in to continue</p>
         {error && <p className="error-text">{error}</p>}
@@ -66,7 +66,7 @@ export default function Login() {
         <details className="forgot">
           <summary>Forgot your password?</summary>
           <p>
-            Mediarium can&apos;t send reset emails. Ask an administrator to set a new password in Settings &gt; Accounts. If you&apos;re the only administrator, run this on the machine that runs Mediarium (swap 1000:1000 for your own PUID:PGID):
+            Cue can&apos;t send reset emails. Ask an administrator to set a new password in Settings &gt; Accounts. If you&apos;re the only administrator, run this on the machine that runs Cue (swap 1000:1000 for your own PUID:PGID):
           </p>
           <code className="forgot-cmd">docker exec -it -u 1000:1000 mediarium /app/app reset-password &lt;username&gt;</code>
           <p>

@@ -12,7 +12,7 @@ import PremiumizeCard from '../../components/PremiumizeCard'
 import { useLive } from '../../useLive'
 import { useConfirm } from '../../components/ConfirmProvider'
 
-// Downloads: Mediarium downloads for itself. Usenet needs only your
+// Downloads: Cue downloads for itself. Usenet needs only your
 // provider's news-server account; torrents need nothing at all. There is no
 // separate download client program to install or connect (unlike Sonarr and
 // Radarr, which hand grabs to SABnzbd, qBittorrent and the like).

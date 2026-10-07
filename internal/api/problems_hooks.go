@@ -57,7 +57,7 @@ func noteNotifyFailure(err error) {
 func noteServiceLimit(service string) {
 	switch service {
 	case serviceTMDB:
-		problems.Record(problems.Problem{Code: problems.CodeTMDBRateLimited, Message: "TMDB says Mediarium has made too many requests for now."})
+		problems.Record(problems.Problem{Code: problems.CodeTMDBRateLimited, Message: "TMDB says Cue has made too many requests for now."})
 	case serviceOpenSubtitles:
 		problems.Record(problems.Problem{Code: problems.CodeSubtitlesRateLimited, Message: "OpenSubtitles says a limit is reached."})
 	}
@@ -88,7 +88,7 @@ func noteBackupFailed(err error) {
 }
 
 func noteUpdateCheckFailed(err error) {
-	problems.Record(problems.Problem{Code: problems.CodeUpdateCheckFailed, Message: "Mediarium could not check for a new version.", Err: err})
+	problems.Record(problems.Problem{Code: problems.CodeUpdateCheckFailed, Message: "Cue could not check for a new version.", Err: err})
 }
 
 // noteUpdateInstallFailed records an update that could not be put in place.
@@ -99,11 +99,11 @@ func noteUpdateInstallFailed(version, message string, err error) {
 	})
 }
 
-// noteRestartedItself records that this run of Mediarium began after it
+// noteRestartedItself records that this run of Cue began after it
 // restarted itself because it had stopped answering.
 func noteRestartedItself(reason string, at time.Time) {
 	problems.Record(problems.Problem{
 		Code: problems.CodeAppRestartedItself, Subject: at.UTC().Format(time.RFC3339),
-		Message: "Mediarium restarted itself because it stopped answering.", Detail: reason,
+		Message: "Cue restarted itself because it stopped answering.", Detail: reason,
 	})
 }

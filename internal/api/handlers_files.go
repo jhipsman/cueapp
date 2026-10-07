@@ -98,7 +98,7 @@ func writeFolderError(w http.ResponseWriter, err error) {
 // paths it may contain (members must not see them); the log has the detail.
 func writeFileReadError(w http.ResponseWriter, err error) {
 	slog.Warn("read title files", "err", err)
-	writeError(w, http.StatusInternalServerError, "Couldn't read this title's files. Check the Mediarium log for details.")
+	writeError(w, http.StatusInternalServerError, "Couldn't read this title's files. Check the Cue log for details.")
 }
 
 // listFolder lists a folder's files, marking the ones the library tracks:

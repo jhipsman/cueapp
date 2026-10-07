@@ -7,7 +7,7 @@ import (
 	"github.com/rdborg/mediarium/internal/settings"
 )
 
-// The modules switchboard: which kinds of media Mediarium looks after.
+// The modules switchboard: which kinds of media Cue looks after.
 // Movies and TV are on by default; music, ebooks and audiobooks are off until
 // switched on. Turning
 // a module off hides its pages and stops its automation (no searches, RSS

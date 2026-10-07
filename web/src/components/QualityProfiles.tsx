@@ -295,7 +295,7 @@ export default function QualityProfilesSection() {
     <section className="card wide">
       <h2>Quality profiles</h2>
       <p style={{ color: 'var(--text-dim)' }}>
-        A profile sets which releases are acceptable and whether Mediarium keeps looking for a better version. Movies and shows use the default unless you pick another on their page.
+        A profile sets which releases are acceptable and whether Cue keeps looking for a better version. Movies and shows use the default unless you pick another on their page.
       </p>
       {error && <p className="error-text">{error}</p>}
 

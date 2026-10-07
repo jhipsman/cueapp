@@ -14,7 +14,7 @@ import (
 // Jackett is read with GET /api/v2.0/indexers?configured=true, the API key
 // in the apikey query parameter (that is how Jackett accepts it). Every
 // configured indexer becomes a Torznab indexer pointing at Jackett's own
-// feed for it, which is how Jackett is meant to be used; when Mediarium has
+// feed for it, which is how Jackett is meant to be used; when Cue has
 // a site definition with the same id, the site can be added directly
 // instead (JackettConn.Direct lists those ids).
 
@@ -60,7 +60,7 @@ func fetchJackett(ctx context.Context, hc *http.Client, c JackettConn) (jackettD
 }
 
 // torznabURL is Jackett's feed for one indexer, without the trailing /api
-// Mediarium adds itself.
+// Cue adds itself.
 func (d jackettData) torznabURL(id string) string {
 	return d.Base + "/api/v2.0/indexers/" + url.PathEscape(id) + "/results/torznab"
 }
@@ -93,7 +93,7 @@ func (im *Importer) planJackett(ctx context.Context, p *plan, ip *IndexersPrevie
 	}
 }
 
-// siteFor finds Mediarium's supported site definition with the id of a
+// siteFor finds Cue's supported site definition with the id of a
 // Jackett indexer; ok is false when there is none (or the site list is not
 // available).
 func (im *Importer) siteFor(ctx context.Context, id string) (indexers.DefinitionSummary, bool) {
@@ -157,9 +157,9 @@ func (im *Importer) planJackettIndexer(ctx context.Context, d *jackettData, x ja
 		item.Action = ActionAdd
 		item.Reason = "added through Jackett's Torznab feed, with Jackett's API key"
 		if canDirect {
-			item.Reason += "; Mediarium's site list also has " + sum.Name + ", which can be added as the site itself instead (list its id \"" + x.ID + "\" in jackett.direct)"
+			item.Reason += "; Cue's site list also has " + sum.Name + ", which can be added as the site itself instead (list its id \"" + x.ID + "\" in jackett.direct)"
 		} else if wantDirect {
-			item.Reason += "; Mediarium's site list has no " + x.ID + ", so it stays on Jackett"
+			item.Reason += "; Cue's site list has no " + x.ID + ", so it stays on Jackett"
 		}
 		if x.LastError != "" {
 			item.Reason += "; Jackett reports an error for it: " + x.LastError

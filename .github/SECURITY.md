@@ -2,7 +2,7 @@
 
 ## Supported versions
 
-Only the latest release of Mediarium gets security fixes. Update before
+Only the latest release of Cue gets security fixes. Update before
 reporting, in case it is already fixed.
 
 ## Reporting a problem
@@ -15,7 +15,7 @@ Report it privately instead, using GitHub's
 
 Include as much of this as you can:
 
-- the Mediarium version (Settings > System > About and credits) and how you run it
+- the Cue version (Settings > System > About and credits) and how you run it
   (Docker Compose, a NAS's Docker app, built from source)
 - what an attacker can do, and what they need first (for example, a member
   account, or access to the local network)
@@ -26,22 +26,22 @@ published and you're credited, unless you'd rather not be.
 
 ## Scope
 
-In scope: the Mediarium server, its web interface, its API, the Docker image
+In scope: the Cue server, its web interface, its API, the Docker image
 (`ghcr.io/rdborg/mediarium`) and the release binaries.
 
-Mediarium serves plain HTTP and is meant for your home network. Exposing
+Cue serves plain HTTP and is meant for your home network. Exposing
 port 8264 directly to the internet is not supported: use a VPN or a reverse
 proxy with HTTPS
 ([docs/security.md](../docs/security.md) has the checklist).
 
 Out of scope: problems in the sites, indexers, Usenet providers or VPN
-services you connect Mediarium to, and anything that needs an admin account
+services you connect Cue to, and anything that needs an admin account
 to already be compromised. An administrator is powerful by design
 (see "Who can do what" in [docs/security.md](../docs/security.md)), so "an
 administrator can do X" is not a vulnerability by itself. "A basic user, a
 stranger, an API key, a release or a web page can do X" is.
 
-## How Mediarium protects you
+## How Cue protects you
 
 - Passwords are stored as bcrypt hashes; API keys, passwords and VPN keys are
   never written to the logs (which are cleaned as they are written) and are
@@ -53,7 +53,7 @@ stranger, an API key, a release or a web page can do X" is.
 - An API key cannot make accounts or keys, download or restore a backup, or
   switch on pushed updates.
 - Session cookies are HttpOnly and SameSite=Strict (and Secure on HTTPS);
-  requests that change data must come from Mediarium's own address.
+  requests that change data must come from Cue's own address.
 - Every page carries a Content-Security-Policy and the usual security headers.
 - Outgoing connections (indexers, media servers, notifications,
   downloads, torrent trackers and web seeds) never go to cloud metadata or

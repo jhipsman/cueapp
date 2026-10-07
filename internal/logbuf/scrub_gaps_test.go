@@ -7,7 +7,7 @@ import (
 )
 
 // Realistic secrets, as they show up in logs and error messages of the
-// clients Mediarium talks to. Each must be gone from the result.
+// clients Cue talks to. Each must be gone from the result.
 func TestScrubRealisticSecrets(t *testing.T) {
 	tests := []struct {
 		name string
@@ -57,7 +57,7 @@ func TestScrubRealisticSecrets(t *testing.T) {
 // Ordinary log lines stay readable.
 func TestScrubLeavesOrdinaryLinesAlone(t *testing.T) {
 	for _, line := range []string{
-		"2026/09/30 11:00:00 Mediarium listening on :8264 (db: /config/app.db)",
+		"2026/09/30 11:00:00 Cue listening on :8264 (db: /config/app.db)",
 		`update: could not check for a new version err="GitHub did not give a usable answer: status 404"`,
 		"downloads: Movie.2026.1080p.WEB-DL.x264-GROUP.nzb finished in 3m10s",
 		"library: imported /data/Movies/Movie (2026)/Movie (2026).mkv",

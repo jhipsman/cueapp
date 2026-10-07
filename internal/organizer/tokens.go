@@ -17,7 +17,7 @@ import (
 //
 // A dot or underscore between the words ({Movie.CleanTitle}) puts that
 // character between the words of the value too. Token names are not case
-// sensitive. A known token with nothing to say (an IMDb id Mediarium doesn't
+// sensitive. A known token with nothing to say (an IMDb id Cue doesn't
 // have) simply disappears.
 
 // TokenKind says which formats a token belongs in.
@@ -231,7 +231,7 @@ func CheckFormat(format string, kind TokenKind) string {
 	check := func(inner string) string {
 		p := parseToken(inner)
 		if !p.known {
-			return fmt.Sprintf("{%s} isn't a token Mediarium knows. Pick one from the token list next to the box.", strings.TrimSpace(inner))
+			return fmt.Sprintf("{%s} isn't a token Cue knows. Pick one from the token list next to the box.", strings.TrimSpace(inner))
 		}
 		if p.pad != "" && strings.Trim(p.pad, "0") != "" {
 			return fmt.Sprintf(`After the colon, use zeros to set padding, like {Season:00}. "%s" won't work.`, p.pad)

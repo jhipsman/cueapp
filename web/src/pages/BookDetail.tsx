@@ -56,7 +56,7 @@ export default function BookDetail() {
     const hasFiles = !!(book.ebook.path || book.audiobook.path)
     const answer = await confirm({
       title: `Remove ${book.title} from your library?`,
-      body: <p>Mediarium stops looking for this book and cancels anything still downloading for it. You can add it back any time.</p>,
+      body: <p>Cue stops looking for this book and cancels anything still downloading for it. You can add it back any time.</p>,
       confirmLabel: 'Remove',
       danger: true,
       option: hasFiles ? { label: 'Also delete its files', hint: 'The ebook file and the audiobook folder, if there are any.', defaultChecked: false } : undefined,
@@ -91,7 +91,7 @@ export default function BookDetail() {
           </p>
           {book.releaseDate && book.releaseDate > localDate(new Date()) && (
             <p className="notice notice-info" style={{ marginTop: 8 }}>
-              Comes out on {new Date(book.releaseDate + 'T00:00:00').toLocaleDateString(undefined, { day: 'numeric', month: 'long', year: 'numeric' })}. Mediarium starts looking for it then.
+              Comes out on {new Date(book.releaseDate + 'T00:00:00').toLocaleDateString(undefined, { day: 'numeric', month: 'long', year: 'numeric' })}. Cue starts looking for it then.
             </p>
           )}
           {book.description && <p className="title-overview">{book.description}</p>}
@@ -206,7 +206,7 @@ function FormatPanel({ book, format, queue, onChanged }: { book: Book; format: B
           {st.path ? <code>{st.path}</code> : null}
         </p>
       ) : (
-        <p className="hint">{st.wanted ? `Mediarium looks for the ${FORMAT_WORD[format]} on your indexers and downloads the best one it finds.` : `Not wanted as an ${FORMAT_WORD[format]}.`}</p>
+        <p className="hint">{st.wanted ? `Cue looks for the ${FORMAT_WORD[format]} on your indexers and downloads the best one it finds.` : `Not wanted as an ${FORMAT_WORD[format]}.`}</p>
       )}
       <Switch checked={st.wanted} onChange={(v) => void setWanted(v)} label={`Want the ${FORMAT_WORD[format]}`} />
       <div className="row-actions">

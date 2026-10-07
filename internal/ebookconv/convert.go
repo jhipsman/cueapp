@@ -16,7 +16,7 @@ const MaxInput = 200 << 20
 // the MOBI 6 half as the fallback.
 func Convert(data []byte, w io.Writer) (meta Metadata, err error) {
 	// A book is written by strangers: a file broken in a way not foreseen
-	// here fails the conversion, it never takes Mediarium down.
+	// here fails the conversion, it never takes Cue down.
 	defer func() {
 		if r := recover(); r != nil {
 			err = fmt.Errorf("%w: %v", ErrNotMobi, r)

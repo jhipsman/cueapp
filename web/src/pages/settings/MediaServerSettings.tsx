@@ -21,8 +21,8 @@ const isBookKind = (k: MediaServerKind) => BOOK_KINDS.includes(k)
 
 const TOKEN_HELP: Record<MediaServerKind, string> = {
   plex: 'Your Plex token. In Plex Web, open any movie, choose ⋯ → Get Info → View XML; the token is the X-Plex-Token part of the address that opens.',
-  jellyfin: 'An API key. In Jellyfin: Dashboard → API Keys → + (name it Mediarium).',
-  emby: 'An API key. In Emby: Settings → Advanced → API Keys → New API Key (name it Mediarium).',
+  jellyfin: 'An API key. In Jellyfin: Dashboard → API Keys → + (name it Cue).',
+  emby: 'An API key. In Emby: Settings → Advanced → API Keys → New API Key (name it Cue).',
   audiobookshelf: 'An API token. In Audiobookshelf: Settings → API Keys → Add API Key (older versions: Settings → Users → your user → API Token).',
   kavita: 'Your API key. In Kavita: open your user settings (your name, top right) → 3rd Party Clients, and copy the API key.',
 }
@@ -61,7 +61,7 @@ function pathMapErrors(rows: PathMapping[], prefix = 'map'): Record<string, stri
   rows.forEach((m, i) => {
     const from = m.from.trim()
     const to = m.to.trim()
-    out[`${prefix}${i}.from`] = firstError(!from && to ? required(from, 'Enter the folder as Mediarium sees it, for example /movies.') : null, folderPath(from, '/movies'))
+    out[`${prefix}${i}.from`] = firstError(!from && to ? required(from, 'Enter the folder as Cue sees it, for example /movies.') : null, folderPath(from, '/movies'))
     out[`${prefix}${i}.to`] = firstError(from && !to ? required(to, 'Enter the same folder as the media server sees it, for example /data/movies.') : null, folderPath(to, '/data/movies'))
   })
   return out
@@ -77,7 +77,7 @@ function PathMapEditor({ value, onChange, v, prefix = 'map' }: { value: PathMapp
               value={m.from}
               onChange={(e) => onChange(value.map((x, j) => (j === i ? { ...x, from: e.target.value } : x)))}
               placeholder="/movies"
-              aria-label="Folder in Mediarium"
+              aria-label="Folder in Cue"
               {...v.bind(`${prefix}${i}.from`, m.from, (t) => onChange(value.map((x, j) => (j === i ? { ...x, from: t } : x))))}
             />
             <FieldError v={v} name={`${prefix}${i}.from`} />
@@ -196,7 +196,7 @@ function KindPanel({
         {...va.bind('address', baseUrl, setBaseUrl)}
       />
       <FieldError v={va} name="address" />
-      <small className="field-help">How Mediarium reaches the server. Inside Docker, use the server&apos;s IP address or container name, not localhost.</small>
+      <small className="field-help">How Cue reaches the server. Inside Docker, use the server&apos;s IP address or container name, not localhost.</small>
     </label>
   )
 
@@ -232,7 +232,7 @@ function KindPanel({
           <div>
             <strong style={{ fontSize: '0.9rem' }}>Folder mapping (optional)</strong>
             <p style={{ margin: '4px 0 8px', color: 'var(--text-dim)', fontSize: '0.85rem' }}>
-              Only needed when {brand.label} sees your library under a different path, for example Mediarium&apos;s <code>/movies</code> is <code>/data/movies</code> in {brand.label}.
+              Only needed when {brand.label} sees your library under a different path, for example Cue&apos;s <code>/movies</code> is <code>/data/movies</code> in {brand.label}.
             </p>
             <PathMapEditor value={pathMap} onChange={setPathMap} v={v} />
           </div>
@@ -333,7 +333,7 @@ function AddForm({ onAdded }: { onAdded: () => void }) {
             </span>
             <div>
               <h3>Find my media servers</h3>
-              <p>Mediarium looks on your home network for Plex, Jellyfin and Emby. Press Connect on the one you want.</p>
+              <p>Cue looks on your home network for Plex, Jellyfin and Emby. Press Connect on the one you want.</p>
             </div>
           </div>
           <FindServers
@@ -441,7 +441,7 @@ function ServerCard({ s, onChanged }: { s: MediaServer; onChanged: () => void })
         <button
           className="btn-sm btn-danger"
           onClick={async () => {
-            if (!(await confirm({ title: `Remove ${s.name}?`, body: <p>Mediarium stops telling it about new downloads. Nothing on the media server changes.</p>, confirmLabel: 'Remove', danger: true }))) return
+            if (!(await confirm({ title: `Remove ${s.name}?`, body: <p>Cue stops telling it about new downloads. Nothing on the media server changes.</p>, confirmLabel: 'Remove', danger: true }))) return
             await run('remove', async () => {
               await api.deleteMediaServer(s.id)
               toast.success(`${s.name} removed.`)
@@ -511,7 +511,7 @@ export default function MediaServerSettings() {
   return (
     <div className="settings-stack">
       <p className="span-all" style={{ color: 'var(--text-dim)', margin: 0 }}>
-        Connect the app you watch with. After every download Mediarium tells it to look at the new folder, so movies and episodes appear there
+        Connect the app you watch with. After every download Cue tells it to look at the new folder, so movies and episodes appear there
         within a minute, and title pages here get a <strong>Watch in Plex</strong> (or Jellyfin, Emby) button.{' '}
         <a href={`${DOCS_URL}/media-servers.md`} target="_blank" rel="noreferrer">
           How to set it up
@@ -527,7 +527,7 @@ export default function MediaServerSettings() {
             <Icon name="monitor" size={28} />
             <div>
               <strong>No media server connected yet.</strong>
-              <p>Pick a server below, or let Mediarium find Plex, Jellyfin and Emby on your network. Then test the connection and add it.</p>
+              <p>Pick a server below, or let Cue find Plex, Jellyfin and Emby on your network. Then test the connection and add it.</p>
             </div>
           </div>
         )}

@@ -58,7 +58,7 @@ func TestRestartWhereNothingWouldStartTheAppAgain(t *testing.T) {
 	}
 	for _, path := range []string{"/api/system/restart", "/api/system/restart?safe=true"} {
 		code, body := doStatus(t, e.client, http.MethodPost, e.base+path)
-		if code != http.StatusConflict || message(body) != "Restart is not available here. Start Mediarium again yourself." {
+		if code != http.StatusConflict || message(body) != "Restart is not available here. Start Cue again yourself." {
 			t.Fatalf("%s: %d %v", path, code, body)
 		}
 	}

@@ -30,7 +30,7 @@ export function parseWireGuardConf(text: string): WireGuardConf | null {
     if (head) {
       section = head[1].toLowerCase()
       sawSection = sawSection || section === 'interface' || section === 'peer'
-      // A second [Peer] is left out: Mediarium uses the first one only.
+      // A second [Peer] is left out: Cue uses the first one only.
       if (section === 'peer' && ++peers > 1) section = 'ignored'
       continue
     }

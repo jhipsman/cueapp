@@ -2,7 +2,7 @@ import { waitForApp } from './updateSteps'
 
 const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms))
 
-// The running version, or null while Mediarium does not answer (restarting).
+// The running version, or null while Cue does not answer (restarting).
 async function fetchVersion(): Promise<string | null> {
   try {
     const r = await fetch('/api/version', { cache: 'no-store' })
@@ -14,7 +14,7 @@ async function fetchVersion(): Promise<string | null> {
   }
 }
 
-// Waits for Mediarium to come back after a restart, then reloads the page so
+// Waits for Cue to come back after a restart, then reloads the page so
 // it shows the version that is running now. The reload also picks up the new
 // interface, since the pages are part of the program. Resolves false when it
 // did not come back in time.

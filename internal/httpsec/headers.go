@@ -3,7 +3,7 @@ package httpsec
 import "net/http"
 
 // contentSecurityPolicy fits the single-page app: everything comes from
-// Mediarium itself except poster and cover images (TMDB, the Cover Art
+// Cue itself except poster and cover images (TMDB, the Cover Art
 // Archive and the Internet Archive it redirects to). Inline styles are
 // allowed because React sets style attributes; scripts are never inline.
 const contentSecurityPolicy = "default-src 'self'; " +

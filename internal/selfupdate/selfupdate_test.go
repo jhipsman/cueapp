@@ -14,7 +14,7 @@ import (
 	"time"
 )
 
-// TestMain lets the test binary stand in for a Mediarium program: started
+// TestMain lets the test binary stand in for a Cue program: started
 // with --version-check under a name like "prog-1.2.0" it prints that version,
 // as the real app does. "-riscv" in the name makes it claim another platform,
 // "-silent" makes it print nothing, "-fail" makes it exit with an error and
@@ -222,7 +222,7 @@ func TestParseVersionLine(t *testing.T) {
 
 func TestInspect(t *testing.T) {
 	dir := t.TempDir()
-	t.Run("a Mediarium program", func(t *testing.T) {
+	t.Run("a Cue program", func(t *testing.T) {
 		p, err := Inspect(context.Background(), fakeProgram(t, dir, "prog-1.4.0"))
 		if err != nil {
 			t.Fatalf("Inspect: %v", err)

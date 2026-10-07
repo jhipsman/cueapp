@@ -127,7 +127,7 @@ func reasonFor(raw string, err error) string {
 	case is(syscall.ENOSPC) || has("no space left", "disk full", "not enough space", "disk quota exceeded"):
 		return "The disk is full. Free up some space and try again."
 	case is(fs.ErrPermission) || has("permission denied", "access is denied", "operation not permitted", "read-only file system"):
-		return "Mediarium is not allowed to use that file or folder. Check its permissions."
+		return "Cue is not allowed to use that file or folder. Check its permissions."
 	case has("no such host", "server misbehaving", "temporary failure in name resolution", "name or service not known", "no address associated"):
 		return "The address could not be found. Check the address and your internet connection."
 	case has("connection refused"):
@@ -172,7 +172,7 @@ var internalMarkers = []string{
 
 // Generic is what a person sees when the real error is only useful in the
 // log. It is a full sentence, so callers can show it as it is.
-const Generic = "Something went wrong inside Mediarium. Try again. If it keeps happening, an administrator can see why in Settings > System > Logs and errors."
+const Generic = "Something went wrong inside Cue. Try again. If it keeps happening, an administrator can see why in Settings > System > Logs and errors."
 
 // ForResponse makes the text of a server error fit to show in the page. Network
 // and file errors become plain sentences; the app's plumbing errors become

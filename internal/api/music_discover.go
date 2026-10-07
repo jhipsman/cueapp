@@ -221,7 +221,7 @@ func (s *Server) handleMusicDiscover(w http.ResponseWriter, r *http.Request) {
 	items, err := s.discoverItems(pageItems)
 	if err != nil {
 		slog.Error("music: discover library lookup failed", "err", err)
-		writeError(w, http.StatusInternalServerError, "Couldn't read the library. Check the Mediarium log for details.")
+		writeError(w, http.StatusInternalServerError, "Couldn't read the library. Check the Cue log for details.")
 		return
 	}
 	out.Items = items
@@ -519,7 +519,7 @@ func (s *Server) handleMusicDiscoverArtists(w http.ResponseWriter, r *http.Reque
 	known, err := s.MusicRepo.ArtistsByMBID(ids)
 	if err != nil {
 		slog.Error("music: discover library lookup failed", "err", err)
-		writeError(w, http.StatusInternalServerError, "Couldn't read the library. Check the Mediarium log for details.")
+		writeError(w, http.StatusInternalServerError, "Couldn't read the library. Check the Cue log for details.")
 		return
 	}
 	for _, a := range stats {

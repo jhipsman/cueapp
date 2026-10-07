@@ -281,7 +281,7 @@ func TestRestoreRejectsBadUploads(t *testing.T) {
 		wantCode  int
 		wantInMsg string
 	}{
-		{"not a zip", "file", []byte("plain text, not a backup"), http.StatusBadRequest, "not a valid Mediarium backup"},
+		{"not a zip", "file", []byte("plain text, not a backup"), http.StatusBadRequest, "not a valid Cue backup"},
 		{"wrong form field", "upload", goodZip, http.StatusBadRequest, "No backup file"},
 		{"extra entry", "file", build(map[string][]byte{"app.db": good["app.db"], "secret.key": good["secret.key"], "evil.sh": []byte("#!/bin/sh")}), http.StatusBadRequest, "unexpected entry"},
 		{"path traversal entry", "file", build(map[string][]byte{"../app.db": good["app.db"], "secret.key": good["secret.key"]}), http.StatusBadRequest, "unexpected entry"},

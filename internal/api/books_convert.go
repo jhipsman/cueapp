@@ -19,7 +19,7 @@ import (
 	"github.com/rdborg/mediarium/internal/ebookconv"
 )
 
-// Kindle books (MOBI, AZW, AZW3) open in the reader as EPUB: Mediarium makes
+// Kindle books (MOBI, AZW, AZW3) open in the reader as EPUB: Cue makes
 // an EPUB copy the first time, one book at a time, and keeps it in its own
 // cache folder (/config/cache/epub). The library itself is never changed, so
 // a media server or e-reader that reads the folder sees no extra files.
@@ -134,7 +134,7 @@ func convertError(err error) string {
 	case errors.Is(err, ebookconv.ErrDRM):
 		return "This book is locked with DRM, so it can't be opened here. Download it for the Kindle it was bought for."
 	case errors.Is(err, ebookconv.ErrUnsupported):
-		return "This Kindle book is stored in a way Mediarium can't read yet. Download it to read it on a Kindle or in Calibre."
+		return "This Kindle book is stored in a way Cue can't read yet. Download it to read it on a Kindle or in Calibre."
 	default:
 		return "This Kindle book couldn't be turned into a book the reader can open. Download it to read it elsewhere."
 	}

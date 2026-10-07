@@ -49,7 +49,7 @@ function Banners() {
                 ? `Looking through your ${j.kind === 'tv' ? 'TV' : 'movie'} folder.`
                 : `Matching your ${j.kind === 'tv' ? 'shows' : 'movies'}: ${j.done} of ${j.total}.`}
             </strong>{' '}
-            You can keep using Mediarium.
+            You can keep using Cue.
           </div>
           <Link className="import-banner-link" to={`/import?kind=${j.kind}`}>
             Go to the import
@@ -87,7 +87,7 @@ function BatchBanner({ batch: b, onDismissed }: { batch: ImportBatch; onDismisse
         </span>
         <div className="import-banner-body">
           <div>
-            <strong>{progressText(b)}</strong> You can keep using Mediarium.
+            <strong>{progressText(b)}</strong> You can keep using Cue.
           </div>
           <div className="bar active import-banner-bar" aria-hidden="true">
             <span style={{ width: `${pct}%` }} />
@@ -115,7 +115,7 @@ function BatchBanner({ batch: b, onDismissed }: { batch: ImportBatch; onDismisse
         </div>
         <small>
           {problems
-            ? `Mediarium retries the ones with problems in the background. ${upNextText(b, true)}`
+            ? `Cue retries the ones with problems in the background. ${upNextText(b, true)}`
             : upNextText(b, true)}
         </small>
       </div>

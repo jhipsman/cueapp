@@ -2,7 +2,7 @@
 
 package organizer
 
-// SameFilesystem has no Windows implementation — Mediarium's actual
+// SameFilesystem has no Windows implementation — Cue's actual
 // deployment target is Linux/Docker, so this only matters for
 // someone running the Go binary natively on Windows for local dev.
 // supported=false tells the caller to skip the warning rather than

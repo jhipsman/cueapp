@@ -175,7 +175,7 @@ func (s *Server) handleScanLibrary(w http.ResponseWriter, r *http.Request) {
 	}
 	info, err := os.Stat(req.Path)
 	if err != nil || !info.IsDir() {
-		writeError(w, http.StatusBadRequest, fmt.Sprintf("%s isn't a folder Mediarium can read. If you use Docker, mount it into the container first.", req.Path))
+		writeError(w, http.StatusBadRequest, fmt.Sprintf("%s isn't a folder Cue can read. If you use Docker, mount it into the container first.", req.Path))
 		return
 	}
 

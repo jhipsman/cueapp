@@ -165,7 +165,7 @@ func (s *Server) downloadSubtitle(w http.ResponseWriter, r *http.Request, kind s
 	// The language ends up in the subtitle's file name, so only a plain code
 	// like en or pt-BR is accepted.
 	if !languageCode.MatchString(req.Language) {
-		writeError(w, http.StatusBadRequest, "That isn't a language code Mediarium can use. Pick one from the list.")
+		writeError(w, http.StatusBadRequest, "That isn't a language code Cue can use. Pick one from the list.")
 		return
 	}
 	path, err := s.writeSubtitle(r.Context(), it, req.Language, subtitlePick{fileID: req.FileID, chosen: true, videoHash: videoHash(it.filePath)})

@@ -48,7 +48,7 @@ const (
 	// app exits to start the new program.
 	updateRestartDelay = 2 * time.Second
 
-	notInstallableMessage = "This Mediarium wasn't started by its Docker image, so it can't restart into an update by itself. Update it the way you installed it."
+	notInstallableMessage = "This Cue wasn't started by its Docker image, so it can't restart into an update by itself. Update it the way you installed it."
 )
 
 // commitProgram checks a program file that has been written to tmp (and whose
@@ -59,9 +59,9 @@ func (s *Server) commitProgram(ctx context.Context, tmp, sum, wantVersion string
 	probe, err := selfupdate.Inspect(ctx, tmp)
 	switch {
 	case errors.Is(err, selfupdate.ErrWrongPlatform):
-		return "", &updateError{status: http.StatusUnprocessableEntity, msg: fmt.Sprintf("That file is for a different kind of system. This Mediarium runs on %s/%s.", runtime.GOOS, runtime.GOARCH), err: err}
+		return "", &updateError{status: http.StatusUnprocessableEntity, msg: fmt.Sprintf("That file is for a different kind of system. This Cue runs on %s/%s.", runtime.GOOS, runtime.GOARCH), err: err}
 	case errors.Is(err, selfupdate.ErrNotMediarium):
-		return "", &updateError{status: http.StatusUnprocessableEntity, msg: "That file is not a Mediarium program for this system.", err: err}
+		return "", &updateError{status: http.StatusUnprocessableEntity, msg: "That file is not a Cue program for this system.", err: err}
 	case err != nil:
 		return "", failed("Couldn't run the new program to check it. Make sure the config folder allows programs to run.", err)
 	}
@@ -75,7 +75,7 @@ func (s *Server) commitProgram(ctx context.Context, tmp, sum, wantVersion string
 		case errors.Is(err, selfupdate.ErrOlderThanImage):
 			return "", &updateError{status: http.StatusConflict, msg: fmt.Sprintf("Version %s is older than the version inside the Docker image (%s), so the container would not use it. Remove the installed update instead to go back to the image's version.", probe.Version, s.imageVersion())}
 		default:
-			return "", &updateError{status: http.StatusConflict, msg: "Mediarium can't tell whether that version is newer. Add ?force=true if you are sure.", err: err}
+			return "", &updateError{status: http.StatusConflict, msg: "Cue can't tell whether that version is newer. Add ?force=true if you are sure.", err: err}
 		}
 	}
 	// A backup first, so the database can be put back if the new version
@@ -98,7 +98,7 @@ func (s *Server) auditUpdate(actor, how, version, sum string) {
 	if len(short) > 12 {
 		short = short[:12]
 	}
-	msg := fmt.Sprintf("Mediarium %s was installed by %s (%s, checksum %s). It restarts to use it.", version, actor, how, short)
+	msg := fmt.Sprintf("Cue %s was installed by %s (%s, checksum %s). It restarts to use it.", version, actor, how, short)
 	if err := s.QueueRepo.LogActivity(0, "update", msg); err != nil {
 		slog.Warn("update: could not write the Activity entry", "err", err)
 	}
@@ -158,13 +158,13 @@ func (j installJob) payload() *jobPayload {
 	p := &jobPayload{State: j.State, Version: j.Version, Error: j.Error, Auto: j.Auto, Active: j.State != "failed"}
 	switch j.State {
 	case "downloading":
-		p.Message = "Downloading Mediarium " + j.Version + "…"
+		p.Message = "Downloading Cue " + j.Version + "…"
 	case "checking":
 		p.Message = "Checking the download…"
 	case "installing":
 		p.Message = "Installing…"
 	case "restarting":
-		p.Message = "Restarting to use Mediarium " + j.Version + "…"
+		p.Message = "Restarting to use Cue " + j.Version + "…"
 	case "failed":
 		p.Message = "The update didn't work."
 	}
@@ -243,7 +243,7 @@ func (s *Server) runInstall(rel updatecheck.Release, pub ed25519.PublicKey, acto
 		case errors.Is(err, updatecheck.ErrNoSignature):
 			return &updateError{status: http.StatusConflict, msg: "This release isn't signed, so it can't be installed automatically.", err: err}
 		case errors.Is(err, updatecheck.ErrNoProgram):
-			return &updateError{status: http.StatusBadGateway, msg: "The download doesn't contain Mediarium, so it wasn't installed.", err: err}
+			return &updateError{status: http.StatusBadGateway, msg: "The download doesn't contain Cue, so it wasn't installed.", err: err}
 		case errors.Is(err, updatecheck.ErrHostNotAllowed):
 			return &updateError{status: http.StatusBadGateway, msg: "The download was redirected somewhere unsafe, so it was stopped.", err: err}
 		}

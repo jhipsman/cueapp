@@ -8,7 +8,7 @@ import (
 	"testing"
 )
 
-// A destination folder Mediarium may not write to is caught before the
+// A destination folder Cue may not write to is caught before the
 // download, not after it. A folder that doesn't exist yet is judged by the
 // closest folder above it.
 func TestDestWritable(t *testing.T) {

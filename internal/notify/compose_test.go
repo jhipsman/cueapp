@@ -107,11 +107,11 @@ func TestComposeTextSubjects(t *testing.T) {
 		subject                     string
 		link                        string
 	}{
-		{"test", "test", "anything", "", "Mediarium test message", ""},
-		{"login refused", "health", "Your Usenet login was refused", "Check the password.", "Mediarium needs attention: your Usenet login was refused", "https://m.example.com/settings/logs"},
-		{"named provider keeps its capital", "health", "Eweka is not working", "Timed out.", "Mediarium needs attention: Eweka is not working", "https://m.example.com/settings/logs"},
-		{"recovered", "health", "Eweka is working again", "The last check passed.", "Mediarium: Eweka is working again", ""},
-		{"update", "update", "Mediarium 1.3.0 is available", "You are running 1.2.0.", "Mediarium 1.3.0 is available", ""},
+		{"test", "test", "anything", "", "Cue test message", ""},
+		{"login refused", "health", "Your Usenet login was refused", "Check the password.", "Cue needs attention: your Usenet login was refused", "https://m.example.com/settings/logs"},
+		{"named provider keeps its capital", "health", "Eweka is not working", "Timed out.", "Cue needs attention: Eweka is not working", "https://m.example.com/settings/logs"},
+		{"recovered", "health", "Eweka is working again", "The last check passed.", "Cue: Eweka is working again", ""},
+		{"update", "update", "Cue 1.3.0 is available", "You are running 1.2.0.", "Cue 1.3.0 is available", ""},
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
@@ -158,7 +158,7 @@ func TestEmailHTMLEscapesAndLoadsNothingElse(t *testing.T) {
 	if strings.Contains(out, `width="1"`) || strings.Contains(out, `height="1"`) {
 		t.Error("looks like a tracking pixel")
 	}
-	for _, want := range []string{`alt="Mediarium"`, "#34d1bf", "Open in Mediarium", "You can choose which emails you get", "<table"} {
+	for _, want := range []string{`alt="Cue"`, "#34d1bf", "Open in Cue", "You can choose which emails you get", "<table"} {
 		if !strings.Contains(out, want) {
 			t.Errorf("missing %q", want)
 		}
@@ -169,7 +169,7 @@ func TestEmailHTMLLeavesOutWhatIsNotThere(t *testing.T) {
 	plain := titanic
 	plain.PosterURL, plain.LinkPath = "", ""
 	out := notify.RenderEmailHTML(notify.Compose("imported", plain, notify.Links{}, composeAt))
-	if strings.Count(out, "<img") != 1 || strings.Contains(out, "Open in Mediarium") || strings.Contains(out, "open it") {
+	if strings.Count(out, "<img") != 1 || strings.Contains(out, "Open in Cue") || strings.Contains(out, "open it") {
 		t.Errorf("poster or links present without an address: %s", out)
 	}
 
@@ -190,7 +190,7 @@ func TestEmailHTMLLeavesOutWhatIsNotThere(t *testing.T) {
 func TestEmailTextAlternative(t *testing.T) {
 	ev := notify.Compose("failed", titanic, notify.Links{Base: "https://m.example.com"}, composeAt)
 	out := notify.RenderEmailText(ev)
-	for _, want := range []string{"Download failed: Titanic (1997)", "Release:", "Open in Mediarium: https://m.example.com/title/597", "You can choose which emails you get", "https://m.example.com/settings/notifications"} {
+	for _, want := range []string{"Download failed: Titanic (1997)", "Release:", "Open in Cue: https://m.example.com/title/597", "You can choose which emails you get", "https://m.example.com/settings/notifications"} {
 		if !strings.Contains(out, want) {
 			t.Errorf("text missing %q:\n%s", want, out)
 		}
@@ -370,7 +370,7 @@ func TestRichPayloadsPerChannel(t *testing.T) {
 
 func TestTestEmailLooksLikeARealOneAndSaysNothingWasDownloaded(t *testing.T) {
 	ev := notify.ComposeTestEmail(titanic, notify.Links{Base: "https://m.example.com"}, composeAt)
-	if ev.Type != "test" || ev.Title != "Mediarium test email" {
+	if ev.Type != "test" || ev.Title != "Cue test email" {
 		t.Fatalf("title/type: %q %q", ev.Title, ev.Type)
 	}
 	if !strings.Contains(ev.Lead, "Titanic (1997)") || !strings.Contains(ev.Lead, "Nothing was downloaded") {

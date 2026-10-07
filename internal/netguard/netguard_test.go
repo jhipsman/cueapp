@@ -134,7 +134,7 @@ func TestRedirectToAnotherHostDropsCredentialHeaders(t *testing.T) {
 		req.Header.Set("X-Plex-Token", "SECRETTOKEN")
 		req.Header.Set("X-Gotify-Key", "SECRETKEY")
 		req.Header.Set("Api-Key", "SECRETAPIKEY")
-		req.Header.Set("User-Agent", "Mediarium-test")
+		req.Header.Set("User-Agent", "Cue-test")
 		req.Header.Set("Accept", "application/json")
 		resp, err := Client(3 * time.Second).Do(req)
 		if err != nil {
@@ -149,7 +149,7 @@ func TestRedirectToAnotherHostDropsCredentialHeaders(t *testing.T) {
 			t.Errorf("%s followed the redirect to another host: %q", h, v)
 		}
 	}
-	if got.Get("User-Agent") != "Mediarium-test" || got.Get("Accept") != "application/json" {
+	if got.Get("User-Agent") != "Cue-test" || got.Get("Accept") != "application/json" {
 		t.Errorf("the plain headers should still be sent, got %v", got)
 	}
 }

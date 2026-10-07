@@ -107,7 +107,7 @@ func buildZip(t *testing.T, entries ...zipEntry) string {
 	return path
 }
 
-// dbBytes returns the bytes of a fresh migrated Mediarium database, optionally
+// dbBytes returns the bytes of a fresh migrated Cue database, optionally
 // altered by mutate before it is closed.
 func dbBytes(t *testing.T, mutate func(*sql.DB)) []byte {
 	t.Helper()
@@ -292,14 +292,14 @@ func TestStageRejectsBadBackups(t *testing.T) {
 			p := filepath.Join(t.TempDir(), "junk.zip")
 			os.WriteFile(p, []byte("this is definitely not a zip file"), 0o644)
 			return p
-		}, "not a valid Mediarium backup"},
+		}, "not a valid Cue backup"},
 		{"truncated zip", func(t *testing.T) string {
 			good := buildZip(t, zipEntry{name: "app.db", data: goodDB}, zipEntry{name: "secret.key", data: key})
 			b := mustRead(t, good)
 			p := filepath.Join(t.TempDir(), "trunc.zip")
 			os.WriteFile(p, b[:len(b)/2], 0o644)
 			return p
-		}, "not a valid Mediarium backup"},
+		}, "not a valid Cue backup"},
 		{"extra entry", func(t *testing.T) string {
 			return buildZip(t, zipEntry{name: "app.db", data: goodDB}, zipEntry{name: "secret.key", data: key}, zipEntry{name: "notes.txt", data: []byte("hi")})
 		}, "unexpected entry"},
@@ -330,20 +330,20 @@ func TestStageRejectsBadBackups(t *testing.T) {
 		{"database is not sqlite", func(t *testing.T) string {
 			return buildZip(t, zipEntry{name: "app.db", data: bytes.Repeat([]byte("not sqlite "), 500)}, zipEntry{name: "secret.key", data: key})
 		}, "damaged or is not a SQLite database"},
-		{"sqlite without Mediarium tables", func(t *testing.T) string {
+		{"sqlite without Cue tables", func(t *testing.T) string {
 			other := dbBytes(t, func(db *sql.DB) { db.Exec(`DROP TABLE users`) })
 			return buildZip(t, zipEntry{name: "app.db", data: other}, zipEntry{name: "secret.key", data: key})
-		}, "does not look like a Mediarium database"},
+		}, "does not look like a Cue database"},
 		{"database from a newer version", func(t *testing.T) string {
 			newer := dbBytes(t, func(db *sql.DB) {
 				db.Exec(`INSERT INTO schema_migrations (version) VALUES ('9999_from_the_future')`)
 			})
 			return buildZip(t, zipEntry{name: "app.db", data: newer}, zipEntry{name: "secret.key", data: key})
-		}, "newer version of Mediarium"},
+		}, "newer version of Cue"},
 		{"manifest from a newer version", func(t *testing.T) string {
 			return buildZip(t, zipEntry{name: "app.db", data: goodDB}, zipEntry{name: "secret.key", data: key},
 				zipEntry{name: "manifest.json", data: []byte(`{"app":"mediarium","migrations":"9999_x"}`)})
-		}, "newer version of Mediarium"},
+		}, "newer version of Cue"},
 		{"manifest from another app", func(t *testing.T) string {
 			return buildZip(t, zipEntry{name: "app.db", data: goodDB}, zipEntry{name: "secret.key", data: key},
 				zipEntry{name: "manifest.json", data: []byte(`{"app":"sonarr"}`)})

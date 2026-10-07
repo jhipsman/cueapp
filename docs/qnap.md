@@ -1,15 +1,15 @@
-# Mediarium on a QNAP NAS
+# Cue on a QNAP NAS
 
-Mediarium runs on a QNAP NAS with **Container Station**, using the same compose file as every other Docker install. General background (folders, hardlinks, updating) is in the main [install guide](./INSTALL.md).
+Cue runs on a QNAP NAS with **Container Station**, using the same compose file as every other Docker install. General background (folders, hardlinks, updating) is in the main [install guide](./INSTALL.md).
 
 ## What you need
 
 - **Container Station 3** (App Center → search "Container Station" → Install).
-- An Intel/AMD or 64-bit ARM QNAP (Mediarium's image is built for `amd64` and `arm64`).
+- An Intel/AMD or 64-bit ARM QNAP (Cue's image is built for `amd64` and `arm64`).
 
 ## Step 1: Find your PUID and PGID
 
-Mediarium writes files as a user and group you choose, by number.
+Cue writes files as a user and group you choose, by number.
 
 - **Already run Radarr, Sonarr or SABnzbd in Container Station?** Open that container's details and use its `PUID` and `PGID`.
 - **Otherwise, over SSH:** Control Panel → Network & File Services → Telnet / SSH → allow SSH. Connect from your computer with `ssh youradmin@<nas-ip>`, then run `id youruser` (the user that owns your media). The `uid` number is your `PUID`, the `gid` number your `PGID`.
@@ -65,8 +65,8 @@ services:
       - /share/data:/data
 ```
 
-   Already have a library? Point `MOVIES_DIR` and `TV_DIR` at it inside `/data` (for example `/data/media/movies`), and if other download apps use `/data/downloads`, give Mediarium its own: `DOWNLOADS_DIR=/data/downloads/mediarium`. See [Choosing your folders](./INSTALL.md#choosing-your-folders).
-4. Click **Validate** to check the YAML, then **Create**. Container Station downloads the image and starts Mediarium.
+   Already have a library? Point `MOVIES_DIR` and `TV_DIR` at it inside `/data` (for example `/data/media/movies`), and if other download apps use `/data/downloads`, give Cue its own: `DOWNLOADS_DIR=/data/downloads/mediarium`. See [Choosing your folders](./INSTALL.md#choosing-your-folders).
+4. Click **Validate** to check the YAML, then **Create**. Container Station downloads the image and starts Cue.
 5. Open `http://<nas-ip>:8264` and follow the setup wizard.
 
 ## Optional folders: music, ebooks and audiobooks
@@ -76,7 +76,7 @@ Music, ebooks and audiobooks each switch on under **Settings → Media types**.
 - **Inside `data`:** create the folder (for example `music`), then take the `#` off the matching `environment` line above. Nothing else to map.
 - **In another shared folder:** add a line under `volumes:`, for example `- /share/music:/music` (or `/ebooks`, `/audiobooks` on the right). No `environment` line is needed when the right side keeps those names.
 
-To add one later, edit the application's YAML, then save it with **Update** so the container is recreated. In Mediarium, switch the type on and check the folder under **Settings → Library → Folders and file names**.
+To add one later, edit the application's YAML, then save it with **Update** so the container is recreated. In Cue, switch the type on and check the folder under **Settings → Library → Folders and file names**.
 
 ## Updating
 
@@ -89,7 +89,7 @@ When a new version is out, administrators see a card on the dashboard and on **S
 
 ## Backing up
 
-Back up `/share/Container/mediarium` (`app.db` and `secret.key`; keep them together) with Hybrid Backup Sync, or use **Settings → System → Server and backup** in Mediarium to download a backup zip.
+Back up `/share/Container/mediarium` (`app.db` and `secret.key`; keep them together) with Hybrid Backup Sync, or use **Settings → System → Server and backup** in Cue to download a backup zip.
 
 ## Troubleshooting
 
@@ -97,7 +97,7 @@ Back up `/share/Container/mediarium` (`app.db` and `secret.key`; keep them toget
 - **"Finished downloads will be copied, not moved" in the setup wizard:** downloads and library are in different shared folders or mapped as separate lines. Everything works, but each file is copied. To make it instant, use one shared folder mapped once as `/data`.
 - **`Bind mount failed ... does not exist`:** a folder on the left of a `volumes` line isn't there. Create it in File Station with exactly that name, then start the application again.
 - **The wizard shows `/movies`, `/tv` and `/downloads`, or "This folder isn't mapped to your server yet":** the folder lines in `environment` are missing, or you changed them after the first start. Fix them and update the application.
-- **The page does not open:** check the application is running and read its log in Container Station (it should say `Mediarium listening on :8264`). QNAP's firewall (QuFirewall) may need a rule for port 8264. Another app on 8264? Change the left number, for example `"8265:8264"`.
+- **The page does not open:** check the application is running and read its log in Container Station (it should say `Cue listening on :8264`). QNAP's firewall (QuFirewall) may need a rule for port 8264. Another app on 8264? Change the left number, for example `"8265:8264"`.
 - **Container Station rejects the YAML:** click **Validate**. The cause is usually indentation lost while pasting.
 
 More answers: [INSTALL.md troubleshooting](./INSTALL.md#troubleshooting).

@@ -10,7 +10,7 @@ To do the same thing to many titles at once, use **Select**.
 
 ## Finding your way
 
-- **Status words.** Each title says where it is: **Downloaded**, **Downloading**, **Pending** (waiting its turn in the download line), **Waiting for a release** (monitored, and Mediarium checks regularly for one), **Partial** (some episodes are downloaded), **Not monitored** (in your library, but nothing is downloaded on its own) and **Failed**. The chips under the toolbar filter by these words and show how many titles each holds.
+- **Status words.** Each title says where it is: **Downloaded**, **Downloading**, **Pending** (waiting its turn in the download line), **Waiting for a release** (monitored, and Cue checks regularly for one), **Partial** (some episodes are downloaded), **Not monitored** (in your library, but nothing is downloaded on its own) and **Failed**. The chips under the toolbar filter by these words and show how many titles each holds.
 - **Clear filters.** When a search, chip, genre or year is narrowing the list, a **Clear filters** button appears beside the chips, and in the "Nothing matches these filters" message when nothing is left. It puts them all back.
 - **Sort direction.** The button with the up-and-down arrows next to **Sort** reverses the order (oldest first, Z to A). The sort and its direction are remembered in this browser.
 - **Press `/`** anywhere (except while you type in a box) to jump to the search box at the top, and **Esc** to leave it.
@@ -39,7 +39,7 @@ On a phone the bar takes one row and the actions fold away behind an **Actions**
 | Action | What it does |
 |---|---|
 | **Monitor** / **Stop monitoring** | Turns automatic searching on or off. Stopping also removes downloads that were only waiting for these titles. |
-| **Better versions** | **Look for better versions** lets Mediarium swap a download for a better one, if the title's quality profile allows upgrades. **Leave what I have alone** stops that for these titles, whatever their profile says, and removes waiting downloads that would have replaced a file. |
+| **Better versions** | **Look for better versions** lets Cue swap a download for a better one, if the title's quality profile allows upgrades. **Leave what I have alone** stops that for these titles, whatever their profile says, and removes waiting downloads that would have replaced a file. |
 | **Quality profile** | Gives them a profile, or the default. |
 | **Download from** | Usenet only, torrents only, both, or the choice in Settings. |
 | **Search now** | Looks for releases of the selected titles that are **monitored and missing something**. A confirmation says how many will be searched, for example "42 of the 64 selected are monitored and missing something". At most **25 titles** are searched per press, and the rest are left to the automatic search. The search runs in the background, one title after another, and the result is written to Activity ("Searched for 25 titles and started 3 downloads."). Only one such search runs at a time. Movies that aren't out yet are skipped. |
@@ -65,7 +65,7 @@ Tags are your own words for sorting a library that lives in one folder: **Kids**
 - **Filter by tag**: the Library's **Tag** filter (shown once a tag is in use) lists only the titles with that tag. Cards show their tags under the title.
 - Up to 20 tags per title, 30 characters each. Case doesn't matter: "kids" joins an existing "Kids".
 - **On your media server** every tag becomes a collection of the same name: in Plex the title's collection field, in Jellyfin and Emby a collection (box set) named after the tag. So a "Kids" tag gives a Kids collection to browse, or to share with a child's account. A title that isn't on the server yet gets its tags a few minutes after it's downloaded. Taking a tag off takes the title out of that collection. Collections you made yourself on the server are never touched. See [media-servers.md](./media-servers.md#tags-as-collections).
-- Tags live in Mediarium's database and go when the title is removed.
+- Tags live in Cue's database and go when the title is removed.
 
 ## Anime and daily shows
 
@@ -74,13 +74,13 @@ Most TV releases name episodes by season (`Show.S02E05`). Two kinds of show don'
 - **Anime** counts episodes from the very first one: `[Group] Long Voyage - 1085 (1080p)`, `Show E105`, or a batch `Show - 01-12`.
 - **Daily shows** (talk shows, news) go by the day: `The.Evening.Desk.2024.03.15`.
 
-A show's page has **Episode numbering**: *Seasons (S01E05)*, *Anime (episode 105)* or *Daily (by air date)*. Mediarium sets it when the show is added, also when it comes from a library import or from Sonarr, which passes on its own setting (Japanese animation is Anime; talk shows and news are Daily), and you can change it. Later anime seasons named like "Show S2 - 05" are read as that season's episode, and a recap such as "Show - 12.5" is not taken for episode 12. For an Anime show, episode 105 is found by counting the show's episodes season by season from the first one (specials left out); for a Daily show, by matching the air date. Searches then also look for "Show 105" or "Show 2024 03 15", and releases and downloaded files named that way are matched to the right episode. A release that does carry a season marker is always taken as it says.
+A show's page has **Episode numbering**: *Seasons (S01E05)*, *Anime (episode 105)* or *Daily (by air date)*. Cue sets it when the show is added, also when it comes from a library import or from Sonarr, which passes on its own setting (Japanese animation is Anime; talk shows and news are Daily), and you can change it. Later anime seasons named like "Show S2 - 05" are read as that season's episode, and a recap such as "Show - 12.5" is not taken for episode 12. For an Anime show, episode 105 is found by counting the show's episodes season by season from the first one (specials left out); for a Daily show, by matching the air date. Searches then also look for "Show 105" or "Show 2024 03 15", and releases and downloaded files named that way are matched to the right episode. A release that does carry a season marker is always taken as it says.
 
 The counting follows TMDB's seasons. When a show's seasons on TMDB are split differently from how a fansub group counts, an episode can come out a few places off; Choose a release on the episode always works as a fallback. Scripts: `seriesType` on a show, and `PUT /api/series/{id}/type` with `{"type": "standard" | "anime" | "daily"}`.
 
 ## Specials
 
-A show's specials (TMDB's season 0: behind-the-scenes episodes, Christmas specials, OVAs) are listed on its page as **Specials**, below the other seasons. They start **unmonitored**, because they are rarely posted in a form that can be found, and they don't count towards how much of the show you have until you ask for them. Mediarium can't look for specials yet, so they have no Search button or Monitored box; they are there so you can see what exists. Switching a whole show on or off leaves them alone. Shows already in your library pick up their specials at the next refresh.
+A show's specials (TMDB's season 0: behind-the-scenes episodes, Christmas specials, OVAs) are listed on its page as **Specials**, below the other seasons. They start **unmonitored**, because they are rarely posted in a form that can be found, and they don't count towards how much of the show you have until you ask for them. Cue can't look for specials yet, so they have no Search button or Monitored box; they are there so you can see what exists. Switching a whole show on or off leaves them alone. Shows already in your library pick up their specials at the next refresh.
 
 ## One folder per kind
 
@@ -93,7 +93,7 @@ Each kind of media has one library folder (Settings > Library > Folders and file
 With **Custom** you can:
 
 - **Start from** a ready-made format (Plex, Jellyfin / Emby, Kodi, *Detailed, like Radarr and Sonarr*, or *Plex with editions*) and change it.
-- **Paste the format you already use in Radarr or Sonarr.** Mediarium understands their token names, so `{Movie CleanTitle} ({Release Year}) - {Custom Formats}{ - Edition Tags}` works as it is.
+- **Paste the format you already use in Radarr or Sonarr.** Cue understands their token names, so `{Movie CleanTitle} ({Release Year}) - {Custom Formats}{ - Edition Tags}` works as it is.
 - **Click a token** in the list next to the boxes to add it where the cursor is.
 
 There is one box for movies and one for episodes. An episode name needs `{Season}` and `{Episode}` (or `{Air-Date}` for daily shows), so two episodes never get the same name. A movie name needs its title.
@@ -113,7 +113,7 @@ There is one box for movies and one for episodes. An episode name needs `{Season
 
 **Numbers.** `{Season:00}` pads to two digits (`S01`), `{Episode:000}` to three.
 
-**What Mediarium doesn't know yet.** The media info comes from the release name, not from reading the file, so audio channels, bit depth and subtitle languages are left out (those tokens are accepted and write nothing). Mediarium doesn't have custom formats yet, so `{Custom Formats}` holds the edition; when the format also has `{Edition Tags}`, the edition is written once. `{Preferred Words}` is accepted and writes nothing.
+**What Cue doesn't know yet.** The media info comes from the release name, not from reading the file, so audio channels, bit depth and subtitle languages are left out (those tokens are accepted and write nothing). Cue doesn't have custom formats yet, so `{Custom Formats}` holds the edition; when the format also has `{Edition Tags}`, the edition is written once. `{Preferred Words}` is accepted and writes nothing.
 
 Scripts: `GET /api/settings/naming-tokens` lists the tokens and ready-made formats, and `GET /api/settings/naming-preview?kind=movie|tv&format=...` returns the preview and, for a format with a mistake, what's wrong in `problem`. The formats are saved as `movieNameFormat` and `episodeNameFormat` with `PUT /api/settings`.
 
