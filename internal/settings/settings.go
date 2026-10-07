@@ -57,6 +57,7 @@ const (
 	// public list-items endpoint only needs a client ID (an app
 	// registration on trakt.tv), no OAuth user login — see internal/trakt.
 	KeyTraktClientID  = "metadata.trakt_client_id" // encrypted
+	KeyOMDbAPIKey     = "metadata.omdb_api_key" // encrypted; an OMDb key for IMDb and Rotten Tomatoes ratings in Watch. Unset = TMDB's score only
 	KeyHardcoverToken = "books.hardcover_token"    // encrypted; a personal Hardcover API token for better book series and release dates. Unset = Open Library only
 
 	// Illegal filename character handling ("configurable

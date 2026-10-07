@@ -15,6 +15,7 @@ type Show struct {
 	Overview     string  `json:"overview"`
 	FirstAirDate string  `json:"first_air_date"`
 	PosterPath   string  `json:"poster_path"`
+	BackdropPath string  `json:"backdrop_path"`
 	VoteAverage  float64 `json:"vote_average"`
 	VoteCount    int     `json:"vote_count"`
 	Popularity   float64 `json:"popularity"`
@@ -35,6 +36,7 @@ type SeasonSummary struct {
 	EpisodeCount int    `json:"episode_count"`
 	Name         string `json:"name"`
 	AirDate      string `json:"air_date"`
+	PosterPath   string `json:"poster_path"`
 }
 
 // ShowDetail is a Show plus its season list, from GET /tv/{id}.
@@ -50,6 +52,11 @@ type EpisodeInfo struct {
 	Name     string `json:"name"`
 	Overview string `json:"overview"`
 	AirDate  string `json:"air_date"`
+	// For Watch: the episode's thumbnail, its length in minutes and TMDB's
+	// score out of 10.
+	StillPath   string  `json:"still_path"`
+	Runtime     int     `json:"runtime"`
+	VoteAverage float64 `json:"vote_average"`
 }
 
 type pagedShows struct {
@@ -170,4 +177,19 @@ func (c *Client) GetShowEpisodes(ctx context.Context, tmdbID int) (*ShowDetail, 
 		all = append(all, results[i]...)
 	}
 	return detail, all, nil
+}
+
+// GetSeasonCached is GetSeason kept for a few minutes, for pages that open
+// the same season over and over (Watch). The answer must not be modified.
+func (c *Client) GetSeasonCached(ctx context.Context, tmdbID, season int) ([]EpisodeInfo, error) {
+	key := fmt.Sprintf("season:%d:%d", tmdbID, season)
+	if v, ok := c.pages.get(key); ok {
+		return v.([]EpisodeInfo), nil
+	}
+	eps, err := c.GetSeason(ctx, tmdbID, season)
+	if err != nil {
+		return nil, err
+	}
+	c.pages.put(key, eps)
+	return eps, nil
 }

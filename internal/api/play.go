@@ -146,11 +146,67 @@ func (s *Server) handlePlayMovie(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "That movie isn't in your library.")
 		return
 	}
+	s.servePlay(w, r, movieTarget(m))
+}
+
+// movieTarget is what to play for a movie. The key is TMDB's id, so a title
+// played from Watch and from the library shares one list.
+func movieTarget(m library.Movie) playTarget {
 	label := m.Title
 	if m.Year > 0 {
 		label = fmt.Sprintf("%s (%d)", m.Title, m.Year)
 	}
-	s.servePlay(w, r, playTarget{key: fmt.Sprintf("movie:%d", m.ID), label: label, movie: &m})
+	return playTarget{key: fmt.Sprintf("movie:%d", m.TMDBID), label: label, movie: &m}
+}
+
+func episodeTarget(series library.Series, season, episode int) playTarget {
+	return playTarget{
+		key:    fmt.Sprintf("ep:%d:%d:%d", series.TMDBID, season, episode),
+		label:  fmt.Sprintf("%s S%02dE%02d", series.Title, season, episode),
+		series: &series, season: season, episode: episode,
+	}
+}
+
+// GET /api/play/tmdb/movie/{tmdbId}: any movie, in the library or not. One
+// in the library is searched with its own quality profile; any other with
+// the default one.
+func (s *Server) handlePlayTMDBMovie(w http.ResponseWriter, r *http.Request) {
+	tmdbID, err := strconv.Atoi(r.PathValue("tmdbId"))
+	if err != nil || tmdbID <= 0 {
+		writeError(w, http.StatusBadRequest, "That isn't a valid TMDB id.")
+		return
+	}
+	if m, ok, err := s.MovieRepo.GetByTMDBID(tmdbID); err == nil && ok {
+		s.servePlay(w, r, movieTarget(m))
+		return
+	}
+	d, err := s.TMDB().GetMovieDetail(r.Context(), tmdbID)
+	if err != nil {
+		writeUpstreamError(w, "look the movie up on TMDB", err)
+		return
+	}
+	s.servePlay(w, r, movieTarget(library.Movie{TMDBID: tmdbID, Title: d.Title, Year: d.Year()}))
+}
+
+// GET /api/play/tmdb/tv/{tmdbId}/{season}/{episode}: any episode of any show.
+func (s *Server) handlePlayTMDBEpisode(w http.ResponseWriter, r *http.Request) {
+	tmdbID, err1 := strconv.Atoi(r.PathValue("tmdbId"))
+	season, err2 := strconv.Atoi(r.PathValue("season"))
+	episode, err3 := strconv.Atoi(r.PathValue("episode"))
+	if err1 != nil || err2 != nil || err3 != nil || tmdbID <= 0 || season < 0 || episode < 1 {
+		writeError(w, http.StatusBadRequest, "That isn't a valid episode.")
+		return
+	}
+	if series, ok, err := s.MovieRepo.GetSeriesByTMDBID(tmdbID); err == nil && ok {
+		s.servePlay(w, r, episodeTarget(series, season, episode))
+		return
+	}
+	d, err := s.TMDB().GetShowFull(r.Context(), tmdbID)
+	if err != nil {
+		writeUpstreamError(w, "look the show up on TMDB", err)
+		return
+	}
+	s.servePlay(w, r, episodeTarget(library.Series{TMDBID: tmdbID, Title: d.Name, Year: d.Year()}, season, episode))
 }
 
 // GET /api/play/series/{id}/{season}/{episode}[?option=N][&fresh=1]
@@ -167,11 +223,7 @@ func (s *Server) handlePlayEpisode(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "That show isn't in your library.")
 		return
 	}
-	s.servePlay(w, r, playTarget{
-		key:    fmt.Sprintf("ep:%d:%d:%d", series.ID, season, episode),
-		label:  fmt.Sprintf("%s S%02dE%02d", series.Title, season, episode),
-		series: &series, season: season, episode: episode,
-	})
+	s.servePlay(w, r, episodeTarget(series, season, episode))
 }
 
 func (s *Server) servePlay(w http.ResponseWriter, r *http.Request, t playTarget) {

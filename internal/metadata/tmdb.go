@@ -101,16 +101,17 @@ func (c *Client) HasAPIKey() bool { return c.apiKey != "" }
 
 // Movie is the subset of TMDB's movie fields the rest of the app needs.
 type Movie struct {
-	TMDBID      int     `json:"id"`
-	Title       string  `json:"title"`
-	Overview    string  `json:"overview"`
-	ReleaseDate string  `json:"release_date"`
-	PosterPath  string  `json:"poster_path"`
-	VoteAverage float64 `json:"vote_average"`
-	VoteCount   int     `json:"vote_count"`
-	Popularity  float64 `json:"popularity"`
-	GenreIDs    []int   `json:"genre_ids"`
-	Genres      []Genre `json:"genres"` // only on the single-movie endpoint
+	TMDBID       int     `json:"id"`
+	Title        string  `json:"title"`
+	Overview     string  `json:"overview"`
+	ReleaseDate  string  `json:"release_date"`
+	PosterPath   string  `json:"poster_path"`
+	BackdropPath string  `json:"backdrop_path"`
+	VoteAverage  float64 `json:"vote_average"`
+	VoteCount    int     `json:"vote_count"`
+	Popularity   float64 `json:"popularity"`
+	GenreIDs     []int   `json:"genre_ids"`
+	Genres       []Genre `json:"genres"` // only on the single-movie endpoint
 }
 
 // Year extracts the 4-digit release year from ReleaseDate ("2024-03-01"),
@@ -154,6 +155,7 @@ type MultiResult struct {
 	FirstAirDate string  `json:"first_air_date"`
 	Overview     string  `json:"overview"`
 	PosterPath   string  `json:"poster_path"`
+	BackdropPath string  `json:"backdrop_path"`
 	Popularity   float64 `json:"popularity"`
 	VoteAverage  float64 `json:"vote_average"`
 	VoteCount    int     `json:"vote_count"`
@@ -266,6 +268,23 @@ func (c *Client) get(ctx context.Context, path string, extra url.Values, out any
 // TMDB returns, using its "w500" size — good enough for a poster-grid
 // library view without the app needing to know all TMDB's image
 // size variants.
+// BackdropURL is the wide background image of a movie or show, sized for a
+// full-width banner, or "" without one.
+func BackdropURL(backdropPath string) string {
+	if backdropPath == "" {
+		return ""
+	}
+	return "https://image.tmdb.org/t/p/w1280" + backdropPath
+}
+
+// StillURL is an episode's still image (its thumbnail), or "" without one.
+func StillURL(stillPath string) string {
+	if stillPath == "" {
+		return ""
+	}
+	return "https://image.tmdb.org/t/p/w400" + stillPath
+}
+
 func PosterURL(posterPath string) string {
 	if posterPath == "" {
 		return ""

@@ -35,6 +35,7 @@ import (
 	"github.com/rdborg/mediarium/internal/trakt"
 	"github.com/rdborg/mediarium/internal/usage"
 	"github.com/rdborg/mediarium/internal/vpn"
+	"github.com/rdborg/mediarium/internal/watch"
 )
 
 type Server struct {
@@ -48,6 +49,7 @@ type Server struct {
 	Cardigann         *indexers.CardigannManager // runs definition-based indexers
 	ClientRepo        *download.Repo
 	MovieRepo         *library.Repo
+	WatchRepo         *watch.Repo // Watch: progress and My List per account (watch_api.go)
 	QueueRepo         *queue.Repo
 	VPNRepo           *vpn.Repo
 	VPNManager        *vpn.Manager
@@ -71,6 +73,7 @@ type Server struct {
 	seriesCheck       authorCheck    // when followed series were last checked (books_series.go)
 	hc                hardcoverState // the Hardcover client for the saved token (books_series.go)
 	premiumizeBase    string         // tests point Premiumize elsewhere; "" = the real one (premiumize.go)
+	omdb              omdbState      // the OMDb client for the saved key (watch_api.go)
 
 	mediaClient    *mediaservers.Client
 	mediaRefresher *mediaservers.Refresher // rescans Plex/Jellyfin/Emby after imports
@@ -166,6 +169,7 @@ func New(db *sql.DB, cfg config.Config, box *crypto.Box, defaultTMDBAPIKey, vers
 		IndexerRepo:       indexers.NewRepo(db, box),
 		ClientRepo:        download.NewRepo(db, box),
 		MovieRepo:         library.NewRepo(db),
+		WatchRepo:         watch.NewRepo(db),
 		QueueRepo:         queue.NewRepo(db),
 		VPNRepo:           vpn.NewRepo(db, box),
 		VPNManager:        vpn.NewManager(),
@@ -454,6 +458,20 @@ func (s *Server) protectedRoutes() *routeTable {
 	play.HandleFunc("GET /api/files/stream", s.handleStreamFile)
 	play.HandleFunc("GET /api/play/movies/{id}", s.handlePlayMovie)
 	play.HandleFunc("GET /api/play/series/{id}/{season}/{episode}", s.handlePlayEpisode)
+	// Watch: browse and stream anything (watch_api.go, play.go).
+	play.HandleFunc("GET /api/play/tmdb/movie/{tmdbId}", s.handlePlayTMDBMovie)
+	play.HandleFunc("GET /api/play/tmdb/tv/{tmdbId}/{season}/{episode}", s.handlePlayTMDBEpisode)
+	play.HandleFunc("GET /api/watch/home", s.handleWatchHome)
+	play.HandleFunc("GET /api/watch/search", s.handleWatchSearch)
+	play.HandleFunc("GET /api/watch/movie/{tmdbId}", s.handleWatchMovie)
+	play.HandleFunc("GET /api/watch/tv/{tmdbId}", s.handleWatchShow)
+	play.HandleFunc("GET /api/watch/tv/{tmdbId}/season/{season}", s.handleWatchSeason)
+	play.HandleFunc("GET /api/watch/tv/{tmdbId}/next", s.handleWatchNext)
+	play.HandleFunc("PUT /api/watch/progress", s.handlePutWatchProgress)
+	play.HandleFunc("GET /api/watch/progress/{kind}/{tmdbId}", s.handleGetWatchProgress)
+	play.HandleFunc("DELETE /api/watch/progress/{kind}/{tmdbId}", s.handleForgetWatchProgress)
+	play.HandleFunc("PUT /api/watch/list/{kind}/{tmdbId}", s.handleAddToWatchList)
+	play.HandleFunc("DELETE /api/watch/list/{kind}/{tmdbId}", s.handleRemoveFromWatchList)
 
 	// "Watch in Plex/Jellyfin/Emby" and "Open my media server" links.
 	member.HandleFunc("GET /api/media-servers/links", s.handleMediaServerLinks)
@@ -661,6 +679,8 @@ func (s *Server) protectedRoutes() *routeTable {
 	admin.HandleFunc("PUT /api/settings/hardcover", s.handlePutHardcover)
 	admin.HandleFunc("GET /api/settings/premiumize", s.handleGetPremiumize)
 	admin.HandleFunc("PUT /api/settings/premiumize", s.handlePutPremiumize)
+	admin.HandleFunc("GET /api/settings/omdb", s.handleGetOMDb)
+	admin.HandleFunc("PUT /api/settings/omdb", s.handlePutOMDb)
 	admin.HandleFunc("POST /api/system/restart", s.handleRestart)
 	admin.HandleFunc("POST /api/system/shutdown", s.handleShutdown)
 	admin.HandleFunc("GET /api/flaresolverr/status", s.handleFlareSolverrStatus)
