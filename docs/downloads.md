@@ -15,6 +15,19 @@ The page has four cards.
 - **Usenet (NZB):** the built-in downloader needs only your provider's login. **Add your Usenet provider** takes the server address, port, username, password, number of connections and whether to use SSL. Press **Test connection** first. **Add server** (or **Save server**) works once the test has passed. Each server has **Test**, **Edit**, **Disable** and **Remove**. A second server (**Add a backup provider**) is used for articles your main one is missing. Priority 0 is the main provider, higher numbers are backups.
 - **Torrents:** the switch **Use the built-in torrent client**, and **Client settings** (listen port, seed ratio limit, seed time limit; press **Save**).
 
+## Premiumize
+
+[Premiumize.me](https://www.premiumize.me) is a paid cloud downloader. With your Premiumize API key saved under **Settings > Downloading > Usenet and torrents**, under **Cloud downloader**, Mediarium hands releases to Premiumize instead of downloading them itself:
+
+1. The torrent (magnet link or `.torrent` file) or NZB is sent to Premiumize. Indexer links are fetched by Mediarium first, so your indexer keys and logins are never shared with Premiumize. If Premiumize already has a torrent cached, this step is skipped.
+2. Premiumize downloads it on its own servers. Its progress fills the first half of the progress bar in Activity.
+3. Mediarium downloads the finished files from Premiumize over HTTPS into the download's working folder (the second half of the bar). The speed limit applies, and a paused download carries on from where it stopped.
+4. Repair, unpacking and import then run as for any other download, and the transfer and its files are removed from your Premiumize cloud so they don't use up its storage.
+
+**Use Premiumize for** chooses which releases go through it: **Torrents** (the default), **Usenet**, or **Both**. Anything not chosen still uses the built-in downloaders. With torrents going through Premiumize, no peers connect to your server, nothing seeds, and the VPN isn't needed for them, so the VPN warnings on the dashboard are not shown. With Usenet going through it, you don't need a Usenet provider of your own.
+
+If Premiumize can't fetch a release (no seeds, a broken NZB, a timeout), the release is blocklisted and another one is tried, exactly as with the built-in downloaders. Removing the key goes back to the built-in downloaders at once.
+
 ## Torrent port (58264)
 
 All torrents run in one built-in engine that listens on **port 58264, TCP and UDP**. The port is in the range never assigned to any service (49152 to 65535), so it's unlikely to clash with anything else, and it's easy to remember next to the web interface's 8264.

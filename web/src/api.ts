@@ -84,6 +84,17 @@ const put = <T>(path: string, body?: unknown) =>
   request<T>(path, { method: 'PUT', body: body !== undefined ? JSON.stringify(body) : undefined })
 const del = <T>(path: string) => request<T>(path, { method: 'DELETE' })
 
+// Premiumize.me, the cloud downloader (Settings > Downloading > Premiumize).
+export type PremiumizeUseFor = 'torrents' | 'usenet' | 'both'
+export interface PremiumizeState {
+  set: boolean
+  useFor: PremiumizeUseFor
+  customerId?: string
+  premiumUntil?: number // Unix seconds
+  limitUsed?: number // share of the fair-use limit used, 0 to 1
+  error?: string // the saved key no longer works, or Premiumize couldn't be reached
+}
+
 // One removal in the recycle bin (Activity > Recycle bin).
 export interface TrashItem {
   // movies, tv or music, with -2, -3 for extra library folders
@@ -1961,6 +1972,8 @@ export const api = {
   unfollowSeries: (source: string, key: string) => del<null>(`/book-series/${source}/${encodeURIComponent(key)}/follow`),
   getHardcover: () => get<{ set: boolean; username?: string }>('/settings/hardcover'),
   putHardcover: (token: string) => put<{ set: boolean; username?: string }>('/settings/hardcover', { token }),
+  getPremiumize: () => get<PremiumizeState>('/settings/premiumize'),
+  putPremiumize: (body: { apiKey?: string; useFor?: PremiumizeUseFor }) => put<PremiumizeState>('/settings/premiumize', body),
   bookWork: (key: string) => get<BookWork>(`/book-works/${encodeURIComponent(key)}`),
   bookImportStatus: () => get<BookImportState>('/books/import'),
   startBookImport: (format?: BookFormat) => post<BookImportState>('/books/import', { format: format ?? '' }),

@@ -8,6 +8,7 @@ import TestButton from '../../components/TestButton'
 import { useToast } from '../../components/Toast'
 import { useAutosaveSetting } from '../../useAutosave'
 import TorrentSection from './TorrentSection'
+import PremiumizeCard from '../../components/PremiumizeCard'
 import { useLive } from '../../useLive'
 import { useConfirm } from '../../components/ConfirmProvider'
 
@@ -87,6 +88,13 @@ export default function DownloadSettings() {
         <SpeedAndSpaceCard />
       </fieldset>
       </div>
+
+      <fieldset className="group folders span-all">
+        <legend>
+          <Icon name="globe" size={14} /> Cloud downloader
+        </legend>
+        <PremiumizeCard onChange={loadStatus} />
+      </fieldset>
 
       <div className="half-cols span-all">
       <fieldset className={`group usenet${torrentOnly ? ' section-off' : ''}`}>

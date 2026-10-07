@@ -101,7 +101,7 @@ func (s *Server) collectHealth() []healthItem {
 	}
 
 	servers, _ := s.ClientRepo.List()
-	if usenetIndexers > 0 && len(servers) == 0 {
+	if usenetIndexers > 0 && len(servers) == 0 && !s.usePremiumize(indexers.ProtocolUsenet) {
 		add("no-usenet-server", "warn", "No Usenet provider added",
 			"Your Usenet indexer finds releases but there's nowhere to download them from. Add your provider's news server.",
 			"Add your provider", "/settings/downloads")
@@ -112,6 +112,8 @@ func (s *Server) collectHealth() []healthItem {
 	switch {
 	case !torrentsOn:
 		// Torrents are off: nothing to warn about VPNs or torrent indexers.
+	case s.usePremiumize(indexers.ProtocolTorrent):
+		// Premiumize fetches torrents on its own servers: no peers connect here.
 	case vpnStatus.State == vpn.StateDown:
 		add("vpn-down", "error", "Your VPN isn't connected",
 			vpnStatus.Label+" isn't working. "+vpnStatus.Reason+" Torrents wait until it's back. Press Disconnect in the VPN settings to download without it.",

@@ -31,6 +31,11 @@ const (
 	KeyTorrentSeedRatioLimit = "torrent.seed_ratio_limit"  // e.g. "2.0"; "0" = unlimited
 	KeyTorrentSeedTimeLimitH = "torrent.seed_time_limit_h" // hours; "0" = unlimited
 
+	// Premiumize.me, a cloud downloader used in place of the built-in torrent
+	// engine (and, if chosen, the Usenet downloader). See internal/premiumize.
+	KeyPremiumizeAPIKey = "premiumize.api_key" // encrypted; unset = Premiumize is not used
+	KeyPremiumizeUseFor = "premiumize.use_for" // "torrents" (the default when unset) | "usenet" | "both"
+
 	// Automation (RSS sync, scheduled search, hunting).
 	KeyAutomationEnabled = "automation.enabled"         // "0" disables; anything else (including unset) enables
 	KeyQualityProfile    = "library.quality_profile"    // legacy: an old preset key (any-1080p, ultra-hd, any); only read once to pick the initial default profile

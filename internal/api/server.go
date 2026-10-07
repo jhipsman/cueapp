@@ -70,6 +70,7 @@ type Server struct {
 	authorCheck       authorCheck    // when followed authors were last checked (books_authors.go)
 	seriesCheck       authorCheck    // when followed series were last checked (books_series.go)
 	hc                hardcoverState // the Hardcover client for the saved token (books_series.go)
+	premiumizeBase    string         // tests point Premiumize elsewhere; "" = the real one (premiumize.go)
 
 	mediaClient    *mediaservers.Client
 	mediaRefresher *mediaservers.Refresher // rescans Plex/Jellyfin/Emby after imports
@@ -656,6 +657,8 @@ func (s *Server) protectedRoutes() *routeTable {
 	admin.HandleFunc("POST /api/watched/cleanup/run", s.handleLibraryCleanupRun)
 	admin.HandleFunc("GET /api/settings/hardcover", s.handleGetHardcover)
 	admin.HandleFunc("PUT /api/settings/hardcover", s.handlePutHardcover)
+	admin.HandleFunc("GET /api/settings/premiumize", s.handleGetPremiumize)
+	admin.HandleFunc("PUT /api/settings/premiumize", s.handlePutPremiumize)
 	admin.HandleFunc("POST /api/system/restart", s.handleRestart)
 	admin.HandleFunc("POST /api/system/shutdown", s.handleShutdown)
 	admin.HandleFunc("GET /api/flaresolverr/status", s.handleFlareSolverrStatus)

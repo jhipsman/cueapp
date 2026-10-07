@@ -182,6 +182,8 @@ func (s *Server) prepareDownload(ctx context.Context, queueID int64, downloadURL
 	}
 	switch {
 	case reused:
+	case s.usePremiumize(protocol):
+		downloadErr = s.downloadPremiumize(ctx, queueID, downloadURL, protocol, incompleteDir)
 	case protocol == indexers.ProtocolTorrent:
 		downloadErr = s.downloadTorrent(ctx, queueID, downloadURL, incompleteDir)
 	default:
