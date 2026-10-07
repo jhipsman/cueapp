@@ -5,7 +5,7 @@
   </picture>
 </p>
 
-<p align="center"><b>Your movies, TV, music and books, from search to library, in one app.</b></p>
+<p align="center"><b>Browse anything, press Play, and it streams. Your movies, TV, music and books in one app.</b></p>
 
 <p align="center">
   <a href="docs/INSTALL.md">Install</a> ·
@@ -40,6 +40,19 @@ Cue is new. Movies and TV work end to end, and so do music, ebooks and audiobook
 
 ## Screenshots
 
+### Watch
+
+| | |
+|---|---|
+| ![Watch home with a big banner, Continue watching with progress bars and rows of posters](docs/images/watch/watch-home.png) | ![A show's page with IMDb and Rotten Tomatoes ratings, Resume and My List](docs/images/watch/watch-show.png) |
+| **Watch**: a banner, Continue watching, My List and rows to scroll through | **Title page**: ratings, description, cast, Resume and My List |
+| ![The episode list with a thumbnail, description and length for each episode](docs/images/watch/watch-show-episodes.png) | ![Rows of posters further down the Watch home](docs/images/watch/watch-home-rows.png) |
+| **Episodes**: a season picker and a card per episode, with what you've watched | **Rows**: trending, popular and genres, for movies and shows |
+
+<p align="center"><img src="docs/images/watch/watch-phone.png" alt="Watch on a phone" width="260" /></p>
+
+### Managing your library
+
 | | |
 |---|---|
 | ![Dashboard with a card for each kind of media and a Server card](docs/images/dashboard.png) | ![Discover with rows of movies and shows like the ones in your library](docs/images/discover.png) |
@@ -50,12 +63,12 @@ Cue is new. Movies and TV work end to end, and so do music, ebooks and audiobook
 | **Upcoming**: the calendar of releases and episodes, and what is still wanted | **Music**: artists and albums, off until you switch it on |
 | ![Discover on the eBooks and Audiobooks tab, with a corner banner on each cover saying eBook, Audiobook or both](docs/images/discover-books.png) | ![The Cue Books shelf with the books you are reading or listening to at the top](docs/images/bookshelf.png) |
 | **Books**: trending and classic books, each marked eBook, Audiobook or both | **Cue Books**: your shelf, with the reader and the audiobook player |
-| ![The Media types page with cards for movies, TV shows, music, audiobooks and ebooks](docs/images/settings-modules.png) | ![The Quality page with the quality profiles table](docs/images/settings-quality.png) |
-| **Media types**: switch movies, TV, music, ebooks and audiobooks on or off | **Quality**: profiles and the fallback order |
+| ![The Media types page with cards for movies, TV shows, music, audiobooks and ebooks](docs/images/settings-modules.png) | ![The downloading settings with the Premiumize cloud downloader](docs/images/settings-downloads.png) |
+| **Media types**: switch movies, TV, music, ebooks and audiobooks on or off | **Downloading**: Premiumize, Usenet and torrents |
 
 <p align="center"><img src="docs/images/phone-dashboard.png" alt="Cue on a phone" width="260" /></p>
 
-> **About these screenshots.** They were taken in demo mode, so every movie, show, artist, poster and cover in them is made up (the books are old public-domain classics). That's on purpose: the pictures don't use anyone else's titles or artwork. In your own copy, Cue shows the real posters, artwork and details for whatever you search for and add.
+> **About these screenshots.** They were taken in demo mode or with sample data, so every movie, show, artist, poster and cover in them is made up (the books are old public-domain classics). That's on purpose: the pictures don't use anyone else's titles or artwork. In your own copy, Cue shows the real posters, artwork and details for whatever you search for and add.
 
 ## Install with Docker
 
