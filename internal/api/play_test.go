@@ -184,7 +184,7 @@ func TestPlaySaysWhyNothingPlays(t *testing.T) {
 		want string
 	}{
 		{playStats{}, "No indexers are set up"},
-		{playStats{indexers: 2, failed: []string{"A", "B"}}, "None of your indexers answered (A, B)"},
+		{playStats{indexers: 2, failed: []string{"A", "B"}, reasons: []string{"A: timed out", "B: Cloudflare"}}, "None of your indexers answered. A: timed out. B: Cloudflare."},
 		{playStats{indexers: 1}, "they're all Usenet indexers"},
 		{playStats{indexers: 2, torrentIndexers: 2, failed: []string{"X"}}, "found nothing for Film (X didn't answer)"},
 		{playStats{indexers: 1, torrentIndexers: 1, results: 4}, "none are torrents"},

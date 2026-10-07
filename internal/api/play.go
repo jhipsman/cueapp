@@ -22,6 +22,7 @@ import (
 	"github.com/rdborg/mediarium/internal/indexers"
 	"github.com/rdborg/mediarium/internal/library"
 	"github.com/rdborg/mediarium/internal/parser"
+	"github.com/rdborg/mediarium/internal/plainerror"
 	"github.com/rdborg/mediarium/internal/premiumize"
 	"github.com/rdborg/mediarium/internal/quality"
 )
@@ -342,6 +343,7 @@ func (s *Server) findStreamable(ctx context.Context, pm *premiumize.Client, t pl
 	for _, o := range outcomes {
 		if o.Err != nil {
 			st.failed = append(st.failed, o.IndexerName)
+			st.reasons = append(st.reasons, indexerFailure(o.IndexerName, o.Err))
 		}
 	}
 	all := dropBlocked(indexers.MergeResults(outcomes), blocked)
@@ -412,6 +414,7 @@ func (s *Server) findStreamable(ctx context.Context, pm *premiumize.Client, t pl
 type playStats struct {
 	indexers, torrentIndexers int      // enabled ones
 	failed                    []string // indexers that didn't answer
+	reasons                   []string // and why, one "Name: reason" each
 	results                   int      // releases found
 	torrents                  int      // of which torrents
 	matching                  int      // torrents of this very title
@@ -430,7 +433,7 @@ func (st playStats) message(label string, checked int) string {
 	case st.indexers == 0:
 		return "No indexers are set up yet, so there's nowhere to look. " + addTorrentSite
 	case st.results == 0 && len(st.failed) >= st.indexers:
-		return fmt.Sprintf("None of your indexers answered (%s). Check them in Settings > Indexers & Search.", strings.Join(st.failed, ", "))
+		return fmt.Sprintf("None of your indexers answered. %s. Press Test next to each one in Settings > Indexers & Search for details.", strings.Join(st.reasons, ". "))
 	case st.results == 0 && st.torrentIndexers == 0:
 		return fmt.Sprintf("Your indexers found nothing for %s, and they're all Usenet indexers. Playing straight away needs torrents. %s", label, addTorrentSite)
 	case st.results == 0:
@@ -443,6 +446,20 @@ func (st playStats) message(label string, checked int) string {
 		return fmt.Sprintf("Found %s of %s, but couldn't read which torrent each one is.", plural(st.matching, "torrent"), label)
 	}
 	return fmt.Sprintf("Found %s of %s, but Premiumize doesn't have any of them ready to stream yet.", plural(st.matching, "torrent"), label)
+}
+
+// indexerFailure is "Name: what went wrong" in plain words, short.
+func indexerFailure(name string, err error) string {
+	msg := strings.TrimSpace(plainerror.Message(err))
+	msg = strings.TrimPrefix(msg, name+": ")
+	msg = strings.TrimRight(msg, ". ")
+	if len(msg) > 160 {
+		msg = msg[:157] + "..."
+	}
+	if msg == "" {
+		msg = "no answer"
+	}
+	return name + ": " + msg
 }
 
 // rankAnyWatchable orders releases with no quality profile: best quality
