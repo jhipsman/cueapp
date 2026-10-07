@@ -1,4 +1,4 @@
-// Package watch keeps what Watch remembers per account: where each person
+// Package watch keeps what Watch remembers per profile: where each person
 // stopped in each movie and episode (Continue Watching, resume) and the
 // titles they saved to My List.
 package watch
@@ -61,20 +61,20 @@ type Repo struct{ db *sql.DB }
 // NewRepo returns a Repo on db.
 func NewRepo(db *sql.DB) *Repo { return &Repo{db: db} }
 
-// SaveProgress records where userID is in a title.
-func (r *Repo) SaveProgress(userID int64, p Progress) error {
+// SaveProgress records where profileID is in a title.
+func (r *Repo) SaveProgress(profileID int64, p Progress) error {
 	if p.UpdatedAt.IsZero() {
 		p.UpdatedAt = time.Now()
 	}
 	_, err := r.db.Exec(`INSERT INTO watch_progress
-		(user_id, kind, tmdb_id, season, episode, position_sec, duration_sec, title, episode_title, poster_path, backdrop_path, updated_at)
+		(profile_id, kind, tmdb_id, season, episode, position_sec, duration_sec, title, episode_title, poster_path, backdrop_path, updated_at)
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-		ON CONFLICT(user_id, kind, tmdb_id, season, episode) DO UPDATE SET
+		ON CONFLICT(profile_id, kind, tmdb_id, season, episode) DO UPDATE SET
 		  position_sec = excluded.position_sec, duration_sec = excluded.duration_sec,
 		  title = excluded.title, episode_title = excluded.episode_title,
 		  poster_path = excluded.poster_path, backdrop_path = excluded.backdrop_path,
 		  updated_at = excluded.updated_at`,
-		userID, p.Kind, p.TMDBID, p.Season, p.Episode, p.Position, p.Duration,
+		profileID, p.Kind, p.TMDBID, p.Season, p.Episode, p.Position, p.Duration,
 		p.Title, p.EpisodeTitle, p.PosterPath, p.BackdropPath, p.UpdatedAt.UTC().Format(time.RFC3339))
 	if err != nil {
 		return fmt.Errorf("save watch progress: %w", err)
@@ -94,11 +94,11 @@ func scanProgress(sc interface{ Scan(...any) error }) (Progress, error) {
 	return p, nil
 }
 
-// GetProgress is where userID stopped in one movie or episode; ok is false
+// GetProgress is where profileID stopped in one movie or episode; ok is false
 // if they never started it.
-func (r *Repo) GetProgress(userID int64, kind string, tmdbID, season, episode int) (Progress, bool, error) {
+func (r *Repo) GetProgress(profileID int64, kind string, tmdbID, season, episode int) (Progress, bool, error) {
 	p, err := scanProgress(r.db.QueryRow(`SELECT `+progressCols+` FROM watch_progress
-		WHERE user_id = ? AND kind = ? AND tmdb_id = ? AND season = ? AND episode = ?`, userID, kind, tmdbID, season, episode))
+		WHERE profile_id = ? AND kind = ? AND tmdb_id = ? AND season = ? AND episode = ?`, profileID, kind, tmdbID, season, episode))
 	if err == sql.ErrNoRows {
 		return Progress{}, false, nil
 	}
@@ -108,16 +108,16 @@ func (r *Repo) GetProgress(userID int64, kind string, tmdbID, season, episode in
 	return p, true, nil
 }
 
-// ShowProgress is every episode of a show userID has started.
-func (r *Repo) ShowProgress(userID int64, tmdbID int) ([]Progress, error) {
-	return r.query(`SELECT `+progressCols+` FROM watch_progress WHERE user_id = ? AND kind = ? AND tmdb_id = ?
-		ORDER BY updated_at DESC`, userID, KindTV, tmdbID)
+// ShowProgress is every episode of a show profileID has started.
+func (r *Repo) ShowProgress(profileID int64, tmdbID int) ([]Progress, error) {
+	return r.query(`SELECT `+progressCols+` FROM watch_progress WHERE profile_id = ? AND kind = ? AND tmdb_id = ?
+		ORDER BY updated_at DESC`, profileID, KindTV, tmdbID)
 }
 
-// Recent is the latest progress per title for userID, newest first: for a
+// Recent is the latest progress per title for profileID, newest first: for a
 // show, its most recently watched episode.
-func (r *Repo) Recent(userID int64, limit int) ([]Progress, error) {
-	all, err := r.query(`SELECT `+progressCols+` FROM watch_progress WHERE user_id = ? ORDER BY updated_at DESC LIMIT 500`, userID)
+func (r *Repo) Recent(profileID int64, limit int) ([]Progress, error) {
+	all, err := r.query(`SELECT `+progressCols+` FROM watch_progress WHERE profile_id = ? ORDER BY updated_at DESC LIMIT 500`, profileID)
 	if err != nil {
 		return nil, err
 	}
@@ -137,10 +137,10 @@ func (r *Repo) Recent(userID int64, limit int) ([]Progress, error) {
 	return out, nil
 }
 
-// ForgetTitle removes userID's progress in a title (every episode of a show),
+// ForgetTitle removes profileID's progress in a title (every episode of a show),
 // to take it off Continue Watching.
-func (r *Repo) ForgetTitle(userID int64, kind string, tmdbID int) error {
-	_, err := r.db.Exec(`DELETE FROM watch_progress WHERE user_id = ? AND kind = ? AND tmdb_id = ?`, userID, kind, tmdbID)
+func (r *Repo) ForgetTitle(profileID int64, kind string, tmdbID int) error {
+	_, err := r.db.Exec(`DELETE FROM watch_progress WHERE profile_id = ? AND kind = ? AND tmdb_id = ?`, profileID, kind, tmdbID)
 	return err
 }
 
@@ -161,36 +161,36 @@ func (r *Repo) query(q string, args ...any) ([]Progress, error) {
 	return out, rows.Err()
 }
 
-// AddToList saves a title to userID's My List (again, it moves to the front).
-func (r *Repo) AddToList(userID int64, it ListItem) error {
-	_, err := r.db.Exec(`INSERT INTO watch_list (user_id, kind, tmdb_id, title, year, poster_path, backdrop_path, added_at)
+// AddToList saves a title to profileID's My List (again, it moves to the front).
+func (r *Repo) AddToList(profileID int64, it ListItem) error {
+	_, err := r.db.Exec(`INSERT INTO watch_list (profile_id, kind, tmdb_id, title, year, poster_path, backdrop_path, added_at)
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-		ON CONFLICT(user_id, kind, tmdb_id) DO UPDATE SET title = excluded.title, year = excluded.year,
+		ON CONFLICT(profile_id, kind, tmdb_id) DO UPDATE SET title = excluded.title, year = excluded.year,
 		  poster_path = excluded.poster_path, backdrop_path = excluded.backdrop_path, added_at = excluded.added_at`,
-		userID, it.Kind, it.TMDBID, it.Title, it.Year, it.PosterPath, it.BackdropPath, time.Now().UTC().Format(time.RFC3339))
+		profileID, it.Kind, it.TMDBID, it.Title, it.Year, it.PosterPath, it.BackdropPath, time.Now().UTC().Format(time.RFC3339))
 	if err != nil {
 		return fmt.Errorf("add to my list: %w", err)
 	}
 	return nil
 }
 
-// RemoveFromList takes a title off userID's My List.
-func (r *Repo) RemoveFromList(userID int64, kind string, tmdbID int) error {
-	_, err := r.db.Exec(`DELETE FROM watch_list WHERE user_id = ? AND kind = ? AND tmdb_id = ?`, userID, kind, tmdbID)
+// RemoveFromList takes a title off profileID's My List.
+func (r *Repo) RemoveFromList(profileID int64, kind string, tmdbID int) error {
+	_, err := r.db.Exec(`DELETE FROM watch_list WHERE profile_id = ? AND kind = ? AND tmdb_id = ?`, profileID, kind, tmdbID)
 	return err
 }
 
-// InList says whether a title is on userID's My List.
-func (r *Repo) InList(userID int64, kind string, tmdbID int) bool {
+// InList says whether a title is on profileID's My List.
+func (r *Repo) InList(profileID int64, kind string, tmdbID int) bool {
 	var n int
-	_ = r.db.QueryRow(`SELECT COUNT(*) FROM watch_list WHERE user_id = ? AND kind = ? AND tmdb_id = ?`, userID, kind, tmdbID).Scan(&n)
+	_ = r.db.QueryRow(`SELECT COUNT(*) FROM watch_list WHERE profile_id = ? AND kind = ? AND tmdb_id = ?`, profileID, kind, tmdbID).Scan(&n)
 	return n > 0
 }
 
-// List is userID's My List, most recently added first.
-func (r *Repo) List(userID int64) ([]ListItem, error) {
+// List is profileID's My List, most recently added first.
+func (r *Repo) List(profileID int64) ([]ListItem, error) {
 	rows, err := r.db.Query(`SELECT kind, tmdb_id, title, year, poster_path, backdrop_path, added_at FROM watch_list
-		WHERE user_id = ? ORDER BY added_at DESC`, userID)
+		WHERE profile_id = ? ORDER BY added_at DESC`, profileID)
 	if err != nil {
 		return nil, fmt.Errorf("list my list: %w", err)
 	}

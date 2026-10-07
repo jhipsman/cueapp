@@ -3,6 +3,7 @@ import { Navigate, Route, BrowserRouter as Router, Routes, useLocation } from 'r
 import { isAdmin } from './api'
 import { AuthProvider, useAuth } from './AuthContext'
 import { ModulesProvider } from './ModulesContext'
+import { MainProfileOnly } from './watch/profiles'
 import AppShell from './components/AppShell'
 import ErrorBoundary from './components/ErrorBoundary'
 import About from './pages/About'
@@ -101,7 +102,13 @@ function Gate() {
           </Suspense>
         }
       />
-      <Route element={<AppShell />}>
+      <Route
+        element={
+          <MainProfileOnly>
+            <AppShell />
+          </MainProfileOnly>
+        }
+      >
         <Route index element={<Dashboard />} />
         <Route path="/search" element={<Search />} />
         <Route path="/search/releases" element={<ReleaseSearch />} />

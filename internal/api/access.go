@@ -35,6 +35,10 @@ type routeTable struct {
 	// answers the request itself and returns false to stop it (a module
 	// that is switched off).
 	gate func(http.ResponseWriter, *http.Request) bool
+	// adminProfile, when set, must also pass for administrator routes: in a
+	// household with several Watch profiles, only the main one changes
+	// settings.
+	adminProfile func(*http.Request) bool
 	// perms lists, for member routes, the permissions a basic account needs
 	// (see auth.Permissions); permsOf reads an account's.
 	perms   map[string][]string
@@ -92,6 +96,9 @@ func (t *routeTable) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		case level == accessAdmin && !user.IsAdmin:
 			writeError(w, http.StatusForbidden, forbiddenMessage)
+			return
+		case level == accessAdmin && t.adminProfile != nil && !t.adminProfile(r):
+			writeError(w, http.StatusForbidden, mainProfileMessage)
 			return
 		}
 		if need := t.perms[pattern]; len(need) > 0 && !user.IsAdmin {

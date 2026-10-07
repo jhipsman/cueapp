@@ -74,6 +74,7 @@ type Server struct {
 	hc                hardcoverState // the Hardcover client for the saved token (books_series.go)
 	premiumizeBase    string         // tests point Premiumize elsewhere; "" = the real one (premiumize.go)
 	omdb              omdbState      // the OMDb client for the saved key (watch_api.go)
+	profileBox        *crypto.Box    // seals profile tokens (watch_profiles.go)
 
 	mediaClient    *mediaservers.Client
 	mediaRefresher *mediaservers.Refresher // rescans Plex/Jellyfin/Emby after imports
@@ -170,6 +171,7 @@ func New(db *sql.DB, cfg config.Config, box *crypto.Box, defaultTMDBAPIKey, vers
 		ClientRepo:        download.NewRepo(db, box),
 		MovieRepo:         library.NewRepo(db),
 		WatchRepo:         watch.NewRepo(db),
+		profileBox:        box,
 		QueueRepo:         queue.NewRepo(db),
 		VPNRepo:           vpn.NewRepo(db, box),
 		VPNManager:        vpn.NewManager(),
@@ -312,7 +314,8 @@ func (s *Server) Routes() http.Handler {
 // without the test being updated too.
 func (s *Server) protectedRoutes() *routeTable {
 	t := newRouteTable()
-	t.gate = s.moduleRouteOpen // /api/music/ and /api/books/ answer 404 while their module is off
+	t.gate = s.moduleRouteOpen           // /api/music/ and /api/books/ answer 404 while their module is off
+	t.adminProfile = s.mainProfileActive // settings only from the main profile (watch_profiles.go)
 	t.permsOf = s.Auth.PermissionsOf
 	member := t.group(accessMember)
 	admin := t.group(accessAdmin)
@@ -461,6 +464,8 @@ func (s *Server) protectedRoutes() *routeTable {
 	// Watch: browse and stream anything (watch_api.go, play.go).
 	play.HandleFunc("GET /api/play/tmdb/movie/{tmdbId}", s.handlePlayTMDBMovie)
 	play.HandleFunc("GET /api/play/tmdb/tv/{tmdbId}/{season}/{episode}", s.handlePlayTMDBEpisode)
+	play.HandleFunc("GET /api/profiles", s.handleListWatchProfiles)
+	play.HandleFunc("POST /api/profiles/{id}/select", s.handleSelectWatchProfile)
 	play.HandleFunc("GET /api/watch/home", s.handleWatchHome)
 	play.HandleFunc("GET /api/watch/search", s.handleWatchSearch)
 	play.HandleFunc("GET /api/watch/movie/{tmdbId}", s.handleWatchMovie)
@@ -681,6 +686,9 @@ func (s *Server) protectedRoutes() *routeTable {
 	admin.HandleFunc("PUT /api/settings/premiumize", s.handlePutPremiumize)
 	admin.HandleFunc("GET /api/settings/omdb", s.handleGetOMDb)
 	admin.HandleFunc("PUT /api/settings/omdb", s.handlePutOMDb)
+	admin.HandleFunc("POST /api/profiles", s.handleAddWatchProfile)
+	admin.HandleFunc("PUT /api/profiles/{id}", s.handleUpdateWatchProfile)
+	admin.HandleFunc("DELETE /api/profiles/{id}", s.handleRemoveWatchProfile)
 	admin.HandleFunc("GET /api/settings/stream-addons", s.handleListStreamAddons)
 	admin.HandleFunc("POST /api/settings/stream-addons", s.handleAddStreamAddon)
 	admin.HandleFunc("DELETE /api/settings/stream-addons/{index}", s.handleRemoveStreamAddon)

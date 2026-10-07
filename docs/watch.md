@@ -4,6 +4,16 @@ Watch is the streaming side of Cue. Open it with **Watch** at the top of any pag
 
 It needs [Premiumize](downloads.md#premiumize) (the player streams straight from Premiumize; nothing is downloaded to your server) and, for IMDb ratings, an optional OMDb key.
 
+## Profiles
+
+Cue works like Netflix for a household: one sign-in, then **Who's watching?** and a profile per person. Each profile has its own Continue Watching, My List and progress, so one person's show doesn't move another's along.
+
+- **The main profile** is the account owner's (made from your account when you first open Watch). Only it can change settings, open the library manager, or add, edit and remove profiles. Cue checks this itself, so another profile can't get round it from the browser.
+- **Add profiles** under your avatar (top right) > **Manage profiles**: a name and a color, up to 6.
+- **Lock a profile with a PIN** (4 digits) in the same place. Put one on the main profile so nobody else can open settings. Changing a PIN signs every device out of that profile.
+- **Switch profile** from the avatar menu. Each browser or TV remembers its own profile.
+- A household with only one profile and no PIN skips the picker.
+
 ## What you can do
 
 - **Browse.** Home has Continue Watching, My List, then trending, popular and genre rows of movies and shows. **Shows** and **Movies** at the top narrow it to one kind.
@@ -42,7 +52,7 @@ Without a key, Watch shows TMDB's own score instead.
 
 ## For apps
 
-Everything Watch shows comes from the API, so a TV app can show the same things. All need a signed-in account (an API key from Settings > Profile, sent as `X-API-Key`) with permission to play.
+Everything Watch shows comes from the API, so a TV app can show the same things. All need a signed-in account (an API key from Settings > Profile, sent as `X-API-Key`) with permission to play, and the profile's token in `X-Cue-Profile`: list them with `GET /api/profiles`, and `POST /api/profiles/{id}/select` with `{"pin": "1234"}` (if it has one) answers with the token.
 
 | | |
 |---|---|

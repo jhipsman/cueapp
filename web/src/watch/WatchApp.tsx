@@ -7,6 +7,9 @@ import MyList from './MyList'
 import SearchPage from './SearchPage'
 import TitlePage from './TitlePage'
 import PlayerPage from './PlayerPage'
+import ManageProfiles from './ManageProfiles'
+import WhoIsWatching from './WhoIsWatching'
+import { Avatar, ProfilesProvider, useProfiles } from './profiles'
 import './watch.css'
 
 // Watch: the streaming side of Cue. Browse anything TMDB knows, press
@@ -20,7 +23,11 @@ export default function WatchApp() {
 
   return (
     <div className="wx">
-      <Routes>
+      <ProfilesProvider>
+        <ProfileGate />
+        <Routes>
+        <Route path="who" element={<WhoIsWatching />} />
+        <Route path="profiles" element={<ManageProfiles />} />
         <Route path="play/movie/:tmdbId" element={<PlayerPage />} />
         <Route path="play/tv/:tmdbId/:season/:episode" element={<PlayerPage />} />
         <Route
@@ -41,7 +48,48 @@ export default function WatchApp() {
             </>
           }
         />
-      </Routes>
+        </Routes>
+      </ProfilesProvider>
+    </div>
+  )
+}
+
+// ProfileGate sends a device that hasn't picked a profile to "Who's watching?".
+function ProfileGate() {
+  const { data } = useProfiles()
+  const location = useLocation()
+  const navigate = useNavigate()
+  const picking = location.pathname.startsWith('/watch/who') || location.pathname.startsWith('/watch/profiles')
+  useEffect(() => {
+    if (data && !data.active && !picking) navigate(`/watch/who?then=${encodeURIComponent(location.pathname + location.search)}`, { replace: true })
+  }, [data, picking, navigate, location.pathname, location.search])
+  return null
+}
+
+// ProfileMenu is the avatar at the top right: switch profile, manage
+// profiles and settings (the main profile only).
+function ProfileMenu() {
+  const { active, data } = useProfiles()
+  const navigate = useNavigate()
+  const [open, setOpen] = useState(false)
+  if (!active) return null
+  const owner = active.main
+  const multi = (data?.profiles.length ?? 0) > 1
+  return (
+    <div className="wx-menu">
+      <button className="wx-menu-button" onClick={() => setOpen((o) => !o)} aria-expanded={open} aria-label={`Profile: ${active.name}`}>
+        <Avatar profile={active} size={34} />
+      </button>
+      {open && (
+        <div className="wx-menu-list" onMouseLeave={() => setOpen(false)}>
+          <div className="wx-menu-who">
+            <Avatar profile={active} size={28} /> {active.name}
+          </div>
+          {multi && <button onClick={() => navigate('/watch/who')}>Switch profile</button>}
+          {owner && <button onClick={() => navigate('/watch/profiles')}>Manage profiles</button>}
+          {owner && <button onClick={() => navigate('/')}>Settings and library</button>}
+        </div>
+      )}
     </div>
   )
 }
@@ -93,9 +141,7 @@ function TopBar() {
           <Icon name="search" size={16} />
           <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Titles, people, genres" aria-label="Search" />
         </label>
-        <Link to="/" className="wx-manage" title="Back to managing your library">
-          <Icon name="sliders" size={16} /> <span>Manage</span>
-        </Link>
+        <ProfileMenu />
       </div>
     </nav>
   )

@@ -615,3 +615,222 @@ html.watch-mode body {
     background-position: -200% 0;
   }
 }
+
+/* ---- Profiles */
+.wx-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  color: #fff;
+  font-weight: 800;
+  flex: 0 0 auto;
+  user-select: none;
+}
+.wx-avatar-add {
+  background: transparent;
+  border: 2px dashed rgba(255, 255, 255, 0.4);
+  color: rgba(255, 255, 255, 0.7);
+}
+.wx-who {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 28px;
+  padding: 40px var(--wx-gutter);
+  text-align: center;
+}
+.wx-who h1 {
+  font-size: clamp(1.8rem, 4vw, 3rem);
+  margin: 0;
+  font-weight: 600;
+}
+.wx-who-brand {
+  position: absolute;
+  top: 18px;
+  left: var(--wx-gutter);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 800;
+  font-size: 1.45rem;
+}
+.wx-who-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: clamp(16px, 3vw, 36px);
+}
+.wx-who-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  background: none;
+  border: 0;
+  color: var(--wx-dim);
+  font-size: 1.15rem;
+  cursor: pointer;
+  padding: 6px;
+}
+.wx-who-tile .wx-avatar {
+  border: 3px solid transparent;
+  transition: border-color 0.15s;
+}
+.wx-who-tile:hover,
+.wx-who-tile:focus-visible {
+  color: var(--wx-text);
+}
+.wx-who-tile:hover .wx-avatar,
+.wx-who-tile:focus-visible .wx-avatar {
+  border-color: #fff;
+}
+.wx-who-edit {
+  position: relative;
+}
+.wx-who-pencil {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.45);
+  border-radius: 8px;
+  color: #fff;
+}
+.wx-who-manage {
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  background: transparent;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-size: 0.9rem;
+}
+.wx-pin {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+}
+.wx-pin-dots {
+  display: flex;
+  gap: 14px;
+}
+.wx-pin-dots span {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+}
+.wx-pin-dots span.on {
+  background: #fff;
+}
+.wx-pin-input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+}
+.wx-pin-keys {
+  display: grid;
+  grid-template-columns: repeat(3, 72px);
+  gap: 10px;
+}
+.wx-pin-keys button {
+  height: 56px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: var(--wx-panel);
+  color: #fff;
+  font-size: 1.3rem;
+  cursor: pointer;
+}
+.wx-pin-keys button:hover {
+  background: #2a2d34;
+}
+.wx-edit {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  width: min(420px, 100%);
+  text-align: left;
+}
+.wx-edit label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  color: var(--wx-dim);
+}
+.wx-edit input {
+  background: var(--wx-panel);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 6px;
+  color: var(--wx-text);
+  padding: 10px 12px;
+  font-size: 1.05rem;
+}
+.wx-colors {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.wx-colors button {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  border: 3px solid transparent;
+  cursor: pointer;
+}
+.wx-colors button.on {
+  border-color: #fff;
+}
+.wx-menu {
+  position: relative;
+}
+.wx-menu-button {
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  display: flex;
+}
+.wx-menu-list {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  min-width: 220px;
+  background: rgba(16, 17, 20, 0.97);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  padding: 8px 0;
+  display: flex;
+  flex-direction: column;
+  z-index: 30;
+}
+.wx-menu-who {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 14px 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  margin-bottom: 6px;
+  font-weight: 700;
+}
+.wx-menu-list button {
+  background: none;
+  border: 0;
+  color: var(--wx-text);
+  text-align: left;
+  padding: 9px 14px;
+  cursor: pointer;
+  font-size: 0.95rem;
+}
+.wx-menu-list button:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+.wx-edit > div {
+  width: 100%;
+}

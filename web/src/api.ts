@@ -27,6 +27,35 @@ const READ_TIMEOUT_MS = 30_000
 const SLOW_MESSAGE = 'Cue is slow to answer right now. Try again in a moment.'
 const NO_ANSWER_MESSAGE = 'Could not reach Cue. Check that it is running, then try again.'
 
+// The Watch profile this device is on: its token goes with every request
+// (the X-Cue-Profile header), per browser.
+const PROFILE_KEY = 'cue-profile'
+
+export function profileToken(): string {
+  try {
+    return localStorage.getItem(PROFILE_KEY) ?? ''
+  } catch {
+    return ''
+  }
+}
+
+export function setProfileToken(token: string) {
+  try {
+    if (token) localStorage.setItem(PROFILE_KEY, token)
+    else localStorage.removeItem(PROFILE_KEY)
+  } catch {
+    // private window: the profile is asked for again next time
+  }
+}
+
+function requestHeaders(json: boolean): Record<string, string> | undefined {
+  const h: Record<string, string> = {}
+  if (json) h['Content-Type'] = 'application/json'
+  const tok = profileToken()
+  if (tok) h['X-Cue-Profile'] = tok
+  return Object.keys(h).length ? h : undefined
+}
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const isRead = !init?.method || init.method === 'GET'
   // A read that waits on TMDB, Open Library, an indexer and the like says
@@ -39,8 +68,8 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     res = await fetch(BASE + path, {
       credentials: 'include',
       cache: 'no-store',
-      headers: init?.body ? { 'Content-Type': 'application/json' } : undefined,
       ...init,
+      headers: requestHeaders(!!init?.body),
       signal: signalFor(init?.signal, isRead ? READ_TIMEOUT_MS : undefined),
     })
     text = await res.text()
@@ -83,6 +112,21 @@ const post = <T>(path: string, body?: unknown) =>
 const put = <T>(path: string, body?: unknown) =>
   request<T>(path, { method: 'PUT', body: body !== undefined ? JSON.stringify(body) : undefined })
 const del = <T>(path: string) => request<T>(path, { method: 'DELETE' })
+
+// Watch profiles: a profile per person in the household.
+export interface WatchProfile {
+  id: number
+  name: string
+  avatar: string // a color name
+  hasPin: boolean
+  main: boolean // the owner's: the only one that can change settings
+}
+export interface WatchProfiles {
+  profiles: WatchProfile[]
+  active?: number // the profile this device is on
+  avatars: string[]
+  max: number
+}
 
 // Watch: the streaming side (browse anything, play from Premiumize).
 export type WatchKind = 'movie' | 'tv'
@@ -2077,6 +2121,12 @@ export const api = {
   streamAddons: () => get<StreamAddon[]>('/settings/stream-addons'),
   addStreamAddon: (url: string) => post<StreamAddon[]>('/settings/stream-addons', { url }),
   removeStreamAddon: (index: number) => del<StreamAddon[]>(`/settings/stream-addons/${index}`),
+  watchProfiles: () => get<WatchProfiles>('/profiles'),
+  selectWatchProfile: (id: number, pin = '') => post<{ token: string; profile: WatchProfile }>(`/profiles/${id}/select`, { pin }),
+  addWatchProfile: (name: string, avatar: string) => post<WatchProfile>('/profiles', { name, avatar }),
+  updateWatchProfile: (id: number, body: { name?: string; avatar?: string; pin?: string }) =>
+    put<{ profile: WatchProfile; token?: string }>(`/profiles/${id}`, body),
+  removeWatchProfile: (id: number) => del<null>(`/profiles/${id}`),
   getOMDb: () => get<{ set: boolean }>('/settings/omdb'),
   putOMDb: (apiKey: string) => put<{ set: boolean }>('/settings/omdb', { apiKey }),
   playMovie: (id: number, option = 1, fresh = false) => get<PlayAnswer>(`/play/movies/${id}?option=${option}${fresh ? '&fresh=1' : ''}`),

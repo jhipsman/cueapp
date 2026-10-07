@@ -131,6 +131,8 @@ var memberRoutes = []string{
 	"GET /api/play/series/{id}/{season}/{episode}",
 	"GET /api/play/tmdb/movie/{tmdbId}",
 	"GET /api/play/tmdb/tv/{tmdbId}/{season}/{episode}",
+	"GET /api/profiles",
+	"POST /api/profiles/{id}/select",
 	"GET /api/watch/home",
 	"GET /api/watch/search",
 	"GET /api/watch/movie/{tmdbId}",

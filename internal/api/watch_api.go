@@ -12,7 +12,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/auth"
 	"github.com/rdborg/mediarium/internal/metadata"
 	"github.com/rdborg/mediarium/internal/omdb"
 	"github.com/rdborg/mediarium/internal/settings"
@@ -76,15 +75,6 @@ func showCards(ss []metadata.Show) []watchCard {
 		}
 	}
 	return out
-}
-
-func watchUser(w http.ResponseWriter, r *http.Request) (*auth.User, bool) {
-	u := auth.UserFromContext(r.Context())
-	if u == nil {
-		writeError(w, http.StatusUnauthorized, "You need to sign in first.")
-		return nil, false
-	}
-	return u, true
 }
 
 func watchKind(w http.ResponseWriter, r *http.Request) (string, int, bool) {
@@ -170,7 +160,7 @@ type watchHome struct {
 
 // GET /api/watch/home: Continue Watching, My List and the shelves.
 func (s *Server) handleWatchHome(w http.ResponseWriter, r *http.Request) {
-	u, ok := watchUser(w, r)
+	pid, ok := s.watchProfile(w, r)
 	if !ok {
 		return
 	}
@@ -191,14 +181,14 @@ func (s *Server) handleWatchHome(w http.ResponseWriter, r *http.Request) {
 			shelves[i] = watchRow{Key: sh.key, Title: sh.title, Items: items}
 		}(i, sh)
 	}
-	cont := s.continueWatching(ctx, u.ID)
+	cont := s.continueWatching(ctx, pid)
 	wg.Wait()
 
 	home := watchHome{}
 	if len(cont) > 0 {
 		home.Rows = append(home.Rows, watchRow{Key: "continue", Title: "Continue watching", Items: cont})
 	}
-	if list := s.myListCards(u.ID); len(list) > 0 {
+	if list := s.myListCards(pid); len(list) > 0 {
 		home.Rows = append(home.Rows, watchRow{Key: "my-list", Title: "My List", Items: list})
 	}
 	for _, row := range shelves {
@@ -321,7 +311,7 @@ type watchEpisode struct {
 // GET /api/watch/tv/{tmdbId}/season/{season}: the season's episodes, with
 // thumbnails and how far this account got in each.
 func (s *Server) handleWatchSeason(w http.ResponseWriter, r *http.Request) {
-	u, ok := watchUser(w, r)
+	pid, ok := s.watchProfile(w, r)
 	if !ok {
 		return
 	}
@@ -337,7 +327,7 @@ func (s *Server) handleWatchSeason(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	progress := map[[2]int]watch.Progress{}
-	if ps, err := s.WatchRepo.ShowProgress(u.ID, tmdbID); err == nil {
+	if ps, err := s.WatchRepo.ShowProgress(pid, tmdbID); err == nil {
 		for _, p := range ps {
 			progress[[2]int{p.Season, p.Episode}] = p
 		}
@@ -404,7 +394,7 @@ type watchTitle struct {
 
 // GET /api/watch/movie/{tmdbId}
 func (s *Server) handleWatchMovie(w http.ResponseWriter, r *http.Request) {
-	u, ok := watchUser(w, r)
+	pid, ok := s.watchProfile(w, r)
 	if !ok {
 		return
 	}
@@ -422,8 +412,8 @@ func (s *Server) handleWatchMovie(w http.ResponseWriter, r *http.Request) {
 	}
 	t := watchTitle{watchCard: movieCard(d.Movie), Tagline: d.Tagline, Runtime: d.Runtime, Genres: genreNames(d.Genres),
 		Certification: d.Certification(), Cast: castNames(d.Cast(10)), Directors: d.Directors(), IMDbID: d.IMDBID,
-		InList: s.WatchRepo.InList(u.ID, watch.KindMovie, tmdbID)}
-	if p, ok, _ := s.WatchRepo.GetProgress(u.ID, watch.KindMovie, tmdbID, 0, 0); ok && !p.Finished() {
+		InList: s.WatchRepo.InList(pid, watch.KindMovie, tmdbID)}
+	if p, ok, _ := s.WatchRepo.GetProgress(pid, watch.KindMovie, tmdbID, 0, 0); ok && !p.Finished() {
 		t.ResumePosition = p.Position
 	}
 	var wg sync.WaitGroup
@@ -440,7 +430,7 @@ func (s *Server) handleWatchMovie(w http.ResponseWriter, r *http.Request) {
 
 // GET /api/watch/tv/{tmdbId}
 func (s *Server) handleWatchShow(w http.ResponseWriter, r *http.Request) {
-	u, ok := watchUser(w, r)
+	pid, ok := s.watchProfile(w, r)
 	if !ok {
 		return
 	}
@@ -457,7 +447,7 @@ func (s *Server) handleWatchShow(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	t := watchTitle{watchCard: showCard(d.Show), Tagline: d.Tagline, Genres: genreNames(d.Genres), Cast: castNames(d.Cast(10)),
-		Directors: d.Creators(), IMDbID: d.ExternalIDs.IMDBID, InList: s.WatchRepo.InList(u.ID, watch.KindTV, tmdbID)}
+		Directors: d.Creators(), IMDbID: d.ExternalIDs.IMDBID, InList: s.WatchRepo.InList(pid, watch.KindTV, tmdbID)}
 	for _, n := range d.Networks {
 		t.Networks = append(t.Networks, n.Name)
 	}
@@ -475,7 +465,7 @@ func (s *Server) handleWatchShow(w http.ResponseWriter, r *http.Request) {
 
 	// Resume: the latest episode watched, or the one after it if it was
 	// finished; for a show not started yet, the first episode.
-	if ps, err := s.WatchRepo.ShowProgress(u.ID, tmdbID); err == nil && len(ps) > 0 {
+	if ps, err := s.WatchRepo.ShowProgress(pid, tmdbID); err == nil && len(ps) > 0 {
 		last := ps[0]
 		if !last.Finished() {
 			t.ResumeSeason, t.ResumeEpisode, t.ResumePosition = last.Season, last.Episode, last.Position
@@ -548,7 +538,7 @@ func (s *Server) handleWatchSearch(w http.ResponseWriter, r *http.Request) {
 // PUT /api/watch/progress {"kind","tmdbId","season","episode","position","duration"}:
 // the player saves where it is every few seconds.
 func (s *Server) handlePutWatchProgress(w http.ResponseWriter, r *http.Request) {
-	u, ok := watchUser(w, r)
+	pid, ok := s.watchProfile(w, r)
 	if !ok {
 		return
 	}
@@ -592,7 +582,7 @@ func (s *Server) handlePutWatchProgress(w http.ResponseWriter, r *http.Request) 
 			}
 		}
 	}
-	if err := s.WatchRepo.SaveProgress(u.ID, p); err != nil {
+	if err := s.WatchRepo.SaveProgress(pid, p); err != nil {
 		writeError(w, http.StatusInternalServerError, "Couldn't save where you are.")
 		return
 	}
@@ -601,7 +591,7 @@ func (s *Server) handlePutWatchProgress(w http.ResponseWriter, r *http.Request) 
 
 // GET /api/watch/progress/{kind}/{tmdbId}?season=&episode=: where to resume.
 func (s *Server) handleGetWatchProgress(w http.ResponseWriter, r *http.Request) {
-	u, ok := watchUser(w, r)
+	pid, ok := s.watchProfile(w, r)
 	if !ok {
 		return
 	}
@@ -611,7 +601,7 @@ func (s *Server) handleGetWatchProgress(w http.ResponseWriter, r *http.Request) 
 	}
 	season, _ := strconv.Atoi(r.URL.Query().Get("season"))
 	episode, _ := strconv.Atoi(r.URL.Query().Get("episode"))
-	p, found, err := s.WatchRepo.GetProgress(u.ID, kind, tmdbID, season, episode)
+	p, found, err := s.WatchRepo.GetProgress(pid, kind, tmdbID, season, episode)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "Couldn't read where you were.")
 		return
@@ -629,7 +619,7 @@ func (s *Server) handleGetWatchProgress(w http.ResponseWriter, r *http.Request) 
 
 // DELETE /api/watch/progress/{kind}/{tmdbId}: take it off Continue Watching.
 func (s *Server) handleForgetWatchProgress(w http.ResponseWriter, r *http.Request) {
-	u, ok := watchUser(w, r)
+	pid, ok := s.watchProfile(w, r)
 	if !ok {
 		return
 	}
@@ -637,7 +627,7 @@ func (s *Server) handleForgetWatchProgress(w http.ResponseWriter, r *http.Reques
 	if !ok {
 		return
 	}
-	if err := s.WatchRepo.ForgetTitle(u.ID, kind, tmdbID); err != nil {
+	if err := s.WatchRepo.ForgetTitle(pid, kind, tmdbID); err != nil {
 		writeError(w, http.StatusInternalServerError, "Couldn't remove it.")
 		return
 	}
@@ -648,7 +638,7 @@ func (s *Server) handleForgetWatchProgress(w http.ResponseWriter, r *http.Reques
 
 // PUT /api/watch/list/{kind}/{tmdbId}
 func (s *Server) handleAddToWatchList(w http.ResponseWriter, r *http.Request) {
-	u, ok := watchUser(w, r)
+	pid, ok := s.watchProfile(w, r)
 	if !ok {
 		return
 	}
@@ -672,7 +662,7 @@ func (s *Server) handleAddToWatchList(w http.ResponseWriter, r *http.Request) {
 		}
 		it.Title, it.Year, it.PosterPath, it.BackdropPath = d.Name, d.Year(), d.PosterPath, d.BackdropPath
 	}
-	if err := s.WatchRepo.AddToList(u.ID, it); err != nil {
+	if err := s.WatchRepo.AddToList(pid, it); err != nil {
 		writeError(w, http.StatusInternalServerError, "Couldn't add it to My List.")
 		return
 	}
@@ -681,7 +671,7 @@ func (s *Server) handleAddToWatchList(w http.ResponseWriter, r *http.Request) {
 
 // DELETE /api/watch/list/{kind}/{tmdbId}
 func (s *Server) handleRemoveFromWatchList(w http.ResponseWriter, r *http.Request) {
-	u, ok := watchUser(w, r)
+	pid, ok := s.watchProfile(w, r)
 	if !ok {
 		return
 	}
@@ -689,7 +679,7 @@ func (s *Server) handleRemoveFromWatchList(w http.ResponseWriter, r *http.Reques
 	if !ok {
 		return
 	}
-	if err := s.WatchRepo.RemoveFromList(u.ID, kind, tmdbID); err != nil {
+	if err := s.WatchRepo.RemoveFromList(pid, kind, tmdbID); err != nil {
 		writeError(w, http.StatusInternalServerError, "Couldn't take it off My List.")
 		return
 	}
