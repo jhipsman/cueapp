@@ -1,7 +1,7 @@
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="branding/mediarium-lockup-dark.svg" />
-    <img src="branding/mediarium-lockup-light.svg" alt="Cue" height="64" />
+    <source media="(prefers-color-scheme: dark)" srcset="branding/cue-lockup-dark.svg" />
+    <img src="branding/cue-lockup-light.svg" alt="Cue" height="64" />
   </picture>
 </p>
 
