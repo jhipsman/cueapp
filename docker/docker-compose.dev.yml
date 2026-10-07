@@ -32,10 +32,14 @@ services:
     ports:
       # Host port on the left (HOST_PORT in .env); the app listens on 8264 inside.
       - "${HOST_PORT:-8264}:8264"
-      # Optional torrent port, TCP and UDP. If you change it, change
+      # Optional torrent port, TCP and UDP, only for the built-in torrent
+      # client (streaming through Premiumize doesn't use it). Off by default:
+      # Windows often reserves this port range for Hyper-V/WSL, and Docker then
+      # fails with "ports are not available ... access permissions". To use
+      # it, remove the # from both lines; if you change the number, change
       # Settings > Downloading > Usenet and torrents > Listen port to match.
-      - "58264:58264/tcp"
-      - "58264:58264/udp"
+      # - "58264:58264/tcp"
+      # - "58264:58264/udp"
     environment:
       - PUID=${PUID:-1000}
       - PGID=${PGID:-1000}
