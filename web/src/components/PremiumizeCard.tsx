@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { api, type PremiumizeState, type PremiumizeUseFor } from '../api'
 import { useToast } from './Toast'
+import { useModules } from '../ModulesContext'
 
 const useForChoices: [PremiumizeUseFor, string][] = [
   ['torrents', 'Torrents'],
@@ -14,6 +15,7 @@ const useForChoices: [PremiumizeUseFor, string][] = [
 // torrent client or Usenet downloader.
 export default function PremiumizeCard({ onChange }: { onChange?: () => void }) {
   const toast = useToast()
+  const { streamingOnly } = useModules()
   const [state, setState] = useState<PremiumizeState | null>(null)
   const [key, setKey] = useState('')
   const [busy, setBusy] = useState(false)
@@ -55,8 +57,9 @@ export default function PremiumizeCard({ onChange }: { onChange?: () => void }) 
         )}
       </h2>
       <p style={{ color: 'var(--text-dim)' }}>
-        Premiumize.me downloads torrents and NZBs on its own servers, often instantly when it already has them. Cue then fetches the finished files from
-        Premiumize over HTTPS. For torrents that means no peers connect to your server, no seeding and no VPN needed.
+        {streamingOnly
+          ? 'Premiumize is where the video comes from: Play picks a version Premiumize already has, and your TV or browser streams it straight from Premiumize. Nothing is downloaded to this computer.'
+          : 'Premiumize.me downloads torrents and NZBs on its own servers, often instantly when it already has them. Cue then fetches the finished files from Premiumize over HTTPS. For torrents that means no peers connect to your server, no seeding and no VPN needed.'}
       </p>
       {set && state && (
         <p>
@@ -102,7 +105,7 @@ export default function PremiumizeCard({ onChange }: { onChange?: () => void }) 
             </button>
           )}
         </div>
-        {set && state && (
+        {set && state && !streamingOnly && (
           <div>
             <p style={{ color: 'var(--text-dim)', margin: '8px 0 6px' }}>Use Premiumize for</p>
             <div className="seg" role="radiogroup" aria-label="Use Premiumize for">

@@ -4,6 +4,17 @@ Watch is the streaming side of Cue. Open it with **Watch** at the top of any pag
 
 It needs [Premiumize](downloads.md#premiumize) (the player streams straight from Premiumize; nothing is downloaded to your server) and, for IMDb ratings, an optional OMDb key.
 
+## Streaming only
+
+Cue starts as a streaming app: opening it goes to **Who's watching?** and then Watch, and Settings shows only what streaming needs:
+
+- **Streaming**: Premiumize, stream add-ons (Comet...), picture quality (best, up to 1080p, or up to 720p as a data saver on hotspots), and the switch below.
+- **Torrent sites**: the fallback search when no add-on has a stream.
+- **Movie info and ratings**: the TMDB key, and OMDb for IMDb ratings.
+- **Accounts** and **System** (updates, backups, logs).
+
+The library manager (downloading to this computer, Usenet, the torrent client and VPN, music, books, Plex/Jellyfin/Emby) is hidden and its automatic searches rest. Nothing is deleted: switch **Streaming only** off in Settings > Streaming and it all comes back. A new install can start with the full manager by setting `CUE_STREAMING_ONLY=0`.
+
 ## Profiles
 
 Cue works like Netflix for a household: one sign-in, then **Who's watching?** and a profile per person. Each profile has its own Continue Watching, My List and progress, so one person's show doesn't move another's along.

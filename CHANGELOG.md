@@ -9,6 +9,7 @@ under [Unreleased]. How releases are cut: [docs/RELEASING.md](docs/RELEASING.md)
 ## [Unreleased]
 
 ### Added
+- **Streaming only**, on by default: Cue opens on Watch, Settings shrinks to Streaming, Torrent sites, Movie info, Accounts and System, and the library manager is hidden with its automatic searches resting (one switch brings it back). Settings > Streaming gathers Premiumize, stream add-ons, a picture-quality cap (best, 1080p, or 720p to save data) and that switch. See [docs/watch.md](docs/watch.md#streaming-only).
 - **Profiles**, Netflix style: one sign-in for the household, **Who's watching?**, and a profile per person with its own Continue Watching, My List and progress. Profiles can be locked with a 4-digit PIN, and only the main profile can change settings or manage profiles. See [docs/watch.md](docs/watch.md#profiles).
 - **Stream add-ons**: paste a Stremio add-on link (Comet on ElfHosted, Torrentio, MediaFusion) in Settings > Downloading, and Play asks it for streams first, with its own scrapers and sorting. Links set up with your Premiumize key play straight away; Cue's own search is the fallback. See [docs/watch.md](docs/watch.md#stream-add-ons-comet-torrentio-mediafusion).
 

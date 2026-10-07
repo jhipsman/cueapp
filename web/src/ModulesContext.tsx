@@ -19,6 +19,8 @@ interface ModulesState {
   loaded: boolean
   // Whether the subtitles switch in Settings is on. Off until the server says so.
   subtitlesOn: boolean
+  // Whether Cue is a streaming app (Watch first, the library manager hidden).
+  streamingOnly: boolean
   // Whether a kind of media is switched on.
   on: (key: ModuleKey) => boolean
   refresh: () => Promise<void>
@@ -36,14 +38,16 @@ export function ModulesProvider({ children }: { children: ReactNode }) {
   const signedIn = !!user
   const [modules, setModules] = useState<Modules>(FALLBACK)
   const [subtitlesOn, setSubtitlesOn] = useState(false)
+  const [streamingOnly, setStreamingOnly] = useState(false)
   const [loaded, setLoaded] = useState(false)
 
   const refresh = useCallback(async () => {
     if (!signedIn) return
     try {
-      const { subtitlesEnabled, ...kinds } = await api.modules()
+      const { subtitlesEnabled, streamingOnly: streaming, ...kinds } = await api.modules()
       setModules({ ...FALLBACK, ...kinds })
       setSubtitlesOn(subtitlesEnabled === true)
+      setStreamingOnly(streaming === true)
     } catch {
       // Keep whatever we had: an older server has no switchboard.
     } finally {
@@ -67,6 +71,7 @@ export function ModulesProvider({ children }: { children: ReactNode }) {
       modules,
       loaded,
       subtitlesOn,
+      streamingOnly,
       on: (key) => modules[key]?.enabled === true,
       refresh,
       set: (next) => {
@@ -74,7 +79,7 @@ export function ModulesProvider({ children }: { children: ReactNode }) {
         setLoaded(true)
       },
     }),
-    [modules, loaded, subtitlesOn, refresh],
+    [modules, loaded, subtitlesOn, streamingOnly, refresh],
   )
   return <ModulesContext.Provider value={value}>{children}</ModulesContext.Provider>
 }

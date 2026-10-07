@@ -59,9 +59,12 @@ export default function AppShell() {
   const { user } = useAuth()
   const admin = isAdmin(user)
   // Members only have their own profile and About under Settings.
-  const settingsGroups = settingsGroupsFor(admin)
-  const nav = NAV.map((n) => (n.sec === 'settings' ? { ...n, to: settingsGroups[0].pages[0].to } : n))
-  const { on: moduleOn } = useModules()
+  const { on: moduleOn, streamingOnly } = useModules()
+  const settingsGroups = settingsGroupsFor(admin, streamingOnly)
+  // Streaming only: Watch and Settings; the library manager's pages stay hidden.
+  const nav = (streamingOnly ? NAV.filter((n) => n.sec === 'settings') : NAV).map((n) =>
+    n.sec === 'settings' ? { ...n, to: settingsGroups[0].pages[0].to } : n,
+  )
   const booksOn = moduleOn('ebooks') || moduleOn('audiobooks')
   const inUpcoming = location.pathname.startsWith('/wanted') || location.pathname.startsWith('/calendar')
   // Errors from the last day that nobody has marked as read (administrators only).
@@ -91,7 +94,7 @@ export default function AppShell() {
 
   // The page name in the top bar, in the browser tab and (when the page has no
   // heading of its own) as the page's one <h1>.
-  const heading = !admin && location.pathname.startsWith('/settings/profile') ? 'Your profile' : pageTitle(location.pathname, admin)
+  const heading = !admin && location.pathname.startsWith('/settings/profile') ? 'Your profile' : pageTitle(location.pathname, admin, streamingOnly)
   const specificTitle = useSpecificTitle()
   useEffect(() => {
     document.title = titleFor(specificTitle || heading)
@@ -228,12 +231,12 @@ export default function AppShell() {
             <Icon name="menu" size={20} />
           </button>
           {pageHasHeading ? <p className="top-title">{heading}</p> : <h1 className="top-title">{heading}</h1>}
-          <SearchBox />
+          {!streamingOnly && <SearchBox />}
           <div className="top-actions">
             <Link className="top-link" to="/watch" title="Browse and stream anything, Netflix style">
               <Icon name="play" size={15} /> <span>Watch</span>
             </Link>
-            {booksOn && (
+            {booksOn && !streamingOnly && (
               <a
                 className="top-link"
                 href="/bookshelf/"
@@ -246,7 +249,7 @@ export default function AppShell() {
                 <Icon name="book" size={15} /> <span>eBooks/Audiobooks Player</span>
               </a>
             )}
-            {homes.map((h) => (
+            {!streamingOnly && homes.map((h) => (
               <a key={h.serverId} className="top-link" href={h.url} target="_blank" rel="noreferrer" title={`Open ${MEDIA_SERVER_BRAND[h.kind].label} (${h.name}) in a new tab`}>
                 <MediaServerMark kind={h.kind} size={16} /> <span>{MEDIA_SERVER_BRAND[h.kind].label}</span>
               </a>

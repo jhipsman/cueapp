@@ -10,6 +10,7 @@ import PlayerPage from './PlayerPage'
 import ManageProfiles from './ManageProfiles'
 import WhoIsWatching from './WhoIsWatching'
 import { Avatar, ProfilesProvider, useProfiles } from './profiles'
+import { useModules } from '../ModulesContext'
 import './watch.css'
 
 // Watch: the streaming side of Cue. Browse anything TMDB knows, press
@@ -70,6 +71,7 @@ function ProfileGate() {
 // profiles and settings (the main profile only).
 function ProfileMenu() {
   const { active, data } = useProfiles()
+  const { streamingOnly } = useModules()
   const navigate = useNavigate()
   const [open, setOpen] = useState(false)
   if (!active) return null
@@ -87,7 +89,7 @@ function ProfileMenu() {
           </div>
           {multi && <button onClick={() => navigate('/watch/who')}>Switch profile</button>}
           {owner && <button onClick={() => navigate('/watch/profiles')}>Manage profiles</button>}
-          {owner && <button onClick={() => navigate('/')}>Settings and library</button>}
+          {owner && <button onClick={() => navigate(streamingOnly ? '/settings/streaming' : '/')}>{streamingOnly ? 'Settings' : 'Settings and library'}</button>}
         </div>
       )}
     </div>

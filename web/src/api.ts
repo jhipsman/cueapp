@@ -113,6 +113,12 @@ const put = <T>(path: string, body?: unknown) =>
   request<T>(path, { method: 'PUT', body: body !== undefined ? JSON.stringify(body) : undefined })
 const del = <T>(path: string) => request<T>(path, { method: 'DELETE' })
 
+// Streaming only (Watch is the app) and the playback quality cap.
+export interface StreamingSettings {
+  streamingOnly: boolean
+  maxResolution: '' | '1080' | '720'
+}
+
 // Watch profiles: a profile per person in the household.
 export interface WatchProfile {
   id: number
@@ -1592,7 +1598,7 @@ export interface ModuleState {
 }
 export type Modules = Record<ModuleKey, ModuleState>
 // What GET /modules answers: the media types plus whether subtitles are switched on.
-export type ModulesAnswer = Modules & { subtitlesEnabled?: boolean }
+export type ModulesAnswer = Modules & { subtitlesEnabled?: boolean; streamingOnly?: boolean }
 
 export interface MusicArtistResult {
   mbid: string
@@ -2127,6 +2133,8 @@ export const api = {
   updateWatchProfile: (id: number, body: { name?: string; avatar?: string; pin?: string }) =>
     put<{ profile: WatchProfile; token?: string }>(`/profiles/${id}`, body),
   removeWatchProfile: (id: number) => del<null>(`/profiles/${id}`),
+  streamingSettings: () => get<StreamingSettings>('/settings/streaming'),
+  putStreamingSettings: (body: Partial<StreamingSettings>) => put<StreamingSettings>('/settings/streaming', body),
   getOMDb: () => get<{ set: boolean }>('/settings/omdb'),
   putOMDb: (apiKey: string) => put<{ set: boolean }>('/settings/omdb', { apiKey }),
   playMovie: (id: number, option = 1, fresh = false) => get<PlayAnswer>(`/play/movies/${id}?option=${option}${fresh ? '&fresh=1' : ''}`),

@@ -4,6 +4,7 @@ import type { IconName } from './components/Icon'
 // Each has its own soft colour so the list is easy to scan. Pages marked
 // `member` are open to every account; the rest are for administrators only.
 export const SETTINGS_NAV: { to: string; label: string; icon: IconName; color: string; member?: boolean }[] = [
+  { to: '/settings/streaming', label: 'Streaming', icon: 'play', color: '#34d1bf' },
   { to: '/settings/modules', label: 'Media types', icon: 'grid', color: '#ff9f6b' },
   { to: '/settings/media', label: 'Folders and file names', icon: 'folder', color: '#7cc4f8' },
   { to: '/settings/quality', label: 'Quality', icon: 'star', color: '#f5c76a' },
@@ -43,6 +44,7 @@ export interface SettingsGroup {
 // its pages as indented items underneath, and every other entry stays closed,
 // so the sidebar stays short.
 const GROUPS: { key: string; label: string; icon: IconName; color: string; pages: string[] }[] = [
+  { key: 'streaming', label: 'Streaming', icon: 'play', color: '#34d1bf', pages: ['/settings/streaming'] },
   { key: 'modules', label: 'Media types', icon: 'grid', color: '#ff9f6b', pages: ['/settings/modules'] },
   { key: 'library', label: 'Library', icon: 'folder', color: '#7cc4f8', pages: ['/settings/media', '/settings/quality'] },
   { key: 'indexers', label: 'Indexers & Search', icon: 'search', color: '#a5b4fc', pages: ['/settings/indexers'] },
@@ -53,27 +55,36 @@ const GROUPS: { key: string; label: string; icon: IconName; color: string; pages
   { key: 'system', label: 'System', icon: 'hard', color: '#b4bfcc', pages: ['/settings/system', '/settings/logs', '/settings/migrate', '/settings/about'] },
 ]
 
+// In streaming-only mode, the few settings a streaming app needs.
+const STREAMING_GROUPS: typeof GROUPS = [
+  { key: 'streaming', label: 'Streaming', icon: 'play', color: '#34d1bf', pages: ['/settings/streaming'] },
+  { key: 'indexers', label: 'Torrent sites', icon: 'search', color: '#a5b4fc', pages: ['/settings/indexers'] },
+  { key: 'metadata', label: 'Movie info and ratings', icon: 'globe', color: '#c1acf7', pages: ['/settings/metadata'] },
+  { key: 'profile', label: 'Accounts', icon: 'user', color: '#8fb8f5', pages: ['/settings/profile'] },
+  { key: 'system', label: 'System', icon: 'hard', color: '#b4bfcc', pages: ['/settings/system', '/settings/logs', '/settings/about'] },
+]
+
 export const inPage = (pathname: string, to: string) => pathname === to || pathname.startsWith(to + '/')
 
 // The groups an account sees, each with only the pages it may open. A group
 // left with one page takes that page's name (for example "Your profile").
-export function settingsGroupsFor(admin: boolean): SettingsGroup[] {
+export function settingsGroupsFor(admin: boolean, streaming = false): SettingsGroup[] {
   const pages = settingsNavFor(admin)
-  return GROUPS.map((g) => {
+  return (streaming ? STREAMING_GROUPS : GROUPS).map((g) => {
     const visible = g.pages.map((to) => pages.find((p) => p.to === to)).filter((p): p is NavPage => !!p)
     return { ...g, label: visible.length === 1 && g.pages.length > 1 ? visible[0].label : visible.length === 1 && !admin ? visible[0].label : g.label, pages: visible }
   }).filter((g) => g.pages.length > 0)
 }
 
-export function groupFor(pathname: string, admin: boolean): SettingsGroup | undefined {
-  return settingsGroupsFor(admin).find((g) => g.pages.some((p) => inPage(pathname, p.to)))
+export function groupFor(pathname: string, admin: boolean, streaming = false): SettingsGroup | undefined {
+  return settingsGroupsFor(admin, streaming).find((g) => g.pages.some((p) => inPage(pathname, p.to)))
 }
 
 // The page name shown at the left of the header. Pages in a group with several
 // pages read "Group · Page" (for example "Downloading · VPN protection").
-export function pageTitle(pathname: string, admin = true): string {
+export function pageTitle(pathname: string, admin = true, streaming = false): string {
   if (pathname === '/') return 'Dashboard'
-  const group = groupFor(pathname, admin)
+  const group = groupFor(pathname, admin, streaming)
   if (group) {
     const page = group.pages.find((p) => inPage(pathname, p.to))
     return page && group.pages.length > 1 ? `${group.label} · ${page.label}` : group.label

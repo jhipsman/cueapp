@@ -4,6 +4,8 @@ import { isAdmin } from './api'
 import { AuthProvider, useAuth } from './AuthContext'
 import { ModulesProvider } from './ModulesContext'
 import { MainProfileOnly } from './watch/profiles'
+import StreamingSettings from './pages/settings/StreamingSettings'
+import { useModules } from './ModulesContext'
 import AppShell from './components/AppShell'
 import ErrorBoundary from './components/ErrorBoundary'
 import About from './pages/About'
@@ -58,6 +60,14 @@ function AdminOnly({ children, fallback = '/settings/profile' }: { children: Rea
   return isAdmin(user) ? <>{children}</> : <Navigate to={fallback} replace />
 }
 
+// Front is what "/" opens: Watch when Cue is a streaming app (once the
+// server has said so), the dashboard otherwise.
+function Front() {
+  const { loaded, streamingOnly } = useModules()
+  if (!loaded) return null
+  return streamingOnly ? <Navigate to="/watch" replace /> : <Dashboard />
+}
+
 function Gate() {
   const { loading, offline, slow, firstRunNeeded, user, needsWizard, refresh } = useAuth()
   const admin = isAdmin(user)
@@ -109,7 +119,7 @@ function Gate() {
           </MainProfileOnly>
         }
       >
-        <Route index element={<Dashboard />} />
+        <Route index element={<Front />} />
         <Route path="/search" element={<Search />} />
         <Route path="/search/releases" element={<ReleaseSearch />} />
         <Route path="/stats" element={<Statistics />} />
@@ -132,6 +142,7 @@ function Gate() {
         <Route path="/queue" element={<Queue />} />
         <Route path="/settings" element={<SettingsLayout />}>
           <Route index element={<Navigate to={admin ? 'modules' : 'profile'} replace />} />
+          <Route path="streaming" element={<AdminOnly><StreamingSettings /></AdminOnly>} />
           <Route path="modules" element={<AdminOnly><ModulesSettings /></AdminOnly>} />
           <Route path="media" element={<AdminOnly><MediaSettings /></AdminOnly>} />
           <Route path="quality" element={<AdminOnly><QualitySettings /></AdminOnly>} />
