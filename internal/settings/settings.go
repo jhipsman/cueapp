@@ -37,6 +37,7 @@ const (
 	KeyStreamingOnly    = "app.streaming_only"      // "1" streaming only (Watch is the app, the download jobs rest), "0" the full library manager; unset = CUE_STREAMING_ONLY (on unless "0")
 	KeyPlaybackMaxRes   = "playback.max_resolution" // "" = the best there is; "1080" or "720" put bigger versions last (data saver)
 	KeyStreamAddons     = "streams.addons"          // encrypted JSON list of {url, name}: Stremio add-ons (Comet, Torrentio...) Play asks for streams first; unset = Cue's own search only
+	KeyIPTV             = "iptv.account"            // encrypted JSON {server, username, password}: an Xtream Codes login for Live TV; unset = no Live TV
 	KeyPremiumizeUseFor = "premiumize.use_for"      // "torrents" (the default when unset) | "usenet" | "both"
 
 	// Automation (RSS sync, scheduled search, hunting).

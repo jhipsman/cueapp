@@ -75,6 +75,7 @@ type Server struct {
 	premiumizeBase    string         // tests point Premiumize elsewhere; "" = the real one (premiumize.go)
 	omdb              omdbState      // the OMDb client for the saved key (watch_api.go)
 	profileBox        *crypto.Box    // seals profile tokens (watch_profiles.go)
+	live              liveState      // Live TV's channel list and guide (live.go)
 
 	mediaClient    *mediaservers.Client
 	mediaRefresher *mediaservers.Refresher // rescans Plex/Jellyfin/Emby after imports
@@ -480,6 +481,14 @@ func (s *Server) protectedRoutes() *routeTable {
 	play.HandleFunc("DELETE /api/watch/progress/{kind}/{tmdbId}", s.handleForgetWatchProgress)
 	play.HandleFunc("PUT /api/watch/list/{kind}/{tmdbId}", s.handleAddToWatchList)
 	play.HandleFunc("DELETE /api/watch/list/{kind}/{tmdbId}", s.handleRemoveFromWatchList)
+	// Live TV (live.go).
+	play.HandleFunc("GET /api/live/channels", s.handleLiveChannels)
+	play.HandleFunc("GET /api/live/guide", s.handleLiveGuide)
+	play.HandleFunc("PUT /api/live/favorites/{id}", s.handleLiveFavorite)
+	play.HandleFunc("DELETE /api/live/favorites/{id}", s.handleLiveFavorite)
+	play.HandleFunc("GET /api/live/play/{id}", s.handleLivePlay)
+	play.HandleFunc("GET /api/live/hls", s.handleLiveHLS)
+	play.HandleFunc("GET /api/live/logo/{id}", s.handleLiveLogo)
 
 	// "Watch in Plex/Jellyfin/Emby" and "Open my media server" links.
 	member.HandleFunc("GET /api/media-servers/links", s.handleMediaServerLinks)
@@ -693,6 +702,8 @@ func (s *Server) protectedRoutes() *routeTable {
 	admin.HandleFunc("PUT /api/profiles/{id}", s.handleUpdateWatchProfile)
 	admin.HandleFunc("DELETE /api/profiles/{id}", s.handleRemoveWatchProfile)
 	admin.HandleFunc("GET /api/settings/streaming", s.handleGetStreamingSettings)
+	admin.HandleFunc("GET /api/settings/iptv", s.handleGetIPTV)
+	admin.HandleFunc("PUT /api/settings/iptv", s.handlePutIPTV)
 	admin.HandleFunc("PUT /api/settings/streaming", s.handlePutStreamingSettings)
 	admin.HandleFunc("GET /api/settings/stream-addons", s.handleListStreamAddons)
 	admin.HandleFunc("POST /api/settings/stream-addons", s.handleAddStreamAddon)
