@@ -2111,6 +2111,9 @@ export const api = {
     get<PlayAnswer>(
       `/play/tmdb/${kind}/${tmdbId}${kind === 'tv' ? `/${season}/${episode}` : ''}?option=${option}${fresh ? '&fresh=1' : ''}`,
     ),
+  // prefetchPlay looks a stream up ahead of time, so Play starts at once.
+  prefetchPlay: (kind: WatchKind, tmdbId: number, season = 0, episode = 0) =>
+    get<null>(`/play/tmdb/${kind}/${tmdbId}${kind === 'tv' ? `/${season}/${episode}` : ''}?prefetch=1`).catch(() => null),
   watchHome: () => get<WatchHome>('/watch/home'),
   watchSearch: (q: string) => get<WatchCard[]>(`/watch/search?q=${encodeURIComponent(q)}`),
   watchTitle: (kind: WatchKind, tmdbId: number) => get<WatchTitle>(`/watch/${kind}/${tmdbId}`),

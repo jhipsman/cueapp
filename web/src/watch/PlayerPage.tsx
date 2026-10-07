@@ -111,6 +111,18 @@ export default function PlayerPage() {
     }
   }, [])
 
+  // A minute in, look the next episode up, so it starts at once too.
+  useEffect(() => {
+    if (kind !== 'tv' || !answer) return
+    const t = setTimeout(() => {
+      api
+        .watchNext(tmdbId, season, episode)
+        .then((n) => api.prefetchPlay('tv', tmdbId, n.season, n.episode))
+        .catch(() => undefined)
+    }, 60_000)
+    return () => clearTimeout(t)
+  }, [kind, tmdbId, season, episode, answer])
+
   // On a TV, the app's own player plays it (every format, Dolby and DTS
   // sound) and saves where you are; this page waits and acts on how it ended.
   useEffect(() => {

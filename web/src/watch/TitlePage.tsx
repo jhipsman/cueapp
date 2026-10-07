@@ -27,6 +27,8 @@ export default function TitlePage({ kind }: { kind: WatchKind }) {
         if (!live) return
         setTitle(t)
         setInList(t.inList)
+        // Look the stream up now, so Play starts straight away.
+        void api.prefetchPlay(kind, tmdbId, t.resumeSeason ?? 1, t.resumeEpisode ?? 1)
         setSeason(t.resumeSeason ?? t.seasons?.[0]?.number ?? null)
       })
       .catch((e) => live && setError(e instanceof Error ? e.message : String(e)))

@@ -118,6 +118,42 @@ func (p *playLists) clock() time.Time {
 
 var playCache playLists
 
+// playLookups runs one lookup per title at a time: Play pressed while the
+// title page's look-ahead is still searching waits for that search.
+var playLookups lookupGroup
+
+type lookupCall struct {
+	done  chan struct{}
+	entry playEntry
+	err   error
+}
+
+type lookupGroup struct {
+	mu    sync.Mutex
+	calls map[string]*lookupCall
+}
+
+func (g *lookupGroup) do(key string, f func() (playEntry, error)) (playEntry, error) {
+	g.mu.Lock()
+	if g.calls == nil {
+		g.calls = map[string]*lookupCall{}
+	}
+	if c, ok := g.calls[key]; ok {
+		g.mu.Unlock()
+		<-c.done
+		return c.entry, c.err
+	}
+	c := &lookupCall{done: make(chan struct{})}
+	g.calls[key] = c
+	g.mu.Unlock()
+	c.entry, c.err = f()
+	close(c.done)
+	g.mu.Lock()
+	delete(g.calls, key)
+	g.mu.Unlock()
+	return c.entry, c.err
+}
+
 // playTarget is what to play: a library movie, or one episode of a show.
 type playTarget struct {
 	key     string
@@ -263,7 +299,7 @@ func (s *Server) servePlay(w http.ResponseWriter, r *http.Request, t playTarget)
 	entry, ok := playCache.get(t.key)
 	if !ok || r.URL.Query().Get("fresh") == "1" {
 		var err error
-		entry, err = s.findStreamable(ctx, pm, t)
+		entry, err = playLookups.do(t.key, func() (playEntry, error) { return s.findStreamable(ctx, pm, t) })
 		if errors.Is(err, premiumize.ErrBadKey) {
 			writeError(w, http.StatusBadGateway, premiumizeKeyError().Error())
 			return
@@ -278,6 +314,12 @@ func (s *Server) servePlay(w http.ResponseWriter, r *http.Request, t playTarget)
 			// Premiumize has it, pressing Play again looks again.
 			playCache.put(t.key, entry)
 		}
+	}
+	if r.URL.Query().Get("prefetch") == "1" {
+		// Only looking ahead (a title page opened, the next episode is
+		// near): the list is ready for when Play is pressed.
+		w.WriteHeader(http.StatusNoContent)
+		return
 	}
 	if len(entry.candidates) == 0 {
 		writeError(w, http.StatusNotFound, entry.nothing)
@@ -338,15 +380,48 @@ func (s *Server) releaseMapperFor(t playTarget) func(parser.Release) parser.Rele
 
 // findStreamable searches, ranks and checks Premiumize's cache for t.
 func (s *Server) findStreamable(ctx context.Context, pm *premiumize.Client, t playTarget) (playEntry, error) {
-	// Stream add-ons first: links they give play as they are, in their order.
-	links, addonHashes, asked, addonsFailed := s.addonStreams(ctx, t)
-	if len(links) > 0 {
-		return playEntry{candidates: links}, nil
+	started := time.Now()
+	// The stream add-ons and the indexers are asked at the same time. Links
+	// from an add-on play as they are, in its order, without waiting for the
+	// indexers (they finish in the background).
+	type addonAnswer struct {
+		links, hashes []playCandidate
+		asked         int
+		failed        []string
 	}
-	addonNote := addonsNote(t.label, asked, addonsFailed, len(addonHashes))
+	addonCh := make(chan addonAnswer, 1)
+	go func() {
+		var a addonAnswer
+		a.links, a.hashes, a.asked, a.failed = s.addonStreams(ctx, t)
+		addonCh <- a
+	}()
+	type searchAnswer struct {
+		outcomes []indexers.Outcome
+		err      error
+	}
+	searchCh := make(chan searchAnswer, 1)
+	if pm != nil {
+		go func() {
+			out, err := s.playSearch(ctx, t)
+			searchCh <- searchAnswer{out, err}
+		}()
+	}
+	addon := <-addonCh
+	addonsTook := time.Since(started)
+	if len(addon.links) > 0 {
+		slog.Info("play: streams from add-ons", "title", t.label, "links", len(addon.links), "took", addonsTook.Round(time.Millisecond))
+		return playEntry{candidates: addon.links}, nil
+	}
+	addonHashes := addon.hashes
+	addonNote := addonsNote(t.label, addon.asked, addon.failed, len(addonHashes))
 	if pm == nil {
 		return playEntry{nothing: strings.TrimSpace(addonNote + " Add your Premiumize key in Settings > Downloading > Usenet and torrents so Cue can search too.")}, nil
 	}
+	found := <-searchCh
+	if found.err != nil {
+		return playEntry{}, found.err
+	}
+	searchTook := time.Since(started)
 
 	instances, err := s.IndexerRepo.List()
 	if err != nil {
@@ -367,15 +442,7 @@ func (s *Server) findStreamable(ctx context.Context, pm *premiumize.Client, t pl
 			}
 		}
 	}
-	var outcomes []indexers.Outcome
-	if t.movie != nil {
-		outcomes = indexers.SearchAll(ctx, instances, t.movie.Title, movieCategory)
-	} else {
-		outcomes = indexers.SearchAll(ctx, instances, tvSearchQuery(t.series.Title, t.season, t.episode), tvCategory)
-		for _, q := range s.extraTVQueries(*t.series, t.season, t.episode) {
-			outcomes = append(outcomes, indexers.SearchAll(ctx, instances, q, tvCategory)...)
-		}
-	}
+	outcomes := found.outcomes
 	for _, o := range outcomes {
 		if o.Err != nil {
 			st.failed = append(st.failed, o.IndexerName)
@@ -442,6 +509,10 @@ func (s *Server) findStreamable(ctx context.Context, pm *premiumize.Client, t pl
 	if err != nil {
 		return playEntry{}, err
 	}
+	defer func() {
+		slog.Info("play: streams from the indexers", "title", t.label, "releases", len(items),
+			"addons", addonsTook.Round(time.Millisecond), "search", searchTook.Round(time.Millisecond), "total", time.Since(started).Round(time.Millisecond))
+	}()
 	for i, ok := range cached {
 		if ok {
 			entry.candidates = append(entry.candidates, cands[i])

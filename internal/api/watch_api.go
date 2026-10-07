@@ -718,14 +718,28 @@ func (s *Server) ratingsFor(ctx context.Context, imdbID string) omdb.Ratings {
 	if c == nil || imdbID == "" {
 		return omdb.Ratings{}
 	}
-	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
-	defer cancel()
-	r, err := c.Ratings(ctx, imdbID)
-	if err != nil {
-		slog.Info("watch: OMDb ratings", "imdbId", imdbID, "err", err)
+	// The page doesn't wait long for OMDb: past ratingsWait it shows without
+	// the ratings, and the lookup finishes in the background so they are
+	// there (from the cache) next time.
+	ch := make(chan omdb.Ratings, 1)
+	go func() {
+		bg, cancel := context.WithTimeout(context.WithoutCancel(ctx), 10*time.Second)
+		defer cancel()
+		r, err := c.Ratings(bg, imdbID)
+		if err != nil {
+			slog.Info("watch: OMDb ratings", "imdbId", imdbID, "err", err)
+		}
+		ch <- r
+	}()
+	select {
+	case r := <-ch:
+		return r
+	case <-time.After(ratingsWait):
+		return omdb.Ratings{}
 	}
-	return r
 }
+
+const ratingsWait = 1500 * time.Millisecond
 
 // GET /api/settings/omdb: whether an OMDb key is saved.
 func (s *Server) handleGetOMDb(w http.ResponseWriter, r *http.Request) {

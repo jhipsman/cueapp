@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/rdborg/mediarium/internal/indexers"
 	"github.com/rdborg/mediarium/internal/library"
@@ -237,5 +238,51 @@ func TestPlayWithNoIndexersExplains(t *testing.T) {
 	}
 	if _, ok := playCache.get("movie:7"); ok {
 		t.Fatal("an empty answer was kept: adding an indexer wouldn't help for 15 minutes")
+	}
+}
+
+func TestPlayDoesNotWaitForASlowSite(t *testing.T) {
+	s := newBareServer(t)
+	s.premiumizeBase = fakePremiumizeCache(t).URL
+	if err := s.Settings.Set(settings.KeyPremiumizeAPIKey, "k", true); err != nil {
+		t.Fatal(err)
+	}
+	fast := fakeTorznab(t)
+	release := make(chan struct{})
+	slow := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		<-release // answers only when the test ends
+	}))
+	t.Cleanup(func() { close(release); slow.Close() })
+	for name, url := range map[string]string{"Fast": fast.URL, "Slow": slow.URL} {
+		if _, err := s.IndexerRepo.Create(indexers.Instance{Name: name, BaseURL: url, APIKey: "x", Protocol: indexers.ProtocolTorrent, Enabled: true}, nil); err != nil {
+			t.Fatal(err)
+		}
+	}
+	m, _ := s.MovieRepo.Add(library.Movie{TMDBID: 9, Title: "Some Movie", Year: 2020, Status: library.StatusMissing})
+	oldWait, oldMax := playSearchWait, playSearchMax
+	playSearchWait, playSearchMax = 300*time.Millisecond, 2*time.Second
+	playCache = playLists{}
+	t.Cleanup(func() { playSearchWait, playSearchMax = oldWait, oldMax; playCache = playLists{} })
+
+	call := func(q string) *httptest.ResponseRecorder {
+		r := httptest.NewRequest(http.MethodGet, "/"+q, nil)
+		r.SetPathValue("id", fmt.Sprint(m.ID))
+		w := httptest.NewRecorder()
+		s.handlePlayMovie(w, r)
+		return w
+	}
+	start := time.Now()
+	if w := call("?prefetch=1"); w.Code != http.StatusNoContent {
+		t.Fatalf("prefetch: %d %s", w.Code, w.Body)
+	}
+	if took := time.Since(start); took > 1500*time.Millisecond {
+		t.Fatalf("the look-ahead waited %v for the slow site", took)
+	}
+	start = time.Now()
+	if w := call(""); w.Code != http.StatusOK {
+		t.Fatalf("play after the look-ahead: %d %s", w.Code, w.Body)
+	}
+	if took := time.Since(start); took > 300*time.Millisecond {
+		t.Fatalf("play after the look-ahead took %v; the list should have been ready", took)
 	}
 }
