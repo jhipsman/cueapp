@@ -157,6 +157,15 @@ export interface PlayAnswer {
   quality: string
   option: number // 1 = the best
   options: number
+  source?: string // the stream add-on it came from, like "Comet"
+}
+
+// A Stremio add-on Play asks for streams (Comet, Torrentio...). The full
+// link holds the debrid key, so only its host comes back.
+export interface StreamAddon {
+  index: number
+  name: string
+  host: string
 }
 
 // Premiumize.me, the cloud downloader (Settings > Downloading > Premiumize).
@@ -2065,6 +2074,9 @@ export const api = {
   forgetWatchProgress: (kind: WatchKind, tmdbId: number) => del<null>(`/watch/progress/${kind}/${tmdbId}`),
   addToWatchList: (kind: WatchKind, tmdbId: number) => put<null>(`/watch/list/${kind}/${tmdbId}`),
   removeFromWatchList: (kind: WatchKind, tmdbId: number) => del<null>(`/watch/list/${kind}/${tmdbId}`),
+  streamAddons: () => get<StreamAddon[]>('/settings/stream-addons'),
+  addStreamAddon: (url: string) => post<StreamAddon[]>('/settings/stream-addons', { url }),
+  removeStreamAddon: (index: number) => del<StreamAddon[]>(`/settings/stream-addons/${index}`),
   getOMDb: () => get<{ set: boolean }>('/settings/omdb'),
   putOMDb: (apiKey: string) => put<{ set: boolean }>('/settings/omdb', { apiKey }),
   playMovie: (id: number, option = 1, fresh = false) => get<PlayAnswer>(`/play/movies/${id}?option=${option}${fresh ? '&fresh=1' : ''}`),

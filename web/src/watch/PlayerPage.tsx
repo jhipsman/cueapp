@@ -182,6 +182,7 @@ export default function PlayerPage() {
             <small>
               {label && `${label} · `}
               {answer.quality} · version {answer.option} of {answer.options}
+              {answer.source && ` · via ${answer.source}`}
               {note && ` · ${note}`}
             </small>
           )}

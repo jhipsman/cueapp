@@ -16,6 +16,24 @@ It needs [Premiumize](downloads.md#premiumize) (the player streams straight from
 
 The library manager (downloads, quality, settings) stays one click away: **Manage** in the top bar.
 
+## Stream add-ons (Comet, Torrentio, MediaFusion)
+
+Play can ask Stremio add-ons for streams before it searches your own indexers. An add-on like **Comet** (hosted for you on ElfHosted) has its own scrapers and, set up with your Premiumize key, answers with links that play straight away, sorted the way you chose on its page.
+
+1. Open the add-on's configure page, for Comet [comet.elfhosted.com/configure](https://comet.elfhosted.com/configure).
+2. Choose **Premiumize** as the debrid service and paste your Premiumize key. Pick your scrapers, resolutions, languages and sorting there.
+3. Press its **Copy link** button: the link ends in `/manifest.json`.
+4. In Cue, open **Settings > Downloading > Usenet and torrents**, and under **Cloud downloader** paste it into **Stream add-ons**, then press **Add**. Cue checks the add-on answers.
+
+When you press Play:
+
+- Every add-on is asked at once. Links come in the order of the list, then each add-on's own order, so the first add-on's best stream plays first. **Try another version** moves down the list.
+- An add-on without a debrid service answers with torrents instead of links. Those are checked with Premiumize like Cue's own search results.
+- If no add-on has a link, Cue searches your indexers as before. With add-ons, you don't even need indexers or a Premiumize key in Cue; the add-on uses its own.
+- The player shows where a stream came from ("via Comet").
+
+The add-on link holds your Premiumize key, so Cue stores it encrypted and only ever shows its address (like comet.elfhosted.com).
+
 ## IMDb ratings
 
 TMDB doesn't have IMDb ratings, so Watch reads them from [OMDb](https://www.omdbapi.com). Get a free key at omdbapi.com/apikey.aspx, click the activation link in OMDb's email, and paste the key into **Settings > Info, lists and subtitles > IMDb ratings (OMDb)**. A free key allows 1,000 lookups a day; each title is looked up at most once a day.

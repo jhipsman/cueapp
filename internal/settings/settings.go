@@ -34,6 +34,7 @@ const (
 	// Premiumize.me, a cloud downloader used in place of the built-in torrent
 	// engine (and, if chosen, the Usenet downloader). See internal/premiumize.
 	KeyPremiumizeAPIKey = "premiumize.api_key" // encrypted; unset = Premiumize is not used
+	KeyStreamAddons     = "streams.addons"     // encrypted JSON list of {url, name}: Stremio add-ons (Comet, Torrentio...) Play asks for streams first; unset = Cue's own search only
 	KeyPremiumizeUseFor = "premiumize.use_for" // "torrents" (the default when unset) | "usenet" | "both"
 
 	// Automation (RSS sync, scheduled search, hunting).

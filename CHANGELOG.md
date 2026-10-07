@@ -8,6 +8,9 @@ under [Unreleased]. How releases are cut: [docs/RELEASING.md](docs/RELEASING.md)
 
 ## [Unreleased]
 
+### Added
+- **Stream add-ons**: paste a Stremio add-on link (Comet on ElfHosted, Torrentio, MediaFusion) in Settings > Downloading, and Play asks it for streams first, with its own scrapers and sorting. Links set up with your Premiumize key play straight away; Cue's own search is the fallback. See [docs/watch.md](docs/watch.md#stream-add-ons-comet-torrentio-mediafusion).
+
 ### Changed
 - **Mediarium is now Cue**, with a new icon (a C around a play button). Settings, the library, your downloads and everything else carry over as they are.
 

@@ -9,6 +9,7 @@ import { useToast } from '../../components/Toast'
 import { useAutosaveSetting } from '../../useAutosave'
 import TorrentSection from './TorrentSection'
 import PremiumizeCard from '../../components/PremiumizeCard'
+import StreamAddonsCard from '../../components/StreamAddonsCard'
 import { useLive } from '../../useLive'
 import { useConfirm } from '../../components/ConfirmProvider'
 
@@ -94,6 +95,7 @@ export default function DownloadSettings() {
           <Icon name="globe" size={14} /> Cloud downloader
         </legend>
         <PremiumizeCard onChange={loadStatus} />
+        <StreamAddonsCard />
       </fieldset>
 
       <div className="half-cols span-all">

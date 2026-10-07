@@ -53,7 +53,9 @@ const (
 // playCandidate is one release Premiumize can stream.
 type playCandidate struct {
 	Release string
-	Hash    string // info hash, lower-case hex
+	Hash    string // info hash, lower-case hex; "" for a link from an add-on
+	URL     string // a link a stream add-on gave, played as it is
+	Source  string // the add-on it came from; "" for Cue's own search
 	Size    int64
 	Tier    quality.Tier
 }
@@ -100,6 +102,13 @@ func (p *playLists) put(key string, e playEntry) {
 	p.entries[key] = e
 }
 
+// clear forgets every list (the stream add-ons changed).
+func (p *playLists) clear() {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	p.entries = nil
+}
+
 func (p *playLists) clock() time.Time {
 	if p.now != nil {
 		return p.now()
@@ -136,6 +145,9 @@ type playAnswer struct {
 	// Options is how many there are. Ask for option+1 if this one won't play.
 	Option  int `json:"option"`
 	Options int `json:"options"`
+	// Source is the stream add-on this came from (like "Comet"); empty for
+	// Cue's own search.
+	Source string `json:"source,omitempty"`
 }
 
 // GET /api/play/movies/{id}[?option=N][&fresh=1]
@@ -232,7 +244,7 @@ func (s *Server) handlePlayEpisode(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) servePlay(w http.ResponseWriter, r *http.Request, t playTarget) {
 	pm := s.premiumizeClient()
-	if pm == nil {
+	if pm == nil && len(s.savedAddons()) == 0 {
 		writeError(w, http.StatusConflict, "Playing needs Premiumize. Add your API key in Settings > Downloading > Usenet and torrents, under Cloud downloader.")
 		return
 	}
@@ -280,6 +292,18 @@ func (s *Server) servePlay(w http.ResponseWriter, r *http.Request, t playTarget)
 	// pack may not hold the episode wanted: then the next option is used.
 	for i := option - 1; i < len(entry.candidates); i++ {
 		c := entry.candidates[i]
+		if c.URL != "" {
+			// A link from an add-on, already resolved with its debrid service.
+			writeJSON(w, http.StatusOK, playAnswer{
+				Title: t.label, URL: c.URL, FileName: c.Release, SizeBytes: c.Size,
+				Release: c.Release, Quality: string(c.Tier), Source: c.Source,
+				Option: i + 1, Options: len(entry.candidates),
+			})
+			return
+		}
+		if pm == nil {
+			continue
+		}
 		files, err := pm.DirectDL(ctx, "magnet:?xt=urn:btih:"+c.Hash)
 		if errors.Is(err, premiumize.ErrBadKey) {
 			writeError(w, http.StatusBadGateway, premiumizeKeyError().Error())
@@ -295,7 +319,7 @@ func (s *Server) servePlay(w http.ResponseWriter, r *http.Request, t playTarget)
 		writeJSON(w, http.StatusOK, playAnswer{
 			Title: t.label, URL: f.Link, StreamURL: f.StreamLink,
 			FileName: path.Base(f.Path), SizeBytes: f.Size,
-			Release: c.Release, Quality: string(c.Tier),
+			Release: c.Release, Quality: string(c.Tier), Source: c.Source,
 			Option: i + 1, Options: len(entry.candidates),
 		})
 		return
@@ -312,6 +336,16 @@ func (s *Server) releaseMapperFor(t playTarget) func(parser.Release) parser.Rele
 
 // findStreamable searches, ranks and checks Premiumize's cache for t.
 func (s *Server) findStreamable(ctx context.Context, pm *premiumize.Client, t playTarget) (playEntry, error) {
+	// Stream add-ons first: links they give play as they are, in their order.
+	links, addonHashes, asked, addonsFailed := s.addonStreams(ctx, t)
+	if len(links) > 0 {
+		return playEntry{candidates: links}, nil
+	}
+	addonNote := addonsNote(t.label, asked, addonsFailed, len(addonHashes))
+	if pm == nil {
+		return playEntry{nothing: strings.TrimSpace(addonNote + " Add your Premiumize key in Settings > Downloading > Usenet and torrents so Cue can search too.")}, nil
+	}
+
 	instances, err := s.IndexerRepo.List()
 	if err != nil {
 		return playEntry{}, err
@@ -380,6 +414,14 @@ func (s *Server) findStreamable(ctx context.Context, pm *premiumize.Client, t pl
 		cands []playCandidate
 		seen  = map[string]bool{}
 	)
+	// Torrents an add-on found come first, in its order.
+	for _, c := range addonHashes {
+		if !seen[c.Hash] {
+			seen[c.Hash] = true
+			items = append(items, c.Hash)
+			cands = append(cands, c)
+		}
+	}
 	for i, res := range ranked {
 		h := hashes[i]
 		if h == "" || seen[h] {
@@ -391,7 +433,7 @@ func (s *Server) findStreamable(ctx context.Context, pm *premiumize.Client, t pl
 	}
 	entry := playEntry{}
 	if len(items) == 0 {
-		entry.nothing = st.message(t.label, 0)
+		entry.nothing = strings.TrimSpace(addonNote + " " + st.message(t.label, 0))
 		return entry, nil
 	}
 	cached, err := pm.CacheCheck(ctx, items)
@@ -404,9 +446,26 @@ func (s *Server) findStreamable(ctx context.Context, pm *premiumize.Client, t pl
 		}
 	}
 	if len(entry.candidates) == 0 {
-		entry.nothing = st.message(t.label, len(items))
+		entry.nothing = strings.TrimSpace(addonNote + " " + st.message(t.label, len(items)))
 	}
 	return entry, nil
+}
+
+// addonsNote says what the stream add-ons found, ahead of the rest of a
+// "nothing to play" message; "" without add-ons.
+func addonsNote(label string, asked int, failed []string, hashes int) string {
+	var parts []string
+	if asked > 0 {
+		if hashes > 0 {
+			parts = append(parts, fmt.Sprintf("Your stream add-ons found %s of %s but no ready-to-play links.", plural(hashes, "torrent"), label))
+		} else {
+			parts = append(parts, fmt.Sprintf("Your stream add-ons found nothing for %s.", label))
+		}
+	}
+	if len(failed) > 0 {
+		parts = append(parts, fmt.Sprintf("%s didn't answer.", strings.Join(failed, ", ")))
+	}
+	return strings.Join(parts, " ")
 }
 
 // playStats counts what one search for something to play found, to say
