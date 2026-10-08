@@ -1664,3 +1664,144 @@ html.watch-mode:has(.wx-player) body {
   width: 64px;
   height: 40px;
 }
+
+/* Live TV's groups: a side menu beside the guide (a picker on phones). */
+.wx-live-body {
+  display: grid;
+  grid-template-columns: 230px minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+}
+.wx-live-side {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  height: calc(100dvh - 160px);
+  min-height: 320px;
+  padding: 10px 6px;
+  border-radius: 10px;
+  background: var(--wx-panel);
+}
+.wx-live-side ul {
+  list-style: none;
+  margin: 0;
+  padding: 0 2px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  flex: 1;
+}
+.wx-live-side li button {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  color: var(--wx-dim);
+  text-align: left;
+  font-size: 0.95rem;
+  cursor: pointer;
+  position: relative;
+}
+.wx-live-side li button span {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.wx-live-side li button small {
+  color: rgba(255, 255, 255, 0.35);
+  font-size: 0.78rem;
+  font-variant-numeric: tabular-nums;
+}
+.wx-live-side li button:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--wx-text);
+}
+.wx-live-side li button.active {
+  background: rgba(52, 209, 191, 0.14);
+  color: var(--wx-text);
+  font-weight: 700;
+}
+.wx-live-side li button.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 8px;
+  bottom: 8px;
+  width: 3px;
+  border-radius: 2px;
+  background: var(--wx-accent);
+}
+.wx-live-side li button.active svg {
+  color: #facc15;
+  fill: currentColor;
+}
+.wx-live-find {
+  margin: 0 4px 4px;
+  padding: 9px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.25);
+  color: var(--wx-text);
+  font: inherit;
+  font-size: 0.9rem;
+}
+.wx-live-find:focus {
+  outline: none;
+  border-color: var(--wx-accent);
+}
+.wx-live-select {
+  display: none;
+}
+.wx-live-main {
+  min-width: 0;
+}
+.wx-live .wx-guide {
+  height: calc(100dvh - 160px);
+}
+html.tv-mode .wx-live-side,
+html.tv-mode .wx-live .wx-guide {
+  height: calc(100vh - 150px);
+}
+html.tv-mode .wx-live-side li button:focus {
+  background: #fff;
+  color: #0b0c0f;
+  box-shadow: 0 0 0 3px var(--wx-accent);
+}
+html.tv-mode .wx-live-side li button:focus small {
+  color: #555;
+}
+@media (max-width: 900px) and (min-width: 641px) {
+  .wx-live-body {
+    grid-template-columns: 180px minmax(0, 1fr);
+  }
+}
+@media (max-width: 640px) {
+  .wx-live-body {
+    display: block;
+  }
+  .wx-live-side {
+    display: none;
+  }
+  .wx-live-select {
+    display: block;
+    margin-bottom: 12px;
+  }
+  .wx-live-select select {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 10px;
+    background: var(--wx-panel);
+    color: var(--wx-text);
+    font: inherit;
+    font-weight: 600;
+  }
+  .wx-live .wx-guide {
+    height: calc(100dvh - 250px - env(safe-area-inset-bottom));
+  }
+}

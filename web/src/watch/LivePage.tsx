@@ -39,6 +39,7 @@ export default function LivePage() {
   const [data, setData] = useState<LiveChannels | null>(null)
   const [error, setError] = useState('')
   const [shown, setShown] = useState(PAGE)
+  const [find, setFind] = useState('')
   const [guide, setGuide] = useState<Record<string, LiveProgramme[]>>({})
   const asked = useRef(new Set<string>())
   const [now, setNow] = useState(() => Date.now())
@@ -153,7 +154,15 @@ export default function LivePage() {
     )
   }
 
-  const cats = (data.categories ?? []).filter((c) => data.channels?.some((ch) => ch.category === c.id))
+  const counts = new Map<string, number>()
+  for (const ch of data.channels ?? []) counts.set(ch.category, (counts.get(ch.category) ?? 0) + 1)
+  const cats = (data.categories ?? []).filter((c) => counts.has(c.id))
+  const groups = [
+    ...(favCount > 0 ? [{ id: 'fav', name: 'Favourites', count: favCount, fixed: true }] : []),
+    { id: 'all', name: 'All channels', count: data.channels?.length ?? 0, fixed: true },
+    ...cats.map((c) => ({ id: c.id, name: c.name, count: counts.get(c.id) ?? 0, fixed: false })),
+  ]
+  const findText = find.trim().toLowerCase()
   const slots: number[] = []
   for (let t = start; t < end; t += 30 * 60_000) slots.push(t)
   const width = HOURS * 60 * PPM
@@ -164,22 +173,38 @@ export default function LivePage() {
         <h2>Live TV</h2>
         {!data.guideReady && <span className="wx-dim">The TV guide is loading; channels play already.</span>}
       </div>
-      <div className="wx-chips" role="tablist" aria-label="Channel groups">
-        {favCount > 0 && (
-          <button role="tab" aria-selected={cat === 'fav'} className={cat === 'fav' ? 'active' : ''} onClick={() => setParams({ cat: 'fav' }, { replace: true })}>
-            <Icon name="star" size={14} /> Favourites
-          </button>
-        )}
-        <button role="tab" aria-selected={cat === 'all'} className={cat === 'all' ? 'active' : ''} onClick={() => setParams({ cat: 'all' }, { replace: true })}>
-          All channels
-        </button>
-        {cats.map((c) => (
-          <button key={c.id} role="tab" aria-selected={cat === c.id} className={cat === c.id ? 'active' : ''} onClick={() => setParams({ cat: c.id }, { replace: true })}>
-            {c.name}
-          </button>
-        ))}
-      </div>
+      <div className="wx-live-body">
+        {/* The groups: a side menu (on a phone, a picker). */}
+        <nav className="wx-live-side" aria-label="Channel groups">
+          {cats.length > 12 && (
+            <input className="wx-live-find" value={find} onChange={(e) => setFind(e.target.value)} placeholder="Find a group" aria-label="Find a group" />
+          )}
+          <ul>
+            {groups
+              .filter((g) => !findText || g.name.toLowerCase().includes(findText) || g.fixed)
+              .map((g) => (
+                <li key={g.id}>
+                  <button className={cat === g.id ? 'active' : ''} aria-current={cat === g.id ? 'true' : undefined} onClick={() => setParams({ cat: g.id }, { replace: true })}>
+                    {g.id === 'fav' && <Icon name="star" size={15} />}
+                    <span>{g.name}</span>
+                    <small>{g.count}</small>
+                  </button>
+                </li>
+              ))}
+          </ul>
+        </nav>
+        <label className="wx-live-select">
+          <span className="sr-only">Channel group</span>
+          <select value={cat} onChange={(e) => setParams({ cat: e.target.value }, { replace: true })}>
+            {groups.map((g) => (
+              <option key={g.id} value={g.id}>
+                {g.name} ({g.count})
+              </option>
+            ))}
+          </select>
+        </label>
 
+        <div className="wx-live-main">
       {list.length === 0 && <p className="wx-dim">No channels here. Star a channel to add it to Favourites.</p>}
       {list.length > 0 && (
         <div className="wx-guide" ref={scroller}>
@@ -258,6 +283,8 @@ export default function LivePage() {
           </div>
         </div>
       )}
+        </div>
+      </div>
     </div>
   )
 }
