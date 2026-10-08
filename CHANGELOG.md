@@ -9,6 +9,8 @@ under [Unreleased]. How releases are cut: [docs/RELEASING.md](docs/RELEASING.md)
 ## [Unreleased]
 
 ### Added
+- **Live TV catch-up and reminders**: past shows on channels your provider keeps are marked in the guide (with Earlier and Later to move through it) and play from their start, a show on now has From the start, and Remind me on a show that hasn't started pops up a card with Watch when it does, on any device on that profile.
+- **Live TV like a TV box**: the channel playing stays in a window over the guide with what's on beside it; flip channels from the guide, go full screen and come back without it stopping. Search finds games and shows on now and coming up.
 - **Cue on a cloud server**: one command on a rented server (Ubuntu or Debian) installs Cue with an HTTPS address (your domain, or a free one made from the server's IP), FlareSolverr, and a nightly update, so the TV app and phones work from anywhere. The image is built for Intel and ARM servers on every change. See [docs/cloud.md](docs/cloud.md).
 - **Phones**: a tab bar at the bottom (Home, Shows, Movies, Live TV, My List), Cue opens full screen when added to the home screen, and the player has **Open in Infuse** and **Open in VLC** (iPhone) or **Open in VLC** (Android) for videos the phone's browser can't play.
 - **Live TV**: add your IPTV provider's Xtream Codes login in Settings > Streaming, and Watch gets a Live TV tab with every channel and its logo, a TV guide grid (now and the next hours, from the provider's guide), the provider's channel groups, and Favourites per profile. Channels play on the TV app straight from the provider, with up and down changing channel, and in browsers and on phones through Cue. See [docs/watch.md](docs/watch.md#live-tv).

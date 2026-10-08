@@ -77,6 +77,8 @@ Using Live TV:
 - **Search finds what's on.** The search box at the top looks through the TV guide too: type a team, a game or a show ("Lakers", "Chiefs vs Bills") and it lists where it's **on now** and when it's **coming up** in the next day and a half, with the channel, plus channels by name. Pick one to start the channel.
 - **Watch while you browse.** Live TV is laid out like a TV box: the channel you're watching plays in a window at the top left, with what's on it now (and how far in), its description and what's next beside it; the groups and the guide are below. Pick a channel (or any show in its row) and the window switches to it, so you can flip through channels without leaving the guide. Pick the one playing again, or **Full screen**, to fill the screen; **Back** returns to the guide with it still playing. Full screen, up and down (or **Ch +** and **Ch −**) change channel within the group.
 - **Recent** at the top of the groups has the channels you watched last on that device.
+- **Catch-up.** Channels your provider keeps (catch-up or timeshift; many keep a few days) have their past shows marked ⟲ in the guide: pick one to watch it from its start. **Earlier** and **Later** above the guide move it back and on; a show on now has **From the start**. On the TV app it plays in the app's player, where you can skip through it.
+- **Reminders.** Pick a show that hasn't started and its details show with **Remind me** (or use the clock button on a Coming up result in search). When it starts, a card pops up wherever Cue is open on that profile, with **Watch**. Reminders are per profile and follow you across devices.
 - **On the TV app**, the channel plays in the app's own player, straight from your provider. Up and down on the remote, or its channel buttons, change channel.
 - **In a browser or on a phone**, the channel plays through Cue, which lets a Cue on HTTPS play a provider's plain-http stream. It uses your server's bandwidth while you watch.
 
@@ -107,6 +109,8 @@ Everything Watch shows comes from the API, so a TV app can show the same things.
 | `GET /api/live/search?q=` | shows on now and coming up whose title has every word, and channels by name |
 | `GET /api/live/guide?ids=&from=&hours=` | the guide for those channels (up to 300), from a Unix time, up to 24 hours |
 | `PUT` / `DELETE /api/live/favorites/{id}` | star or unstar a channel for the profile |
+| `GET /api/live/catchup/{id}?start=&stop=` | where a past show plays from its start (Unix times) |
+| `GET`, `PUT`, `DELETE /api/live/reminders` | the profile's reminders: `{"channelId","start","stop","title"}` |
 | `GET /api/live/play/{id}` | where a channel plays: `url` through Cue, and `direct` (the provider's) for the TV app |
 | `PUT` / `DELETE /api/watch/list/{kind}/{tmdbId}` | add to or remove from My List |
 

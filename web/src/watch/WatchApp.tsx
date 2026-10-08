@@ -12,6 +12,7 @@ import LivePlayer from './LivePlayer'
 import ManageProfiles from './ManageProfiles'
 import WhoIsWatching from './WhoIsWatching'
 import { Avatar, ProfilesProvider, useProfiles } from './profiles'
+import { RemindersProvider } from './reminders'
 import { useModules } from '../ModulesContext'
 import { installTVNavigation, onTV, refocusSoon } from './tv'
 import './watch.css'
@@ -34,6 +35,7 @@ export default function WatchApp() {
   return (
     <div className="wx">
       <ProfilesProvider>
+        <RemindersProvider>
         <ProfileGate />
         <Routes>
         <Route path="who" element={<WhoIsWatching />} />
@@ -62,6 +64,7 @@ export default function WatchApp() {
           }
         />
         </Routes>
+        </RemindersProvider>
       </ProfilesProvider>
     </div>
   )

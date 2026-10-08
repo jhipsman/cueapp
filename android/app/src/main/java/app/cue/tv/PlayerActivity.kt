@@ -59,6 +59,7 @@ class PlayerActivity : Activity() {
     private val main = Handler(Looper.getMainLooper())
     private var finished = false
     private var live = false
+    private var catchup = false // a past show from the provider's recordings: seekable, nothing saved
     private var isShow = false
 
     private lateinit var controls: View
@@ -94,6 +95,7 @@ class PlayerActivity : Activity() {
         info = JSONObject(intent.getStringExtra(EXTRA_JSON) ?: "{}")
         server = intent.getStringExtra(EXTRA_SERVER) ?: ""
         live = info.optBoolean("live")
+        catchup = info.optBoolean("catchup")
         isShow = info.optString("kind") == "tv"
 
         val renderers = DefaultRenderersFactory(this)
@@ -178,7 +180,7 @@ class PlayerActivity : Activity() {
         if (start > 0 && !live) player.seekTo(start)
         player.prepare()
         player.playWhenReady = true
-        if (!live) main.postDelayed(saver, SAVE_EVERY_MS)
+        if (!live && !catchup) main.postDelayed(saver, SAVE_EVERY_MS)
         main.post(ticker)
         showControls()
     }
@@ -241,7 +243,7 @@ class PlayerActivity : Activity() {
                 addView(pill("10", R.drawable.ic_cue_forward) { seekBy(10_000) })
             }
             addView(View(context), LinearLayout.LayoutParams(0, 1, 1f))
-            if (isShow && !live) {
+            if (isShow && !live && !catchup) {
                 nextButton = pill("Next episode", R.drawable.ic_cue_next) { end("next") }.also { addView(it) }
             }
             addView(pill("Audio", R.drawable.ic_cue_audio) { chooseTrack(C.TRACK_TYPE_AUDIO, "Audio") })
@@ -418,7 +420,7 @@ class PlayerActivity : Activity() {
     // saveProgress tells Cue where this profile is in the title, the same way
     // Watch in a browser does.
     private fun saveProgress() {
-        if (live) return
+        if (live || catchup) return
         val pos = player.currentPosition / 1000
         val dur = player.duration.let { if (it == C.TIME_UNSET) 0 else it / 1000 }
         if (pos < 5 || dur <= 0 || server.isEmpty()) return

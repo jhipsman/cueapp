@@ -134,6 +134,7 @@ export interface LiveChannel {
   category: string
   logo?: string
   favorite: boolean
+  catchupDays?: number // days back the provider keeps it (catch-up)
   now?: LiveProgramme
   next?: LiveProgramme
 }
@@ -156,6 +157,14 @@ export interface LiveHit {
   show?: LiveProgramme // empty for a channel found by its name
   onNow: boolean
 }
+export interface LiveReminder {
+  channelId: string
+  start: string
+  stop: string
+  title: string
+  channel?: string
+  logo?: string
+}
 export interface LivePlay {
   id: string
   num: number
@@ -163,6 +172,7 @@ export interface LivePlay {
   url: string // through Cue, for browsers
   direct?: string // the provider's own, for the TV app
   logo?: string
+  catchup?: boolean // a past show from the provider's recordings
 }
 export interface IPTVSettings {
   set: boolean
@@ -2205,6 +2215,12 @@ export const api = {
   setLiveFavorite: (id: string, on: boolean) =>
     on ? put<{ favorite: boolean }>(`/live/favorites/${encodeURIComponent(id)}`) : del<{ favorite: boolean }>(`/live/favorites/${encodeURIComponent(id)}`),
   liveSearch: (q: string) => get<{ hits: LiveHit[]; guideReady?: boolean }>(`/live/search?q=${encodeURIComponent(q)}`),
+  liveCatchup: (id: string, start: number, stop: number) =>
+    get<LivePlay>(`/live/catchup/${encodeURIComponent(id)}?start=${Math.floor(start / 1000)}&stop=${Math.floor(stop / 1000)}`),
+  liveReminders: () => get<LiveReminder[]>('/live/reminders'),
+  addLiveReminder: (r: { channelId: string; start: string; stop: string; title: string }) => put<null>('/live/reminders', r),
+  removeLiveReminder: (channelId: string, start: string) =>
+    del<null>(`/live/reminders?channel=${encodeURIComponent(channelId)}&start=${encodeURIComponent(new Date(start).toISOString().replace(/\.\d{3}Z$/, 'Z'))}`),
   livePlay: (id: string) => get<LivePlay>(`/live/play/${encodeURIComponent(id)}`),
   getIPTV: () => get<IPTVSettings>('/settings/iptv'),
   putIPTV: (body: { server: string; username?: string; password?: string }) => put<IPTVSettings>('/settings/iptv', body),
