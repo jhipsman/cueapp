@@ -6,8 +6,12 @@
   --wx-panel: #1b1d22;
   --wx-text: #f4f4f5;
   --wx-dim: #a6a8ae;
+  /* The color theme (theme.ts sets these per profile); Cue's own here. */
   --wx-accent: #34d1bf; /* Cue cyan, from the logo */
+  --wx-accent-rgb: 52, 209, 191;
   --wx-accent-text: #06201d;
+  --wx-bg-rgb: 16, 17, 20;
+  --wx-glow: 0 0 24px rgba(52, 209, 191, 0.45);
   --wx-gutter: clamp(16px, 4vw, 56px);
   min-height: 100vh;
   background: var(--wx-bg);
@@ -17,7 +21,7 @@
 }
 html.watch-mode,
 html.watch-mode body {
-  background: #101114;
+  background: var(--wx-bg, #101114);
 }
 .wx a {
   color: inherit;
@@ -45,7 +49,7 @@ html.watch-mode body {
   transition: background 0.25s;
 }
 .wx-nav.solid {
-  background: rgba(16, 17, 20, 0.97);
+  background: rgba(var(--wx-bg-rgb), 0.97);
 }
 .wx-brand {
   display: inline-flex;
@@ -63,7 +67,7 @@ html.watch-mode body {
   width: 1.9rem;
   height: 1.9rem;
   margin-right: -0.3rem; /* the mark's own margin: "ue" tucks in like a letter */
-  filter: drop-shadow(0 0 10px rgba(52, 209, 191, 0.45));
+  filter: var(--wx-glow-filter, drop-shadow(0 0 10px rgba(52, 209, 191, 0.45)));
 }
 .cue-wordmark-ue {
   font-family: 'Sora', var(--font-display, sans-serif);
@@ -72,13 +76,13 @@ html.watch-mode body {
   letter-spacing: -0.05em;
   line-height: 1.15;
   color: #fff;
-  text-shadow: 0 1px 12px rgba(52, 209, 191, 0.25);
+  text-shadow: var(--wx-glow-text, 0 1px 12px rgba(52, 209, 191, 0.25));
   padding: 0 0.06em 0.06rem 0;
 }
 .wx-brand-mark {
   width: 30px;
   height: 30px;
-  color: #34d1bf; /* the Cue mark's color */
+  color: var(--wx-accent, #34d1bf); /* the Cue mark's color */
 }
 .wx-links {
   display: flex;
@@ -134,7 +138,7 @@ html.watch-mode body {
     display: flex;
     justify-content: space-around;
     padding: 6px 4px calc(6px + env(safe-area-inset-bottom));
-    background: rgba(16, 17, 20, 0.97);
+    background: rgba(var(--wx-bg-rgb), 0.97);
     border-top: 1px solid rgba(255, 255, 255, 0.08);
   }
   .wx-tabs a {
@@ -217,8 +221,8 @@ html.watch-mode body {
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(to right, rgba(16, 17, 20, 0.92) 0%, rgba(16, 17, 20, 0.55) 45%, rgba(16, 17, 20, 0) 75%),
-    linear-gradient(to top, var(--wx-bg) 0%, rgba(16, 17, 20, 0) 35%);
+    linear-gradient(to right, rgba(var(--wx-bg-rgb), 0.92) 0%, rgba(var(--wx-bg-rgb), 0.55) 45%, rgba(var(--wx-bg-rgb), 0) 75%),
+    linear-gradient(to top, var(--wx-bg) 0%, rgba(var(--wx-bg-rgb), 0) 35%);
 }
 .wx-hero-body {
   position: relative;
@@ -346,7 +350,7 @@ html.watch-mode body {
   width: var(--wx-gutter);
   min-width: 36px;
   border: 0;
-  background: rgba(16, 17, 20, 0.6);
+  background: rgba(var(--wx-bg-rgb), 0.6);
   color: #fff;
   cursor: pointer;
   z-index: 2;
@@ -851,7 +855,7 @@ html.watch-mode body {
   right: 0;
   top: calc(100% + 8px);
   min-width: 220px;
-  background: rgba(16, 17, 20, 0.97);
+  background: rgba(var(--wx-bg-rgb), 0.97);
   border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 8px;
   padding: 8px 0;
@@ -910,13 +914,13 @@ html.tv-mode .wx-btn:focus {
   background: #fff;
   color: #0b0c0f;
   transform: scale(1.06);
-  box-shadow: 0 0 0 3px var(--wx-accent), 0 10px 30px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 0 0 3px var(--wx-accent), var(--wx-glow), 0 10px 30px rgba(0, 0, 0, 0.5);
 }
 /* Posters and episode cards: lifted with a cyan ring. */
 html.tv-mode .wx-card:focus {
   transform: scale(1.07);
   z-index: 3;
-  box-shadow: 0 0 0 3px var(--wx-accent), 0 14px 34px rgba(0, 0, 0, 0.7);
+  box-shadow: 0 0 0 3px var(--wx-accent), var(--wx-glow), 0 14px 34px rgba(0, 0, 0, 0.7);
   border-radius: 8px;
 }
 html.tv-mode .wx-ep:focus {
@@ -937,7 +941,7 @@ html.tv-mode .wx-search:focus-within {
 html.tv-mode .wx-nav button:focus,
 html.tv-mode .wx-round:focus,
 html.tv-mode .wx-who-tile:focus .wx-avatar {
-  box-shadow: 0 0 0 3px var(--wx-accent), 0 0 24px rgba(52, 209, 191, 0.45);
+  box-shadow: 0 0 0 3px var(--wx-accent), var(--wx-glow);
 }
 /* Chips (Live TV's groups, seasons). */
 html.tv-mode .wx-chips button:focus {
@@ -955,12 +959,12 @@ html.tv-mode .wx-guide {
   height: calc(100vh - 200px);
 }
 html.tv-mode .wx-prog:focus {
-  background: rgba(52, 209, 191, 0.22);
+  background: rgba(var(--wx-accent-rgb), 0.22);
   box-shadow: inset 0 0 0 3px var(--wx-accent);
 }
 html.tv-mode .wx-guide-chan-play:focus,
 html.tv-mode .wx-guide-star:focus {
-  background: rgba(52, 209, 191, 0.18);
+  background: rgba(var(--wx-accent-rgb), 0.18);
   box-shadow: inset 0 0 0 3px var(--wx-accent);
 }
 
@@ -1488,7 +1492,7 @@ html.watch-mode:has(.wx-live-preview.is-full) body {
   height: 9px;
   border-radius: 50%;
   background: var(--wx-accent);
-  box-shadow: 0 0 0 3px rgba(52, 209, 191, 0.3);
+  box-shadow: 0 0 0 3px rgba(var(--wx-accent-rgb), 0.3);
 }
 .vx-pop-wrap {
   position: relative;
@@ -1619,7 +1623,7 @@ html.watch-mode:has(.wx-live-preview.is-full) body {
   max-width: 760px;
   border-radius: 12px;
   background: var(--wx-panel);
-  border: 1px solid rgba(52, 209, 191, 0.35);
+  border: 1px solid rgba(var(--wx-accent-rgb), 0.35);
 }
 .wx-setup h2 {
   margin: 0 0 4px;
@@ -1746,7 +1750,7 @@ html.watch-mode:has(.wx-live-preview.is-full) body {
   color: var(--wx-text);
 }
 .wx-live-side li button.active {
-  background: rgba(52, 209, 191, 0.14);
+  background: rgba(var(--wx-accent-rgb), 0.14);
   color: var(--wx-text);
   font-weight: 700;
 }
@@ -1859,10 +1863,10 @@ html.tv-mode .wx-live-side li button:focus small {
   cursor: pointer;
 }
 .wx-live-hit:hover {
-  border-color: rgba(52, 209, 191, 0.6);
+  border-color: rgba(var(--wx-accent-rgb), 0.6);
 }
 .wx-live-hit.now {
-  border-color: rgba(52, 209, 191, 0.35);
+  border-color: rgba(var(--wx-accent-rgb), 0.35);
 }
 .wx-live-hit-logo {
   flex: none;
@@ -1911,7 +1915,7 @@ html.tv-mode .wx-live-side li button:focus small {
 html.tv-mode .wx-live-hit:focus {
   transform: scale(1.03);
   border-color: var(--wx-accent);
-  box-shadow: 0 0 0 3px var(--wx-accent), 0 10px 26px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 0 0 3px var(--wx-accent), var(--wx-glow), 0 10px 26px rgba(0, 0, 0, 0.5);
 }
 @media (max-width: 640px) {
   .wx-live-hits {
@@ -2135,7 +2139,7 @@ html.tv-mode .wx-live-hit:focus {
   min-height: 260px;
 }
 .wx-guide-row.playing .wx-guide-chan {
-  background: rgba(52, 209, 191, 0.14);
+  background: rgba(var(--wx-accent-rgb), 0.14);
   box-shadow: inset 4px 0 0 var(--wx-accent);
 }
 .wx-guide-row.playing .wx-guide-name small {
@@ -2143,7 +2147,7 @@ html.tv-mode .wx-live-hit:focus {
   font-weight: 700;
 }
 .wx-guide-row.playing .wx-prog.now {
-  background: rgba(52, 209, 191, 0.16);
+  background: rgba(var(--wx-accent-rgb), 0.16);
 }
 /* On a TV (laid out 1280 by 720). */
 html.tv-mode .wx-live {
@@ -2201,7 +2205,7 @@ html.tv-mode .wx-live-actions .wx-btn:focus {
   max-width: min(520px, calc(100vw - 32px));
   padding: 14px 16px;
   border-radius: 14px;
-  border: 1px solid rgba(52, 209, 191, 0.5);
+  border: 1px solid rgba(var(--wx-accent-rgb), 0.5);
   background: rgba(22, 24, 29, 0.97);
   box-shadow: 0 18px 50px rgba(0, 0, 0, 0.6);
   animation: wx-reminder-in 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
@@ -2305,7 +2309,7 @@ html.tv-mode .wx-live .wx-guide {
   color: #facc15;
 }
 .wx-prog.picked {
-  background: rgba(52, 209, 191, 0.25);
+  background: rgba(var(--wx-accent-rgb), 0.25);
   box-shadow: inset 0 0 0 2px var(--wx-accent);
 }
 .wx-live-badge.later {
@@ -2436,4 +2440,155 @@ html.tv-mode .wx-live-hit-remind:focus {
   width: 26px;
   height: 26px;
   border-radius: 7px;
+}
+
+/* Colors: a profile's theme. */
+.wx-theme {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 28px var(--wx-gutter) 60px;
+}
+.wx-theme-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.wx-theme h1 {
+  margin: 0;
+  font-size: 28px;
+}
+.wx-theme h1 small {
+  color: var(--wx-dim);
+  font-weight: 500;
+  font-size: 18px;
+}
+.wx-theme h2 {
+  font-size: 15px;
+  color: var(--wx-dim);
+  font-weight: 600;
+  margin: 26px 0 12px;
+}
+.wx-theme-preview {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex-wrap: wrap;
+  margin-top: 22px;
+  padding: 22px;
+  border-radius: 14px;
+  background: var(--wx-panel);
+}
+.wx-theme-preview .wx-btn.play {
+  box-shadow: var(--wx-glow);
+}
+.wx-theme-card {
+  width: 92px;
+  height: 52px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.04));
+  box-shadow: 0 0 0 3px var(--wx-accent), var(--wx-glow);
+}
+.wx-theme-chip {
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--wx-accent);
+  background: rgba(var(--wx-accent-rgb), 0.16);
+  border: 1px solid rgba(var(--wx-accent-rgb), 0.5);
+}
+.wx-theme-swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.wx-swatch {
+  position: relative;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  border: 0;
+  display: grid;
+  place-items: center;
+  color: #0b0c0f;
+  cursor: pointer;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.15);
+}
+.wx-swatch.on {
+  box-shadow: 0 0 0 3px var(--wx-bg), 0 0 0 5px #fff;
+}
+.wx-swatch:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--wx-bg), 0 0 0 6px #fff;
+  transform: scale(1.12);
+}
+.wx-swatch-custom {
+  background: conic-gradient(#ef4444, #eab308, #22c55e, #38bdf8, #8b5cf6, #ec4899, #ef4444);
+  color: #fff;
+}
+.wx-swatch-custom input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.wx-theme-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 10px;
+}
+.wx-theme-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--wx-panel);
+  color: var(--wx-text);
+  font: inherit;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+.wx-theme-option small {
+  display: block;
+  color: var(--wx-dim);
+  font-weight: 400;
+  font-size: 12px;
+  margin-top: 3px;
+}
+.wx-theme-option.on {
+  border-color: var(--wx-accent);
+  box-shadow: inset 0 0 0 1px var(--wx-accent);
+}
+.wx-theme-option:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--wx-accent), var(--wx-glow);
+}
+.wx-glow-sample {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--wx-accent);
+}
+.wx-glow-sample.glow-soft {
+  box-shadow: 0 0 14px rgba(var(--wx-accent-rgb), 0.6);
+}
+.wx-glow-sample.glow-strong {
+  box-shadow: 0 0 22px 4px rgba(var(--wx-accent-rgb), 0.85);
+}
+.wx-bg-sample {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  flex: none;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.18);
+}
+.wx-theme .wx-actions {
+  margin-top: 30px;
+}
+.wx-theme-option:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--wx-text);
 }

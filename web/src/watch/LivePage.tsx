@@ -8,6 +8,7 @@ import { recentChannels, rememberChannel, useLiveStream } from './liveStream'
 import { useReminders } from './reminders'
 import { Spinner } from './parts'
 import { useProfiles } from './profiles'
+import { savedTheme } from './theme'
 import { onTV, type TVPlayerResult } from './tv'
 import VideoControls from './VideoControls'
 
@@ -231,6 +232,7 @@ export default function LivePage() {
           showStop: p.catchup ? atEndRef.current : 0,
           offsetSec: p.catchup ? cuOffsetRef.current : 0,
           token: profileToken(),
+          accent: savedTheme().accent, // the profile's color, for the player
         }),
       )
     },

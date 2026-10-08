@@ -195,6 +195,13 @@ export interface WatchProfile {
   avatar: string // a color name
   hasPin: boolean
   main: boolean // the owner's: the only one that can change settings
+  theme?: WatchTheme
+}
+// A profile's colors in Watch.
+export interface WatchTheme {
+  accent: string // "#rrggbb"
+  glow: 'off' | 'soft' | 'strong'
+  background: 'midnight' | 'black' | 'slate' | 'tinted'
 }
 export interface WatchProfiles {
   profiles: WatchProfile[]
@@ -2249,6 +2256,7 @@ export const api = {
   putIPTV: (body: { server: string; username?: string; password?: string }) => put<IPTVSettings>('/settings/iptv', body),
   getOMDb: () => get<{ set: boolean }>('/settings/omdb'),
   putOMDb: (apiKey: string) => put<{ set: boolean }>('/settings/omdb', { apiKey }),
+  saveProfileTheme: (t: WatchTheme) => put<WatchTheme>('/profile/theme', t),
   getYouTube: () => get<{ set: boolean }>('/settings/youtube'),
   putYouTube: (apiKey: string) => put<{ set: boolean }>('/settings/youtube', { apiKey }),
   watchProviders: (kind: 'movie' | 'tv', tmdbId: number) =>

@@ -6,8 +6,8 @@ export default function CueWordmark({ className }: { className?: string }) {
       <svg viewBox="0 0 32 32" aria-hidden="true" className="cue-wordmark-c">
         <defs>
           <linearGradient id="cue-wm-grad" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0" stopColor="#5eead4" />
-            <stop offset="1" stopColor="#22b3a2" />
+            <stop offset="0" style={{ stopColor: 'var(--wx-accent-hi, #5eead4)' }} />
+            <stop offset="1" style={{ stopColor: 'var(--wx-accent-lo, #22b3a2)' }} />
           </linearGradient>
         </defs>
         <path d="M25.96 7.64A13 13 0 1 0 25.96 24.36L22.51 21.46A8.5 8.5 0 1 1 22.51 10.54Z" fill="url(#cue-wm-grad)" />

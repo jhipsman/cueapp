@@ -21,6 +21,7 @@ type Profile struct {
 	Avatar string // a color name from AvatarColors
 	HasPIN bool
 	Main   bool // the account owner's: the only one that may change settings
+	Theme  Theme
 	secret string
 	pin    string // bcrypt hash
 }
@@ -69,13 +70,15 @@ func cleanAvatar(a string) string {
 	return AvatarColors[0]
 }
 
-const profileCols = `id, user_id, name, avatar, pin_hash, secret, is_main`
+const profileCols = `id, user_id, name, avatar, pin_hash, secret, is_main, theme`
 
 func scanProfile(sc interface{ Scan(...any) error }) (Profile, error) {
 	var p Profile
-	if err := sc.Scan(&p.ID, &p.UserID, &p.Name, &p.Avatar, &p.pin, &p.secret, &p.Main); err != nil {
+	var theme string
+	if err := sc.Scan(&p.ID, &p.UserID, &p.Name, &p.Avatar, &p.pin, &p.secret, &p.Main, &theme); err != nil {
 		return p, err
 	}
+	p.Theme = parseTheme(theme)
 	p.HasPIN = p.pin != ""
 	return p, nil
 }

@@ -4,6 +4,7 @@ import { api, profileToken, type PlayAnswer, type WatchEpisode } from '../api'
 import Icon from '../components/Icon'
 import { useDocumentTitle } from '../documentTitle'
 import { epCode, playHref, Spinner } from './parts'
+import { savedTheme } from './theme'
 import { onTV, type TVPlayerResult } from './tv'
 import VideoControls from './VideoControls'
 import FreeElsewhere from './FreeElsewhere'
@@ -207,6 +208,7 @@ export default function PlayerPage() {
         season,
         episode,
         token: profileToken(),
+        accent: savedTheme().accent, // the profile's color, for the player
       }),
     )
   }, [answer, resumeReady, error, kind, tmdbId, season, episode, load, navigate])

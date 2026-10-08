@@ -110,10 +110,32 @@ type profileView struct {
 	Avatar string `json:"avatar"`
 	HasPIN bool   `json:"hasPin"`
 	Main   bool   `json:"main"`
+	// Theme is the profile's colors in Watch.
+	Theme watch.Theme `json:"theme"`
 }
 
 func viewWatchProfile(p watch.Profile) profileView {
-	return profileView{ID: p.ID, Name: p.Name, Avatar: p.Avatar, HasPIN: p.HasPIN, Main: p.Main}
+	return profileView{ID: p.ID, Name: p.Name, Avatar: p.Avatar, HasPIN: p.HasPIN, Main: p.Main, Theme: p.Theme}
+}
+
+// PUT /api/profile/theme {"accent","glow","background"}: the colors of the
+// profile this device is on. Anyone can change their own.
+func (s *Server) handlePutProfileTheme(w http.ResponseWriter, r *http.Request) {
+	if _, ok := s.watchProfile(w, r); !ok {
+		return
+	}
+	p, _ := s.activeProfile(r)
+	var t watch.Theme
+	if err := decodeJSON(r, &t); err != nil {
+		writeError(w, http.StatusBadRequest, "That request couldn't be read.")
+		return
+	}
+	saved, err := s.WatchRepo.SetTheme(p.UserID, p.ID, t)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "Couldn't save the theme.")
+		return
+	}
+	writeJSON(w, http.StatusOK, saved)
 }
 
 type profilesPayload struct {

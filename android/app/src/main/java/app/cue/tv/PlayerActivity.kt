@@ -99,7 +99,10 @@ class PlayerActivity : Activity() {
     private val dp by lazy { screenUnit(this) }
     private fun px(v: Int) = (v * dp).toInt()
     private fun TextView.size(units: Float) = setTextSize(TypedValue.COMPLEX_UNIT_PX, units * dp)
-    private val teal by lazy { getColor(R.color.cue_teal) }
+    // The profile's color from Watch, or Cue's own.
+    private val teal by lazy {
+        runCatching { Color.parseColor(info.optString("accent")) }.getOrNull() ?: getColor(R.color.cue_teal)
+    }
 
     private val saver = object : Runnable {
         override fun run() {
@@ -288,6 +291,7 @@ class PlayerActivity : Activity() {
         }
 
         timeBar = TimeBar(this).apply {
+            setAccent(teal)
             onSeek = { to ->
                 seekToPosition(to)
                 showControls()

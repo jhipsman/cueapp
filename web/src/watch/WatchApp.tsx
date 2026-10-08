@@ -10,6 +10,8 @@ import PlayerPage from './PlayerPage'
 import LivePage from './LivePage'
 import LivePlayer from './LivePlayer'
 import ManageProfiles from './ManageProfiles'
+import ThemePage from './ThemePage'
+import { applyTheme, savedTheme } from './theme'
 import WhoIsWatching from './WhoIsWatching'
 import { Avatar, ProfilesProvider, useProfiles } from './profiles'
 import { RemindersProvider } from './reminders'
@@ -23,6 +25,7 @@ import './watch.css'
 export default function WatchApp() {
   useEffect(() => {
     document.documentElement.classList.add('watch-mode')
+    applyTheme(savedTheme()) // the colors last used here, until the profile loads
     const stopTV = installTVNavigation() // the remote's arrows, in the TV app
     return () => {
       document.documentElement.classList.remove('watch-mode')
@@ -40,6 +43,7 @@ export default function WatchApp() {
         <Routes>
         <Route path="who" element={<WhoIsWatching />} />
         <Route path="profiles" element={<ManageProfiles />} />
+        <Route path="theme" element={<ThemePage />} />
         <Route path="play/movie/:tmdbId" element={<PlayerPage />} />
         <Route path="play/tv/:tmdbId/:season/:episode" element={<PlayerPage />} />
         <Route path="live/play/:id" element={<LivePlayer />} />
@@ -103,6 +107,7 @@ function ProfileMenu() {
             <Avatar profile={active} size={28} /> {active.name}
           </div>
           {multi && <button onClick={() => navigate('/watch/who')}>Switch profile</button>}
+          <button onClick={() => navigate('/watch/theme')}>Colors</button>
           {owner && <button onClick={() => navigate('/watch/profiles')}>Manage profiles</button>}
           {onTV() && <button onClick={() => window.CueTV?.changeServer()}>Change server</button>}
           {owner && <button onClick={() => navigate(streamingOnly ? '/settings/streaming' : '/')}>{streamingOnly ? 'Settings' : 'Settings and library'}</button>}

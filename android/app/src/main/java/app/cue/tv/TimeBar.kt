@@ -26,6 +26,13 @@ class TimeBar(context: Context) : View(context) {
     private val played = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = context.getColor(R.color.cue_teal) }
     private val glow = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0x5534D1BF }
 
+    // setAccent colors the bar and its knob's glow (the profile's color).
+    fun setAccent(color: Int) {
+        played.color = color
+        glow.color = (color and 0x00FFFFFF) or 0x55000000
+        invalidate()
+    }
+
     init {
         isFocusable = true
         isFocusableInTouchMode = true

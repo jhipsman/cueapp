@@ -66,6 +66,10 @@ To get a key: open [YouTube Data API v3](https://console.cloud.google.com/apis/l
 
 Nothing is downloaded from either. When Cue finds nothing at all, the player (and every title page) shows the free services that have it, like **Tubi**, **Pluto TV** or **The Roku Channel**, from TMDB's list, each opening a search for it there.
 
+## Colors
+
+Each profile has its own color theme: open the profile menu (the avatar at the top right) and choose **Colors**. Pick a color (or any color, on a phone or computer), how much it glows, and a background: **Midnight** (Cue's own), **Black** (best on OLED TVs), **Slate**, or **Tinted** with your color. Watch changes as you pick; **Save** keeps it for the profile on every device, the TV app's player included.
+
 ## IMDb ratings
 
 TMDB doesn't have IMDb ratings, so Watch reads them from [OMDb](https://www.omdbapi.com). Get a free key at omdbapi.com/apikey.aspx, click the activation link in OMDb's email, and paste the key into **Settings > Info, lists and subtitles > IMDb ratings (OMDb)**. A free key allows 1,000 lookups a day; each title is looked up at most once a day.
@@ -125,6 +129,7 @@ Everything Watch shows comes from the API, so a TV app can show the same things.
 | `GET`, `PUT`, `DELETE /api/live/reminders` | the profile's reminders: `{"channelId","start","stop","title"}` |
 | `GET /api/live/play/{id}` | where a channel plays: `url` through Cue, and `direct` (the provider's) for the TV app |
 | `PUT` / `DELETE /api/watch/list/{kind}/{tmdbId}` | add to or remove from My List |
+| `PUT /api/profile/theme` | the profile's colors: `{"accent":"#34d1bf","glow":"off|soft|strong","background":"midnight|black|slate|tinted"}` |
 
 `kind` is `movie` or `tv`.
 

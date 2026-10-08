@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react'
 import { Navigate } from 'react-router-dom'
 import { api, setProfileToken, type WatchProfile, type WatchProfiles } from '../api'
+import { applyTheme } from './theme'
 
 // The household's profiles and the one this device is on, for every Watch page.
 
@@ -54,6 +55,12 @@ export function ProfilesProvider({ children }: { children: ReactNode }) {
 
   const active = data?.profiles.find((p) => p.id === data.active) ?? null
   const main = data?.profiles.find((p) => p.main) ?? null
+  // The profile's own colors (theme.ts).
+  const themeKey = JSON.stringify(active?.theme ?? null)
+  useEffect(() => {
+    if (active) applyTheme(active.theme)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [themeKey])
   return <Ctx.Provider value={{ data, active, main, refresh, choose }}>{children}</Ctx.Provider>
 }
 
