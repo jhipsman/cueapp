@@ -75,7 +75,7 @@ Cue is new. Movies and TV work end to end, and so do music, ebooks and audiobook
 
 ## Run it in the cloud
 
-Rent a small server (from about €4 a month), paste one command, and Cue runs there with an HTTPS address, so the Fire TV app and phones work from anywhere with your computer off:
+Rent a small server (about $10 a month), paste one command, and Cue runs there with an HTTPS address, so the Fire TV app and phones work from anywhere with your computer off:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/jhipsman/cueapp/HEAD/deploy/cloud/install.sh | sudo bash

@@ -13,8 +13,10 @@ Any server with Ubuntu 24.04 (or Debian 12), 2 GB of memory or more, works. Some
 
 | | Size | About | Notes |
 |---|---|---|---|
-| [Hetzner Cloud](https://www.hetzner.com/cloud) | CX22: 2 CPUs, 4 GB | €4 a month | 20 TB of traffic included. US and EU locations. |
-| [DigitalOcean](https://www.digitalocean.com) | Basic, 2 GB | $12 a month | Simple to use. |
+| [Hetzner Cloud](https://www.hetzner.com/cloud), US (Ashburn or Hillsboro) | CPX21: 3 CPUs, 4 GB | about $10 a month | 1 TB of traffic a month included. Sign-up can ask for ID. |
+| [Hetzner Cloud](https://www.hetzner.com/cloud), Europe | CX22: 2 CPUs, 4 GB | about €4 a month | 20 TB of traffic included. |
+| [DigitalOcean](https://www.digitalocean.com) | Basic, 2 GB | $12 a month | Simple to use, easy sign-up. |
+| [Vultr](https://www.vultr.com) | Cloud Compute, 2 GB | $10–12 a month | Many US locations. |
 | [Oracle Cloud](https://www.oracle.com/cloud/free/) | Ampere A1, up to 4 CPUs and 24 GB | free | Free for good, but sign-up can be fussy and capacity is sometimes unavailable. Open ports 80 and 443 in the instance's security list as well. |
 
 When you create it, choose **Ubuntu 24.04**, and add your SSH key or set a root password. Note its **IP address**.
@@ -73,6 +75,7 @@ Everything Cue keeps (settings, accounts, profiles) is in `/opt/cue/config`. Cop
 ## If something isn't right
 
 - **The address doesn't open, or says the certificate is wrong**: ports 80 and 443 must be open to the internet (in the provider's firewall, or Oracle's security list). The certificate comes on the first visit and can take a minute.
+- **Slow with 2 GB of memory**: FlareSolverr (for torrent sites behind Cloudflare) runs a hidden Chrome. Resize the server to 4 GB from its page; nothing is lost.
 - **"unauthorized" or "denied" while downloading Cue's image**: the image on GitHub is private. On GitHub, open your profile, **Packages**, **cue**, **Package settings**, and under **Danger zone** choose **Change visibility > Public**. Then run the installer again.
 - **Torrent sites don't answer from the server**: some sites block servers in data centers. Comet (Settings > Streaming) works regardless and is the better source anyway.
 - **Live TV channels don't play in a browser but do on the TV**: some IPTV providers refuse connections from data centers. The TV app plays straight from the provider at home, so it isn't affected.
