@@ -80,6 +80,23 @@ func (f *fallbackState) put(key string, cands []playCandidate) {
 	f.entries[key] = fallbackEntry{at: time.Now(), cands: cands}
 }
 
+// browserFilesFirst puts the Internet Archive's AVI, MKV and MPEG files,
+// which a browser can't play, after everything else.
+func browserFilesFirst(cands []playCandidate) []playCandidate {
+	out := append([]playCandidate(nil), cands...)
+	bad := func(c playCandidate) bool { return c.Direct && !archiveorg.BrowserPlays(c.URL) }
+	slices.SortStableFunc(out, func(a, b playCandidate) int {
+		switch {
+		case !bad(a) && bad(b):
+			return -1
+		case bad(a) && !bad(b):
+			return 1
+		}
+		return 0
+	})
+	return out
+}
+
 // youtubeKey is the saved YouTube Data API key, or "".
 func (s *Server) youtubeKey() string {
 	key, err := s.Settings.Get(settings.KeyYouTubeAPIKey)

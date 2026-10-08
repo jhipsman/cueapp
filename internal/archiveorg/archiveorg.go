@@ -119,6 +119,16 @@ func oneString(raw json.RawMessage) string {
 	return ""
 }
 
+// BrowserPlays says whether a web browser can usually play the file (an
+// MP4, WebM or Ogg video); the TV app plays the rest too.
+func BrowserPlays(name string) bool {
+	switch strings.ToLower(path.Ext(name)) {
+	case ".mp4", ".m4v", ".webm", ".ogv":
+		return true
+	}
+	return false
+}
+
 var playable = map[string]bool{".mp4": true, ".m4v": true, ".webm": true, ".mkv": true, ".avi": true, ".mov": true, ".mpg": true, ".mpeg": true, ".ogv": true}
 
 // Videos lists an item's video files.
@@ -126,6 +136,9 @@ func (c *Client) Videos(ctx context.Context, item Item) ([]Video, error) {
 	var meta struct {
 		Metadata struct {
 			Title json.RawMessage `json:"title"`
+			// Borrow-only uploads (the lending library): their files
+			// can't be downloaded.
+			Restricted json.RawMessage `json:"access-restricted-item"`
 		} `json:"metadata"`
 		Files []struct {
 			Name   string `json:"name"`
@@ -133,10 +146,15 @@ func (c *Client) Videos(ctx context.Context, item Item) ([]Video, error) {
 			Format string `json:"format"`
 			Size   string `json:"size"`
 			Length string `json:"length"`
+			// A file kept private by its uploader can't be downloaded.
+			Private string `json:"private"`
 		} `json:"files"`
 	}
 	if err := c.getJSON(ctx, c.base+"/metadata/"+url.PathEscape(item.ID), &meta); err != nil {
 		return nil, err
+	}
+	if strings.EqualFold(oneString(meta.Metadata.Restricted), "true") || string(meta.Metadata.Restricted) == "true" {
+		return nil, nil
 	}
 	title := item.Title
 	if t := oneString(meta.Metadata.Title); t != "" {
@@ -145,7 +163,7 @@ func (c *Client) Videos(ctx context.Context, item Item) ([]Video, error) {
 	var out []Video
 	for _, f := range meta.Files {
 		ext := strings.ToLower(path.Ext(f.Name))
-		if !playable[ext] || strings.Contains(strings.ToLower(f.Name), "sample") {
+		if !playable[ext] || f.Private == "true" || strings.Contains(strings.ToLower(f.Name), "sample") {
 			continue
 		}
 		size, _ := strconv.ParseInt(f.Size, 10, 64)

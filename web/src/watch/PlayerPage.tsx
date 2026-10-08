@@ -55,6 +55,28 @@ function OpenIn({ url, onOpen }: { url: string; onOpen: () => void }) {
   )
 }
 
+// CopyLink copies the video's address, to open in VLC on a computer (Media
+// > Open Network Stream), which plays every format.
+function CopyLink({ url }: { url: string }) {
+  const [done, setDone] = useState(false)
+  if (!url) return null
+  return (
+    <div className="wx-open-in">
+      <button
+        className="wx-btn small"
+        onClick={() => {
+          void navigator.clipboard
+            ?.writeText(url)
+            .then(() => setDone(true))
+            .catch(() => window.prompt('Copy this link into VLC (Media > Open Network Stream):', url))
+        }}
+      >
+        <Icon name={done ? 'check' : 'external'} size={14} /> {done ? 'Copied: paste it in VLC' : 'Copy link for VLC'}
+      </button>
+    </div>
+  )
+}
+
 export default function PlayerPage() {
   const params = useParams()
   const navigate = useNavigate()
@@ -298,7 +320,7 @@ export default function PlayerPage() {
     setError(
       playerApps(answer.url).length > 0
         ? 'None of the versions found will play in this browser. Open it in a player app instead:'
-        : 'None of the versions found will play in this browser. Try another browser, or the app on your TV.',
+        : 'None of the versions found will play in this browser (their video or sound is in a format browsers don’t open). Watch it on the TV app, or copy the link into VLC:',
     )
   }
 
@@ -331,6 +353,7 @@ export default function PlayerPage() {
           <p className="wx-error">{error}</p>
           <FreeElsewhere kind={kind} tmdbId={tmdbId} />
           {answer && <OpenIn url={answer.url} onOpen={() => undefined} />}
+          {answer && !answer.youtube && playerApps(answer.url).length === 0 && !onTV() && <CopyLink url={answer.url} />}
           <div className="wx-actions" style={{ justifyContent: 'center' }}>
             <button className="wx-btn" onClick={() => void load(1, true)}>
               Search again
