@@ -41,11 +41,13 @@ It takes a few minutes: it installs Docker, sets Cue up in `/opt/cue`, gives it 
   Open:  https://cue-203-0-113-7.sslip.io
 ```
 
-That address is made from the server's IP by [sslip.io](https://sslip.io), so you need no domain. To use your own (like `cue.example.com`), point its DNS **A record** at the server's IP, then run the installer again with it:
+That address is made from the server's IP by [sslip.io](https://sslip.io), so you need no domain. For a short one of your own (like `cuetv.me`), buy it (Cloudflare, Porkbun or Namecheap; about $10–15 a year), and in its DNS add an **A record** for `@` with the server's IP (on Cloudflare, set it to **DNS only**, the grey cloud). To have `www.cuetv.me` work too, add the same for `www`. Wait a few minutes, then run the installer again with the name:
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/jhipsman/cueapp/HEAD/deploy/cloud/install.sh | sudo CUE_HOST=cue.example.com bash
+curl -fsSL https://raw.githubusercontent.com/jhipsman/cueapp/HEAD/deploy/cloud/install.sh | sudo CUE_HOST=cuetv.me bash
 ```
+
+Everything you set up stays. Typing just `cuetv.me` then opens Cue (and Watch, once signed in), on phones, computers and in the Fire TV app; `www.cuetv.me` forwards to it. The old sslip.io address stops working, so sign in again on each device, and in the Fire TV app use **Change server** (in your avatar's menu).
 
 To set the time zone the TV guide uses, add `TZ=America/New_York` (or yours) the same way.
 

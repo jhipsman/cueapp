@@ -60,6 +60,26 @@ CUE_HOST=$host
 TZ=$tz
 EOT
 
+# www.<your domain> forwards to <your domain>, when its DNS points here too
+# (checked now: a www name that doesn't point here would only make Caddy
+# keep failing to get it a certificate).
+case "$host" in
+  *.sslip.io|www.*) ;;
+  *)
+    here="$(curl -fsS4 --max-time 10 https://api.ipify.org || true)"
+    www_ip="$(getent ahostsv4 "www.$host" 2>/dev/null | awk 'NR==1{print $1}' || true)"
+    if [ -n "$here" ] && [ "$www_ip" = "$here" ]; then
+      say "Sending www.$host to $host"
+      cat >> Caddyfile <<EOT
+
+www.$host {
+	redir https://$host{uri} permanent
+}
+EOT
+    fi
+    ;;
+esac
+
 # ---- Firewall ----
 if command -v ufw >/dev/null && ufw status 2>/dev/null | grep -q "Status: active"; then
   say "Opening ports 80 and 443 in the firewall"

@@ -35,14 +35,14 @@ class SetupActivity : Activity() {
             typeface = Typeface.DEFAULT_BOLD
         }
         val intro = TextView(this).apply {
-            text = "Enter the address of your Cue server. On a cloud server that's its https:// address, like https://cue-1-2-3-4.sslip.io. On a computer at home, its address, like 192.168.1.20 (Cue's port 8264 is added for you)."
+            text = "Enter your Cue address, like cuetv.me. For Cue on a computer at home, its address, like 192.168.1.20."
             setTextColor(getColor(R.color.cue_dim))
             textSize = 18f
             setPadding(0, dp(12), 0, dp(20))
         }
         input = EditText(this).apply {
             setText(intent.getStringExtra(EXTRA_ADDRESS) ?: Server.address(this@SetupActivity) ?: "")
-            hint = "https://cue-1-2-3-4.sslip.io"
+            hint = "cuetv.me"
             setHintTextColor(getColor(R.color.cue_dim))
             setTextColor(getColor(R.color.cue_text))
             textSize = 22f
