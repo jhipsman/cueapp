@@ -2157,9 +2157,11 @@ export const api = {
   getHardcover: () => get<{ set: boolean; username?: string }>('/settings/hardcover'),
   putHardcover: (token: string) => put<{ set: boolean; username?: string }>('/settings/hardcover', { token }),
   // Watch (the streaming side): any title by TMDB id.
-  playTMDB: (kind: WatchKind, tmdbId: number, season = 0, episode = 0, option = 1, fresh = false) =>
+  // web: a browser is playing it (not the TV app), so versions with sound a
+  // browser can play come first.
+  playTMDB: (kind: WatchKind, tmdbId: number, season = 0, episode = 0, option = 1, fresh = false, web = false) =>
     get<PlayAnswer>(
-      `/play/tmdb/${kind}/${tmdbId}${kind === 'tv' ? `/${season}/${episode}` : ''}?option=${option}${fresh ? '&fresh=1' : ''}`,
+      `/play/tmdb/${kind}/${tmdbId}${kind === 'tv' ? `/${season}/${episode}` : ''}?option=${option}${fresh ? '&fresh=1' : ''}${web ? '&client=web' : ''}`,
     ),
   // prefetchPlay looks a stream up ahead of time, so Play starts at once.
   prefetchPlay: (kind: WatchKind, tmdbId: number, season = 0, episode = 0) =>

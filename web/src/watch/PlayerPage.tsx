@@ -78,7 +78,7 @@ export default function PlayerPage() {
       loading.current = true
       setError('')
       try {
-        const a = await api.playTMDB(kind, tmdbId, season, episode, option, fresh)
+        const a = await api.playTMDB(kind, tmdbId, season, episode, option, fresh, !onTV())
         setAnswer(a)
         setUseOriginal(!a.streamUrl)
       } catch (e) {
@@ -219,6 +219,30 @@ export default function PlayerPage() {
     const t = setTimeout(() => setCountdown((c) => (c === null ? null : c - 1)), 1000)
     return () => clearTimeout(t)
   }, [countdown, next, navigate, tmdbId])
+
+  // Some versions carry sound a browser can't play (Dolby, DTS, TrueHD):
+  // the picture plays in silence. A few seconds in, if no sound has been
+  // decoded, move on to the next version from the same point.
+  useEffect(() => {
+    if (!answer || onTV()) return
+    // Checked once the video has played a few seconds (it may buffer first).
+    const t = setInterval(() => {
+      const v = video.current as (HTMLVideoElement & { webkitAudioDecodedByteCount?: number; mozHasAudio?: boolean; audioTracks?: { length: number } }) | null
+      if (!v || v.paused || v.currentTime < 4) return
+      clearInterval(t)
+      const silent =
+        v.webkitAudioDecodedByteCount === 0 || v.mozHasAudio === false || (v.audioTracks !== undefined && v.audioTracks.length === 0)
+      if (!silent) return
+      if (answer.option < answer.options) {
+        resumeAt.current = Math.floor(v.currentTime)
+        setNote(`Version ${answer.option} had no sound in this browser, so trying the next one.`)
+        void load(answer.option + 1)
+      } else {
+        setNote('This version has no sound in this browser. Try Open in VLC, or the TV app.')
+      }
+    }, 2000)
+    return () => clearInterval(t)
+  }, [answer, useOriginal, load])
 
   function onLoaded() {
     const v = video.current

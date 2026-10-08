@@ -53,3 +53,23 @@ func TestPreferResolutionPutsBigVersionsLast(t *testing.T) {
 		t.Fatal("no cap should keep the order")
 	}
 }
+
+func TestBrowserAudioFirst(t *testing.T) {
+	cands := []playCandidate{
+		{Release: "Movie.2019.2160p.UHD.BluRay.TrueHD.Atmos.7.1.x265", URL: "u1"},
+		{Release: "Movie.2019.1080p.WEB-DL.DDP5.1.H.264", URL: "u2"},
+		{Release: "Movie.2019.1080p.BluRay.DTS-HD.MA.5.1", URL: "u3"},
+		{Release: "Movie.2019.1080p.WEBRip.AAC5.1.x264", URL: "u4"},
+		{Release: "Movie.2019.2160p.BluRay.DTS", Hash: "abc"}, // Premiumize's own stream: fine
+		{Release: "Movie.2019.720p.HDTV.x264", URL: "u5"},
+		{Release: "Addams.Family.1991.1080p", URL: "u6"}, // "dd" inside a word isn't Dolby
+	}
+	var got []string
+	for _, c := range browserAudioFirst(cands) {
+		got = append(got, c.URL+c.Hash)
+	}
+	want := "u4 abc u5 u6 u1 u2 u3"
+	if strings.Join(got, " ") != want {
+		t.Fatalf("order = %v, want %s", got, want)
+	}
+}

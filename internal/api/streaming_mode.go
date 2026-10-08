@@ -2,6 +2,7 @@ package api
 
 import (
 	"net/http"
+	"regexp"
 	"sort"
 	"strings"
 
@@ -115,4 +116,19 @@ func (s *Server) handlePutStreamingSettings(w http.ResponseWriter, r *http.Reque
 		}
 	}
 	writeJSON(w, http.StatusOK, s.streamingSettingsNow())
+}
+
+// cinemaAudio matches release names with sound web browsers can't play:
+// Dolby Digital (AC-3, E-AC-3/DD+), DTS, TrueHD and Atmos.
+var cinemaAudio = regexp.MustCompile(`(?i)(^|[^a-z0-9])(dts(-?hd|-?x|-?ma)?|truehd|atmos|ddp?(\+|5\.?1|7\.?1|2\.?0)?|e-?ac-?3|ac-?3|dolby[ .]?digital)([^a-z0-9]|$)`)
+
+// browserAudioFirst puts versions a web browser can play with sound first,
+// for Watch in a browser (the TV app plays every kind of sound). Versions
+// Premiumize finds itself come with its own browser-ready stream, so only
+// add-on links are judged, by their names.
+func browserAudioFirst(cands []playCandidate) []playCandidate {
+	silent := func(c playCandidate) bool { return c.URL != "" && cinemaAudio.MatchString(c.Release) }
+	out := append([]playCandidate(nil), cands...)
+	sort.SliceStable(out, func(i, j int) bool { return !silent(out[i]) && silent(out[j]) })
+	return out
 }
