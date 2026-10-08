@@ -68,7 +68,7 @@ Nothing is downloaded from either. When Cue finds nothing at all, the player (an
 
 ## Skip intro
 
-Episodes show **Skip intro** (and **Skip recap**) while one is playing, and when the credits start the next episode is offered with a countdown, in the browser and in the TV app (where the remote's OK presses Skip). The times come from [TheIntroDB](https://theintrodb.org), whose users submit them. When it has nothing for a show, Cue learns: jump over the intro once (with the remote's right button or the time bar), or press **Next episode** during the credits, and every other episode of that show gets the button too.
+Episodes show **Skip intro** (and **Skip recap**) while one is playing, and when the credits start the next episode is offered with a countdown, in the browser and in the TV app (where the remote's OK presses Skip). Cue learns the times from your household: jump over the intro once (with the remote's right button or the time bar), or press **Next episode** during the credits, and every other episode of that show gets the button too. Until then it uses [TheIntroDB](https://theintrodb.org), whose users submit times for each cut of an episode (picked by the video's length). If its times are off for your version, skip the intro yourself once: yours are used from then on.
 
 ## Colors
 

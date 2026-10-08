@@ -257,7 +257,7 @@ export default function PlayerPage() {
     // without them if TheIntroDB is slow).
     const skipsSoon = Promise.race([
       api.watchSkips(kind, tmdbId, season, episode, 0).catch(() => ({}) as WatchSkips),
-      new Promise<WatchSkips>((done) => setTimeout(() => done({}), 4500)),
+      new Promise<WatchSkips>((done) => setTimeout(() => done({}), 2000)),
     ])
     void skipsSoon.then((sk) => {
       if (cancelled) return
@@ -280,7 +280,6 @@ export default function PlayerPage() {
           recapEnd: sk.recap?.end ?? 0,
           creditsStart: sk.creditsStart ?? 0,
           creditsFromEnd: sk.creditsFromEnd ?? 0,
-          introKnown: !!sk.source?.includes('theintrodb') && !!sk.intro,
         }),
       )
     })
@@ -373,10 +372,10 @@ export default function PlayerPage() {
     const cur = jump.current!
     cur.timer = window.setTimeout(() => {
       jump.current = null
-      if (skips?.source?.includes('theintrodb') && skips.intro) return
       if (cur.from < 480 && cur.to - cur.from >= 15 && cur.to - cur.from <= 200) {
         void api.learnSkip({ kind, tmdbId, season, segment: 'intro', start: Math.round(cur.from), end: Math.round(cur.to) }).catch(() => undefined)
-        setSkips((s) => (s && !s.intro ? { ...s, intro: { start: cur.from, end: cur.to } } : s))
+        // Theirs wins from now on (TheIntroDB's may be for another cut).
+        setSkips((s) => ({ ...(s ?? {}), intro: { start: cur.from, end: cur.to }, source: 'learned' }))
       }
     }, 4000)
   }
@@ -615,10 +614,10 @@ export default function PlayerPage() {
                         label: skips?.intro || skips?.recap ? 'Skip intro is on' : 'Skip intro: no times yet',
                         hint: !skips
                           ? 'Looking them up…'
-                          : skips.source?.includes('theintrodb')
-                            ? 'Times from TheIntroDB'
-                            : skips.source === 'learned'
-                              ? 'Learned from a skip in this show'
+                          : skips.source?.startsWith('learned')
+                            ? 'Learned from a skip in this show'
+                            : skips.source?.includes('theintrodb')
+                              ? 'Times from TheIntroDB. If they’re off, skip the intro yourself once and Cue uses yours'
                               : 'Jump over the intro once and the rest of the show gets the button',
                         disabled: true,
                       },

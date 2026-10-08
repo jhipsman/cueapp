@@ -102,13 +102,13 @@ class PlayerActivity : Activity() {
     private var recapEnd = 0L
     private var creditsStart = 0L
     private var creditsFromEnd = 0L
-    private var introKnown = false // TheIntroDB has it: nothing to learn
     private lateinit var skipButton: TextView
     private var skipTo = 0L
     // The viewer's jump forward in progress (several presses count as one).
     private var jumpFrom = -1L
     private var jumpTo = -1L
     private val jumpDone = Runnable { learnIntro() }
+    private var skipsAsked = false
 
     // Sizes follow the screen, not the TV's density or font-size setting
     // (Google TV boxes differ there): 1 unit is 1/960 of the screen's width.
@@ -155,7 +155,6 @@ class PlayerActivity : Activity() {
         introStart = ms("introStart"); introEnd = ms("introEnd")
         recapStart = ms("recapStart"); recapEnd = ms("recapEnd")
         creditsStart = ms("creditsStart"); creditsFromEnd = ms("creditsFromEnd")
-        introKnown = info.optBoolean("introKnown")
         hasOther = info.optBoolean("hasOther")
 
         val renderers = DefaultRenderersFactory(this)
@@ -215,6 +214,10 @@ class PlayerActivity : Activity() {
 
         player.addListener(object : Player.Listener {
             override fun onPlaybackStateChanged(state: Int) {
+                if (state == Player.STATE_READY && !skipsAsked && !live && !catchup) {
+                    skipsAsked = true
+                    fetchSkips()
+                }
                 spinner.visibility = if (state == Player.STATE_BUFFERING) View.VISIBLE else View.GONE
                 if (state == Player.STATE_ENDED) {
                     if (live) end("error", "The channel stopped.") else end("ended")
@@ -670,7 +673,7 @@ class PlayerActivity : Activity() {
     // noteJump gathers the viewer's jumps forward; one over the start of an
     // episode teaches Cue its intro (learnIntro, once the remote rests).
     private fun noteJump(from: Long, to: Long) {
-        if (!isShow || live || catchup || introKnown || to <= from) return
+        if (!isShow || live || catchup || to <= from) return
         if (jumpFrom >= 0 && kotlin.math.abs(from - jumpTo) < 4000) {
             jumpTo = to
         } else {
@@ -687,10 +690,9 @@ class PlayerActivity : Activity() {
         jumpFrom = -1
         jumpTo = -1
         if (from < 0 || from >= 480 || to - from < 15 || to - from > 200) return
-        if (introEnd == 0L) {
-            introStart = (from * 1000).toLong()
-            introEnd = (to * 1000).toLong()
-        }
+        // Theirs wins from now on (TheIntroDB's may be for another cut).
+        introStart = (from * 1000).toLong()
+        introEnd = (to * 1000).toLong()
         postJson("/api/watch/skips/learn", JSONObject()
             .put("kind", "tv").put("tmdbId", info.optInt("tmdbId")).put("season", info.optInt("season"))
             .put("segment", "intro").put("start", from).put("end", to))
@@ -707,6 +709,47 @@ class PlayerActivity : Activity() {
         postJson("/api/watch/skips/learn", JSONObject()
             .put("kind", info.optString("kind")).put("tmdbId", info.optInt("tmdbId")).put("season", info.optInt("season"))
             .put("segment", "credits").put("start", pos / 1000.0).put("duration", dur / 1000.0))
+    }
+
+    // fetchSkips asks Cue for the skip times now the video's length is
+    // known: TheIntroDB's are for one cut of an episode, and only the
+    // length says which.
+    private fun fetchSkips() {
+        val dur = player.duration.takeIf { it != C.TIME_UNSET && it > 0 } ?: return
+        if (server.isEmpty()) return
+        val kind = info.optString("kind")
+        val path = "/api/watch/skips/$kind/${info.optInt("tmdbId")}?season=${info.optInt("season")}&episode=${info.optInt("episode")}&duration=${dur / 1000}"
+        val cookie = CookieManager.getInstance().getCookie(server)
+        val token = info.optString("token")
+        Thread {
+            try {
+                val c = URL("$server$path").openConnection() as HttpURLConnection
+                c.connectTimeout = 8000
+                c.readTimeout = 8000
+                if (cookie != null) c.setRequestProperty("Cookie", cookie)
+                if (token.isNotEmpty()) c.setRequestProperty("X-Cue-Profile", token)
+                if (c.responseCode != 200) return@Thread
+                val j = JSONObject(c.inputStream.bufferedReader().use { it.readText() })
+                c.disconnect()
+                main.post {
+                    if (finished) return@post
+                    j.optJSONObject("intro")?.let {
+                        introStart = (it.optDouble("start", 0.0) * 1000).toLong()
+                        introEnd = (it.optDouble("end", 0.0) * 1000).toLong()
+                    }
+                    j.optJSONObject("recap")?.let {
+                        recapStart = (it.optDouble("start", 0.0) * 1000).toLong()
+                        recapEnd = (it.optDouble("end", 0.0) * 1000).toLong()
+                    }
+                    val cs = (j.optDouble("creditsStart", 0.0) * 1000).toLong()
+                    if (cs > 0) creditsStart = cs
+                    val cf = (j.optDouble("creditsFromEnd", 0.0) * 1000).toLong()
+                    if (cf > 0) creditsFromEnd = cf
+                }
+            } catch (_: Exception) {
+                // No skip buttons this time.
+            }
+        }.start()
     }
 
     // postJson sends something to Cue as this profile, in the background.

@@ -46,45 +46,51 @@ func (s *Server) handleWatchSkips(w http.ResponseWriter, r *http.Request) {
 	defer cancel()
 
 	var out skipsAnswer
-	seg, err := introDBOnce().Get(ctx, tmdbID, season, episode, duration)
-	if err != nil {
-		slog.Info("watch: TheIntroDB", "err", err)
-	}
-	if seg.Intro != nil && seg.Intro.End > 0 {
-		out.Intro = &introdb.Segment{Start: max(seg.Intro.Start, 0), End: seg.Intro.End}
-		out.Source = "theintrodb"
-	}
-	if seg.Recap != nil && seg.Recap.End > 0 {
-		out.Recap = &introdb.Segment{Start: max(seg.Recap.Start, 0), End: seg.Recap.End}
-		out.Source = "theintrodb"
-	}
-	if seg.Credits != nil && seg.Credits.Start > 0 && (duration == 0 || seg.Credits.Start < duration) {
-		out.CreditsStart = seg.Credits.Start
-		out.Source = "theintrodb"
-	}
-
-	learned := false
-	if out.Intro == nil && kind == watch.KindTV {
+	// What this household skipped in the show comes first: it's from the
+	// same files, where TheIntroDB's times may be for another cut.
+	if kind == watch.KindTV {
 		if m, ok, err := s.WatchRepo.SkipMarkFor(kind, tmdbID, season, "intro"); err == nil && ok {
 			out.Intro = &introdb.Segment{Start: m.Start, End: m.End}
-			learned = true
-		}
-	}
-	if out.CreditsStart == 0 {
-		if m, ok, err := s.WatchRepo.SkipMarkFor(kind, tmdbID, season, "credits"); err == nil && ok {
-			if duration > 0 {
-				out.CreditsStart = duration - m.End
-			} else {
-				out.CreditsFromEnd = m.End
-			}
-			learned = true
-		}
-	}
-	if learned {
-		if out.Source != "" {
-			out.Source += "+learned"
-		} else {
 			out.Source = "learned"
+		}
+	}
+	if m, ok, err := s.WatchRepo.SkipMarkFor(kind, tmdbID, season, "credits"); err == nil && ok {
+		if duration > 0 {
+			out.CreditsStart = duration - m.End
+		} else {
+			out.CreditsFromEnd = m.End
+		}
+		out.Source = "learned"
+	}
+	// TheIntroDB, only with the video's length: without it the times can
+	// be for another cut, minutes off.
+	if duration >= 300 && (out.Intro == nil || out.CreditsStart == 0) {
+		seg, err := introDBOnce().Get(ctx, tmdbID, season, episode, duration)
+		if err != nil {
+			slog.Info("watch: TheIntroDB", "err", err)
+		}
+		used := false
+		if out.Intro == nil && seg.Intro != nil && seg.Intro.End > 0 && seg.Intro.End < duration {
+			out.Intro = &introdb.Segment{Start: max(seg.Intro.Start, 0), End: seg.Intro.End}
+			used = true
+		}
+		if out.Intro != nil && seg.Recap != nil && seg.Recap.End > 0 && seg.Recap.End <= out.Intro.Start+5 {
+			out.Recap = &introdb.Segment{Start: max(seg.Recap.Start, 0), End: seg.Recap.End}
+			used = true
+		} else if out.Intro == nil && seg.Recap != nil && seg.Recap.End > 0 && seg.Recap.End < duration {
+			out.Recap = &introdb.Segment{Start: max(seg.Recap.Start, 0), End: seg.Recap.End}
+			used = true
+		}
+		if out.CreditsStart == 0 && out.CreditsFromEnd == 0 && seg.Credits != nil && seg.Credits.Start > duration/2 && seg.Credits.Start < duration {
+			out.CreditsStart = seg.Credits.Start
+			used = true
+		}
+		if used {
+			if out.Source != "" {
+				out.Source += "+theintrodb"
+			} else {
+				out.Source = "theintrodb"
+			}
 		}
 	}
 	writeJSON(w, http.StatusOK, out)

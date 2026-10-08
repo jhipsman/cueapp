@@ -56,15 +56,11 @@ func New(base string) *Client {
 }
 
 // Get is what TheIntroDB has for a movie (season 0) or an episode. duration
-// (seconds; 0 if not known) helps it pick times for the right cut; when that
-// finds nothing, it asks again without it (times for another cut are
-// usually close).
+// (seconds; 0 if not known) picks times for that cut of the episode: times
+// for another cut (one with a "Previously on", or from another service)
+// can be minutes off.
 func (c *Client) Get(ctx context.Context, tmdbID, season, episode int, duration float64) (Segments, error) {
-	seg, err := c.get(ctx, tmdbID, season, episode, duration)
-	if err == nil && duration > 0 && seg.Intro == nil && seg.Recap == nil && seg.Credits == nil {
-		return c.get(ctx, tmdbID, season, episode, 0)
-	}
-	return seg, err
+	return c.get(ctx, tmdbID, season, episode, duration)
 }
 
 func (c *Client) get(ctx context.Context, tmdbID, season, episode int, duration float64) (Segments, error) {
@@ -123,25 +119,49 @@ func (c *Client) get(ctx context.Context, tmdbID, season, episode int, duration 
 }
 
 type rawSegment struct {
-	StartMs *int64 `json:"start_ms"`
-	EndMs   *int64 `json:"end_ms"`
+	StartMs     *int64   `json:"start_ms"`
+	EndMs       *int64   `json:"end_ms"`
+	Confidence  *float64 `json:"confidence"`
+	Submissions *int     `json:"submission_count"`
 }
 
-// first is the first usable segment: the one most users agreed on comes
-// first in TheIntroDB's answer.
+// first is the segment most agreed on: the highest confidence, then the
+// most submissions, then the first given.
 func first(list []rawSegment) *Segment {
-	for _, r := range list {
+	score := func(r rawSegment) (float64, int) {
+		c, n := 0.0, 0
+		if r.Confidence != nil {
+			c = *r.Confidence
+		}
+		if r.Submissions != nil {
+			n = *r.Submissions
+		}
+		return c, n
+	}
+	best := -1
+	for i, r := range list {
 		if r.StartMs == nil && r.EndMs == nil {
 			continue
 		}
-		s := Segment{Start: -1, End: -1}
-		if r.StartMs != nil {
-			s.Start = float64(*r.StartMs) / 1000
+		if best >= 0 {
+			c, n := score(r)
+			bc, bn := score(list[best])
+			if c < bc || c == bc && n <= bn {
+				continue
+			}
 		}
-		if r.EndMs != nil {
-			s.End = float64(*r.EndMs) / 1000
-		}
-		return &s
+		best = i
 	}
-	return nil
+	if best < 0 {
+		return nil
+	}
+	r := list[best]
+	s := Segment{Start: -1, End: -1}
+	if r.StartMs != nil {
+		s.Start = float64(*r.StartMs) / 1000
+	}
+	if r.EndMs != nil {
+		s.End = float64(*r.EndMs) / 1000
+	}
+	return &s
 }
