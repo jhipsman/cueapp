@@ -195,6 +195,17 @@ type playAnswer struct {
 	// YouTube is set instead of URL for a YouTube video: its id, for
 	// YouTube's embedded player.
 	YouTube string `json:"youtube,omitempty"`
+	// Convert, for a web browser, is a token for /api/play/convert: the
+	// file converted as it plays, for when the browser can't open it
+	// (play_convert.go). Empty when the server can't convert.
+	Convert string `json:"convert,omitempty"`
+}
+
+func (s *Server) withConvert(web bool, a playAnswer) playAnswer {
+	if web && a.YouTube == "" {
+		a.Convert = s.convertToken(a.URL)
+	}
+	return a
 }
 
 // GET /api/play/movies/{id}[?option=N][&fresh=1]
@@ -371,11 +382,11 @@ func (s *Server) servePlay(w http.ResponseWriter, r *http.Request, t playTarget)
 	for i := option - 1; i < len(entry.candidates); i++ {
 		c := entry.candidates[i]
 		if c.YouTube != "" || c.Direct {
-			writeJSON(w, http.StatusOK, playAnswer{
+			writeJSON(w, http.StatusOK, s.withConvert(web, playAnswer{
 				Title: t.label, URL: c.URL, YouTube: c.YouTube, FileName: c.Release, SizeBytes: c.Size,
 				Release: c.Release, Quality: string(c.Tier), Source: c.Source,
 				Option: i + 1, Options: len(entry.candidates),
-			})
+			}))
 			return
 		}
 		if c.URL != "" && web && pm != nil && c.Hash != "" {
@@ -384,12 +395,12 @@ func (s *Server) servePlay(w http.ResponseWriter, r *http.Request, t playTarget)
 			// everywhere, so it goes first, with the file itself behind it.
 			if files, err := pm.DirectDL(ctx, "magnet:?xt=urn:btih:"+c.Hash); err == nil {
 				if f, ok := pickPlayFile(files, t, s.releaseMapperFor(t)); ok && f.StreamLink != "" {
-					writeJSON(w, http.StatusOK, playAnswer{
+					writeJSON(w, http.StatusOK, s.withConvert(web, playAnswer{
 						Title: t.label, URL: f.Link, StreamURL: f.StreamLink,
 						FileName: path.Base(f.Path), SizeBytes: f.Size,
 						Release: c.Release, Quality: string(c.Tier), Source: c.Source,
 						Option: i + 1, Options: len(entry.candidates),
-					})
+					}))
 					return
 				}
 			}
@@ -397,11 +408,11 @@ func (s *Server) servePlay(w http.ResponseWriter, r *http.Request, t playTarget)
 		if c.URL != "" {
 			// A link from an add-on, already resolved with its debrid service.
 			// Opened here first, so the device gets the file's own address.
-			writeJSON(w, http.StatusOK, playAnswer{
+			writeJSON(w, http.StatusOK, s.withConvert(web, playAnswer{
 				Title: t.label, URL: resolveAddonLink(ctx, c.URL), FileName: c.Release, SizeBytes: c.Size,
 				Release: c.Release, Quality: string(c.Tier), Source: c.Source,
 				Option: i + 1, Options: len(entry.candidates),
-			})
+			}))
 			return
 		}
 		if pm == nil {
@@ -419,12 +430,12 @@ func (s *Server) servePlay(w http.ResponseWriter, r *http.Request, t playTarget)
 		if !ok {
 			continue
 		}
-		writeJSON(w, http.StatusOK, playAnswer{
+		writeJSON(w, http.StatusOK, s.withConvert(web, playAnswer{
 			Title: t.label, URL: f.Link, StreamURL: f.StreamLink,
 			FileName: path.Base(f.Path), SizeBytes: f.Size,
 			Release: c.Release, Quality: string(c.Tier), Source: c.Source,
 			Option: i + 1, Options: len(entry.candidates),
-		})
+		}))
 		return
 	}
 	writeError(w, http.StatusNotFound, fmt.Sprintf("None of the remaining versions of %s could be played. Try again with fresh=1 to search again.", t.label))

@@ -157,6 +157,8 @@ var memberRoutes = []string{
 	"PUT /api/live/reminders",
 	"DELETE /api/live/reminders",
 	"GET /api/live/hls",
+	"GET /api/play/convert",
+	"GET /api/play/convert/stream",
 	"GET /api/live/logo/{id}",
 	"GET /api/media-servers/links",
 	"GET /api/queue",

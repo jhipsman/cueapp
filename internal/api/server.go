@@ -496,6 +496,8 @@ func (s *Server) protectedRoutes() *routeTable {
 	play.HandleFunc("PUT /api/live/reminders", s.handleAddLiveReminder)
 	play.HandleFunc("DELETE /api/live/reminders", s.handleRemoveLiveReminder)
 	play.HandleFunc("GET /api/live/hls", s.handleLiveHLS)
+	play.HandleFunc("GET /api/play/convert", s.handleConvertProbe)
+	play.HandleFunc("GET /api/play/convert/stream", s.handleConvertStream)
 	play.HandleFunc("GET /api/live/logo/{id}", s.handleLiveLogo)
 
 	// "Watch in Plex/Jellyfin/Emby" and "Open my media server" links.

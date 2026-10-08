@@ -93,6 +93,10 @@ export default function PlayerPage() {
   }, [])
   const [answer, setAnswer] = useState<PlayAnswer | null>(null)
   const [useOriginal, setUseOriginal] = useState(false)
+  // The file converted by Cue as it plays, for a browser that can't open it:
+  // where in the video the conversion started, and how long the video is.
+  const [conv, setConv] = useState<{ stream: string; duration: number; offset: number } | null>(null)
+  const converting = useRef(false)
   const [error, setError] = useState('')
   const [note, setNote] = useState('')
   const [next, setNext] = useState<WatchEpisode | null>(null)
@@ -113,6 +117,8 @@ export default function PlayerPage() {
       try {
         const a = await api.playTMDB(kind, tmdbId, season, episode, option, fresh, !onTV())
         setAnswer(a)
+        setConv(null)
+        converting.current = false
         setUseOriginal(!a.streamUrl)
       } catch (e) {
         setError(e instanceof Error ? e.message : String(e))
@@ -144,11 +150,13 @@ export default function PlayerPage() {
 
   const save = useCallback(() => {
     const v = video.current
-    if (!v || !answer || !isFinite(v.duration) || v.currentTime < 5) return
+    const at = (conv?.offset ?? 0) + (v?.currentTime ?? 0)
+    const length = conv ? conv.duration : (v?.duration ?? NaN)
+    if (!v || !answer || !isFinite(length) || length <= 0 || at < 5) return
     void api
-      .saveWatchProgress({ kind, tmdbId, season, episode, position: Math.floor(v.currentTime), duration: Math.floor(v.duration) })
+      .saveWatchProgress({ kind, tmdbId, season, episode, position: Math.floor(at), duration: Math.floor(length) })
       .catch(() => undefined)
-  }, [answer, kind, tmdbId, season, episode])
+  }, [answer, conv, kind, tmdbId, season, episode])
 
   // Save every few seconds while playing, and when leaving.
   useEffect(() => {
@@ -268,9 +276,12 @@ export default function PlayerPage() {
       const silent =
         v.webkitAudioDecodedByteCount === 0 || v.mozHasAudio === false || (v.audioTracks !== undefined && v.audioTracks.length === 0)
       if (!silent) return
+      // Cue can convert the sound into one the browser plays, from here.
+      resumeAt.current = Math.floor((conv?.offset ?? 0) + v.currentTime)
+      if (startConvert('No sound in this browser, so Cue is converting it…')) return
       if (answer.option < answer.options && silentSkips.current < 2) {
         silentSkips.current++
-        resumeAt.current = Math.floor(v.currentTime)
+        resumeAt.current = Math.floor((conv?.offset ?? 0) + v.currentTime)
         setNote(`Version ${answer.option} had no sound in this browser, so trying the next one.`)
         void load(answer.option + 1)
       } else {
@@ -278,10 +289,14 @@ export default function PlayerPage() {
       }
     }, 2000)
     return () => clearInterval(t)
-  }, [answer, useOriginal, load])
+  }, [answer, useOriginal, conv, load])
 
   function onLoaded() {
     const v = video.current
+    if (conv) {
+      resumeAt.current = 0 // the conversion started there already
+      return
+    }
     if (v && resumeAt.current > 0 && resumeAt.current < v.duration - 60) {
       v.currentTime = resumeAt.current
     }
@@ -291,8 +306,9 @@ export default function PlayerPage() {
   // Near the end of an episode, find the next one (once).
   function onTime() {
     const v = video.current
-    if (!v || kind !== 'tv' || next || !isFinite(v.duration)) return
-    if (v.duration - v.currentTime < 60) {
+    const length = conv ? conv.duration : v?.duration
+    if (!v || kind !== 'tv' || next || !length || !isFinite(length)) return
+    if (length - ((conv?.offset ?? 0) + v.currentTime) < 60) {
       api
         .watchNext(tmdbId, season, episode)
         .then(setNext)
@@ -312,6 +328,26 @@ export default function PlayerPage() {
       setUseOriginal(true)
       return
     }
+    // The browser can't open this file: Cue converts it as it plays.
+    if (!startConvert('Converting this version so this browser can play it…')) moveOn()
+  }
+
+  // startConvert has Cue convert this version as it plays (from
+  // resumeAt), once; false when it can't or already did.
+  function startConvert(why: string): boolean {
+    if (!answer?.convert || conv || converting.current) return false
+    converting.current = true
+    setNote(why)
+    api
+      .convertProbe(answer.convert)
+      .then((p) => setConv({ stream: p.stream, duration: p.duration, offset: Math.max(0, Math.floor(resumeAt.current)) }))
+      .catch(() => moveOn())
+    return true
+  }
+
+  // The next version, or nothing more to try.
+  function moveOn() {
+    if (!answer) return
     if (answer.option < answer.options) {
       setNote(`Version ${answer.option} wouldn't play here, so trying the next one.`)
       void load(answer.option + 1)
@@ -324,7 +360,13 @@ export default function PlayerPage() {
     )
   }
 
-  const src = answer ? (useOriginal ? answer.url : answer.streamUrl || answer.url) : ''
+  const src = answer
+    ? conv?.stream
+      ? `${conv.stream}&t=${conv.offset}`
+      : useOriginal
+        ? answer.url
+        : answer.streamUrl || answer.url
+    : ''
   const nextEpisode = () =>
     api
       .watchNext(tmdbId, season, episode)
@@ -398,7 +440,12 @@ export default function PlayerPage() {
           <VideoControls
             video={videoEl}
             title={answer.title}
-            subtitle={answer.quality}
+            subtitle={[answer.quality, conv?.stream && 'converted for this browser'].filter(Boolean).join(' · ')}
+            timeline={
+              conv?.stream && conv.duration > 0
+                ? { offset: conv.offset, duration: conv.duration, onSeek: (sec) => setConv((c) => (c ? { ...c, offset: Math.max(0, Math.floor(sec)) } : c)) }
+                : undefined
+            }
             onBack={() => navigate(-1)}
             note={note}
             actions={
@@ -424,7 +471,7 @@ export default function PlayerPage() {
                   hint: answer.option < answer.options ? `Version ${answer.option + 1} of ${answer.options}` : 'This is the last one found',
                   disabled: answer.option >= answer.options,
                   onClick: () => {
-                    resumeAt.current = Math.floor(video.current?.currentTime ?? 0)
+                    resumeAt.current = Math.floor((conv?.offset ?? 0) + (video.current?.currentTime ?? 0))
                     void load(answer.option + 1)
                   },
                 },

@@ -9,6 +9,7 @@ under [Unreleased]. How releases are cut: [docs/RELEASING.md](docs/RELEASING.md)
 ## [Unreleased]
 
 ### Added
+- **Plays in any browser**: when a browser can't open a version (MKV or AVI, Xvid or HEVC pictures, Dolby or DTS sound, or silent), Cue converts it as it plays with ffmpeg (now in the image), copying the picture when it can and making English stereo sound; moving through the video carries on from that point.
 - **Colors**: each profile picks its own theme in the profile menu: a color (eleven, or any color on a phone or computer) for buttons, focus and the logo, a glow (off, soft or strong) and a background (midnight, black, slate, or tinted with the color). It follows the profile to every device, the TV app's player included.
 - **TV app**: **Other version** in the player, and a version whose sound the TV can't play moves on to the next one by itself. Dolby (AC3, E-AC3, TrueHD) and DTS sound now play on any TV, decoded by the app. The player's text is sized by the screen, not the TV's font setting, and it shows the picture's real resolution.
 - **Hard-to-find shows**: when the add-ons and torrent sites have nothing, Play looks on the Internet Archive (plays in Cue's player) and, with a free YouTube key in Settings > Streaming, for full episodes and films on YouTube (plays in YouTube's own player). Title pages and the player show free services a title is on, like Tubi, Pluto TV and The Roku Channel. See [docs/watch.md](docs/watch.md#hard-to-find-shows-internet-archive-and-youtube).

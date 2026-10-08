@@ -304,6 +304,7 @@ export interface PlayAnswer {
   options: number
   source?: string // the stream add-on it came from, like "Comet"
   youtube?: string // a YouTube video's id: it plays in YouTube's own player
+  convert?: string // a token for /api/play/convert: the file converted for a browser as it plays
 }
 
 // A Stremio add-on Play asks for streams (Comet, Torrentio...). The full
@@ -2256,6 +2257,8 @@ export const api = {
   putIPTV: (body: { server: string; username?: string; password?: string }) => put<IPTVSettings>('/settings/iptv', body),
   getOMDb: () => get<{ set: boolean }>('/settings/omdb'),
   putOMDb: (apiKey: string) => put<{ set: boolean }>('/settings/omdb', { apiKey }),
+  convertProbe: (token: string) =>
+    get<{ duration: number; copyVideo: boolean; stream: string }>(`/play/convert?u=${encodeURIComponent(token)}`),
   saveProfileTheme: (t: WatchTheme) => put<WatchTheme>('/profile/theme', t),
   getYouTube: () => get<{ set: boolean }>('/settings/youtube'),
   putYouTube: (apiKey: string) => put<{ set: boolean }>('/settings/youtube', { apiKey }),
