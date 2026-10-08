@@ -54,6 +54,7 @@ export default function RecordingPlayer() {
             video={videoEl}
             title={info.title}
             subtitle={`${info.channel} · recording`}
+            thumbs={info.convert ? (sec) => `/api/thumb?u=${encodeURIComponent(info.convert!)}&t=${Math.floor(sec / 10) * 10}` : undefined}
             onBack={() => navigate(-1)}
             timeline={
               conv && conv.duration > 0

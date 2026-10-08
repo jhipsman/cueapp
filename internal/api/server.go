@@ -303,6 +303,7 @@ func (s *Server) Routes() http.Handler {
 	// the TV app's player can fetch it (watch_subtitles.go).
 	public.HandleFunc("GET /api/subs", s.handleSubsFile)
 	public.HandleFunc("GET /api/recording", s.handleRecordingFile)
+	public.HandleFunc("GET /api/thumb", s.handleThumb)
 
 	public.Handle("/api/", s.signedIn(s.protectedRoutes()))
 

@@ -3,6 +3,8 @@ package app.cue.tv
 import android.app.Activity
 import android.content.Intent
 import android.content.res.ColorStateList
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.Color
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
@@ -220,6 +222,11 @@ class PlayerActivity : Activity() {
             addView(pauseBadge, FrameLayout.LayoutParams(px(110), px(110), Gravity.CENTER))
             addView(controls, FrameLayout.LayoutParams(MATCH, MATCH))
             skipButton = buildSkipButton()
+            val fb = buildFrameBox()
+            frameBox = fb
+            addView(fb, FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.BOTTOM or Gravity.START).apply {
+                bottomMargin = px(158)
+            })
             buildGuide()?.let {
                 guide = it
                 addView(it, FrameLayout.LayoutParams(px(400), MATCH, Gravity.START))
@@ -342,6 +349,7 @@ class PlayerActivity : Activity() {
             setAccent(teal)
             onSeek = { to ->
                 noteJump(this@PlayerActivity.position(), to)
+                showFrame(to)
                 seekToPosition(to)
                 showControls()
             }
@@ -522,6 +530,7 @@ class PlayerActivity : Activity() {
         val from = if (pendingSeek >= 0) pendingSeek else position()
         noteJump(from, from + ms)
         val dur = length().takeIf { it > 0 } ?: Long.MAX_VALUE
+        showFrame((from + ms).coerceIn(0, dur))
         seekToPosition((from + ms).coerceIn(0, dur))
         refreshTime()
     }
@@ -745,6 +754,86 @@ class PlayerActivity : Activity() {
         postJson("/api/watch/skips/learn", JSONObject()
             .put("kind", info.optString("kind")).put("tmdbId", info.optInt("tmdbId")).put("season", info.optInt("season"))
             .put("segment", "credits").put("start", pos / 1000.0).put("duration", dur / 1000.0))
+    }
+
+    // ---- Frames over the time bar while moving through the video ----
+
+    private var frameBox: LinearLayout? = null
+    private var frameImage: ImageView? = null
+    private var frameTime: TextView? = null
+    private var frameWanted = -1L
+    private val frameCache = object : android.util.LruCache<Long, Bitmap>(40) {}
+    private val frameHider = Runnable { frameBox?.visibility = View.GONE }
+
+    private fun buildFrameBox(): LinearLayout = LinearLayout(this).apply {
+        orientation = LinearLayout.VERTICAL
+        gravity = Gravity.CENTER_HORIZONTAL
+        setPadding(px(4), px(4), px(4), px(4))
+        background = GradientDrawable().apply {
+            cornerRadius = px(6).toFloat()
+            setColor(0xF0141414.toInt())
+            setStroke(px(1), 0x40FFFFFF)
+        }
+        val img = ImageView(this@PlayerActivity).apply {
+            scaleType = ImageView.ScaleType.CENTER_CROP
+            setBackgroundColor(Color.BLACK)
+        }
+        frameImage = img
+        addView(img, LinearLayout.LayoutParams(px(224), px(126)))
+        val time = TextView(this@PlayerActivity).apply {
+            setTextColor(Color.WHITE)
+            size(13f)
+            typeface = Typeface.MONOSPACE
+            setPadding(0, px(4), 0, px(2))
+        }
+        frameTime = time
+        addView(time)
+        visibility = View.GONE
+    }
+
+    // showFrame shows the picture at `at` (ms) above the time bar, where the
+    // knob is going; it fades a moment after the remote rests.
+    private fun showFrame(at: Long) {
+        val token = info.optString("thumbs")
+        val box = frameBox ?: return
+        if (token.isEmpty() || live || server.isEmpty()) return
+        val dur = length()
+        if (dur <= 0) return
+        val bucket = at / 10_000 * 10
+        frameWanted = bucket
+        frameTime?.text = clock(at)
+        // Over the knob's new place, kept on the screen.
+        val loc = IntArray(2)
+        timeBar.getLocationInWindow(loc)
+        val f = (at.toFloat() / dur).coerceIn(0f, 1f)
+        val x = loc[0] + px(12) + f * (timeBar.width - px(24))
+        val w = px(232)
+        box.translationX = (x - w / 2f).coerceIn(px(16).toFloat(), (window.decorView.width - w - px(16)).toFloat())
+        box.visibility = View.VISIBLE
+        main.removeCallbacks(frameHider)
+        main.postDelayed(frameHider, 1500)
+        frameCache.get(bucket)?.let {
+            frameImage?.setImageBitmap(it)
+            return
+        }
+        val url = "$server/api/thumb?u=${Uri.encode(token)}&t=$bucket"
+        Thread {
+            try {
+                val c = URL(url).openConnection() as HttpURLConnection
+                c.connectTimeout = 8000
+                c.readTimeout = 20000
+                val bmp = if (c.responseCode == 200) c.inputStream.use { BitmapFactory.decodeStream(it) } else null
+                c.disconnect()
+                if (bmp != null) {
+                    main.post {
+                        frameCache.put(bucket, bmp)
+                        if (frameWanted == bucket) frameImage?.setImageBitmap(bmp)
+                    }
+                }
+            } catch (_: Exception) {
+                // No frame this time.
+            }
+        }.start()
     }
 
     // ---- Live TV: the channel list ----

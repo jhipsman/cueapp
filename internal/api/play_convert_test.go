@@ -88,3 +88,38 @@ func TestConvertPlaysInBrowsers(t *testing.T) {
 		})
 	}
 }
+
+func TestThumbFrames(t *testing.T) {
+	if !canConvert() {
+		t.Skip("no ffmpeg here")
+	}
+	dir := t.TempDir()
+	clip := filepath.Join(dir, "clip.mkv")
+	if out, err := exec.Command("ffmpeg", "-hide_banner", "-loglevel", "error", "-f", "lavfi", "-i", "testsrc=size=640x360:rate=25:duration=30",
+		"-c:v", "libx264", "-pix_fmt", "yuv420p", clip).CombinedOutput(); err != nil {
+		t.Skipf("can't make a clip here: %v %s", err, out)
+	}
+	files := httptest.NewServer(http.FileServer(http.Dir(dir)))
+	defer files.Close()
+	box, err := crypto.LoadOrCreateKey(filepath.Join(dir, "key"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	s := &Server{profileBox: box}
+	for _, link := range []string{files.URL + "/clip.mkv", clip} { // a web address and a file (a recording)
+		tok := s.convertToken(link)
+		for _, at := range []string{"0", "14.5", "25"} {
+			rec := httptest.NewRecorder()
+			s.handleThumb(rec, httptest.NewRequest("GET", "/api/thumb?u="+url.QueryEscape(tok)+"&t="+at, nil))
+			if rec.Code != 200 || rec.Header().Get("Content-Type") != "image/jpeg" || rec.Body.Len() < 500 || !bytes.HasPrefix(rec.Body.Bytes(), []byte{0xff, 0xd8}) {
+				t.Fatalf("%s at %s: %d %d bytes", link, at, rec.Code, rec.Body.Len())
+			}
+		}
+	}
+	// A file one can probe and convert too (recordings play this way).
+	rec := httptest.NewRecorder()
+	s.handleConvertProbe(rec, httptest.NewRequest("GET", "/api/play/convert?u="+url.QueryEscape(s.convertToken(clip)), nil))
+	if rec.Code != 200 {
+		t.Fatalf("probe a file: %d %s", rec.Code, rec.Body)
+	}
+}

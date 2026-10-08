@@ -330,6 +330,7 @@ export interface PlayAnswer {
   source?: string // the stream add-on it came from, like "Comet"
   youtube?: string // a YouTube video's id: it plays in YouTube's own player
   convert?: string // a token for /api/play/convert: the file converted for a browser as it plays
+  thumbs?: string // a token for /api/thumb: frames for the time bar
 }
 
 // A Stremio add-on Play asks for streams (Comet, Torrentio...). The full

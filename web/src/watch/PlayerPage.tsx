@@ -299,6 +299,7 @@ export default function PlayerPage() {
           creditsStart: sk.creditsStart ?? 0,
           creditsFromEnd: sk.creditsFromEnd ?? 0,
           subtitleUrl,
+          thumbs: answer.thumbs ?? '',
           subsOn: prefs.on,
           subsSize: prefs.size,
           subsBand: prefs.band,
@@ -655,6 +656,7 @@ export default function PlayerPage() {
             }
             onBack={() => navigate(-1)}
             note={note || subsNote}
+            thumbs={answer.thumbs ? (sec) => `/api/thumb?u=${encodeURIComponent(answer.thumbs!)}&t=${Math.floor(sec / 10) * 10}` : undefined}
             captions={{
               on: subsPrefs.on,
               items: [

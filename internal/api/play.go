@@ -199,11 +199,18 @@ type playAnswer struct {
 	// file converted as it plays, for when the browser can't open it
 	// (play_convert.go). Empty when the server can't convert.
 	Convert string `json:"convert,omitempty"`
+	// Thumbs is the same kind of token for /api/thumb: frames for the time
+	// bar (play_thumbs.go), on any device.
+	Thumbs string `json:"thumbs,omitempty"`
 }
 
 func (s *Server) withConvert(web bool, a playAnswer) playAnswer {
-	if web && a.YouTube == "" {
-		a.Convert = s.convertToken(a.URL)
+	if a.YouTube == "" {
+		tok := s.convertToken(a.URL)
+		a.Thumbs = tok
+		if web {
+			a.Convert = tok
+		}
 	}
 	return a
 }

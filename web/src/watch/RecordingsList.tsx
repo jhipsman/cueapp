@@ -40,6 +40,7 @@ export async function playRecording(r: LiveRecording, navigate: (to: string) => 
       subtitle: `${r.channel} · recorded ${when(r.start)}`,
       startSec: 0,
       kind: 'recording',
+      thumbs: p.convert ?? '',
       token: profileToken(),
       accent: savedTheme().accent,
     }),

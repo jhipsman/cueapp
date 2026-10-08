@@ -36,6 +36,8 @@ interface Props {
   actions?: ReactNode
   // The "Versions" (or other) menu, with its heading.
   menu?: { label: string; icon: 'layers' | 'tv'; heading?: string; items: MenuItem[] }
+  // Frames for the time bar: the picture's address at a point (seconds).
+  thumbs?: (sec: number) => string
   // Subtitles: the CC button (lit when on) and its menu.
   captions?: { on: boolean; items: (MenuItem & { checked?: boolean })[] }
 }
@@ -81,7 +83,7 @@ function Skip({ back }: { back?: boolean }) {
   )
 }
 
-export default function VideoControls({ video, title, subtitle, onBack, live, note, actions, menu, timeline, captions }: Props) {
+export default function VideoControls({ video, title, subtitle, onBack, live, note, actions, menu, timeline, captions, thumbs }: Props) {
   const root = useRef<HTMLDivElement>(null)
   const bar = useRef<HTMLDivElement>(null)
   const [playing, setPlaying] = useState(false)
@@ -385,7 +387,12 @@ export default function VideoControls({ video, title, subtitle, onBack, live, no
               </div>
               <div className="vx-thumb" style={{ left: pct(shownPos) }} />
               {hover !== null && (
-                <div className="vx-tip" style={{ left: `${hover * 100}%` }}>
+                <div
+                  className={`vx-tip${thumbs && total > 0 ? ' with-frame' : ''}`}
+                  // With a frame, kept inside the bar at the ends.
+                  style={{ left: thumbs && total > 0 ? `clamp(100px, ${hover * 100}%, calc(100% - 100px))` : `${hover * 100}%` }}
+                >
+                  {thumbs && total > 0 && <img src={thumbs(hover * total)} alt="" />}
                   {clock(hover * total)}
                 </div>
               )}

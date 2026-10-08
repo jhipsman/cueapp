@@ -95,8 +95,11 @@ func probeFile(ctx context.Context, link string) (probeInfo, error) {
 	_, ffprobe := ffmpegOnce()
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
-	cmd := exec.CommandContext(ctx, ffprobe, "-v", "error", "-user_agent", convertUA,
-		"-print_format", "json", "-show_format", "-show_streams", link)
+	pargs := []string{"-v", "error"}
+	if isWebLink(link) {
+		pargs = append(pargs, "-user_agent", convertUA)
+	}
+	cmd := exec.CommandContext(ctx, ffprobe, append(pargs, "-print_format", "json", "-show_format", "-show_streams", link)...)
 	var out, errOut bytes.Buffer
 	cmd.Stdout, cmd.Stderr = &out, &errOut
 	if err := cmd.Run(); err != nil {
@@ -232,9 +235,10 @@ func (s *Server) handleConvertStream(w http.ResponseWriter, r *http.Request) {
 	}
 	start, _ := strconv.ParseFloat(r.URL.Query().Get("t"), 64)
 
-	args := []string{"-hide_banner", "-loglevel", "error", "-nostdin",
-		"-reconnect", "1", "-reconnect_streamed", "1", "-reconnect_delay_max", "5",
-		"-user_agent", convertUA}
+	args := []string{"-hide_banner", "-loglevel", "error", "-nostdin"}
+	if isWebLink(link) { // options only for web addresses (a recording is a file)
+		args = append(args, "-reconnect", "1", "-reconnect_streamed", "1", "-reconnect_delay_max", "5", "-user_agent", convertUA)
+	}
 	if start > 0 {
 		args = append(args, "-ss", strconv.FormatFloat(start, 'f', 1, 64))
 	}
