@@ -1,6 +1,7 @@
 package app.cue.tv
 
 import android.app.Activity
+import android.content.Context
 import android.content.Intent
 import android.content.res.ColorStateList
 import android.graphics.Bitmap
@@ -38,6 +39,9 @@ import androidx.media3.common.VideoSize
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.media3.exoplayer.DefaultRenderersFactory
+import androidx.media3.exoplayer.audio.AudioCapabilities
+import androidx.media3.exoplayer.audio.AudioSink
+import androidx.media3.exoplayer.audio.DefaultAudioSink
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.ui.AspectRatioFrameLayout
@@ -172,9 +176,22 @@ class PlayerActivity : Activity() {
         creditsStart = ms("creditsStart"); creditsFromEnd = ms("creditsFromEnd")
         hasOther = info.optBoolean("hasOther")
 
-        val renderers = DefaultRenderersFactory(this)
+        // Sound: the box's own decoders first (they keep it in step with the
+        // picture), the app's FFmpeg ones only for what the box can't decode
+        // (DTS, TrueHD), and always decoded here rather than passed to the TV
+        // as it is: a TV or soundbar that says it takes Dolby and then plays
+        // nothing was the silent La Brea, and software-decoded surround on
+        // every format put voices out of step on some Google TV boxes.
+        val renderers = object : DefaultRenderersFactory(this) {
+            override fun buildAudioSink(context: Context, enableFloatOutput: Boolean, enableAudioTrackPlaybackParams: Boolean): AudioSink =
+                DefaultAudioSink.Builder(context)
+                    .setAudioCapabilities(AudioCapabilities.DEFAULT_AUDIO_CAPABILITIES)
+                    .setEnableFloatOutput(enableFloatOutput)
+                    .setEnableAudioTrackPlaybackParams(enableAudioTrackPlaybackParams)
+                    .build()
+        }
             .setEnableDecoderFallback(true)
-            .setExtensionRendererMode(DefaultRenderersFactory.EXTENSION_RENDERER_MODE_PREFER)
+            .setExtensionRendererMode(DefaultRenderersFactory.EXTENSION_RENDERER_MODE_ON)
         // Debrid links often redirect, sometimes from http to https.
         val http = DefaultHttpDataSource.Factory()
             .setAllowCrossProtocolRedirects(true)
