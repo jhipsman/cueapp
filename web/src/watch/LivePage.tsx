@@ -163,8 +163,8 @@ export default function LivePage() {
 
   // The stream, in the window (or full screen: the same video, so going
   // full screen and back never restarts it).
-  const streamUrl = play && !onTVPlayer ? play.url : null
-  useLiveStream(videoEl, streamUrl, setPlayError)
+  const sources = useMemo(() => (play && !onTVPlayer ? (play.alts?.length ? play.alts : [{ kind: 'hls' as const, url: play.url }]) : null), [play, onTVPlayer])
+  useLiveStream(videoEl, sources, setPlayError)
 
   const setPlaying = useCallback(
     (id: string, opts: { full?: boolean; push?: boolean; from?: LiveProgramme } = {}) => {
@@ -200,6 +200,7 @@ export default function LivePage() {
       window.CueTV?.play(
         JSON.stringify({
           url: p.direct || new URL(p.url, window.location.href).toString(),
+          alts: p.directAlts ?? [],
           title: `${p.num ? p.num + '  ' : ''}${p.name}`,
           subtitle: p.catchup ? 'Catch-up' : c?.now ? `${c.now.title} · until ${hhmm(c.now.stop)}` : '',
           live: !p.catchup,

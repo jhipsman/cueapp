@@ -173,6 +173,10 @@ export interface LivePlay {
   direct?: string // the provider's own, for the TV app
   logo?: string
   catchup?: boolean // a past show from the provider's recordings
+  // Where it plays, in the order to try: "hls" (a playlist) or "ts" (one
+  // MPEG-TS stream).
+  alts?: { kind: 'hls' | 'ts'; url: string }[]
+  directAlts?: string[] // the TV app's others to try
 }
 export interface IPTVSettings {
   set: boolean

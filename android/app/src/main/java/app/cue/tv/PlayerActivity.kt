@@ -60,6 +60,10 @@ class PlayerActivity : Activity() {
     private var finished = false
     private var live = false
     private var catchup = false // a past show from the provider's recordings: seekable, nothing saved
+    // Other addresses for the same thing, tried in turn if one won't start
+    // (providers serve catch-up in different ways).
+    private val alts = ArrayDeque<String>()
+    private var started = false
     private var isShow = false
 
     private lateinit var controls: View
@@ -96,6 +100,9 @@ class PlayerActivity : Activity() {
         server = intent.getStringExtra(EXTRA_SERVER) ?: ""
         live = info.optBoolean("live")
         catchup = info.optBoolean("catchup")
+        info.optJSONArray("alts")?.let { list ->
+            for (i in 0 until list.length()) list.optString(i).takeIf { it.isNotEmpty() }?.let { alts.addLast(it) }
+        }
         isShow = info.optString("kind") == "tv"
 
         val renderers = DefaultRenderersFactory(this)
@@ -157,6 +164,7 @@ class PlayerActivity : Activity() {
             }
 
             override fun onIsPlayingChanged(isPlaying: Boolean) {
+                if (isPlaying) started = true
                 playPause.setCompoundDrawablesRelativeWithIntrinsicBounds(
                     if (isPlaying) R.drawable.ic_cue_pause else R.drawable.ic_cue_play, 0, 0, 0,
                 )
@@ -166,6 +174,12 @@ class PlayerActivity : Activity() {
             }
 
             override fun onPlayerError(error: PlaybackException) {
+                if (!started && alts.isNotEmpty()) {
+                    player.setMediaItem(MediaItem.fromUri(alts.removeFirst()))
+                    player.prepare()
+                    player.playWhenReady = true
+                    return
+                }
                 if (live && error.errorCode == PlaybackException.ERROR_CODE_BEHIND_LIVE_WINDOW) {
                     player.seekToDefaultPosition() // fell behind: back to live
                     player.prepare()

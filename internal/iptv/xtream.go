@@ -253,6 +253,19 @@ func (c *Client) CatchupURL(id string, start time.Time, minutes int, format stri
 		max(minutes, 1), start.In(loc).Format("2006-01-02:15-04"), url.PathEscape(id), format)
 }
 
+// CatchupPHPURL is the older way providers serve catch-up
+// (/streaming/timeshift.php), as MPEG-TS; some offer only this one.
+func (c *Client) CatchupPHPURL(id string, start time.Time, minutes int, loc *time.Location) string {
+	if loc == nil {
+		loc = time.UTC
+	}
+	q := url.Values{
+		"username": {c.acct.Username}, "password": {c.acct.Password}, "stream": {id},
+		"start": {start.In(loc).Format("2006-01-02:15-04")}, "duration": {strconv.Itoa(max(minutes, 1))},
+	}
+	return c.acct.Server + "/streaming/timeshift.php?" + q.Encode()
+}
+
 // GuideURL is the account's full XMLTV guide.
 func (c *Client) GuideURL() string {
 	q := url.Values{"username": {c.acct.Username}, "password": {c.acct.Password}}

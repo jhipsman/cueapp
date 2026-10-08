@@ -16,6 +16,9 @@ const contentSecurityPolicy = "default-src 'self'; " +
 	// are served from changing CDN hosts.
 	"media-src 'self' blob: https:; " +
 	"connect-src 'self'; " +
+	// The live TV players (hls.js, mpegts.js) work in a background worker
+	// made from a blob; it runs only their own code, as the page does.
+	"worker-src 'self' blob:; " +
 	"object-src 'none'; " +
 	"base-uri 'self'; " +
 	"form-action 'self'; " +

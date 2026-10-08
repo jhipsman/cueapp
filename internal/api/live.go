@@ -16,6 +16,7 @@ package api
 // address the browser sees is sealed.
 
 import (
+	"bufio"
 	"cmp"
 	"context"
 	"crypto/sha256"
@@ -402,9 +403,14 @@ func (s *Server) handleLivePlay(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, "Couldn't start that channel.")
 		return
 	}
+	alts, err := s.sealAlts([]struct{ kind, link string }{{"hls", c.StreamURL(ch.ID, "m3u8")}, {"ts", c.StreamURL(ch.ID, "ts")}})
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "Couldn't start that channel.")
+		return
+	}
 	out := map[string]any{
 		"id": ch.ID, "num": ch.Num, "name": ch.Name,
-		"url": "/api/live/hls?u=" + url.QueryEscape(sealed),
+		"url": "/api/live/hls?u=" + url.QueryEscape(sealed), "alts": alts,
 	}
 	if ch.Logo != "" {
 		out["logo"] = "/api/live/logo/" + url.PathEscape(ch.ID)
@@ -467,6 +473,18 @@ func (s *Server) handleLiveHLS(w http.ResponseWriter, r *http.Request) {
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode >= 400 {
+		// Logged without the address's login, so a catch-up that won't play
+		// says which of the provider's ways answered what.
+		way := "live"
+		switch p := resp.Request.URL.Path; {
+		case strings.Contains(p, "/timeshift/") && strings.HasSuffix(p, ".m3u8"):
+			way = "catch-up (HLS)"
+		case strings.Contains(p, "/timeshift/"):
+			way = "catch-up (TS)"
+		case strings.Contains(p, "timeshift.php"):
+			way = "catch-up (timeshift.php)"
+		}
+		slog.Info("live tv: the provider refused a stream", "way", way, "status", resp.StatusCode)
 		msg := fmt.Sprintf("The channel didn't play (your provider answered %d).", resp.StatusCode)
 		if resp.StatusCode == http.StatusForbidden || resp.StatusCode == http.StatusUnauthorized {
 			msg = "Your provider refused the channel. Too many devices may be watching at once."
@@ -476,8 +494,13 @@ func (s *Server) handleLiveHLS(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ctype := resp.Header.Get("Content-Type")
+	// A playlist by its type, its name, or (timeshift.php answers either)
+	// its first line.
+	br := bufio.NewReader(resp.Body)
+	head, _ := br.Peek(7)
 	isPlaylist := strings.Contains(strings.ToLower(ctype), "mpegurl") ||
-		strings.HasSuffix(strings.ToLower(resp.Request.URL.Path), ".m3u8")
+		strings.HasSuffix(strings.ToLower(resp.Request.URL.Path), ".m3u8") ||
+		string(head) == "#EXTM3U"
 	if !isPlaylist {
 		for _, h := range []string{"Content-Type", "Content-Length", "Content-Range", "Accept-Ranges"} {
 			if v := resp.Header.Get(h); v != "" {
@@ -486,11 +509,11 @@ func (s *Server) handleLiveHLS(w http.ResponseWriter, r *http.Request) {
 		}
 		w.Header().Set("Cache-Control", "no-store")
 		w.WriteHeader(resp.StatusCode)
-		_, _ = io.Copy(w, resp.Body)
+		_, _ = io.Copy(w, br)
 		return
 	}
 
-	body, err := io.ReadAll(io.LimitReader(resp.Body, 4<<20))
+	body, err := io.ReadAll(io.LimitReader(br, 4<<20))
 	if err != nil {
 		writeError(w, http.StatusBadGateway, "The channel didn't answer. Try again in a moment.")
 		return
@@ -981,12 +1004,19 @@ func (s *Server) handleLiveCatchup(w http.ResponseWriter, r *http.Request) {
 			loc = l
 		}
 	}
-	sealed, err := s.profileBox.Encrypt(liveSealPrefix + c.CatchupURL(ch.ID, start, minutes, "m3u8", loc))
+	// Providers serve catch-up in different ways: HLS, MPEG-TS, or the older
+	// timeshift.php. The player tries them in this order.
+	tries := []struct{ kind, link string }{
+		{"hls", c.CatchupURL(ch.ID, start, minutes, "m3u8", loc)},
+		{"ts", c.CatchupURL(ch.ID, start, minutes, "ts", loc)},
+		{"ts", c.CatchupPHPURL(ch.ID, start, minutes, loc)},
+	}
+	alts, err := s.sealAlts(tries)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "Couldn't start that show.")
 		return
 	}
-	out := map[string]any{"id": ch.ID, "num": ch.Num, "name": ch.Name, "url": "/api/live/hls?u=" + url.QueryEscape(sealed), "catchup": true}
+	out := map[string]any{"id": ch.ID, "num": ch.Num, "name": ch.Name, "url": alts[0]["url"], "alts": alts, "catchup": true}
 	if ch.Logo != "" {
 		out["logo"] = "/api/live/logo/" + url.PathEscape(ch.ID)
 	}
@@ -996,6 +1026,7 @@ func (s *Server) handleLiveCatchup(w http.ResponseWriter, r *http.Request) {
 			format = "m3u8"
 		}
 		out["direct"] = c.CatchupURL(ch.ID, start, minutes, format, loc)
+		out["directAlts"] = []string{c.CatchupPHPURL(ch.ID, start, minutes, loc), c.CatchupURL(ch.ID, start, minutes, "m3u8", loc)}
 	}
 	writeJSON(w, http.StatusOK, out)
 }
@@ -1076,4 +1107,19 @@ func (s *Server) handleRemoveLiveReminder(w http.ResponseWriter, r *http.Request
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
+}
+
+// sealAlts turns provider addresses into Cue's (sealed: they hold the
+// password), each with how to play it: "hls" (a playlist) or "ts" (one
+// MPEG-TS stream).
+func (s *Server) sealAlts(tries []struct{ kind, link string }) ([]map[string]string, error) {
+	out := make([]map[string]string, 0, len(tries))
+	for _, t := range tries {
+		sealed, err := s.profileBox.Encrypt(liveSealPrefix + t.link)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, map[string]string{"kind": t.kind, "url": "/api/live/hls?u=" + url.QueryEscape(sealed)})
+	}
+	return out, nil
 }
