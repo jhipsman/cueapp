@@ -11,6 +11,7 @@ import LivePage from './LivePage'
 import LivePlayer from './LivePlayer'
 import ManageProfiles from './ManageProfiles'
 import ThemePage from './ThemePage'
+import RecordingPlayer from './RecordingPlayer'
 import { applyTheme, savedTheme } from './theme'
 import WhoIsWatching from './WhoIsWatching'
 import { Avatar, ProfilesProvider, useProfiles } from './profiles'
@@ -44,6 +45,7 @@ export default function WatchApp() {
         <Route path="who" element={<WhoIsWatching />} />
         <Route path="profiles" element={<ManageProfiles />} />
         <Route path="theme" element={<ThemePage />} />
+        <Route path="recording/:id" element={<RecordingPlayer />} />
         <Route path="play/movie/:tmdbId" element={<PlayerPage />} />
         <Route path="play/tv/:tmdbId/:season/:episode" element={<PlayerPage />} />
         <Route path="live/play/:id" element={<LivePlayer />} />

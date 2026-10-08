@@ -2675,3 +2675,159 @@ html.tv-mode .wx-live-hit-remind:focus {
 .vx-icon.lit {
   color: var(--wx-accent);
 }
+
+/* Live TV recordings. */
+.wx-rec-dot {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #ef4444;
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.25);
+  flex: none;
+}
+.wx-btn .wx-rec-dot {
+  margin-right: 2px;
+}
+.wx-btn.wx-rec-on {
+  border-color: rgba(239, 68, 68, 0.7);
+}
+.wx-prog .wx-rec-dot {
+  width: 7px;
+  height: 7px;
+  margin: 0 2px;
+  vertical-align: middle;
+}
+.wx-recs {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.wx-rec {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--wx-panel);
+}
+.wx-rec-logo {
+  width: 64px;
+  height: 40px;
+  flex: none;
+  display: grid;
+  place-items: center;
+}
+.wx-rec-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.wx-rec-body b,
+.wx-rec-body small {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.wx-rec-body small {
+  color: var(--wx-dim);
+}
+.wx-rec-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--wx-dim);
+}
+.wx-rec-status.recording {
+  color: #f87171;
+}
+.wx-rec-status.recording i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ef4444;
+  animation: wx-blink 1.2s infinite;
+}
+.wx-rec-status.done {
+  color: var(--wx-accent);
+}
+.wx-rec-status.failed {
+  color: #fca5a5;
+  font-weight: 500;
+}
+@keyframes wx-blink {
+  50% {
+    opacity: 0.2;
+  }
+}
+.wx-rec-actions {
+  display: flex;
+  gap: 8px;
+  flex: none;
+}
+.wx-recs-empty {
+  padding: 30px 10px;
+  text-align: center;
+  color: var(--wx-text);
+  max-width: 520px;
+  margin: 0 auto;
+}
+@media (max-width: 640px) {
+  .wx-rec {
+    flex-wrap: wrap;
+  }
+  .wx-rec-actions {
+    width: 100%;
+  }
+}
+
+/* Follow a team or show on Live TV (search). */
+.wx-follow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 12px 16px;
+  margin-bottom: 12px;
+  border-radius: 12px;
+  background: rgba(var(--wx-accent-rgb), 0.1);
+  border: 1px solid rgba(var(--wx-accent-rgb), 0.35);
+}
+.wx-follow span {
+  flex: 1;
+  min-width: 200px;
+}
+.wx-follows {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+.wx-follows small {
+  color: var(--wx-dim);
+}
+.wx-follow-chip {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  background: var(--wx-panel);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+.wx-follow-chip button {
+  background: none;
+  border: 0;
+  color: var(--wx-text);
+  font: inherit;
+  font-size: 13px;
+  padding: 5px 4px 5px 12px;
+  cursor: pointer;
+}
+.wx-follow-chip button + button {
+  padding: 5px 10px 5px 4px;
+  color: var(--wx-dim);
+}

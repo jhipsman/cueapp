@@ -6,6 +6,8 @@ import { useDocumentTitle } from '../documentTitle'
 import ChannelLogo from './ChannelLogo'
 import { recentChannels, rememberChannel, useLiveStream } from './liveStream'
 import { useReminders } from './reminders'
+import RecordingsList from './RecordingsList'
+import { useRecordings } from './recordings'
 import { Spinner } from './parts'
 import { useProfiles } from './profiles'
 import { savedTheme } from './theme'
@@ -101,6 +103,21 @@ export default function LivePage() {
   // How far the guide is moved back or on, in 3-hour steps.
   const [shift, setShift] = useState(0)
   const reminders = useReminders()
+  const recs = useRecordings()
+  // recordButton is Record for a show, or what's happening to it.
+  const recordButton = (channelId: string, show: LiveProgramme, primary = false) => {
+    const r = recs.find(channelId, show.start)
+    return (
+      <button
+        className={`wx-btn small${primary ? ' play' : ''}${r ? ' wx-rec-on' : ''}`}
+        onClick={() => void (r ? recs.remove(r.id) : recs.record(channelId, show).catch((e) => window.alert(e instanceof Error ? e.message : String(e))))}
+        aria-pressed={!!r}
+      >
+        <span className="wx-rec-dot" aria-hidden="true" />
+        {r ? (r.status === 'recording' ? 'Recording · Stop' : r.status === 'done' ? 'Recorded' : 'Recording set') : 'Record'}
+      </button>
+    )
+  }
   const [play, setPlay] = useState<LivePlay | null>(null)
   const [playError, setPlayError] = useState('')
   const [videoEl, setVideoEl] = useState<HTMLVideoElement | null>(null)
@@ -215,6 +232,12 @@ export default function LivePage() {
           setPlaying(n.id)
           return
         }
+        if (r.reason === 'channel' && r.message) {
+          // Picked in the TV app's channel list.
+          nativeNext.current = true
+          setPlaying(r.message)
+          return
+        }
         if (r.reason === 'error') setPlayError(`This channel won't play.${r.message ? ' ' + r.message : ''}`)
       }
       window.CueTV?.play(
@@ -231,6 +254,10 @@ export default function LivePage() {
           showStart: p.catchup ? atRef.current : 0,
           showStop: p.catchup ? atEndRef.current : 0,
           offsetSec: p.catchup ? cuOffsetRef.current : 0,
+          // The channel list the TV app shows over the picture (OK).
+          channels: p.catchup
+            ? []
+            : list.slice(0, 400).map((x) => ({ id: x.id, num: x.num || '', name: x.name, now: x.now?.title ?? '', until: x.now ? hhmm(x.now.stop) : '' })),
           token: profileToken(),
           accent: savedTheme().accent, // the profile's color, for the player
         }),
@@ -389,6 +416,7 @@ export default function LivePage() {
     ...(recentCount > 0 ? [{ id: 'recent', name: 'Recent', count: recentCount, fixed: true }] : []),
     ...(favCount > 0 ? [{ id: 'fav', name: 'Favourites', count: favCount, fixed: true }] : []),
     { id: 'all', name: 'All channels', count: data.channels?.length ?? 0, fixed: true },
+    { id: 'recordings', name: 'Recordings', count: recs.list.length, fixed: true },
     ...cats.map((c) => ({ id: c.id, name: c.name, count: counts.get(c.id) ?? 0, fixed: false })),
   ]
   const findText = find.trim().toLowerCase()
@@ -492,6 +520,7 @@ export default function LivePage() {
                   <Icon name={reminders.has(picked.channel.id, picked.show.start) ? 'check' : 'clock'} size={16} />
                   {reminders.has(picked.channel.id, picked.show.start) ? 'Reminder set' : 'Remind me'}
                 </button>
+                {recordButton(picked.channel.id, picked.show)}
                 <button className="wx-btn small" onClick={() => setPlaying(picked.channel.id)}>
                   <Icon name="play" size={16} /> Watch {picked.channel.name} now
                 </button>
@@ -566,6 +595,7 @@ export default function LivePage() {
                     </button>
                   )
                 )}
+                {!catchup && nowShow && recordButton(channel.id, nowShow)}
                 <button className="wx-btn small" onClick={() => void toggleFavorite(channel)} aria-pressed={channel.favorite}>
                   <Icon name="star" size={16} /> {channel.favorite ? 'Favourite' : 'Add to Favourites'}
                 </button>
@@ -601,6 +631,7 @@ export default function LivePage() {
                   >
                     {g.id === 'fav' && <Icon name="star" size={15} />}
                     {g.id === 'recent' && <Icon name="clock" size={15} />}
+                    {g.id === 'recordings' && <span className="wx-rec-dot" aria-hidden="true" />}
                     <span>{g.name}</span>
                     <small>{g.count}</small>
                   </button>
@@ -620,7 +651,8 @@ export default function LivePage() {
         </label>
 
         <div className="wx-live-main">
-          {list.length === 0 && <p className="wx-dim">No channels here. Star a channel to add it to Favourites.</p>}
+          {cat === 'recordings' && <RecordingsList list={recs.list} onRemove={(id) => void recs.remove(id)} />}
+          {cat !== 'recordings' && list.length === 0 && <p className="wx-dim">No channels here. Star a channel to add it to Favourites.</p>}
           {list.length > 0 && (
             <div className="wx-guide-bar">
               <button className="wx-btn small" onClick={() => setShift((n) => n - 1)} disabled={start - 3 * 3_600_000 < Date.now() - maxBack}>
@@ -689,6 +721,7 @@ export default function LivePage() {
                           const w = Math.max(x(Math.min(e, end)) - left, 4)
                           const again = e <= now && canCatchup(c, p)
                           const reminded = s > now && reminders.has(c.id, p.start)
+                          const recorded = !!recs.find(c.id, p.start)
                           const isPicked = picked?.channel.id === c.id && picked.show.start === p.start
                           const isCatchupPlaying = catchup && playing && Date.parse(p.start) === at
                           return (
@@ -704,6 +737,7 @@ export default function LivePage() {
                                 <b>
                                   {again && <Icon name="refresh" size={12} />}
                                   {reminded && <Icon name="clock" size={12} />}
+                                  {recorded && <span className="wx-rec-dot" aria-label="Recording" />}
                                   {p.title}
                                 </b>
                                 <small>

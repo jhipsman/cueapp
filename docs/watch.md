@@ -66,6 +66,12 @@ To get a key: open [YouTube Data API v3](https://console.cloud.google.com/apis/l
 
 Nothing is downloaded from either. When Cue finds nothing at all, the player (and every title page) shows the free services that have it, like **Tubi**, **Pluto TV** or **The Roku Channel**, from TMDB's list, each opening a search for it there.
 
+## Recording, follows and the TV channel list
+
+- **Record**: pick a show in the guide (or one on now) and press **Record**. Cue records it on the server from a minute before it starts to two minutes after it ends, even with nothing open, and it appears in **Recordings** in the side menu, to play in the browser or the TV app. Recordings are kept 30 days, and none starts with less than 3 GB free. A recording uses one of your provider's connections while it runs.
+- **Follow**: search Live TV for a team or show and press **Follow**; every match in the guide over the next day and a half gets a reminder by itself. A reminder you take off stays off.
+- **Channel list on the TV**: in the TV app's live player, press OK (or left) for the channel list over the picture; up and down move, OK switches, Back closes it.
+
 ## Subtitles
 
 Press **CC** in the player (or **Subtitles** in the TV app) and Cue finds English subtitles on OpenSubtitles for what's playing, the one made for that release first. The CC menu sets the text size and a dark band behind the lines, and **Out of time? Try another** swaps in the next one. Turned on, they show from the start of everything you play on that device. Each subtitle is downloaded once and kept on the server; OpenSubtitles allows a set number of downloads a day.

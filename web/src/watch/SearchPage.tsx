@@ -48,6 +48,25 @@ export default function SearchPage() {
   } | null>(null);
   const [live, setLive] = useState<{ q: string; hits: LiveHit[] } | null>(null);
   const [error, setError] = useState("");
+  // Follows: words that get a reminder whenever a show with them is on.
+  const [follows, setFollows] = useState<string[]>([]);
+  useEffect(() => {
+    if (!liveTV) return;
+    api
+      .liveFollows()
+      .then(setFollows)
+      .catch(() => undefined);
+  }, [liveTV]);
+  const following = follows.some((f) => f.toLowerCase() === q.trim().toLowerCase());
+  async function toggleFollow(phrase: string, on: boolean) {
+    try {
+      if (on) await api.followLive(phrase);
+      else await api.unfollowLive(phrase);
+      setFollows(await api.liveFollows());
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    }
+  }
   useDocumentTitle(q ? `Search: ${q}` : "Search");
 
   useEffect(() => {
@@ -137,6 +156,39 @@ export default function SearchPage() {
       {error && <p className="wx-error">{error}</p>}
       {done && items.length === 0 && hits.length === 0 && (
         <p className="wx-dim">Nothing found for “{q}”.</p>
+      )}
+
+      {liveTV && q.trim() && (shows.length > 0 || following) && (
+        <div className="wx-follow">
+          <Icon name="clock" size={18} />
+          <span>
+            {following ? (
+              <>
+                Following <b>“{q.trim()}”</b>: you get a reminder whenever it's on Live TV.
+              </>
+            ) : (
+              <>
+                Get a reminder whenever <b>“{q.trim()}”</b> is on Live TV.
+              </>
+            )}
+          </span>
+          <button className={`wx-btn small${following ? "" : " play"}`} onClick={() => void toggleFollow(q.trim(), !following)}>
+            {following ? "Unfollow" : "Follow"}
+          </button>
+        </div>
+      )}
+      {liveTV && follows.length > 0 && (
+        <div className="wx-follows">
+          <small>Following:</small>
+          {follows.map((f) => (
+            <span key={f} className="wx-follow-chip">
+              <button onClick={() => navigate(`/watch/search?q=${encodeURIComponent(f)}`)}>{f}</button>
+              <button onClick={() => void toggleFollow(f, false)} aria-label={`Stop following ${f}`}>
+                <Icon name="x" size={12} />
+              </button>
+            </span>
+          ))}
+        </div>
       )}
 
       {onNow.length > 0 && (

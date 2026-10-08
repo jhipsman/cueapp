@@ -22,6 +22,7 @@ import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ProgressBar
+import android.widget.ScrollView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.annotation.OptIn
@@ -116,6 +117,10 @@ class PlayerActivity : Activity() {
     // An English subtitle from OpenSubtitles added to the video (Watch
     // finds it when subtitles are on, or Subtitles here asks for one).
     private var externalSubs = false
+    // Live TV: the channel list shown over the picture (OK or left).
+    private var guide: View? = null
+    private var guideList: LinearLayout? = null
+    private val guideHider = Runnable { hideGuide() }
     private var subsAsking = false
 
     // Sizes follow the screen, not the TV's density or font-size setting
@@ -215,6 +220,10 @@ class PlayerActivity : Activity() {
             addView(pauseBadge, FrameLayout.LayoutParams(px(110), px(110), Gravity.CENTER))
             addView(controls, FrameLayout.LayoutParams(MATCH, MATCH))
             skipButton = buildSkipButton()
+            buildGuide()?.let {
+                guide = it
+                addView(it, FrameLayout.LayoutParams(px(400), MATCH, Gravity.START))
+            }
             addView(skipButton, FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, px(52), Gravity.BOTTOM or Gravity.END).apply {
                 marginEnd = px(48)
                 bottomMargin = px(150)
@@ -576,6 +585,22 @@ class PlayerActivity : Activity() {
 
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
         val code = event.keyCode
+        if (code == KeyEvent.KEYCODE_BACK && guideShowing()) {
+            if (event.action == KeyEvent.ACTION_UP) hideGuide()
+            return true
+        }
+        if (guideShowing()) {
+            // Up and down move through the list; OK picks (the rows' own).
+            if (event.action == KeyEvent.ACTION_DOWN) {
+                main.removeCallbacks(guideHider)
+                main.postDelayed(guideHider, 15_000)
+                if (code == KeyEvent.KEYCODE_DPAD_RIGHT) {
+                    hideGuide()
+                    return true
+                }
+            }
+            return super.dispatchKeyEvent(event)
+        }
         if (code == KeyEvent.KEYCODE_BACK) {
             if (event.action == KeyEvent.ACTION_UP) {
                 if (controlsShowing() && player.isPlaying) hideControls() else end("back")
@@ -604,11 +629,12 @@ class PlayerActivity : Activity() {
                             skip()
                             return true
                         }
+                        if (live && showGuide()) return true
                         if (!live) togglePlay()
                         showControls(playPause)
                         return true
                     }
-                    KeyEvent.KEYCODE_DPAD_LEFT -> { if (live) showControls() else { seekBy(-10_000); showControls(timeBar) }; return true }
+                    KeyEvent.KEYCODE_DPAD_LEFT -> { if (live) { if (!showGuide()) showControls() } else { seekBy(-10_000); showControls(timeBar) }; return true }
                     KeyEvent.KEYCODE_DPAD_RIGHT -> { if (live) showControls() else { seekBy(10_000); showControls(timeBar) }; return true }
                     KeyEvent.KEYCODE_DPAD_UP -> { if (live) end("channel-up") else showControls(); return true }
                     KeyEvent.KEYCODE_DPAD_DOWN -> { if (live) end("channel-down") else showControls(); return true }
@@ -721,6 +747,97 @@ class PlayerActivity : Activity() {
             .put("segment", "credits").put("start", pos / 1000.0).put("duration", dur / 1000.0))
     }
 
+    // ---- Live TV: the channel list ----
+
+    private fun guideShowing() = guide?.visibility == View.VISIBLE
+
+    private fun buildGuide(): View? {
+        val chans = info.optJSONArray("channels") ?: return null
+        if (!live || chans.length() < 2) return null
+        val list = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(px(16), px(20), px(16), px(40))
+        }
+        list.addView(TextView(this).apply {
+            text = "Channels"
+            setTextColor(0xFFC7C8CC.toInt())
+            size(13f)
+            typeface = Typeface.DEFAULT_BOLD
+            letterSpacing = 0.08f
+            setPadding(px(12), 0, 0, px(10))
+        })
+        val current = info.optString("id")
+        for (i in 0 until chans.length()) {
+            val c = chans.optJSONObject(i) ?: continue
+            val id = c.optString("id")
+            val row = TextView(this).apply {
+                val num = c.optString("num")
+                val now = c.optString("now")
+                val until = c.optString("until")
+                text = buildString {
+                    append(if (num.isNotEmpty()) "$num   " else "")
+                    append(c.optString("name"))
+                    if (now.isNotEmpty()) append("\n").append(now).append(if (until.isNotEmpty()) "  ·  until $until" else "")
+                }
+                size(14f)
+                maxLines = 2
+                ellipsize = android.text.TextUtils.TruncateAt.END
+                val colors = ColorStateList(
+                    arrayOf(intArrayOf(android.R.attr.state_focused), intArrayOf()),
+                    intArrayOf(0xFF0B0C0F.toInt(), Color.WHITE),
+                )
+                setTextColor(colors)
+                setPadding(px(12), px(9), px(12), px(9))
+                background = StateListDrawable().apply {
+                    addState(intArrayOf(android.R.attr.state_focused), GradientDrawable().apply {
+                        cornerRadius = px(8).toFloat()
+                        setColor(Color.WHITE)
+                    })
+                    addState(intArrayOf(), GradientDrawable().apply {
+                        cornerRadius = px(8).toFloat()
+                        setColor(if (id == current) (teal and 0x00FFFFFF) or 0x40000000 else Color.TRANSPARENT)
+                    })
+                }
+                isFocusable = true
+                isFocusableInTouchMode = true
+                tag = id
+                setOnClickListener {
+                    if (id == current) hideGuide() else end("channel", id)
+                }
+            }
+            list.addView(row, LinearLayout.LayoutParams(MATCH, ViewGroup.LayoutParams.WRAP_CONTENT).apply { bottomMargin = px(2) })
+        }
+        guideList = list
+        return ScrollView(this).apply {
+            isFillViewport = true
+            isVerticalScrollBarEnabled = false
+            background = GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT, intArrayOf(0xF00B0C0F.toInt(), 0xD00B0C0F.toInt()))
+            addView(list)
+            visibility = View.GONE
+        }
+    }
+
+    // showGuide opens the channel list on the channel playing; false when
+    // there is none (one channel, catch-up).
+    private fun showGuide(): Boolean {
+        val g = guide ?: return false
+        val list = guideList ?: return false
+        hideControls()
+        g.visibility = View.VISIBLE
+        val current = info.optString("id")
+        val row = (0 until list.childCount).map { list.getChildAt(it) }.firstOrNull { it.tag == current }
+            ?: list.getChildAt(1)
+        row?.requestFocus()
+        main.removeCallbacks(guideHider)
+        main.postDelayed(guideHider, 15_000)
+        return true
+    }
+
+    private fun hideGuide() {
+        main.removeCallbacks(guideHider)
+        guide?.visibility = View.GONE
+    }
+
     // ---- Subtitles ----
 
     // mediaItem is the video, with Watch's subtitle added when there is one.
@@ -764,14 +881,14 @@ class PlayerActivity : Activity() {
     // asked for an English one (it's added and shown); after that, the list
     // of subtitles to choose from.
     private fun subtitlesPressed() {
-        if (externalSubs || live || catchup || server.isEmpty()) {
+        val kind = info.optString("kind")
+        if (externalSubs || live || catchup || server.isEmpty() || (kind != "movie" && kind != "tv")) {
             chooseTrack(C.TRACK_TYPE_TEXT, "Subtitles")
             return
         }
         if (subsAsking) return
         subsAsking = true
         Toast.makeText(this, "Finding English subtitles…", Toast.LENGTH_SHORT).show()
-        val kind = info.optString("kind")
         val path = "/api/watch/subtitles/$kind/${info.optInt("tmdbId")}?season=${info.optInt("season")}&episode=${info.optInt("episode")}&release=${Uri.encode(info.optString("release"))}"
         val cookie = CookieManager.getInstance().getCookie(server)
         val token = info.optString("token")

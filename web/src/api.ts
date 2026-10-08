@@ -303,6 +303,20 @@ export interface WatchSkips {
   source?: string
 }
 
+// A Live TV show Cue records (or recorded) on the server.
+export interface LiveRecording {
+  id: number
+  channelId: string
+  channel: string
+  title: string
+  start: string
+  stop: string
+  status: 'scheduled' | 'recording' | 'done' | 'failed'
+  size: number
+  problem?: string
+  logo?: string
+}
+
 export interface PlayAnswer {
   title: string
   url: string // the original file
@@ -2268,6 +2282,14 @@ export const api = {
   liveCatchup: (id: string, start: number, stop: number) =>
     get<LivePlay>(`/live/catchup/${encodeURIComponent(id)}?start=${Math.floor(start / 1000)}&stop=${Math.floor(stop / 1000)}`),
   liveReminders: () => get<LiveReminder[]>('/live/reminders'),
+  liveRecordings: () => get<LiveRecording[]>('/live/recordings'),
+  addLiveRecording: (r: { channelId: string; start: string; stop: string; title: string }) => put<LiveRecording>('/live/recordings', r),
+  removeLiveRecording: (id: number) => del<null>(`/live/recordings/${id}`),
+  playLiveRecording: (id: number) =>
+    get<{ url: string; title: string; channel: string; start: string; convert?: string }>(`/live/recordings/${id}/play`),
+  liveFollows: () => get<string[]>('/live/follows'),
+  followLive: (phrase: string) => put<null>('/live/follows', { phrase }),
+  unfollowLive: (phrase: string) => request<null>('/live/follows', { method: 'DELETE', body: JSON.stringify({ phrase }) }),
   addLiveReminder: (r: { channelId: string; start: string; stop: string; title: string }) => put<null>('/live/reminders', r),
   removeLiveReminder: (channelId: string, start: string) =>
     del<null>(`/live/reminders?channel=${encodeURIComponent(channelId)}&start=${encodeURIComponent(new Date(start).toISOString().replace(/\.\d{3}Z$/, 'Z'))}`),
