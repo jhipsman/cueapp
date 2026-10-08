@@ -22,11 +22,14 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
+import android.widget.Toast
 import androidx.annotation.OptIn
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
+import androidx.media3.common.Tracks
+import androidx.media3.common.VideoSize
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.media3.exoplayer.DefaultRenderersFactory
@@ -84,10 +87,18 @@ class PlayerActivity : Activity() {
     private lateinit var spinner: ProgressBar
     private lateinit var pauseBadge: ImageView
     private var nextButton: TextView? = null
+    private var subtitle: TextView? = null
+    // Whether Watch has another version to try, and whether the sound was
+    // checked yet (a version whose sound this TV can't play moves on).
+    private var hasOther = false
+    private var soundChecked = false
     private var nextOffered = false
 
-    private val dp by lazy { resources.displayMetrics.density }
+    // Sizes follow the screen, not the TV's density or font-size setting
+    // (Google TV boxes differ there): 1 unit is 1/960 of the screen's width.
+    private val dp by lazy { screenUnit(this) }
     private fun px(v: Int) = (v * dp).toInt()
+    private fun TextView.size(units: Float) = setTextSize(TypedValue.COMPLEX_UNIT_PX, units * dp)
     private val teal by lazy { getColor(R.color.cue_teal) }
 
     private val saver = object : Runnable {
@@ -121,6 +132,7 @@ class PlayerActivity : Activity() {
             for (i in 0 until list.length()) list.optString(i).takeIf { it.isNotEmpty() }?.let { alts.addLast(it) }
         }
         isShow = info.optString("kind") == "tv"
+        hasOther = info.optBoolean("hasOther")
 
         val renderers = DefaultRenderersFactory(this)
             .setEnableDecoderFallback(true)
@@ -190,6 +202,40 @@ class PlayerActivity : Activity() {
                 if (paused) showControls() else scheduleHide()
             }
 
+            override fun onTracksChanged(tracks: Tracks) {
+                if (live || soundChecked) return
+                val audio = tracks.groups.filter { it.type == C.TRACK_TYPE_AUDIO }
+                if (audio.isEmpty()) return
+                soundChecked = true
+                if (audio.none { it.isSupported }) {
+                    // The picture would play in silence.
+                    if (hasOther) {
+                        end("nosound")
+                    } else {
+                        Toast.makeText(this@PlayerActivity, "This version's sound can't play on this TV.", Toast.LENGTH_LONG).show()
+                    }
+                }
+            }
+
+            override fun onVideoSizeChanged(videoSize: VideoSize) {
+                // Say what the picture really is: a version can be smaller
+                // than its name says.
+                val w = videoSize.width
+                if (w <= 0) return
+                // By width: a film cropped wide is 1920 x 800 and still 1080p.
+                val label = when {
+                    w >= 3200 -> "4K"
+                    w >= 1800 -> "1080p"
+                    w >= 1200 -> "720p"
+                    else -> "SD (${videoSize.height}p)"
+                }
+                val base = info.optString("subtitle")
+                subtitle?.apply {
+                    text = listOf(base, "Picture $label").filter { it.isNotEmpty() }.joinToString("  ·  ")
+                    visibility = View.VISIBLE
+                }
+            }
+
             override fun onPlayerError(error: PlaybackException) {
                 if (!started && alts.isNotEmpty()) {
                     player.setMediaItem(MediaItem.fromUri(alts.removeFirst()))
@@ -222,14 +268,14 @@ class PlayerActivity : Activity() {
         val title = TextView(this).apply {
             text = info.optString("title")
             setTextColor(Color.WHITE)
-            setTextSize(TypedValue.COMPLEX_UNIT_SP, 26f)
+            size(22f)
             typeface = Typeface.create("sans-serif-medium", Typeface.BOLD)
             setShadowLayer(8f, 0f, 2f, Color.BLACK)
         }
-        val sub = TextView(this).apply {
+        val sub = TextView(this).also { subtitle = it }.apply {
             text = info.optString("subtitle")
             setTextColor(0xFFC7C8CC.toInt())
-            setTextSize(TypedValue.COMPLEX_UNIT_SP, 15f)
+            size(13f)
             setPadding(0, px(4), 0, 0)
             visibility = if (text.isNullOrEmpty()) View.GONE else View.VISIBLE
         }
@@ -249,7 +295,7 @@ class PlayerActivity : Activity() {
         }
         timeLeft = TextView(this).apply {
             setTextColor(Color.WHITE)
-            setTextSize(TypedValue.COMPLEX_UNIT_SP, 15f)
+            size(13f)
             typeface = Typeface.MONOSPACE
         }
         val timeRow = LinearLayout(this).apply {
@@ -277,6 +323,9 @@ class PlayerActivity : Activity() {
             if (isShow && !live && !catchup) {
                 nextButton = pill("Next episode", R.drawable.ic_cue_next) { end("next") }.also { addView(it) }
             }
+            if (hasOther && !live && !catchup) {
+                addView(pill("Other version", R.drawable.ic_cue_versions) { end("other") })
+            }
             addView(pill("Audio", R.drawable.ic_cue_audio) { chooseTrack(C.TRACK_TYPE_AUDIO, "Audio") })
             addView(pill("Subtitles", R.drawable.ic_cue_subtitles) { chooseTrack(C.TRACK_TYPE_TEXT, "Subtitles") })
         }
@@ -297,7 +346,7 @@ class PlayerActivity : Activity() {
     private fun liveBadge(): View = TextView(this).apply {
         text = "●  LIVE"
         setTextColor(Color.WHITE)
-        setTextSize(TypedValue.COMPLEX_UNIT_SP, 14f)
+        size(12f)
         typeface = Typeface.DEFAULT_BOLD
         letterSpacing = 0.08f
         setPadding(px(12), px(5), px(12), px(5))
@@ -312,7 +361,7 @@ class PlayerActivity : Activity() {
     // a white pill with dark text when the remote is on it.
     private fun pill(label: String, icon: Int, onClick: () -> Unit): TextView = TextView(this).apply {
         text = label
-        textSize = 16f
+        size(14f)
         typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL)
         val colors = ColorStateList(
             arrayOf(intArrayOf(android.R.attr.state_focused), intArrayOf()),
@@ -337,7 +386,7 @@ class PlayerActivity : Activity() {
         isFocusable = true
         isFocusableInTouchMode = true
         setOnClickListener { onClick() }
-        layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, px(48)).apply { marginEnd = px(8) }
+        layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, px(42)).apply { marginEnd = px(8) }
     }
 
     private fun chooseTrack(type: Int, title: String) {

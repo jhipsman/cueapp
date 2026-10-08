@@ -9,6 +9,7 @@ under [Unreleased]. How releases are cut: [docs/RELEASING.md](docs/RELEASING.md)
 ## [Unreleased]
 
 ### Added
+- **TV app**: **Other version** in the player, and a version whose sound the TV can't play moves on to the next one by itself. Dolby (AC3, E-AC3, TrueHD) and DTS sound now play on any TV, decoded by the app. The player's text is sized by the screen, not the TV's font setting, and it shows the picture's real resolution.
 - **Hard-to-find shows**: when the add-ons and torrent sites have nothing, Play looks on the Internet Archive (plays in Cue's player) and, with a free YouTube key in Settings > Streaming, for full episodes and films on YouTube (plays in YouTube's own player). Title pages and the player show free services a title is on, like Tubi, Pluto TV and The Roku Channel. See [docs/watch.md](docs/watch.md#hard-to-find-shows-internet-archive-and-youtube).
 - **Live TV catch-up and reminders**: past shows on channels your provider keeps are marked in the guide (with Earlier and Later to move through it) and play from their start, a show on now has From the start, and Remind me on a show that hasn't started pops up a card with Watch when it does, on any device on that profile.
 - **Live TV like a TV box**: the channel playing stays in a window over the guide with what's on beside it; flip channels from the guide, go full screen and come back without it stopping. Search finds games and shows on now and coming up.

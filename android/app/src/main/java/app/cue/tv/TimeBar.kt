@@ -20,7 +20,7 @@ class TimeBar(context: Context) : View(context) {
     // Called with where to go when the remote moves the knob.
     var onSeek: ((Long) -> Unit)? = null
 
-    private val dp = context.resources.displayMetrics.density
+    private val dp = screenUnit(context)
     private val track = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0x40FFFFFF }
     private val loaded = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0x66FFFFFF }
     private val played = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = context.getColor(R.color.cue_teal) }

@@ -164,6 +164,25 @@ export default function PlayerPage() {
           .catch(() => navigate(-1))
         return
       }
+      if (r.reason === 'other') {
+        resumeAt.current = r.position
+        setNote(`Trying version ${answer.option + 1} of ${answer.options}.`)
+        void load(answer.option + 1)
+        return
+      }
+      if (r.reason === 'nosound') {
+        // This version's sound can't play on this TV: the next one, from the
+        // same point, a couple of times at most.
+        resumeAt.current = r.position
+        if (answer.option < answer.options && silentSkips.current < 2) {
+          silentSkips.current++
+          setNote(`Version ${answer.option} had no sound on this TV, so trying the next one.`)
+          void load(answer.option + 1)
+        } else {
+          setError('The versions found have sound this TV can\'t play. Try again later for others.')
+        }
+        return
+      }
       if (r.reason === 'error') {
         if (answer.option < answer.options) {
           setNote(`Version ${answer.option} wouldn't play, so trying the next one.`)
@@ -182,6 +201,7 @@ export default function PlayerPage() {
         title: answer.title,
         subtitle: [label, answer.quality, answer.source && `via ${answer.source}`].filter(Boolean).join(' · '),
         startSec: resumeAt.current,
+        hasOther: answer.option < answer.options,
         kind,
         tmdbId,
         season,

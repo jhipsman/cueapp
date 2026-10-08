@@ -53,8 +53,12 @@ android {
 }
 
 dependencies {
-    val media3 = "1.4.1"
+    val media3 = "1.6.1"
     implementation("androidx.media3:media3-exoplayer:$media3")
     implementation("androidx.media3:media3-exoplayer-hls:$media3")
     implementation("androidx.media3:media3-ui:$media3")
+    // FFmpeg's audio decoders (Jellyfin's build of Media3's extension): Dolby
+    // (AC3, E-AC3, TrueHD) and DTS play as ordinary sound on any TV, instead
+    // of silence where the TV or box can't take them.
+    implementation("org.jellyfin.media3:media3-ffmpeg-decoder:$media3+2")
 }

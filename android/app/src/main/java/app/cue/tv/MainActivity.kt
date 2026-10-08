@@ -48,6 +48,9 @@ class MainActivity : Activity() {
             useWideViewPort = true
             loadWithOverviewMode = true
             setSupportZoom(false)
+            // Text the size the page sets, whatever the TV's font-size
+            // setting (some Google TV boxes ship with it raised).
+            textZoom = 100
         }
         CookieManager.getInstance().setAcceptCookie(true)
         CookieManager.getInstance().setAcceptThirdPartyCookies(w, true)
