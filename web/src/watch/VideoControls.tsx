@@ -26,6 +26,11 @@ interface Props {
   subtitle?: string
   onBack: () => void
   live?: boolean
+  // A catch-up show plays as a stream that starts somewhere in the show and
+  // can't seek far by itself: the bar shows the whole show (duration, in
+  // seconds), offset is where in it the stream began, and a jump outside
+  // what's loaded asks for the stream again from there (onSeek).
+  timeline?: { offset: number; duration: number; onSeek: (sec: number) => void }
   note?: string
   // Buttons for the right of the bottom row (next episode, channels...).
   actions?: ReactNode
@@ -74,7 +79,7 @@ function Skip({ back }: { back?: boolean }) {
   )
 }
 
-export default function VideoControls({ video, title, subtitle, onBack, live, note, actions, menu }: Props) {
+export default function VideoControls({ video, title, subtitle, onBack, live, note, actions, menu, timeline }: Props) {
   const root = useRef<HTMLDivElement>(null)
   const bar = useRef<HTMLDivElement>(null)
   const [playing, setPlaying] = useState(false)
@@ -93,6 +98,29 @@ export default function VideoControls({ video, title, subtitle, onBack, live, no
   const [flash, setFlash] = useState<{ kind: 'play' | 'pause' | 'back' | 'fwd'; n: number } | null>(null)
   const idleTimer = useRef<ReturnType<typeof setTimeout>>(undefined)
   const lastTap = useRef<{ t: number; x: number }>({ t: 0, x: 0 })
+
+  // Where in the title (or catch-up show) the picture is, and how long it is.
+  const offset = timeline?.offset ?? 0
+  const pos = offset + time
+  const total = timeline ? timeline.duration : duration
+  // jump goes to sec in the title: within what's loaded it moves the video;
+  // further (catch-up only), it asks for the stream from there.
+  const jump = useCallback(
+    (sec: number) => {
+      if (!video) return
+      const rel = sec - offset
+      const r = video.seekable
+      for (let i = 0; i < r.length; i++) {
+        if (rel >= r.start(i) && rel <= r.end(i)) {
+          media.seek(video, rel)
+          return
+        }
+      }
+      if (timeline) timeline.onSeek(sec)
+      else if (isFinite(video.duration)) media.seek(video, Math.max(0, Math.min(rel, video.duration - 1)))
+    },
+    [video, offset, timeline],
+  )
 
   // Follow the video.
   useEffect(() => {
@@ -160,11 +188,11 @@ export default function VideoControls({ video, title, subtitle, onBack, live, no
   const skip = useCallback(
     (sec: number) => {
       if (!video || live) return
-      media.seek(video, Math.max(0, Math.min(video.currentTime + sec, (video.duration || 0) - 1)))
+      jump(Math.max(0, Math.min(offset + video.currentTime + sec, (timeline ? timeline.duration : video.duration || 0) - 1)))
       setFlash((f) => ({ kind: sec < 0 ? 'back' : 'fwd', n: (f?.n ?? 0) + 1 }))
       wake()
     },
-    [video, live, wake],
+    [video, live, wake, jump, offset, timeline],
   )
 
   const fullscreen = useCallback(() => {
@@ -245,7 +273,7 @@ export default function VideoControls({ video, title, subtitle, onBack, live, no
     return Math.max(0, Math.min(1, (clientX - r.left) / r.width))
   }
   const seekTo = (f: number) => {
-    if (video && isFinite(video.duration)) media.seek(video, f * video.duration)
+    if (total > 0 && isFinite(total)) jump(f * total)
   }
   const onBarDown = (e: React.PointerEvent) => {
     e.preventDefault()
@@ -253,14 +281,19 @@ export default function VideoControls({ video, title, subtitle, onBack, live, no
     setDragging(true)
     const f = fraction(e.clientX)
     setHover(f)
-    seekTo(f)
+    // A catch-up show jumps when the knob is let go: each jump outside
+    // what's loaded asks the provider again.
+    if (!timeline) seekTo(f)
   }
   const onBarMove = (e: React.PointerEvent) => {
     const f = fraction(e.clientX)
     setHover(f)
-    if (dragging) seekTo(f)
+    if (dragging && !timeline) seekTo(f)
   }
-  const onBarUp = () => setDragging(false)
+  const onBarUp = (e: React.PointerEvent) => {
+    if (dragging && timeline) seekTo(fraction(e.clientX))
+    setDragging(false)
+  }
 
   // A click on the picture plays or pauses (a double click is full screen);
   // on a touch screen a tap shows the controls, a double tap on a side skips.
@@ -290,8 +323,9 @@ export default function VideoControls({ video, title, subtitle, onBack, live, no
     wake()
   }
 
-  const pct = (n: number) => (duration > 0 && isFinite(duration) ? `${Math.min(100, (n / duration) * 100)}%` : '0%')
-  const showBar = !live && duration > 0 && isFinite(duration)
+  const pct = (n: number) => (total > 0 && isFinite(total) ? `${Math.min(100, Math.max(0, (n / total) * 100))}%` : '0%')
+  const showBar = !live && total > 0 && isFinite(total)
+  const shownPos = dragging && timeline && hover !== null ? hover * total : pos
   const volIcon = muted || volume === 0 ? 'volume-x' : volume < 0.5 ? 'volume-low' : 'volume'
 
   return (
@@ -338,23 +372,23 @@ export default function VideoControls({ video, title, subtitle, onBack, live, no
               role="slider"
               aria-label="Time"
               aria-valuemin={0}
-              aria-valuemax={Math.floor(duration)}
-              aria-valuenow={Math.floor(time)}
-              aria-valuetext={`${clock(time)} of ${clock(duration)}`}
+              aria-valuemax={Math.floor(total)}
+              aria-valuenow={Math.floor(pos)}
+              aria-valuetext={`${clock(pos)} of ${clock(total)}`}
               tabIndex={0}
             >
               <div className="vx-track">
-                <div className="vx-loaded" style={{ width: pct(loaded) }} />
-                <div className="vx-played" style={{ width: pct(time) }} />
+                <div className="vx-loaded" style={{ width: pct(offset + loaded) }} />
+                <div className="vx-played" style={{ width: pct(shownPos) }} />
               </div>
-              <div className="vx-thumb" style={{ left: pct(time) }} />
+              <div className="vx-thumb" style={{ left: pct(shownPos) }} />
               {hover !== null && (
                 <div className="vx-tip" style={{ left: `${hover * 100}%` }}>
-                  {clock(hover * duration)}
+                  {clock(hover * total)}
                 </div>
               )}
             </div>
-            <span className="vx-remaining">{clock(duration - time)}</span>
+            <span className="vx-remaining">{clock(total - pos)}</span>
           </div>
         )}
 

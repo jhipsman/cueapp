@@ -64,6 +64,17 @@ class PlayerActivity : Activity() {
     // (providers serve catch-up in different ways).
     private val alts = ArrayDeque<String>()
     private var started = false
+
+    // Catch-up: the show's start and end (ms since 1970), where in it the
+    // stream began (providers start a catch-up stream at a whole minute and
+    // it can't seek far by itself), and the channel, to ask Cue for the
+    // stream from another minute.
+    private var cuStart = 0L
+    private var cuStop = 0L
+    private var cuOffset = 0L
+    private var cuChannel = ""
+    private var pendingSeek = -1L
+    private val restarter = Runnable { restartCatchupAt(pendingSeek) }
     private var isShow = false
 
     private lateinit var controls: View
@@ -100,6 +111,12 @@ class PlayerActivity : Activity() {
         server = intent.getStringExtra(EXTRA_SERVER) ?: ""
         live = info.optBoolean("live")
         catchup = info.optBoolean("catchup")
+        if (catchup) {
+            cuStart = info.optLong("showStart")
+            cuStop = info.optLong("showStop")
+            cuOffset = (info.optDouble("offsetSec", 0.0) * 1000).toLong()
+            cuChannel = info.optString("id")
+        }
         info.optJSONArray("alts")?.let { list ->
             for (i in 0 until list.length()) list.optString(i).takeIf { it.isNotEmpty() }?.let { alts.addLast(it) }
         }
@@ -226,7 +243,7 @@ class PlayerActivity : Activity() {
 
         timeBar = TimeBar(this).apply {
             onSeek = { to ->
-                player.seekTo(to)
+                seekToPosition(to)
                 showControls()
             }
         }
@@ -332,11 +349,17 @@ class PlayerActivity : Activity() {
             .show()
     }
 
+    // Where in the title the picture is, and how long the title is: for
+    // catch-up, the whole show, whatever minute the stream began at.
+    private fun position(): Long = if (catchup) cuOffset + player.currentPosition else player.currentPosition
+    private fun length(): Long =
+        if (catchup && cuStop > cuStart) cuStop - cuStart else player.duration.let { if (it == C.TIME_UNSET) 0L else it }
+
     private fun refreshTime() {
         if (live) return
-        val dur = player.duration.let { if (it == C.TIME_UNSET) 0L else it }
-        val pos = player.currentPosition
-        timeBar.update(pos, dur, player.bufferedPosition)
+        val dur = length()
+        val pos = if (pendingSeek >= 0) pendingSeek else position()
+        timeBar.update(pos, dur, if (catchup) cuOffset + player.bufferedPosition else player.bufferedPosition)
         timeLeft.text = if (dur > 0) clock(dur - pos) else ""
         // Near the end of an episode, offer the next one.
         val next = nextButton
@@ -384,9 +407,67 @@ class PlayerActivity : Activity() {
 
     private fun seekBy(ms: Long) {
         if (live) return
-        val dur = player.duration.let { if (it == C.TIME_UNSET) Long.MAX_VALUE else it }
-        player.seekTo((player.currentPosition + ms).coerceIn(0, dur))
+        val from = if (pendingSeek >= 0) pendingSeek else position()
+        val dur = length().takeIf { it > 0 } ?: Long.MAX_VALUE
+        seekToPosition((from + ms).coerceIn(0, dur))
         refreshTime()
+    }
+
+    // seekToPosition goes to a point in the title. Within what the stream has
+    // loaded it just moves; for catch-up further away, it asks Cue for the
+    // stream from that minute, once the remote has stopped moving.
+    private fun seekToPosition(to: Long) {
+        if (!catchup) {
+            player.seekTo(to)
+            return
+        }
+        val rel = to - cuOffset
+        if (pendingSeek < 0 && rel >= 0 && rel <= player.bufferedPosition && player.isCurrentMediaItemSeekable) {
+            player.seekTo(rel)
+            return
+        }
+        pendingSeek = to
+        main.removeCallbacks(restarter)
+        main.postDelayed(restarter, 700)
+    }
+
+    private fun restartCatchupAt(to: Long) {
+        if (to < 0 || server.isEmpty() || cuChannel.isEmpty()) return
+        val minute = (to / 60_000) * 60_000
+        val cookie = CookieManager.getInstance().getCookie(server)
+        val token = info.optString("token")
+        Thread {
+            val answer = try {
+                val c = URL("$server/api/live/catchup/${java.net.URLEncoder.encode(cuChannel, "UTF-8")}?start=${(cuStart + minute) / 1000}&stop=${cuStop / 1000}")
+                    .openConnection() as HttpURLConnection
+                c.connectTimeout = 8000
+                c.readTimeout = 15000
+                c.setRequestProperty("User-Agent", "CueTV/1")
+                if (cookie != null) c.setRequestProperty("Cookie", cookie)
+                if (token.isNotEmpty()) c.setRequestProperty("X-Cue-Profile", token)
+                val ok = c.responseCode == 200
+                val body = (if (ok) c.inputStream else c.errorStream)?.bufferedReader()?.use { it.readText() } ?: ""
+                c.disconnect()
+                if (ok) JSONObject(body) else null
+            } catch (_: Exception) {
+                null
+            }
+            runOnUiThread {
+                pendingSeek = -1
+                val direct = answer?.optString("direct").orEmpty()
+                if (direct.isEmpty()) return@runOnUiThread // stays where it was
+                cuOffset = minute
+                started = false
+                alts.clear()
+                answer?.optJSONArray("directAlts")?.let { list ->
+                    for (i in 0 until list.length()) list.optString(i).takeIf { it.isNotEmpty() }?.let { alts.addLast(it) }
+                }
+                player.setMediaItem(MediaItem.fromUri(direct))
+                player.prepare()
+                player.playWhenReady = true
+                refreshTime()
+            }
+        }.start()
     }
 
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {

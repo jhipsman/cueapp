@@ -86,6 +86,15 @@ export default function LivePage() {
   const at = Number(params.get('at') ?? 0)
   const atEnd = Number(params.get('end') ?? 0)
   const catchup = at > 0 && atEnd > at
+  // Where in the catch-up show the stream starts, in seconds (moved by
+  // scrubbing: providers start a catch-up stream at a whole minute).
+  const [cuOffset, setCuOffset] = useState(0)
+  const atRef = useRef(at)
+  const atEndRef = useRef(atEnd)
+  const cuOffsetRef = useRef(cuOffset)
+  atRef.current = at
+  atEndRef.current = atEnd
+  cuOffsetRef.current = cuOffset
   // A show picked that hasn't started: its details, with Remind me.
   const [picked, setPicked] = useState<{ channel: LiveChannel; show: LiveProgramme } | null>(null)
   // How far the guide is moved back or on, in 3-hour steps.
@@ -146,20 +155,27 @@ export default function LivePage() {
     scroller.current?.scrollTo({ top: 0 })
   }, [cat])
 
-  // Tune: look the channel's address up, and remember it as recent.
+  // Tune: look the channel's address up, and remember it as recent. Moving
+  // within a catch-up show (cuOffset) asks again from there, without
+  // clearing the picture first.
+  const tuned = useRef('')
   useEffect(() => {
-    setPlay(null)
+    const key = `${ch}|${at}|${atEnd}`
+    if (tuned.current !== key) {
+      setPlay(null)
+      tuned.current = key
+    }
     setPlayError('')
     if (!ch) return
     rememberChannel(ch)
     let current = true
-    ;(catchup ? api.liveCatchup(ch, at, atEnd) : api.livePlay(ch))
+    ;(catchup ? api.liveCatchup(ch, at + cuOffset * 1000, atEnd) : api.livePlay(ch))
       .then((p) => current && setPlay(p))
       .catch((e) => current && setPlayError(e instanceof Error ? e.message : String(e)))
     return () => {
       current = false
     }
-  }, [ch, catchup, at, atEnd])
+  }, [ch, catchup, at, atEnd, cuOffset])
 
   // The stream, in the window (or full screen: the same video, so going
   // full screen and back never restarts it).
@@ -167,17 +183,20 @@ export default function LivePage() {
   useLiveStream(videoEl, sources, setPlayError)
 
   const setPlaying = useCallback(
-    (id: string, opts: { full?: boolean; push?: boolean; from?: LiveProgramme } = {}) => {
+    (id: string, opts: { full?: boolean; push?: boolean; from?: LiveProgramme; range?: { at: number; end: number } } = {}) => {
       const next: Record<string, string> = { cat, ch: id }
       if (opts.full) next.full = '1'
-      if (opts.from) {
-        next.at = String(Date.parse(opts.from.start))
-        next.end = String(Date.parse(opts.from.stop))
+      const range = opts.from ? { at: Date.parse(opts.from.start), end: Date.parse(opts.from.stop) } : opts.range
+      if (range) {
+        next.at = String(range.at)
+        next.end = String(range.end)
       }
+      // A different show (or live) starts at its beginning.
+      if (!range || range.at !== at || id !== ch) setCuOffset(0)
       setPicked(null)
       setParams(next, { replace: !opts.push })
     },
-    [cat, setParams],
+    [cat, setParams, at, ch],
   )
 
   // On a TV, full screen is the app's player, straight from the provider.
@@ -205,6 +224,12 @@ export default function LivePage() {
           subtitle: p.catchup ? 'Catch-up' : c?.now ? `${c.now.title} · until ${hhmm(c.now.stop)}` : '',
           live: !p.catchup,
           catchup: !!p.catchup,
+          // For moving through a catch-up show: the TV asks Cue for the
+          // stream from a new minute, like the browser does.
+          id: p.id,
+          showStart: p.catchup ? atRef.current : 0,
+          showStop: p.catchup ? atEndRef.current : 0,
+          offsetSec: p.catchup ? cuOffsetRef.current : 0,
           token: profileToken(),
         }),
       )
@@ -234,8 +259,8 @@ export default function LivePage() {
       if (play) openTVPlayer(play, channel)
       return
     }
-    setPlaying(ch, { full: true, push: true })
-  }, [ch, play, channel, openTVPlayer, setPlaying])
+    setPlaying(ch, { full: true, push: true, range: catchup ? { at, end: atEnd } : undefined })
+  }, [ch, play, channel, openTVPlayer, setPlaying, catchup, at, atEnd])
 
   const exitFull = useCallback(() => {
     if (window.history.state?.idx > 0) navigate(-1)
@@ -410,13 +435,18 @@ export default function LivePage() {
             <VideoControls
               video={videoEl}
               live={!catchup}
+              timeline={
+                catchup
+                  ? { offset: cuOffset, duration: (atEnd - at) / 1000, onSeek: (sec) => setCuOffset(Math.max(0, Math.floor(sec / 60) * 60)) }
+                  : undefined
+              }
               title={catchup && catchupShow ? catchupShow.title : `${play.num ? play.num + '  ' : ''}${play.name}`}
               subtitle={catchup ? `${play.name} · catch-up from ${when(new Date(at).toISOString())}` : nowShow ? `${nowShow.title} · until ${hhmm(nowShow.stop)}` : undefined}
               onBack={exitFull}
               actions={
                 <>
                   <ChannelLogo className="wx-live-logo" name={play.name} src={play.logo || channel?.logo} />
-                  {list.length > 1 && (
+                  {list.length > 1 && !catchup && (
                     <>
                       <button className="vx-text-btn" onClick={() => zap(-1)} aria-label="Previous channel">
                         <Icon name="chevron-down" size={22} />
