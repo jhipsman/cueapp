@@ -89,6 +89,23 @@ function firstFocusable(): HTMLElement | null {
   return Array.from(document.querySelectorAll<HTMLElement>(FOCUSABLE)).find(visible) ?? null
 }
 
+// scrollBoxes brings el into view inside the boxes around it that scroll
+// up and down by themselves (Live TV's group menu, the guide), and says
+// whether there were any.
+function scrollBoxes(el: HTMLElement): boolean {
+  let any = false
+  for (let p = el.parentElement; p && p !== document.body && p !== document.documentElement; p = p.parentElement) {
+    if (!/(auto|scroll)/.test(getComputedStyle(p).overflowY) || p.scrollHeight <= p.clientHeight + 1) continue
+    any = true
+    const pr = p.getBoundingClientRect()
+    const er = el.getBoundingClientRect()
+    const pad = 24
+    if (er.top < pr.top + pad) p.scrollBy({ top: er.top - pr.top - pad, behavior: 'smooth' })
+    else if (er.bottom > pr.bottom - pad) p.scrollBy({ top: er.bottom - pr.bottom + pad, behavior: 'smooth' })
+  }
+  return any
+}
+
 function focus(el: HTMLElement) {
   el.focus({ preventScroll: true })
   // Inside the TV guide (its own scroll box): just bring the show into view.
@@ -96,6 +113,8 @@ function focus(el: HTMLElement) {
     el.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' })
     return
   }
+  // Inside another box that scrolls by itself, like Live TV's group menu.
+  if (!el.closest('.wx-row-scroll, .wx-chips') && scrollBoxes(el)) return
   // In a row of posters: the row slides so the focused one sits near the
   // left, the way TV apps do, rather than jumping to the middle.
   const row = el.closest<HTMLElement>('.wx-row-scroll, .wx-chips')

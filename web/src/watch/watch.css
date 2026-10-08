@@ -1007,6 +1007,7 @@ html.tv-mode .wx-guide-star:focus {
 .wx-guide {
   position: relative;
   overflow: auto;
+  height: calc(100vh - 210px);
   height: calc(100dvh - 210px);
   min-height: 320px;
   border-radius: 10px;
@@ -1206,6 +1207,7 @@ html.tv-mode .wx-guide-star:focus {
     --wx-chan-w: 112px;
   }
   .wx-guide {
+    height: calc(100vh - 254px - env(safe-area-inset-bottom));
     height: calc(100dvh - 254px - env(safe-area-inset-bottom));
     border-radius: 0;
     margin: 0 calc(var(--wx-gutter) * -1);
@@ -1697,6 +1699,7 @@ html.watch-mode:has(.wx-live-preview.is-full) body {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  height: calc(100vh - 160px);
   height: calc(100dvh - 160px);
   min-height: 320px;
   padding: 10px 6px;
@@ -1782,6 +1785,7 @@ html.watch-mode:has(.wx-live-preview.is-full) body {
   min-width: 0;
 }
 .wx-live .wx-guide {
+  height: calc(100vh - 160px);
   height: calc(100dvh - 160px);
 }
 html.tv-mode .wx-live-side,
@@ -1823,6 +1827,7 @@ html.tv-mode .wx-live-side li button:focus small {
     font-weight: 600;
   }
   .wx-live .wx-guide {
+    height: calc(100vh - 250px - env(safe-area-inset-bottom));
     height: calc(100dvh - 250px - env(safe-area-inset-bottom));
   }
 }
@@ -2125,6 +2130,7 @@ html.tv-mode .wx-live-hit:focus {
 }
 .wx-live .wx-live-side,
 .wx-live .wx-guide {
+  height: calc(100vh - var(--live-top-h) - 136px);
   height: calc(100dvh - var(--live-top-h) - 136px);
   min-height: 260px;
 }
@@ -2277,6 +2283,7 @@ html.tv-mode .wx-live-actions .wx-btn:focus {
   font-size: 0.8rem !important;
 }
 .wx-live .wx-guide {
+  height: calc(100vh - var(--live-top-h) - 184px);
   height: calc(100dvh - var(--live-top-h) - 184px);
 }
 html.tv-mode .wx-live .wx-guide {
