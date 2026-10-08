@@ -113,7 +113,7 @@ export default function LivePage() {
         onClick={() => void (r ? recs.remove(r.id) : recs.record(channelId, show).catch((e) => window.alert(e instanceof Error ? e.message : String(e))))}
         aria-pressed={!!r}
       >
-        <span className="wx-rec-dot" aria-hidden="true" />
+        <i className="wx-rec-dot" aria-hidden="true" />
         {r ? (r.status === 'recording' ? 'Recording · Stop' : r.status === 'done' ? 'Recorded' : 'Recording set') : 'Record'}
       </button>
     )
@@ -631,7 +631,7 @@ export default function LivePage() {
                   >
                     {g.id === 'fav' && <Icon name="star" size={15} />}
                     {g.id === 'recent' && <Icon name="clock" size={15} />}
-                    {g.id === 'recordings' && <span className="wx-rec-dot" aria-hidden="true" />}
+                    {g.id === 'recordings' && <i className="wx-rec-dot" aria-hidden="true" />}
                     <span>{g.name}</span>
                     <small>{g.count}</small>
                   </button>
@@ -737,7 +737,7 @@ export default function LivePage() {
                                 <b>
                                   {again && <Icon name="refresh" size={12} />}
                                   {reminded && <Icon name="clock" size={12} />}
-                                  {recorded && <span className="wx-rec-dot" aria-label="Recording" />}
+                                  {recorded && <i className="wx-rec-dot" aria-label="Recording" />}
                                   {p.title}
                                 </b>
                                 <small>

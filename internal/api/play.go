@@ -205,6 +205,9 @@ type playAnswer struct {
 }
 
 func (s *Server) withConvert(web bool, a playAnswer) playAnswer {
+	if a.Quality == string(quality.TierUnknown) {
+		a.Quality = "" // nothing to say, rather than "Unknown" under the title
+	}
 	if a.YouTube == "" {
 		tok := s.convertToken(a.URL)
 		a.Thumbs = tok

@@ -277,7 +277,15 @@ export default function PlayerPage() {
           new Promise<string>((done) => setTimeout(() => done(''), 8000)),
         ])
       : Promise.resolve('')
-    void Promise.all([skipsSoon, subsSoon]).then(([sk, subtitleUrl]) => {
+    // The title's artwork, for the TV app's starting screen.
+    const artSoon = Promise.race([
+      api
+        .watchTitle(kind, tmdbId)
+        .then((t) => t.backdropUrl ?? '')
+        .catch(() => ''),
+      new Promise<string>((done) => setTimeout(() => done(''), 1500)),
+    ])
+    void Promise.all([skipsSoon, subsSoon, artSoon]).then(([sk, subtitleUrl, backdrop]) => {
       if (cancelled) return
       window.CueTV?.play(
         JSON.stringify({
@@ -299,6 +307,7 @@ export default function PlayerPage() {
           creditsStart: sk.creditsStart ?? 0,
           creditsFromEnd: sk.creditsFromEnd ?? 0,
           subtitleUrl,
+          backdrop,
           thumbs: answer.thumbs ?? '',
           subsOn: prefs.on,
           subsSize: prefs.size,
@@ -542,6 +551,7 @@ export default function PlayerPage() {
   const started = useRef('')
   const stalled = useRef<() => void>(() => undefined)
   stalled.current = () => {
+    if (error || !answer) return // given up already: nothing to retry
     if (conv?.stream) moveOn()
     else onError()
   }
@@ -579,7 +589,7 @@ export default function PlayerPage() {
     }, 25_000)
     return () => clearTimeout(t)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [src])
+  }, [src, error])
 
   const nextEpisode = () =>
     api
@@ -653,6 +663,8 @@ export default function PlayerPage() {
             onEnded={onEnded}
             onPlaying={() => {
               started.current = src
+              // "Trying the next one" and the like have done their job.
+              window.setTimeout(() => setNote(''), 5000)
             }}
             // Loaded and ready counts too: a phone may wait for a tap to
             // play with sound.

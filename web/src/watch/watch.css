@@ -2856,3 +2856,61 @@ html.tv-mode .wx-live-hit-remind:focus {
     height: 81px;
   }
 }
+
+/* Seasons as buttons next to "Episodes". */
+.wx-seasons .wx-season-chips {
+  padding: 4px 2px;
+  min-width: 0;
+}
+
+/* ---- TV polish: no scroll bars, a few more posters to a row, room for
+   the focused card's lift, the top bar solid once the page moves. */
+html.tv-mode,
+html.tv-mode body,
+html.tv-mode .wx * {
+  scrollbar-width: none;
+}
+html.tv-mode::-webkit-scrollbar,
+html.tv-mode body::-webkit-scrollbar,
+html.tv-mode .wx *::-webkit-scrollbar {
+  display: none;
+}
+html.tv-mode .wx-card {
+  width: 152px;
+}
+html.tv-mode .wx-card.wide {
+  width: 276px;
+}
+html.tv-mode .wx-row-scroll {
+  gap: 12px;
+  padding-top: 14px;
+  padding-bottom: 22px;
+  scroll-snap-type: none;
+}
+html.tv-mode .wx-row {
+  margin-bottom: 16px;
+}
+html.tv-mode .wx-row h2 {
+  font-size: 1.12rem;
+  margin-bottom: 0;
+}
+html.tv-mode .wx-hero {
+  min-height: 72vh;
+}
+html.tv-mode .wx-nav {
+  background: linear-gradient(to bottom, rgba(var(--wx-bg-rgb), 0.96) 0%, rgba(var(--wx-bg-rgb), 0.85) 70%, rgba(var(--wx-bg-rgb), 0));
+}
+html.tv-mode .wx-season-chips button {
+  padding: 8px 18px;
+}
+html.tv-mode .wx-chips button.active {
+  box-shadow: none;
+}
+html.tv-mode .wx-page {
+  padding-top: 104px;
+}
+html.tv-mode .wx-grid {
+  padding-top: 10px;
+  grid-template-columns: repeat(auto-fill, 152px);
+  gap: 22px 14px;
+}

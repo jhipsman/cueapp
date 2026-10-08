@@ -218,6 +218,15 @@ class PlayerActivity : Activity() {
         val root = FrameLayout(this).apply {
             setBackgroundColor(Color.BLACK)
             addView(video, FrameLayout.LayoutParams(MATCH, MATCH))
+            val dim = View(this@PlayerActivity).apply {
+                setBackgroundColor(0x66000000)
+                visibility = View.GONE
+            }
+            pauseDim = dim
+            addView(dim, FrameLayout.LayoutParams(MATCH, MATCH))
+            val startView = buildStartScreen()
+            startScreen = startView
+            addView(startView, FrameLayout.LayoutParams(MATCH, MATCH))
             addView(spinner, FrameLayout.LayoutParams(px(64), px(64), Gravity.CENTER))
             addView(pauseBadge, FrameLayout.LayoutParams(px(110), px(110), Gravity.CENTER))
             addView(controls, FrameLayout.LayoutParams(MATCH, MATCH))
@@ -250,13 +259,22 @@ class PlayerActivity : Activity() {
                 }
             }
 
+            override fun onRenderedFirstFrame() {
+                hideStartScreen()
+            }
+
             override fun onIsPlayingChanged(isPlaying: Boolean) {
-                if (isPlaying) started = true
+                if (isPlaying) {
+                    started = true
+                    hideStartScreen()
+                }
                 playPause.setCompoundDrawablesRelativeWithIntrinsicBounds(
                     if (isPlaying) R.drawable.ic_cue_pause else R.drawable.ic_cue_play, 0, 0, 0,
                 )
                 val paused = !isPlaying && player.playbackState == Player.STATE_READY
                 pauseBadge.visibility = if (paused) View.VISIBLE else View.GONE
+                pauseDim?.visibility = if (paused) View.VISIBLE else View.GONE
+                if (!isPlaying) cancelCountdown()
                 if (paused) showControls() else scheduleHide()
             }
 
@@ -487,6 +505,7 @@ class PlayerActivity : Activity() {
             nextOffered = true
             showControls()
             next.requestFocus()
+            startCountdown()
         }
     }
 
@@ -594,6 +613,11 @@ class PlayerActivity : Activity() {
 
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
         val code = event.keyCode
+        // Any key but OK stops the next episode's countdown.
+        if (event.action == KeyEvent.ACTION_DOWN && countdownLeft >= 0 &&
+            code != KeyEvent.KEYCODE_DPAD_CENTER && code != KeyEvent.KEYCODE_ENTER) {
+            cancelCountdown()
+        }
         if (code == KeyEvent.KEYCODE_BACK && guideShowing()) {
             if (event.action == KeyEvent.ACTION_UP) hideGuide()
             return true
@@ -754,6 +778,96 @@ class PlayerActivity : Activity() {
         postJson("/api/watch/skips/learn", JSONObject()
             .put("kind", info.optString("kind")).put("tmdbId", info.optInt("tmdbId")).put("season", info.optInt("season"))
             .put("segment", "credits").put("start", pos / 1000.0).put("duration", dur / 1000.0))
+    }
+
+    // ---- Starting, pausing, and the next episode ----
+
+    private var startScreen: View? = null
+    private var pauseDim: View? = null
+    private var countdownLeft = -1
+    private val countdown = object : Runnable {
+        override fun run() {
+            val next = nextButton ?: return
+            if (countdownLeft <= 0) {
+                countdownLeft = -1
+                end("next")
+                return
+            }
+            next.text = "Next episode in $countdownLeft"
+            countdownLeft--
+            main.postDelayed(this, 1000)
+        }
+    }
+
+    // startCountdown plays the next episode in 10 seconds unless the viewer
+    // does something else (any key but OK, or pausing).
+    private fun startCountdown() {
+        if (nextButton == null || countdownLeft >= 0) return
+        countdownLeft = 10
+        main.post(countdown)
+    }
+
+    private fun cancelCountdown() {
+        if (countdownLeft < 0) return
+        countdownLeft = -1
+        main.removeCallbacks(countdown)
+        nextButton?.text = "Next episode"
+    }
+
+    // The starting screen: the title's artwork and name while the video
+    // loads, instead of a spinner on black.
+    private fun buildStartScreen(): View {
+        val box = FrameLayout(this).apply { setBackgroundColor(0xFF0B0C0F.toInt()) }
+        val art = ImageView(this).apply {
+            scaleType = ImageView.ScaleType.CENTER_CROP
+            alpha = 0f
+        }
+        box.addView(art, FrameLayout.LayoutParams(MATCH, MATCH))
+        box.addView(View(this).apply {
+            background = GradientDrawable(GradientDrawable.Orientation.BOTTOM_TOP, intArrayOf(0xF00B0C0F.toInt(), 0x800B0C0F.toInt(), 0x400B0C0F))
+        }, FrameLayout.LayoutParams(MATCH, MATCH))
+        val text = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(px(56), 0, px(56), px(56))
+            addView(TextView(this@PlayerActivity).apply {
+                text = info.optString("title")
+                setTextColor(Color.WHITE)
+                size(30f)
+                typeface = Typeface.create("sans-serif-medium", Typeface.BOLD)
+                maxLines = 2
+            })
+            addView(TextView(this@PlayerActivity).apply {
+                text = info.optString("subtitle").ifEmpty { "Starting…" }
+                setTextColor(0xFFC7C8CC.toInt())
+                size(15f)
+                setPadding(0, px(6), 0, 0)
+            })
+        }
+        box.addView(text, FrameLayout.LayoutParams(MATCH, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.BOTTOM))
+        val backdrop = info.optString("backdrop")
+        if (backdrop.startsWith("http")) {
+            Thread {
+                try {
+                    val c = URL(backdrop).openConnection() as HttpURLConnection
+                    c.connectTimeout = 6000
+                    c.readTimeout = 10000
+                    val bmp = c.inputStream.use { BitmapFactory.decodeStream(it) }
+                    c.disconnect()
+                    if (bmp != null) main.post {
+                        art.setImageBitmap(bmp)
+                        art.animate().alpha(0.6f).setDuration(300).start()
+                    }
+                } catch (_: Exception) {
+                }
+            }.start()
+        }
+        return box
+    }
+
+    private fun hideStartScreen() {
+        val v = startScreen ?: return
+        startScreen = null
+        v.animate().alpha(0f).setDuration(250).withEndAction { v.visibility = View.GONE }.start()
     }
 
     // ---- Frames over the time bar while moving through the video ----

@@ -173,13 +173,14 @@ function Episodes({
       <div className="wx-seasons">
         <h2>Episodes</h2>
         {seasons.length > 1 ? (
-          <select value={season} onChange={(e) => onSeason(Number(e.target.value))} aria-label="Season">
+          // Buttons, not a drop-down: easy with a remote, one tap on a phone.
+          <div className="wx-chips wx-season-chips" role="tablist" aria-label="Season">
             {seasons.map((s) => (
-              <option key={s.number} value={s.number}>
+              <button key={s.number} role="tab" aria-selected={s.number === season} className={s.number === season ? 'active' : ''} onClick={() => onSeason(s.number)}>
                 {s.name}
-              </option>
+              </button>
             ))}
-          </select>
+          </div>
         ) : (
           <span className="wx-dim">{seasons[0].name}</span>
         )}

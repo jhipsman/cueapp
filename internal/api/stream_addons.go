@@ -270,7 +270,7 @@ func notCached(texts ...string) bool {
 
 // slateMax is the size under which a "video" from an add-on is its
 // placeholder ("Not ready yet", a few seconds long), not a film or episode.
-const slateMax = 40 << 20
+const slateMax = 15 << 20
 
 // addonFileReal checks the file an add-on link led to: false for the
 // add-on's placeholder video (ElfHosted's "Not ready yet" slate), which is

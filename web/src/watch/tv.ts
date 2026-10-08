@@ -84,7 +84,14 @@ function best(from: HTMLElement, dir: Dir): HTMLElement | null {
 }
 
 function firstFocusable(): HTMLElement | null {
-  const main = document.querySelector<HTMLElement>('.wx-hero .wx-btn.play, .wx-who-tile, .wx-card, .wx-btn')
+  // The main thing on the page, in this order: Play, a profile, the channel
+  // playing (or the first) in the TV guide, a poster, an episode, a button.
+  const order = ['.wx-hero .wx-btn.play', '.wx-who-tile', '.wx-guide-row.playing .wx-guide-chan-play', '.wx-guide-chan-play', '.wx-card', '.wx-ep', '.wx-btn']
+  let main: HTMLElement | null = null
+  for (const sel of order) {
+    main = Array.from(document.querySelectorAll<HTMLElement>(sel)).find(visible) ?? null
+    if (main) break
+  }
   if (main && visible(main)) return main
   return Array.from(document.querySelectorAll<HTMLElement>(FOCUSABLE)).find(visible) ?? null
 }
