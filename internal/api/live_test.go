@@ -178,3 +178,49 @@ func TestLiveTV(t *testing.T) {
 		t.Fatalf("after removing: %s", w.Body)
 	}
 }
+
+func TestLogoURL(t *testing.T) {
+	for in, want := range map[string]string{
+		" http://x.example/a b.png ": "http://x.example/a%20b.png",
+		"//cdn.example/logo.png":     "http://cdn.example/logo.png",
+		"cdn.example/logo.png":       "http://cdn.example/logo.png",
+		"https://x.example/l.svg":    "https://x.example/l.svg",
+		"":                           "",
+		"ftp://x.example/l.png":      "",
+	} {
+		if got := logoURL(in); got != want {
+			t.Errorf("logoURL(%q) = %q, want %q", in, got, want)
+		}
+	}
+}
+
+// Logos come from sites with self-signed certificates, as SVG, or only
+// for browsers; each still shows, and an SVG can't run anything.
+func TestFetchLogoFromCarelessSites(t *testing.T) {
+	svg := `<?xml version="1.0"?><svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"><rect width="10" height="10"/></svg>`
+	srv := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if !strings.Contains(r.UserAgent(), "Mozilla") {
+			http.Error(w, "browsers only", http.StatusForbidden)
+			return
+		}
+		w.Write([]byte(svg))
+	}))
+	defer srv.Close()
+	b, err := fetchLogo(context.Background(), srv.URL+"/logo.svg")
+	if err != nil || logoType(b) != "image/svg+xml" {
+		t.Fatalf("svg logo: %v %q", err, logoType(b))
+	}
+	w := httptest.NewRecorder()
+	serveLogo(w, b)
+	if w.Header().Get("Content-Type") != "image/svg+xml" || !strings.Contains(w.Header().Get("Content-Security-Policy"), "sandbox") {
+		t.Fatalf("served as %v", w.Header())
+	}
+	if _, err := fetchLogo(context.Background(), srv.URL+"/not-a-picture"); err != nil {
+		t.Fatalf("unexpected: %v", err) // the same SVG: fine
+	}
+	html := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { w.Write([]byte("<html>login</html>")) }))
+	defer html.Close()
+	if _, err := fetchLogo(context.Background(), html.URL); err == nil {
+		t.Fatal("a web page was taken for a logo")
+	}
+}

@@ -19,13 +19,13 @@ import (
 	"cmp"
 	"context"
 	"crypto/sha256"
+	"crypto/tls"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"log/slog"
-	"mime"
 	"net/http"
 	"net/url"
 	"os"
@@ -67,6 +67,9 @@ type liveState struct {
 	guideErr     string
 
 	hc *http.Client // for the provider (tests swap it)
+
+	logoFails       map[string]time.Time // logo address -> when fetching it last failed
+	logoHostsLogged map[string]bool      // logo sites already logged as failing
 }
 
 func (s *Server) iptvAccount() (iptv.Account, bool) {
@@ -528,40 +531,33 @@ func redactURLError(err error) error {
 }
 
 // GET /api/live/logo/{id}: the channel's logo, through Cue (the page may
-// only show pictures from a few places) and kept on disk for a week.
+// only show pictures from a few places) and kept on disk for a week. A logo
+// that can't be fetched is remembered for an hour, and the guide shows the
+// channel's initials instead.
 func (s *Server) handleLiveLogo(w http.ResponseWriter, r *http.Request) {
 	ch, _, err := s.liveChannelByID(r.Context(), r.PathValue("id"))
 	if err != nil || ch.Logo == "" {
 		http.NotFound(w, r)
 		return
 	}
-	sum := sha256.Sum256([]byte(ch.Logo))
+	link := logoURL(ch.Logo)
+	sum := sha256.Sum256([]byte(link))
 	name := hex.EncodeToString(sum[:16])
 	dir := filepath.Join(s.cfg.ConfigDir, "cache", "live-logos")
 	path := filepath.Join(dir, name)
-	if b, err := os.ReadFile(path); err == nil && len(b) > 0 {
-		if st, err := os.Stat(path); err == nil && time.Since(st.ModTime()) < 7*24*time.Hour {
+	if st, err := os.Stat(path); err == nil && time.Since(st.ModTime()) < 7*24*time.Hour {
+		if b, err := os.ReadFile(path); err == nil && len(b) > 0 {
 			serveLogo(w, b)
 			return
 		}
 	}
-	u, err := url.Parse(ch.Logo)
-	if err != nil || (u.Scheme != "http" && u.Scheme != "https") {
+	if link == "" || s.live.logoFailedRecently(link) {
 		http.NotFound(w, r)
 		return
 	}
-	ctx, cancel := context.WithTimeout(r.Context(), 15*time.Second)
-	defer cancel()
-	req, _ := http.NewRequestWithContext(ctx, http.MethodGet, u.String(), nil)
-	req.Header.Set("User-Agent", "Cue")
-	resp, err := s.liveHTTP().Do(req)
+	b, err := fetchLogo(r.Context(), link)
 	if err != nil {
-		http.NotFound(w, r)
-		return
-	}
-	defer resp.Body.Close()
-	b, err := io.ReadAll(io.LimitReader(resp.Body, 2<<20))
-	if err != nil || resp.StatusCode != http.StatusOK || !isImage(b) {
+		s.live.logoFailed(link, err)
 		http.NotFound(w, r)
 		return
 	}
@@ -571,23 +567,119 @@ func (s *Server) handleLiveLogo(w http.ResponseWriter, r *http.Request) {
 	serveLogo(w, b)
 }
 
-func isImage(b []byte) bool {
+// logoURL tidies the logo addresses providers list: spaces, "//host/..."
+// with no scheme, or no scheme at all. "" when it isn't a web address.
+func logoURL(raw string) string {
+	s := strings.TrimSpace(raw)
+	s = strings.ReplaceAll(s, " ", "%20")
+	switch {
+	case strings.HasPrefix(s, "//"):
+		s = "http:" + s
+	case s != "" && !strings.Contains(s, "://"):
+		s = "http://" + s
+	}
+	u, err := url.Parse(s)
+	if err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Host == "" {
+		return ""
+	}
+	return u.String()
+}
+
+// logoClient fetches channel logos. Logo sites are often careless with
+// their certificates and turn away clients that don't look like a browser;
+// a logo is only a picture (checked to be one, and served with no way to
+// run anything), so it doesn't insist on a valid certificate.
+var logoClient = &http.Client{
+	Timeout: 15 * time.Second,
+	Transport: &http.Transport{
+		Proxy:               http.ProxyFromEnvironment,
+		TLSClientConfig:     &tls.Config{InsecureSkipVerify: true}, //nolint:gosec // pictures only, see above
+		MaxIdleConnsPerHost: 4,
+		IdleConnTimeout:     60 * time.Second,
+	},
+}
+
+func fetchLogo(ctx context.Context, link string) ([]byte, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, link, nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36")
+	req.Header.Set("Accept", "image/avif,image/webp,image/png,image/svg+xml,image/*;q=0.8,*/*;q=0.5")
+	resp, err := logoClient.Do(req)
+	if err != nil {
+		return nil, redactURLError(err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("status %d", resp.StatusCode)
+	}
+	b, err := io.ReadAll(io.LimitReader(resp.Body, 3<<20))
+	if err != nil {
+		return nil, err
+	}
+	if logoType(b) == "" {
+		return nil, fmt.Errorf("not a picture (%s)", http.DetectContentType(b))
+	}
+	return b, nil
+}
+
+// logoType is a logo's content type, or "" when it isn't a picture. SVG is
+// recognised by its tag (Go's sniffing calls it text).
+func logoType(b []byte) string {
 	ct := http.DetectContentType(b)
-	return strings.HasPrefix(ct, "image/") && ct != "image/svg+xml"
+	if strings.HasPrefix(ct, "image/") {
+		return ct
+	}
+	head := strings.ToLower(string(b[:min(len(b), 1024)]))
+	if strings.Contains(head, "<svg") {
+		return "image/svg+xml"
+	}
+	return ""
 }
 
 func serveLogo(w http.ResponseWriter, b []byte) {
-	ct := http.DetectContentType(b)
-	if !strings.HasPrefix(ct, "image/") || ct == "image/svg+xml" {
-		ct = "application/octet-stream"
-	}
-	if exts, _ := mime.ExtensionsByType(ct); len(exts) == 0 {
+	ct := logoType(b)
+	if ct == "" {
 		ct = "application/octet-stream"
 	}
 	w.Header().Set("Content-Type", ct)
 	w.Header().Set("Cache-Control", "private, max-age=86400")
 	w.Header().Set("X-Content-Type-Options", "nosniff")
+	// An SVG opened on its own could carry script: nothing in it may run.
+	w.Header().Set("Content-Security-Policy", "default-src 'none'; style-src 'unsafe-inline'; sandbox")
 	_, _ = w.Write(b)
+}
+
+// logoFailedRecently says a logo couldn't be fetched within the last hour.
+func (l *liveState) logoFailedRecently(link string) bool {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	at, ok := l.logoFails[link]
+	return ok && time.Since(at) < time.Hour
+}
+
+// logoFailed remembers a logo that couldn't be fetched, and logs it (once
+// per site, so a provider whose logos are all on one broken site says so
+// once).
+func (l *liveState) logoFailed(link string, err error) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	if l.logoFails == nil {
+		l.logoFails = map[string]time.Time{}
+	}
+	l.logoFails[link] = time.Now()
+	host := link
+	if u, perr := url.Parse(link); perr == nil {
+		host = u.Host
+	}
+	if l.logoHostsLogged == nil {
+		l.logoHostsLogged = map[string]bool{}
+	}
+	if !l.logoHostsLogged[host] {
+		l.logoHostsLogged[host] = true
+		slog.Warn("live tv: a channel logo couldn't be fetched; the guide shows the channel's initials", "site", host, "err", err)
+	}
 }
 
 // liveProviderMessage says what went wrong with the provider, for people.

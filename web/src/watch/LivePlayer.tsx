@@ -5,6 +5,7 @@ import { api, profileToken, type LiveChannel, type LiveChannels, type LivePlay }
 import Icon from '../components/Icon'
 import { useDocumentTitle } from '../documentTitle'
 import { channelsIn, liveHref } from './LivePage'
+import ChannelLogo from './ChannelLogo'
 import { Spinner } from './parts'
 import { onTV, type TVPlayerResult } from './tv'
 import VideoControls from './VideoControls'
@@ -186,7 +187,7 @@ export default function LivePlayer() {
             onBack={() => navigate(-1)}
             actions={
               <>
-                {(play.logo || channel?.logo) && <img className="wx-live-logo" src={play.logo || channel?.logo} alt="" />}
+                <ChannelLogo className="wx-live-logo" name={play.name} src={play.logo || channel?.logo} />
                 {list.length > 1 && (
                   <>
                     <button className="vx-text-btn" onClick={() => zap(-1)} aria-label="Previous channel">

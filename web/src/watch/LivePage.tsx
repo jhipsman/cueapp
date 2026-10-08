@@ -3,6 +3,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { api, type LiveChannel, type LiveChannels, type LiveProgramme } from '../api'
 import Icon from '../components/Icon'
 import { useDocumentTitle } from '../documentTitle'
+import ChannelLogo from './ChannelLogo'
 import { Spinner } from './parts'
 import { useProfiles } from './profiles'
 
@@ -199,7 +200,9 @@ export default function LivePage() {
                 <div className="wx-guide-row" key={c.id}>
                   <div className="wx-guide-chan">
                     <button className="wx-guide-chan-play" onClick={() => navigate(liveHref(c.id, cat))} title={`Watch ${c.name}`}>
-                      <span className="wx-guide-logo">{c.logo ? <img src={c.logo} alt="" loading="lazy" /> : <Icon name="tv" size={20} />}</span>
+                      <span className="wx-guide-logo">
+                        <ChannelLogo name={c.name} src={c.logo} />
+                      </span>
                       <span className="wx-guide-name">
                         <small>{c.num || ''}</small>
                         {c.name}

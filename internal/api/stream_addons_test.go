@@ -50,9 +50,9 @@ func TestPlayUsesStreamAddonsFirst(t *testing.T) {
 			_, _ = w.Write([]byte(`{"id":"comet","name":"Comet","version":"2","resources":["stream"],"types":["movie","series"]}`))
 		case "/secret-config/stream/movie/tt0137523.json":
 			_, _ = w.Write([]byte(`{"streams":[
-				{"name":"[PM+] 2160p","description":"Fight.Club.1999.2160p.UHD.BluRay.x265\n🇮🇹","url":"`+addon.URL+`/playback/it"},
-				{"name":"[PM+] 2160p","description":"Fight.Club.1999.2160p.UHD.BluRay.x265\n💾 18 GB","url":"`+addon.URL+`/playback/1","behaviorHints":{"filename":"Fight.Club.1999.2160p.UHD.BluRay.x265.mkv","videoSize":19327352832}},
-				{"name":"[PM+] 1080p","title":"Fight.Club.1999.1080p.BluRay.x264","url":"`+addon.URL+`/playback/2"}
+				{"name":"[PM+] 2160p","description":"Fight.Club.1999.2160p.UHD.BluRay.x265\n🇮🇹","url":"` + addon.URL + `/playback/it"},
+				{"name":"[PM+] 2160p","description":"Fight.Club.1999.2160p.UHD.BluRay.x265\n💾 18 GB","url":"` + addon.URL + `/playback/1","behaviorHints":{"filename":"Fight.Club.1999.2160p.UHD.BluRay.x265.mkv","videoSize":19327352832}},
+				{"name":"[PM+] 1080p","title":"Fight.Club.1999.1080p.BluRay.x264","url":"` + addon.URL + `/playback/2"}
 			]}`))
 		default:
 			http.NotFound(w, r)

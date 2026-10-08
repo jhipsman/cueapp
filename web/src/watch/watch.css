@@ -1647,3 +1647,20 @@ html.watch-mode:has(.wx-player) body {
   background: var(--wx-accent);
   border-color: var(--wx-accent);
 }
+
+/* A channel with no logo (or one that won't load): its initials. */
+.wx-chan-initials {
+  display: inline-grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  border-radius: 6px;
+  color: #fff;
+  font-weight: 800;
+  font-size: 0.85rem;
+  letter-spacing: 0.04em;
+}
+.wx-live-logo.wx-chan-initials {
+  width: 64px;
+  height: 40px;
+}
