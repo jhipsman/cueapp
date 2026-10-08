@@ -481,6 +481,18 @@ export default function PlayerPage() {
                     void load(answer.option + 1)
                   },
                 },
+                ...(answer.convert && !conv?.stream
+                  ? [
+                      {
+                        label: 'No sound? Fix it',
+                        hint: 'Cue converts the sound so this browser can play it',
+                        onClick: () => {
+                          resumeAt.current = Math.floor(video.current?.currentTime ?? 0)
+                          startConvert('Converting the sound for this browser…')
+                        },
+                      },
+                    ]
+                  : []),
                 ...playerApps(answer.url).map((a) => ({
                   label: `Open in ${a.name}`,
                   hint: 'Plays every kind of sound',
