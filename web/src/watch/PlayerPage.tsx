@@ -524,9 +524,26 @@ export default function PlayerPage() {
     setNote(why)
     api
       .convertProbe(answer.convert)
-      .then((p) => setConv({ stream: p.stream, duration: p.duration, offset: Math.max(0, Math.floor(resumeAt.current)) }))
+      .then((p) => {
+        // Remaking the whole picture is slow on a small server: other
+        // versions are tried first, and this is the last resort.
+        if (!p.copyVideo && answer.option < answer.options) {
+          moveOn()
+          return
+        }
+        setConv({ stream: p.stream, duration: p.duration, offset: Math.max(0, Math.floor(resumeAt.current)) })
+      })
       .catch(() => moveOn())
     return true
+  }
+
+  // A video that hasn't started 25 seconds after it was opened (still
+  // spinning): treated as one that won't play here.
+  const started = useRef('')
+  const stalled = useRef<() => void>(() => undefined)
+  stalled.current = () => {
+    if (conv?.stream) moveOn()
+    else onError()
   }
 
   // The next version, or nothing more to try.
@@ -552,6 +569,18 @@ export default function PlayerPage() {
         ? answer.url
         : answer.streamUrl || answer.url
     : ''
+  useEffect(() => {
+    if (!src || onTV() || !answer || answer.youtube || error) return
+    const t = setTimeout(() => {
+      if (started.current !== src) {
+        setNote('This version is taking too long to start, so trying another.')
+        stalled.current()
+      }
+    }, 25_000)
+    return () => clearTimeout(t)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [src])
+
   const nextEpisode = () =>
     api
       .watchNext(tmdbId, season, episode)
@@ -622,6 +651,14 @@ export default function PlayerPage() {
             onSeeking={onSeeking}
             onPause={save}
             onEnded={onEnded}
+            onPlaying={() => {
+              started.current = src
+            }}
+            // Loaded and ready counts too: a phone may wait for a tap to
+            // play with sound.
+            onCanPlay={() => {
+              started.current = src
+            }}
             onError={onError}
           >
             {subs && (
