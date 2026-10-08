@@ -163,3 +163,35 @@ func TestBrowserGetsPremiumizesConvertedCopy(t *testing.T) {
 		t.Fatalf("TV app: %+v", a)
 	}
 }
+
+func TestNotCachedMarks(t *testing.T) {
+	for _, c := range []struct {
+		name string
+		want bool
+	}{{"[PM⬇️] Comet 1080p", true}, {"[PM⚡] Comet 1080p", false}, {"Torrentio\n1080p", false}, {"[RD download] Torrentio", true}} {
+		if got := notCached(c.name); got != c.want {
+			t.Errorf("notCached(%q) = %v", c.name, got)
+		}
+	}
+}
+
+func TestAddonFileReal(t *testing.T) {
+	big := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Range", "bytes 0-0/2000000000")
+		w.WriteHeader(http.StatusPartialContent)
+		_, _ = w.Write([]byte{0})
+	}))
+	defer big.Close()
+	slate := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Range", "bytes 0-0/850000")
+		w.WriteHeader(http.StatusPartialContent)
+		_, _ = w.Write([]byte{0})
+	}))
+	defer slate.Close()
+	if !addonFileReal(t.Context(), big.URL+"/film.mkv") {
+		t.Error("a 2 GB file is real")
+	}
+	if addonFileReal(t.Context(), slate.URL+"/not_cached.mp4") {
+		t.Error("an 850 KB video is the placeholder")
+	}
+}

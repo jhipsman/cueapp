@@ -103,6 +103,9 @@ func (s *Server) addonStreams(ctx context.Context, t playTarget) (links, hashes 
 		}
 		asked++
 		for _, st := range ans.streams {
+			if notCached(st.Name, st.Title, st.Description) {
+				continue // it would play the add-on's "not ready yet" video
+			}
 			label := st.Label()
 			c := playCandidate{Release: label, Size: st.Hints.VideoSize, Tier: quality.Classify(parser.Parse(label)), Source: name,
 				NotEnglish: notEnglish(label, st.Name, st.Title, st.Description)}
@@ -252,6 +255,64 @@ func (s *Server) handleRemoveStreamAddon(w http.ResponseWriter, r *http.Request)
 
 // linkHash finds a torrent's info hash in an add-on's play link (Comet and
 // Torrentio put it in the path).
+// uncachedMark is how add-ons mark a stream the debrid service doesn't have
+// yet (Comet and Torrentio: [PM⬇️] instead of [PM⚡]).
+var uncachedMark = regexp.MustCompile(`(?i)⬇|⏳|\buncached\b|\bnot cached\b|\bdownload\]`)
+
+func notCached(texts ...string) bool {
+	for _, t := range texts {
+		if uncachedMark.MatchString(t) {
+			return true
+		}
+	}
+	return false
+}
+
+// slateMax is the size under which a "video" from an add-on is its
+// placeholder ("Not ready yet", a few seconds long), not a film or episode.
+const slateMax = 40 << 20
+
+// addonFileReal checks the file an add-on link led to: false for the
+// add-on's placeholder video (ElfHosted's "Not ready yet" slate), which is
+// tiny or a web page.
+func addonFileReal(ctx context.Context, file string) bool {
+	ctx, cancel := context.WithTimeout(ctx, 15*time.Second)
+	defer cancel()
+	u, err := url.Parse(file)
+	if err != nil {
+		return true
+	}
+	if strings.Contains(strings.ToLower(u.Host), "slate") {
+		return false
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, file, nil)
+	if err != nil {
+		return true
+	}
+	req.Header.Set("Range", "bytes=0-0")
+	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36")
+	c := &http.Client{Transport: netguard.Transport(), Timeout: 15 * time.Second}
+	resp, err := c.Do(req)
+	if err != nil {
+		return true // can't tell: let the player try
+	}
+	resp.Body.Close()
+	if strings.HasPrefix(resp.Header.Get("Content-Type"), "text/html") {
+		return false
+	}
+	size := resp.ContentLength
+	if cr := resp.Header.Get("Content-Range"); cr != "" {
+		if i := strings.LastIndexByte(cr, '/'); i >= 0 {
+			if n, err := strconv.ParseInt(cr[i+1:], 10, 64); err == nil {
+				size = n
+			}
+		}
+	} else if resp.StatusCode == http.StatusPartialContent {
+		size = -1
+	}
+	return size < 0 || size >= slateMax
+}
+
 var linkHash = regexp.MustCompile(`(?i)\b[0-9a-f]{40}\b`)
 
 // addonLinkClient opens add-on links from the server (tests swap it). It

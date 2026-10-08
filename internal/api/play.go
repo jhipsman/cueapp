@@ -408,8 +408,14 @@ func (s *Server) servePlay(w http.ResponseWriter, r *http.Request, t playTarget)
 		if c.URL != "" {
 			// A link from an add-on, already resolved with its debrid service.
 			// Opened here first, so the device gets the file's own address.
+			file := resolveAddonLink(ctx, c.URL)
+			if file != c.URL && !addonFileReal(ctx, file) {
+				// The add-on's "not ready yet" video: the next version.
+				slog.Info("play: an add-on gave its not-cached placeholder; trying the next version", "title", t.label, "addon", c.Source)
+				continue
+			}
 			writeJSON(w, http.StatusOK, s.withConvert(web, playAnswer{
-				Title: t.label, URL: resolveAddonLink(ctx, c.URL), FileName: c.Release, SizeBytes: c.Size,
+				Title: t.label, URL: file, FileName: c.Release, SizeBytes: c.Size,
 				Release: c.Release, Quality: string(c.Tier), Source: c.Source,
 				Option: i + 1, Options: len(entry.candidates),
 			}))
