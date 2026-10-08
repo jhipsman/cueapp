@@ -78,7 +78,7 @@ export default function Home({ only }: { only?: WatchKind }) {
       <div className="wx-rows" style={hero ? undefined : { marginTop: 90 }}>
         {!only && <SetupCard />}
         {rows.map((r) => (
-          <Row key={r.key} title={r.title} items={r.items} wide={r.key === 'continue'} />
+          <Row key={r.key} title={r.title} items={r.items} wide={r.key === 'continue' || r.key === 'new-episodes'} />
         ))}
         {rows.length === 0 && (
           <p className="wx-dim" style={{ padding: '0 var(--wx-gutter)' }}>

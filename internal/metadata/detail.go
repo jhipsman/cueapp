@@ -294,7 +294,14 @@ type ShowFull struct {
 	Homepage         string `json:"homepage"`
 	NumberOfSeasons  int    `json:"number_of_seasons"`
 	NumberOfEpisodes int    `json:"number_of_episodes"`
-	Networks         []struct {
+	// LastEpisodeToAir is the newest episode out, for "New episodes".
+	LastEpisodeToAir *struct {
+		AirDate string `json:"air_date"`
+		Season  int    `json:"season_number"`
+		Episode int    `json:"episode_number"`
+		Name    string `json:"name"`
+	} `json:"last_episode_to_air"`
+	Networks []struct {
 		Name string `json:"name"`
 	} `json:"networks"`
 	CreatedBy []struct {

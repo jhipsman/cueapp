@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { api, profileToken, type PlayAnswer, type WatchEpisode } from '../api'
+import { api, profileToken, type PlayAnswer, type WatchEpisode, type WatchSkips } from '../api'
 import Icon from '../components/Icon'
 import { useDocumentTitle } from '../documentTitle'
 import { epCode, playHref, Spinner } from './parts'
@@ -55,6 +55,15 @@ function OpenIn({ url, onOpen }: { url: string; onOpen: () => void }) {
   )
 }
 
+// skipButton is the skip button to show at pos: during the recap or the
+// intro (not in its last two seconds).
+function skipButton(skips: WatchSkips | null, pos: number): { label: string; to: number } | null {
+  if (!skips) return null
+  if (skips.recap && pos >= skips.recap.start && pos < skips.recap.end - 2) return { label: 'Skip recap', to: skips.recap.end }
+  if (skips.intro && pos >= skips.intro.start && pos < skips.intro.end - 2) return { label: 'Skip intro', to: skips.intro.end }
+  return null
+}
+
 // CopyLink copies the video's address, to open in VLC on a computer (Media
 // > Open Network Stream), which plays every format.
 function CopyLink({ url }: { url: string }) {
@@ -100,6 +109,15 @@ export default function PlayerPage() {
   // Asked once past the last version: Cue then looks on the Internet
   // Archive and YouTube.
   const askedBeyond = useRef(false)
+  // Skip intro and the credits (TheIntroDB, or learned from skips here):
+  // where the picture is (seconds into the title), and the video's length.
+  const [skips, setSkips] = useState<WatchSkips | null>(null)
+  const [pos, setPos] = useState(0)
+  const [length, setLength] = useState(0)
+  const lastPos = useRef(0)
+  const ownSeek = useRef(false) // a jump Cue made (resume, a skip button), not the viewer
+  const jump = useRef<{ from: number; to: number; timer: number } | null>(null)
+  const creditsDone = useRef(false)
   const [error, setError] = useState('')
   const [note, setNote] = useState('')
   const [next, setNext] = useState<WatchEpisode | null>(null)
@@ -121,6 +139,9 @@ export default function PlayerPage() {
         const a = await api.playTMDB(kind, tmdbId, season, episode, option, fresh, !onTV())
         setAnswer(a)
         setConv(null)
+        setSkips(null)
+        setLength(0)
+        creditsDone.current = false
         converting.current = false
         setUseOriginal(!a.streamUrl)
       } catch (e) {
@@ -231,21 +252,41 @@ export default function PlayerPage() {
       navigate(-1)
     }
     const label = kind === 'tv' ? epCode(season, episode) : ''
-    window.CueTV?.play(
-      JSON.stringify({
-        url: answer.url,
-        title: answer.title,
-        subtitle: [label, answer.quality, answer.source && `via ${answer.source}`].filter(Boolean).join(' · '),
-        startSec: resumeAt.current,
-        hasOther: answer.option < answer.options,
-        kind,
-        tmdbId,
-        season,
-        episode,
-        token: profileToken(),
-        accent: savedTheme().accent, // the profile's color, for the player
-      }),
-    )
+    let cancelled = false
+    // The skip times go with it (waited for briefly; the player starts
+    // without them if TheIntroDB is slow).
+    const skipsSoon = Promise.race([
+      api.watchSkips(kind, tmdbId, season, episode, 0).catch(() => ({}) as WatchSkips),
+      new Promise<WatchSkips>((done) => setTimeout(() => done({}), 1500)),
+    ])
+    void skipsSoon.then((sk) => {
+      if (cancelled) return
+      window.CueTV?.play(
+        JSON.stringify({
+          url: answer.url,
+          title: answer.title,
+          subtitle: [label, answer.quality, answer.source && `via ${answer.source}`].filter(Boolean).join(' · '),
+          startSec: resumeAt.current,
+          hasOther: answer.option < answer.options,
+          kind,
+          tmdbId,
+          season,
+          episode,
+          token: profileToken(),
+          accent: savedTheme().accent, // the profile's color, for the player
+          introStart: sk.intro?.start ?? 0,
+          introEnd: sk.intro?.end ?? 0,
+          recapStart: sk.recap?.start ?? 0,
+          recapEnd: sk.recap?.end ?? 0,
+          creditsStart: sk.creditsStart ?? 0,
+          creditsFromEnd: sk.creditsFromEnd ?? 0,
+          introKnown: !!sk.source?.includes('theintrodb') && !!sk.intro,
+        }),
+      )
+    })
+    return () => {
+      cancelled = true
+    }
   }, [answer, resumeReady, error, kind, tmdbId, season, episode, load, navigate])
 
   // Escape leaves the player.
@@ -296,13 +337,71 @@ export default function PlayerPage() {
     return () => clearInterval(t)
   }, [answer, useOriginal, conv, load])
 
+  // The skip times, once the video's length is known (it picks the cut).
+  useEffect(() => {
+    if (!answer || answer.youtube || onTV() || length <= 0 || skips) return
+    let live = true
+    api
+      .watchSkips(kind, tmdbId, season, episode, length)
+      .then((s) => live && setSkips(s))
+      .catch(() => live && setSkips({}))
+    return () => {
+      live = false
+    }
+  }, [answer, length, skips, kind, tmdbId, season, episode])
+
+  // seekAbs moves to a point in the title (also in a converted video).
+  function seekAbs(t: number) {
+    ownSeek.current = true
+    if (conv?.stream) setConv({ ...conv, offset: Math.max(0, Math.floor(t)) })
+    else if (video.current) video.current.currentTime = t
+  }
+
+  // noteJump gathers the viewer's jumps forward (several presses of +10s
+  // count as one); a jump over the start of an episode teaches Cue its
+  // intro, unless TheIntroDB already knows it.
+  function noteJump(from: number, to: number) {
+    if (kind !== 'tv' || to <= from) return
+    const j = jump.current
+    if (j && Math.abs(from - j.to) < 4) {
+      window.clearTimeout(j.timer)
+      j.to = to
+    } else {
+      if (j) window.clearTimeout(j.timer)
+      jump.current = { from, to, timer: 0 }
+    }
+    const cur = jump.current!
+    cur.timer = window.setTimeout(() => {
+      jump.current = null
+      if (skips?.source?.includes('theintrodb') && skips.intro) return
+      if (cur.from < 480 && cur.to - cur.from >= 15 && cur.to - cur.from <= 200) {
+        void api.learnSkip({ kind, tmdbId, season, segment: 'intro', start: Math.round(cur.from), end: Math.round(cur.to) }).catch(() => undefined)
+        setSkips((s) => (s && !s.intro ? { ...s, intro: { start: cur.from, end: cur.to } } : s))
+      }
+    }, 4000)
+  }
+
+  function onSeeking() {
+    const v = video.current
+    if (!v) return
+    const to = (conv?.offset ?? 0) + v.currentTime
+    if (ownSeek.current) {
+      ownSeek.current = false
+    } else {
+      noteJump(lastPos.current, to)
+    }
+    lastPos.current = to
+  }
+
   function onLoaded() {
     const v = video.current
+    setLength(conv?.stream ? conv.duration : v && isFinite(v.duration) ? v.duration : 0)
     if (conv) {
       resumeAt.current = 0 // the conversion started there already
       return
     }
     if (v && resumeAt.current > 0 && resumeAt.current < v.duration - 60) {
+      ownSeek.current = true
       v.currentTime = resumeAt.current
     }
     resumeAt.current = 0
@@ -311,9 +410,26 @@ export default function PlayerPage() {
   // Near the end of an episode, find the next one (once).
   function onTime() {
     const v = video.current
-    const length = conv ? conv.duration : v?.duration
-    if (!v || kind !== 'tv' || next || !length || !isFinite(length)) return
-    if (length - ((conv?.offset ?? 0) + v.currentTime) < 60) {
+    if (v) {
+      const at = (conv?.offset ?? 0) + v.currentTime
+      lastPos.current = at
+      setPos(at)
+      // The credits: the next episode's card, counting down.
+      const creditsAt = skips?.creditsStart || (skips?.creditsFromEnd && length ? length - skips.creditsFromEnd : 0)
+      if (kind === 'tv' && creditsAt > 0 && at >= creditsAt && !creditsDone.current) {
+        creditsDone.current = true
+        api
+          .watchNext(tmdbId, season, episode)
+          .then((n) => {
+            setNext(n)
+            setCountdown(NEXT_COUNTDOWN)
+          })
+          .catch(() => undefined)
+      }
+    }
+    const total = conv ? conv.duration : v?.duration
+    if (!v || kind !== 'tv' || next || !total || !isFinite(total)) return
+    if (total - ((conv?.offset ?? 0) + v.currentTime) < 60) {
       api
         .watchNext(tmdbId, season, episode)
         .then(setNext)
@@ -439,6 +555,7 @@ export default function PlayerPage() {
             playsInline
             onLoadedMetadata={onLoaded}
             onTimeUpdate={onTime}
+            onSeeking={onSeeking}
             onPause={save}
             onEnded={onEnded}
             onError={onError}
@@ -449,14 +566,34 @@ export default function PlayerPage() {
             subtitle={[answer.quality, conv?.stream && 'converted for this browser'].filter(Boolean).join(' · ')}
             timeline={
               conv?.stream && conv.duration > 0
-                ? { offset: conv.offset, duration: conv.duration, onSeek: (sec) => setConv((c) => (c ? { ...c, offset: Math.max(0, Math.floor(sec)) } : c)) }
+                ? {
+                    offset: conv.offset,
+                    duration: conv.duration,
+                    onSeek: (sec) => {
+                      if (ownSeek.current) ownSeek.current = false
+                      else noteJump(lastPos.current, sec)
+                      lastPos.current = sec
+                      ownSeek.current = true // the reload that follows isn't the viewer's
+                      setConv((c) => (c ? { ...c, offset: Math.max(0, Math.floor(sec)) } : c))
+                    },
+                  }
                 : undefined
             }
             onBack={() => navigate(-1)}
             note={note}
             actions={
               kind === 'tv' ? (
-                <button className="vx-text-btn" onClick={() => void nextEpisode()} aria-label="Next episode">
+                <button
+                  className="vx-text-btn"
+                  onClick={() => {
+                    // Next pressed near the end: where the credits start.
+                    if (length > 0 && !skips?.creditsStart && length - pos >= 15 && length - pos <= 900 && pos > length * 0.7) {
+                      void api.learnSkip({ kind, tmdbId, season, segment: 'credits', start: Math.round(pos), duration: Math.round(length) }).catch(() => undefined)
+                    }
+                    void nextEpisode()
+                  }}
+                  aria-label="Next episode"
+                >
                   <Icon name="skip-forward" size={22} fill="currentColor" />
                   <span>Next episode</span>
                 </button>
@@ -504,6 +641,18 @@ export default function PlayerPage() {
             }}
           />
         </>
+      )}
+
+      {playing && skipButton(skips, pos) && (
+        <button
+          className="wx-skip"
+          onClick={() => {
+            const b = skipButton(skips, pos)
+            if (b) seekAbs(b.to)
+          }}
+        >
+          {skipButton(skips, pos)?.label} <Icon name="skip-forward" size={18} fill="currentColor" />
+        </button>
       )}
 
       {next && countdown !== null && (

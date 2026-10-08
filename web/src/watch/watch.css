@@ -2592,3 +2592,61 @@ html.tv-mode .wx-live-hit-remind:focus {
   background: rgba(255, 255, 255, 0.08);
   color: var(--wx-text);
 }
+
+/* "New episode" on a card. */
+.wx-card-new {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--wx-accent-text);
+  background: var(--wx-accent);
+  box-shadow: var(--wx-glow);
+}
+
+/* Skip intro / Skip recap, over the video. */
+.wx-skip {
+  position: absolute;
+  right: max(28px, env(safe-area-inset-right));
+  bottom: 130px;
+  z-index: 6;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 22px;
+  border-radius: 8px;
+  border: 1.5px solid rgba(255, 255, 255, 0.85);
+  background: rgba(var(--wx-bg-rgb), 0.72);
+  color: #fff;
+  font: inherit;
+  font-size: 17px;
+  font-weight: 700;
+  cursor: pointer;
+  backdrop-filter: blur(6px);
+  animation: wx-skip-in 0.25s ease-out;
+}
+.wx-skip:hover,
+.wx-skip:focus-visible {
+  outline: none;
+  background: #fff;
+  color: #0b0c0f;
+  box-shadow: var(--wx-glow);
+}
+@keyframes wx-skip-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+@media (max-width: 640px) {
+  .wx-skip {
+    bottom: 110px;
+    padding: 10px 16px;
+    font-size: 15px;
+  }
+}

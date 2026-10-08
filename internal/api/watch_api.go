@@ -39,6 +39,8 @@ type watchCard struct {
 	Season       int     `json:"season,omitempty"`
 	Episode      int     `json:"episode,omitempty"`
 	EpisodeTitle string  `json:"episodeTitle,omitempty"`
+	// New: the episode came out in the last two weeks.
+	New bool `json:"new,omitempty"`
 }
 
 type watchRow struct {
@@ -182,16 +184,33 @@ func (s *Server) handleWatchHome(w http.ResponseWriter, r *http.Request) {
 		}(i, sh)
 	}
 	cont := s.continueWatching(ctx, pid)
+	var because []watchRow
+	var newEps []watchCard
+	var pwg sync.WaitGroup
+	pwg.Add(2)
+	go func() { defer pwg.Done(); because = s.becauseYouWatched(ctx, pid) }()
+	go func() { defer pwg.Done(); newEps = s.newEpisodes(ctx, pid, cont) }()
+	pwg.Wait()
 	wg.Wait()
 
 	home := watchHome{}
 	if len(cont) > 0 {
 		home.Rows = append(home.Rows, watchRow{Key: "continue", Title: "Continue watching", Items: cont})
 	}
+	if len(newEps) > 0 {
+		home.Rows = append(home.Rows, watchRow{Key: "new-episodes", Title: "New episodes", Items: newEps})
+	}
 	if list := s.myListCards(pid); len(list) > 0 {
 		home.Rows = append(home.Rows, watchRow{Key: "my-list", Title: "My List", Items: list})
 	}
-	for _, row := range shelves {
+	// "Because you watched" rows sit among the others, after the first.
+	for i, row := range shelves {
+		if i == 1 && len(because) > 0 {
+			home.Rows = append(home.Rows, because[0])
+		}
+		if i == 4 && len(because) > 1 {
+			home.Rows = append(home.Rows, because[1])
+		}
 		if len(row.Items) > 0 {
 			home.Rows = append(home.Rows, row)
 		}
@@ -241,6 +260,7 @@ func (s *Server) continueWatching(ctx context.Context, userID int64) []watchCard
 				continue // caught up
 			}
 			c.Season, c.Episode, c.EpisodeTitle = next.Season, next.Episode, next.Name
+			c.New = recentlyAired(next.AirDate, 14)
 		} else {
 			c.Progress = p.Fraction()
 		}
@@ -261,6 +281,155 @@ func (s *Server) myListCards(userID int64) []watchCard {
 			PosterURL: metadata.PosterURL(it.PosterPath), BackdropURL: metadata.BackdropURL(it.BackdropPath)})
 	}
 	return out
+}
+
+// becauseYouWatched is a row of what TMDB recommends for each of the two
+// titles the profile watched most recently, without what it has watched.
+func (s *Server) becauseYouWatched(ctx context.Context, pid int64) []watchRow {
+	recent, err := s.WatchRepo.Recent(pid, 40)
+	if err != nil || len(recent) == 0 {
+		return nil
+	}
+	tm := s.TMDB()
+	if tm == nil || !tm.HasAPIKey() {
+		return nil
+	}
+	watched := map[string]bool{}
+	for _, p := range recent {
+		watched[fmt.Sprintf("%s:%d", p.Kind, p.TMDBID)] = true
+	}
+	var picks []watch.Progress
+	for _, p := range recent {
+		if len(picks) == 2 {
+			break
+		}
+		// Only what was really watched, not a title opened for a moment.
+		if p.Position >= 300 || p.Finished() || p.Kind == watch.KindTV && p.Episode > 1 {
+			picks = append(picks, p)
+		}
+	}
+	rows := make([]watchRow, len(picks))
+	var wg sync.WaitGroup
+	for i, p := range picks {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			var cards []watchCard
+			if p.Kind == watch.KindMovie {
+				ms, err := tm.RelatedMovies(ctx, p.TMDBID, metadata.RelatedRecommended)
+				if err != nil {
+					return
+				}
+				cards = movieCards(ms)
+			} else {
+				ss, err := tm.RelatedShows(ctx, p.TMDBID, metadata.RelatedRecommended)
+				if err != nil {
+					return
+				}
+				cards = showCards(ss)
+			}
+			var keep []watchCard
+			for _, c := range cards {
+				if !watched[fmt.Sprintf("%s:%d", c.Kind, c.TMDBID)] {
+					keep = append(keep, c)
+				}
+			}
+			if len(keep) >= 4 {
+				rows[i] = watchRow{Key: fmt.Sprintf("because-%s-%d", p.Kind, p.TMDBID), Title: "Because you watched " + p.Title, Items: keep}
+			}
+		}()
+	}
+	wg.Wait()
+	var out []watchRow
+	for _, r := range rows {
+		if len(r.Items) > 0 {
+			out = append(out, r)
+		}
+	}
+	return out
+}
+
+// newEpisodes is the shows on the profile's My List, or watched lately, with
+// an episode out in the last two weeks it hasn't seen; ones already on
+// Continue Watching aren't repeated.
+func (s *Server) newEpisodes(ctx context.Context, pid int64, cont []watchCard) []watchCard {
+	tm := s.TMDB()
+	if tm == nil || !tm.HasAPIKey() {
+		return nil
+	}
+	skip := map[int]bool{}
+	for _, c := range cont {
+		if c.Kind == watch.KindTV {
+			skip[c.TMDBID] = true
+		}
+	}
+	type show struct {
+		id              int
+		title, poster   string
+		backdrop        string
+		season, episode int // the latest the profile watched; 0 = none
+	}
+	var shows []show
+	seen := map[int]bool{}
+	if recent, err := s.WatchRepo.Recent(pid, 30); err == nil {
+		for _, p := range recent {
+			if p.Kind == watch.KindTV && !skip[p.TMDBID] && !seen[p.TMDBID] && time.Since(p.UpdatedAt) < 120*24*time.Hour {
+				seen[p.TMDBID] = true
+				shows = append(shows, show{p.TMDBID, p.Title, p.PosterPath, p.BackdropPath, p.Season, p.Episode})
+			}
+		}
+	}
+	if list, err := s.WatchRepo.List(pid); err == nil {
+		for _, it := range list {
+			if it.Kind == watch.KindTV && !skip[it.TMDBID] && !seen[it.TMDBID] {
+				seen[it.TMDBID] = true
+				shows = append(shows, show{it.TMDBID, it.Title, it.PosterPath, it.BackdropPath, 0, 0})
+			}
+		}
+	}
+	if len(shows) > 15 {
+		shows = shows[:15]
+	}
+	cards := make([]*watchCard, len(shows))
+	var wg sync.WaitGroup
+	for i, sh := range shows {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			d, err := tm.GetShowFull(ctx, sh.id)
+			if err != nil || d.LastEpisodeToAir == nil {
+				return
+			}
+			last := d.LastEpisodeToAir
+			if !recentlyAired(last.AirDate, 14) || sh.season > last.Season || sh.season == last.Season && sh.episode >= last.Episode {
+				return
+			}
+			c := watchCard{Kind: watch.KindTV, TMDBID: sh.id, Title: sh.title, PosterURL: metadata.PosterURL(sh.poster),
+				BackdropURL: metadata.BackdropURL(sh.backdrop), Season: last.Season, Episode: last.Episode, EpisodeTitle: last.Name, New: true}
+			if c.BackdropURL == "" {
+				c.BackdropURL = metadata.BackdropURL(d.BackdropPath)
+			}
+			cards[i] = &c
+		}()
+	}
+	wg.Wait()
+	var out []watchCard
+	for _, c := range cards {
+		if c != nil {
+			out = append(out, *c)
+		}
+	}
+	return out
+}
+
+// recentlyAired says a TMDB air date is within the last days days.
+func recentlyAired(date string, days int) bool {
+	t, err := time.Parse("2006-01-02", date)
+	if err != nil {
+		return false
+	}
+	age := time.Since(t)
+	return age >= 0 && age < time.Duration(days)*24*time.Hour
 }
 
 // ---- Episodes

@@ -226,6 +226,7 @@ export interface WatchCard {
   season?: number
   episode?: number
   episodeTitle?: string
+  new?: boolean // the episode came out in the last two weeks
 }
 export interface WatchRow {
   key: string
@@ -290,6 +291,16 @@ export interface WatchProviders {
 function userRegion(): string {
   const m = /-([A-Za-z]{2})\b/.exec(navigator.language ?? '')
   return m ? m[1].toUpperCase() : 'US'
+}
+
+// Where a video's intro, recap and credits are, in seconds (TheIntroDB, or
+// learned from what the household skips).
+export interface WatchSkips {
+  intro?: { start: number; end: number }
+  recap?: { start: number; end: number }
+  creditsStart?: number
+  creditsFromEnd?: number // credits start this long before the end
+  source?: string
 }
 
 export interface PlayAnswer {
@@ -2219,6 +2230,10 @@ export const api = {
   watchSearch: (q: string) => get<WatchCard[]>(`/watch/search?q=${encodeURIComponent(q)}`),
   watchTitle: (kind: WatchKind, tmdbId: number) => get<WatchTitle>(`/watch/${kind}/${tmdbId}`),
   watchSeason: (tmdbId: number, season: number) => get<WatchEpisode[]>(`/watch/tv/${tmdbId}/season/${season}`),
+  watchSkips: (kind: 'movie' | 'tv', tmdbId: number, season: number, episode: number, duration: number) =>
+    get<WatchSkips>(`/watch/skips/${kind}/${tmdbId}?season=${season}&episode=${episode}&duration=${Math.round(duration)}`),
+  learnSkip: (b: { kind: 'movie' | 'tv'; tmdbId: number; season: number; segment: 'intro' | 'credits'; start: number; end?: number; duration?: number }) =>
+    post<void>('/watch/skips/learn', b),
   watchNext: (tmdbId: number, season: number, episode: number) =>
     get<WatchEpisode>(`/watch/tv/${tmdbId}/next?season=${season}&episode=${episode}`),
   watchProgress: (kind: WatchKind, tmdbId: number, season = 0, episode = 0) =>

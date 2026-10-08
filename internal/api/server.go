@@ -479,6 +479,8 @@ func (s *Server) protectedRoutes() *routeTable {
 	play.HandleFunc("GET /api/watch/tv/{tmdbId}/season/{season}", s.handleWatchSeason)
 	play.HandleFunc("GET /api/watch/tv/{tmdbId}/next", s.handleWatchNext)
 	play.HandleFunc("GET /api/watch/providers/{kind}/{tmdbId}", s.handleWatchProviders)
+	play.HandleFunc("GET /api/watch/skips/{kind}/{tmdbId}", s.handleWatchSkips)
+	play.HandleFunc("POST /api/watch/skips/learn", s.handleLearnSkip)
 	play.HandleFunc("PUT /api/watch/progress", s.handlePutWatchProgress)
 	play.HandleFunc("GET /api/watch/progress/{kind}/{tmdbId}", s.handleGetWatchProgress)
 	play.HandleFunc("DELETE /api/watch/progress/{kind}/{tmdbId}", s.handleForgetWatchProgress)

@@ -94,6 +94,22 @@ class PlayerActivity : Activity() {
     private var soundChecked = false
     private var nextOffered = false
 
+    // Skip intro / recap and the credits, in ms (0 = not known), from
+    // TheIntroDB or learned from what the household skips.
+    private var introStart = 0L
+    private var introEnd = 0L
+    private var recapStart = 0L
+    private var recapEnd = 0L
+    private var creditsStart = 0L
+    private var creditsFromEnd = 0L
+    private var introKnown = false // TheIntroDB has it: nothing to learn
+    private lateinit var skipButton: TextView
+    private var skipTo = 0L
+    // The viewer's jump forward in progress (several presses count as one).
+    private var jumpFrom = -1L
+    private var jumpTo = -1L
+    private val jumpDone = Runnable { learnIntro() }
+
     // Sizes follow the screen, not the TV's density or font-size setting
     // (Google TV boxes differ there): 1 unit is 1/960 of the screen's width.
     private val dp by lazy { screenUnit(this) }
@@ -135,6 +151,11 @@ class PlayerActivity : Activity() {
             for (i in 0 until list.length()) list.optString(i).takeIf { it.isNotEmpty() }?.let { alts.addLast(it) }
         }
         isShow = info.optString("kind") == "tv"
+        fun ms(key: String) = (info.optDouble(key, 0.0) * 1000).toLong()
+        introStart = ms("introStart"); introEnd = ms("introEnd")
+        recapStart = ms("recapStart"); recapEnd = ms("recapEnd")
+        creditsStart = ms("creditsStart"); creditsFromEnd = ms("creditsFromEnd")
+        introKnown = info.optBoolean("introKnown")
         hasOther = info.optBoolean("hasOther")
 
         val renderers = DefaultRenderersFactory(this)
@@ -184,6 +205,11 @@ class PlayerActivity : Activity() {
             addView(spinner, FrameLayout.LayoutParams(px(64), px(64), Gravity.CENTER))
             addView(pauseBadge, FrameLayout.LayoutParams(px(110), px(110), Gravity.CENTER))
             addView(controls, FrameLayout.LayoutParams(MATCH, MATCH))
+            skipButton = buildSkipButton()
+            addView(skipButton, FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, px(52), Gravity.BOTTOM or Gravity.END).apply {
+                marginEnd = px(48)
+                bottomMargin = px(150)
+            })
         }
         setContentView(root)
 
@@ -293,6 +319,7 @@ class PlayerActivity : Activity() {
         timeBar = TimeBar(this).apply {
             setAccent(teal)
             onSeek = { to ->
+                noteJump(this@PlayerActivity.position(), to)
                 seekToPosition(to)
                 showControls()
             }
@@ -325,7 +352,10 @@ class PlayerActivity : Activity() {
             }
             addView(View(context), LinearLayout.LayoutParams(0, 1, 1f))
             if (isShow && !live && !catchup) {
-                nextButton = pill("Next episode", R.drawable.ic_cue_next) { end("next") }.also { addView(it) }
+                nextButton = pill("Next episode", R.drawable.ic_cue_next) {
+                    learnCredits()
+                    end("next")
+                }.also { addView(it) }
             }
             if (hasOther && !live && !catchup) {
                 addView(pill("Other version", R.drawable.ic_cue_versions) { end("other") })
@@ -414,9 +444,16 @@ class PlayerActivity : Activity() {
         val pos = if (pendingSeek >= 0) pendingSeek else position()
         timeBar.update(pos, dur, if (catchup) cuOffset + player.bufferedPosition else player.bufferedPosition)
         timeLeft.text = if (dur > 0) clock(dur - pos) else ""
-        // Near the end of an episode, offer the next one.
+        updateSkip(pos)
+        // When the credits start (or near the end), offer the next episode.
         val next = nextButton
-        if (next != null && !nextOffered && dur > 0 && dur - pos < 45_000 && player.isPlaying) {
+        val credits = when {
+            creditsStart > 0 -> creditsStart
+            creditsFromEnd > 0 && dur > 0 -> dur - creditsFromEnd
+            else -> 0L
+        }
+        val atCredits = credits > 0 && pos >= credits
+        if (next != null && !nextOffered && dur > 0 && (atCredits || dur - pos < 45_000) && player.isPlaying) {
             nextOffered = true
             showControls()
             next.requestFocus()
@@ -461,6 +498,7 @@ class PlayerActivity : Activity() {
     private fun seekBy(ms: Long) {
         if (live) return
         val from = if (pendingSeek >= 0) pendingSeek else position()
+        noteJump(from, from + ms)
         val dur = length().takeIf { it > 0 } ?: Long.MAX_VALUE
         seekToPosition((from + ms).coerceIn(0, dur))
         refreshTime()
@@ -549,6 +587,10 @@ class PlayerActivity : Activity() {
             if (!controlsShowing()) {
                 when (code) {
                     KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER -> {
+                        if (skipButton.visibility == View.VISIBLE) {
+                            skip()
+                            return true
+                        }
                         if (!live) togglePlay()
                         showControls(playPause)
                         return true
@@ -563,6 +605,132 @@ class PlayerActivity : Activity() {
             }
         }
         return super.dispatchKeyEvent(event)
+    }
+
+    // ---- Skip intro, the credits, and learning them ----
+
+    private fun buildSkipButton(): TextView = TextView(this).apply {
+        size(16f)
+        typeface = Typeface.create("sans-serif-medium", Typeface.BOLD)
+        gravity = Gravity.CENTER
+        setPadding(px(22), 0, px(22), 0)
+        val colors = ColorStateList(
+            arrayOf(intArrayOf(android.R.attr.state_focused), intArrayOf()),
+            intArrayOf(0xFF0B0C0F.toInt(), Color.WHITE),
+        )
+        setTextColor(colors)
+        background = StateListDrawable().apply {
+            addState(intArrayOf(android.R.attr.state_focused), GradientDrawable().apply {
+                cornerRadius = px(8).toFloat()
+                setColor(Color.WHITE)
+            })
+            addState(intArrayOf(), GradientDrawable().apply {
+                cornerRadius = px(8).toFloat()
+                setColor(0xB3101114.toInt())
+                setStroke(px(2), Color.WHITE)
+            })
+        }
+        isFocusable = true
+        isFocusableInTouchMode = true
+        visibility = View.GONE
+        setOnClickListener { skip() }
+    }
+
+    // updateSkip shows Skip recap / Skip intro while in one.
+    private fun updateSkip(pos: Long) {
+        if (live || catchup) return
+        val (label, to) = when {
+            recapEnd > 0 && pos >= recapStart && pos < recapEnd - 2000 -> "Skip recap" to recapEnd
+            introEnd > 0 && pos >= introStart && pos < introEnd - 2000 -> "Skip intro" to introEnd
+            else -> "" to 0L
+        }
+        if (label.isEmpty()) {
+            if (skipButton.visibility == View.VISIBLE) {
+                val hadFocus = skipButton.isFocused
+                skipButton.visibility = View.GONE
+                if (hadFocus && controlsShowing()) playPause.requestFocus()
+            }
+            return
+        }
+        skipTo = to
+        skipButton.text = "$label  ›"
+        if (skipButton.visibility != View.VISIBLE) {
+            skipButton.visibility = View.VISIBLE
+            if (!controlsShowing()) skipButton.requestFocus()
+        }
+    }
+
+    private fun skip() {
+        if (skipTo <= 0) return
+        player.seekTo(skipTo)
+        skipButton.visibility = View.GONE
+        refreshTime()
+    }
+
+    // noteJump gathers the viewer's jumps forward; one over the start of an
+    // episode teaches Cue its intro (learnIntro, once the remote rests).
+    private fun noteJump(from: Long, to: Long) {
+        if (!isShow || live || catchup || introKnown || to <= from) return
+        if (jumpFrom >= 0 && kotlin.math.abs(from - jumpTo) < 4000) {
+            jumpTo = to
+        } else {
+            jumpFrom = from
+            jumpTo = to
+        }
+        main.removeCallbacks(jumpDone)
+        main.postDelayed(jumpDone, 4000)
+    }
+
+    private fun learnIntro() {
+        val from = jumpFrom / 1000.0
+        val to = jumpTo / 1000.0
+        jumpFrom = -1
+        jumpTo = -1
+        if (from < 0 || from >= 480 || to - from < 15 || to - from > 200) return
+        if (introEnd == 0L) {
+            introStart = (from * 1000).toLong()
+            introEnd = (to * 1000).toLong()
+        }
+        postJson("/api/watch/skips/learn", JSONObject()
+            .put("kind", "tv").put("tmdbId", info.optInt("tmdbId")).put("season", info.optInt("season"))
+            .put("segment", "intro").put("start", from).put("end", to))
+    }
+
+    // learnCredits: Next pressed during the end of an episode marks where
+    // its credits start.
+    private fun learnCredits() {
+        if (creditsStart > 0 || live || catchup) return
+        val dur = player.duration.takeIf { it != C.TIME_UNSET } ?: return
+        val pos = player.currentPosition
+        val left = dur - pos
+        if (left < 15_000 || left > 900_000 || pos < dur * 0.7) return
+        postJson("/api/watch/skips/learn", JSONObject()
+            .put("kind", info.optString("kind")).put("tmdbId", info.optInt("tmdbId")).put("season", info.optInt("season"))
+            .put("segment", "credits").put("start", pos / 1000.0).put("duration", dur / 1000.0))
+    }
+
+    // postJson sends something to Cue as this profile, in the background.
+    private fun postJson(path: String, body: JSONObject) {
+        if (server.isEmpty()) return
+        val cookie = CookieManager.getInstance().getCookie(server)
+        val token = info.optString("token")
+        Thread {
+            try {
+                val c = URL("$server$path").openConnection() as HttpURLConnection
+                c.requestMethod = "POST"
+                c.doOutput = true
+                c.connectTimeout = 8000
+                c.readTimeout = 8000
+                c.setRequestProperty("Content-Type", "application/json")
+                if (cookie != null) c.setRequestProperty("Cookie", cookie)
+                if (token.isNotEmpty()) c.setRequestProperty("X-Cue-Profile", token)
+                c.outputStream.use { it.write(body.toString().toByteArray()) }
+                c.responseCode
+                c.disconnect()
+            } catch (_: Exception) {
+                // Not learned this time.
+            }
+        }.start()
     }
 
     // saveProgress tells Cue where this profile is in the title, the same way

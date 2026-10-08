@@ -38,6 +38,7 @@ export function Card({ card, wide }: { card: WatchCard; wide?: boolean }) {
           ) : null}
         </div>
       )}
+      {card.new && <span className="wx-card-new">New episode</span>}
       {card.progress !== undefined && card.progress > 0 && (
         <div className="wx-card-progress">
           <div style={{ width: `${Math.round(card.progress * 100)}%` }} />

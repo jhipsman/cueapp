@@ -119,7 +119,7 @@ export default function TitlePage({ kind }: { kind: WatchKind }) {
                 {title.networks.join(', ')}
               </p>
             )}
-            <FreeElsewhere kind={kind} tmdbId={tmdbId} label="Also free on" />
+            <FreeElsewhere kind={kind} tmdbId={tmdbId} label="Also free on" subscriptions />
           </div>
         </div>
 
