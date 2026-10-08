@@ -154,7 +154,7 @@ export default function PlayerPage() {
     if (!onTV() || !answer || !resumeReady || error) return
     window.cueTvPlayerDone = (r: TVPlayerResult) => {
       window.cueTvPlayerDone = undefined
-      if (r.reason === 'ended') {
+      if (r.reason === 'ended' || r.reason === 'next') {
         if (kind !== 'tv') return navigate(-1)
         api
           .watchNext(tmdbId, season, episode)

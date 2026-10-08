@@ -866,20 +866,83 @@ html.watch-mode body {
 }
 
 /* ---- On a TV (the Fire TV / Google TV app): no mouse, so focus is the
-   pointer. Make it impossible to miss, and keep hover-only bits visible. */
-html.tv-mode .wx :focus {
-  outline: 4px solid #fff;
-  outline-offset: 4px;
+   pointer. A cyan glow and a slight lift, like the big streaming apps; the
+   page is laid out 1280 wide (tv.ts), so sizes here are for that. */
+html.tv-mode,
+html.tv-mode body {
+  scroll-behavior: smooth;
+  cursor: none;
 }
+html.tv-mode .wx :focus,
+html.tv-mode .wx :focus-visible {
+  outline: none;
+}
+html.tv-mode .wx a,
+html.tv-mode .wx button,
+html.tv-mode .wx [tabindex] {
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease,
+    background 0.18s ease,
+    color 0.18s ease;
+}
+/* Buttons: white with dark text when focused (Play, More info, Set up...). */
+html.tv-mode .wx-btn:focus {
+  background: #fff;
+  color: #0b0c0f;
+  transform: scale(1.06);
+  box-shadow: 0 0 0 3px var(--wx-accent), 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+/* Posters and episode cards: lifted with a cyan ring. */
 html.tv-mode .wx-card:focus {
-  transform: scale(1.08);
+  transform: scale(1.07);
   z-index: 3;
-}
-html.tv-mode .wx-row-arrow {
-  display: none;
+  box-shadow: 0 0 0 3px var(--wx-accent), 0 14px 34px rgba(0, 0, 0, 0.7);
+  border-radius: 8px;
 }
 html.tv-mode .wx-ep:focus {
   background: var(--wx-panel);
+  box-shadow: inset 0 0 0 3px var(--wx-accent);
+  border-radius: 10px;
+}
+/* The top bar: the focused section in cyan, underlined. */
+html.tv-mode .wx-links a:focus,
+html.tv-mode .wx-brand:focus {
+  color: var(--wx-accent) !important;
+  text-decoration: underline 3px;
+  text-underline-offset: 8px;
+}
+html.tv-mode .wx-search:focus-within {
+  box-shadow: 0 0 0 3px var(--wx-accent);
+}
+html.tv-mode .wx-nav button:focus,
+html.tv-mode .wx-round:focus,
+html.tv-mode .wx-who-tile:focus .wx-avatar {
+  box-shadow: 0 0 0 3px var(--wx-accent), 0 0 24px rgba(52, 209, 191, 0.45);
+}
+/* Chips (Live TV's groups, seasons). */
+html.tv-mode .wx-chips button:focus {
+  border-color: var(--wx-accent);
+  box-shadow: 0 0 0 2px var(--wx-accent);
+  transform: scale(1.05);
+}
+html.tv-mode .wx-row-arrow,
+html.tv-mode .wx-tabs {
+  display: none;
+}
+/* The TV guide: the focused show or channel lights up inside its cell (an
+   outline would be cut off by the guide's edges). */
+html.tv-mode .wx-guide {
+  height: calc(100vh - 200px);
+}
+html.tv-mode .wx-prog:focus {
+  background: rgba(52, 209, 191, 0.22);
+  box-shadow: inset 0 0 0 3px var(--wx-accent);
+}
+html.tv-mode .wx-guide-chan-play:focus,
+html.tv-mode .wx-guide-star:focus {
+  background: rgba(52, 209, 191, 0.18);
+  box-shadow: inset 0 0 0 3px var(--wx-accent);
 }
 
 /* Live TV: the guide. Channels down a sticky left column, shows across a

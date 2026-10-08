@@ -43,6 +43,11 @@ class MainActivity : Activity() {
             mediaPlaybackRequiresUserGesture = false
             mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
             userAgentString = "$userAgentString CueTV/1"
+            // Watch lays itself out 1280 wide on a TV (tv.ts); these make
+            // the web view scale that page to fit the screen.
+            useWideViewPort = true
+            loadWithOverviewMode = true
+            setSupportZoom(false)
         }
         CookieManager.getInstance().setAcceptCookie(true)
         CookieManager.getInstance().setAcceptThirdPartyCookies(w, true)

@@ -16,7 +16,7 @@ declare global {
 }
 
 export interface TVPlayerResult {
-  reason: 'ended' | 'error' | 'back' | 'channel-up' | 'channel-down'
+  reason: 'ended' | 'next' | 'error' | 'back' | 'channel-up' | 'channel-down'
   position: number // seconds
   duration: number // seconds
   message?: string
@@ -91,10 +91,30 @@ function firstFocusable(): HTMLElement | null {
 
 function focus(el: HTMLElement) {
   el.focus({ preventScroll: true })
-  el.scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'smooth' })
-  // Keep a little of the page above a focused row in view.
+  // Inside the TV guide (its own scroll box): just bring the show into view.
+  if (el.closest('.wx-guide')) {
+    el.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' })
+    return
+  }
+  // In a row of posters: the row slides so the focused one sits near the
+  // left, the way TV apps do, rather than jumping to the middle.
+  const row = el.closest<HTMLElement>('.wx-row-scroll, .wx-chips')
+  if (row) {
+    const rr = row.getBoundingClientRect()
+    const er = el.getBoundingClientRect()
+    const pad = 48
+    if (er.left < rr.left + pad || er.right > rr.right - pad) {
+      row.scrollBy({ left: er.left - rr.left - pad, behavior: 'smooth' })
+    }
+  }
+  // The page: the top bar and the banner show the top; anything else sits a
+  // third of the way down the screen.
   const r = el.getBoundingClientRect()
-  if (r.top < 90) window.scrollBy({ top: r.top - 120, behavior: 'smooth' })
+  if (el.closest('.wx-nav, .wx-hero')) {
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  } else if (r.top < 110 || r.bottom > window.innerHeight - 40) {
+    window.scrollBy({ top: r.top - window.innerHeight * 0.32, behavior: 'smooth' })
+  }
 }
 
 const KEYS: Record<string, Dir> = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right' }
@@ -104,6 +124,11 @@ const KEYS: Record<string, Dir> = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft:
 export function installTVNavigation(): () => void {
   if (!onTV()) return () => undefined
   document.documentElement.classList.add('tv-mode')
+  // TVs give a web view a 960-pixel-wide page, which makes everything huge.
+  // Laid out 1280 wide (a 720p screen) and scaled to fit, Cue looks the
+  // size a TV app should.
+  const meta = document.querySelector<HTMLMetaElement>('meta[name="viewport"]')
+  if (meta) meta.content = 'width=1280, user-scalable=no'
   const onKey = (e: KeyboardEvent) => {
     const dir = KEYS[e.key]
     if (!dir) return
