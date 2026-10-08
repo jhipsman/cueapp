@@ -1,0 +1,9 @@
+# HTTPS for Cue. Caddy gets a certificate for CUE_HOST from Let's Encrypt
+# and renews it; plain http:// visits are sent to https://.
+{$CUE_HOST} {
+	encode zstd gzip
+	reverse_proxy cue:8264 {
+		# Live TV and long searches stream their answers.
+		flush_interval -1
+	}
+}

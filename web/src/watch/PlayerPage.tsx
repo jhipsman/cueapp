@@ -15,6 +15,42 @@ const NEXT_COUNTDOWN = 10
 // version Premiumize can stream, resumes where you stopped, saves where you
 // are, quietly moves to the next version if one won't play, and offers the
 // next episode at the end.
+// Phones and tablets can hand a video to a player app, which plays what the
+// browser can't. iPhone: Infuse or VLC; Android: VLC.
+const UA = typeof navigator === 'undefined' ? '' : navigator.userAgent
+const IOS = /iPhone|iPad|iPod/.test(UA) || (/Macintosh/.test(UA) && typeof navigator !== 'undefined' && navigator.maxTouchPoints > 1)
+const ANDROID = /Android/.test(UA)
+
+function playerApps(url: string): { name: string; href: string }[] {
+  if (!url || onTV()) return []
+  const u = encodeURIComponent(url)
+  if (IOS) {
+    return [
+      { name: 'Infuse', href: `infuse://x-callback-url/play?url=${u}` },
+      { name: 'VLC', href: `vlc-x-callback://x-callback-url/stream?url=${u}` },
+    ]
+  }
+  if (ANDROID) {
+    const [scheme, rest] = url.split('://')
+    return [{ name: 'VLC', href: `intent://${rest}#Intent;scheme=${scheme};package=org.videolan.vlc;type=video/*;end` }]
+  }
+  return []
+}
+
+function OpenIn({ url, onOpen }: { url: string; onOpen: () => void }) {
+  const apps = playerApps(url)
+  if (apps.length === 0) return null
+  return (
+    <div className="wx-open-in">
+      {apps.map((a) => (
+        <a key={a.name} className="wx-btn small" href={a.href} onClick={onOpen}>
+          Open in {a.name}
+        </a>
+      ))}
+    </div>
+  )
+}
+
 export default function PlayerPage() {
   const params = useParams()
   const navigate = useNavigate()
@@ -221,7 +257,11 @@ export default function PlayerPage() {
       void load(answer.option + 1)
       return
     }
-    setError("None of the versions found will play in this browser. Try another browser, or the app on your TV.")
+    setError(
+      playerApps(answer.url).length > 0
+        ? 'None of the versions found will play in this browser. Open it in a player app instead:'
+        : 'None of the versions found will play in this browser. Try another browser, or the app on your TV.',
+    )
   }
 
   const src = answer ? (useOriginal ? answer.url : answer.streamUrl || answer.url) : ''
@@ -244,7 +284,8 @@ export default function PlayerPage() {
             </small>
           )}
         </div>
-        <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
+        <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          {answer && <OpenIn url={answer.url} onOpen={() => video.current?.pause()} />}
           {answer && answer.option < answer.options && (
             <button className="wx-btn small" onClick={() => void load(answer.option + 1)}>
               Try another version
@@ -270,6 +311,7 @@ export default function PlayerPage() {
       {error && (
         <div className="wx-player-center">
           <p className="wx-error">{error}</p>
+          {answer && <OpenIn url={answer.url} onOpen={() => undefined} />}
           <div className="wx-actions" style={{ justifyContent: 'center' }}>
             <button className="wx-btn" onClick={() => void load(1, true)}>
               Search again

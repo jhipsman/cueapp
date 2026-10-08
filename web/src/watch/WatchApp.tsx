@@ -46,6 +46,7 @@ export default function WatchApp() {
           element={
             <>
               <TopBar />
+              <PhoneTabs />
               <Routes>
                 <Route index element={<Home />} />
                 <Route path="movies" element={<Home only="movie" />} />
@@ -105,6 +106,38 @@ function ProfileMenu() {
         </div>
       )}
     </div>
+  )
+}
+
+// PhoneTabs: on a phone, the sections sit at the bottom, in thumb's reach
+// (the top bar keeps only the logo, search and the profile).
+function PhoneTabs() {
+  const liveTV = useProfiles().data?.liveTV ?? false
+  return (
+    <nav className="wx-tabs" aria-label="Sections">
+      <NavLink to="/watch" end>
+        <Icon name="grid" size={20} />
+        Home
+      </NavLink>
+      <NavLink to="/watch/shows">
+        <Icon name="tv" size={20} />
+        Shows
+      </NavLink>
+      <NavLink to="/watch/movies">
+        <Icon name="film" size={20} />
+        Movies
+      </NavLink>
+      {liveTV && (
+        <NavLink to="/watch/live">
+          <Icon name="activity" size={20} />
+          Live TV
+        </NavLink>
+      )}
+      <NavLink to="/watch/list">
+        <Icon name="bookmark" size={20} />
+        My List
+      </NavLink>
+    </nav>
   )
 }
 

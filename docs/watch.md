@@ -65,7 +65,7 @@ Without a key, Watch shows TMDB's own score instead.
 
 Add your IPTV provider and Watch gets a **Live TV** tab: every channel with its logo, a TV guide of what's on now and for the next hours, and Favourites per profile.
 
-![The Live TV guide](images/watch-live-guide.png)
+![The Live TV guide](images/watch/watch-live-guide.png)
 
 1. Find your provider's **Xtream Codes** login: a server address (usually with a port, like `http://line.example.com:8080`), a username and a password. Providers send it with the M3U link; if you only have an M3U link, the three are in it: `http://SERVER/get.php?username=USERNAME&password=PASSWORD&...`.
 2. Main profile only: **Settings > Streaming > Live TV**, fill them in and press **Save**. Cue checks the login with the provider.

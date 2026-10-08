@@ -47,7 +47,7 @@ object Server {
                 else -> "That address answered, but it isn't Cue (status $code)."
             }
         } catch (e: Exception) {
-            "Couldn't reach $address: ${e.message ?: e.javaClass.simpleName}. Check the address, and that the TV and the server are on the same network (or Tailscale)."
+            "Couldn't reach $address: ${e.message ?: e.javaClass.simpleName}. Check the address and that the server is on."
         }
     }
 }

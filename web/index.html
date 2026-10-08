@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>Cue</title>
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="icon" href="/favicon.ico" sizes="any" />
@@ -11,6 +11,11 @@
     <link rel="apple-touch-icon" href="/apple-touch-icon-180.png" />
     <link rel="manifest" href="/manifest.webmanifest" />
     <meta name="theme-color" content="#0f1216" />
+    <!-- Added to an iPhone's home screen, Cue opens full screen like an app. -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+    <meta name="apple-mobile-web-app-title" content="Cue" />
     <!-- Loading screen shown before the app's code arrives (same look as components/Splash.tsx). -->
     <style>
       .splash { position: fixed; inset: 0; display: grid; place-content: center; justify-items: center; gap: 14px; background: #0f1216; color: #e8ecf1; font-family: system-ui, -apple-system, 'Segoe UI', sans-serif; z-index: 100; }

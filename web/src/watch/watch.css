@@ -39,7 +39,8 @@ html.watch-mode body {
   display: flex;
   align-items: center;
   gap: 22px;
-  padding: 14px var(--wx-gutter);
+  padding: calc(14px + env(safe-area-inset-top)) max(var(--wx-gutter), env(safe-area-inset-right)) 14px
+    max(var(--wx-gutter), env(safe-area-inset-left));
   background: linear-gradient(to bottom, rgba(0, 0, 0, 0.75), rgba(0, 0, 0, 0));
   transition: background 0.25s;
 }
@@ -100,9 +101,38 @@ html.watch-mode body {
   font-size: 0.85rem;
   white-space: nowrap;
 }
+.wx-tabs {
+  display: none;
+}
 @media (max-width: 640px) {
   .wx-links {
     display: none;
+  }
+  .wx-tabs {
+    position: fixed;
+    inset: auto 0 0 0;
+    z-index: 20;
+    display: flex;
+    justify-content: space-around;
+    padding: 6px 4px calc(6px + env(safe-area-inset-bottom));
+    background: rgba(16, 17, 20, 0.97);
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+  }
+  .wx-tabs a {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    padding: 4px 0;
+    font-size: 0.68rem;
+    color: var(--wx-dim);
+  }
+  .wx-tabs a.active {
+    color: var(--wx-text);
+  }
+  .wx {
+    padding-bottom: calc(64px + env(safe-area-inset-bottom));
   }
   .wx-manage span {
     display: none;
@@ -530,7 +560,7 @@ html.watch-mode body {
   display: flex;
   align-items: center;
   gap: 14px;
-  padding: 16px 20px;
+  padding: calc(16px + env(safe-area-inset-top)) max(20px, env(safe-area-inset-right)) 16px max(20px, env(safe-area-inset-left));
   background: linear-gradient(to bottom, rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0));
   transition: opacity 0.3s;
   z-index: 2;
@@ -895,7 +925,7 @@ html.tv-mode .wx-ep:focus {
 .wx-guide {
   position: relative;
   overflow: auto;
-  height: calc(100vh - 210px);
+  height: calc(100dvh - 210px);
   min-height: 320px;
   border-radius: 10px;
   background: var(--wx-panel);
@@ -1094,7 +1124,7 @@ html.tv-mode .wx-ep:focus {
     --wx-chan-w: 112px;
   }
   .wx-guide {
-    height: calc(100vh - 190px);
+    height: calc(100dvh - 254px - env(safe-area-inset-bottom));
     border-radius: 0;
     margin: 0 calc(var(--wx-gutter) * -1);
   }
@@ -1121,5 +1151,19 @@ html.tv-mode .wx-ep:focus {
   }
   .wx-player-top .wx-btn.small {
     padding: 6px 10px;
+  }
+}
+
+/* "Open in Infuse / VLC" on phones and tablets: for videos the phone's
+   browser can't play (MKV, HEVC, Dolby and DTS sound). */
+.wx-open-in {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+@media (max-width: 640px) {
+  .wx-player-top {
+    flex-wrap: wrap;
   }
 }

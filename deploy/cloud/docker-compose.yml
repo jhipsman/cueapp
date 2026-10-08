@@ -1,0 +1,45 @@
+# Cue on a cloud server: Cue itself, Caddy in front of it for HTTPS (it gets
+# and renews the certificate by itself), and FlareSolverr for torrent sites
+# behind Cloudflare. Set up by install.sh; the settings live in .env next to
+# this file, and everything Cue keeps is in ./config.
+services:
+  cue:
+    image: ${CUE_IMAGE:-ghcr.io/jhipsman/cue:latest}
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      - TZ=${TZ:-Etc/UTC}
+      - PUID=1000
+      - PGID=1000
+      - CUE_STREAMING_ONLY=1
+      - FLARESOLVERR_URL=http://flaresolverr:8191
+      # Cue only sees Caddy (on this private network), which passes on the
+      # real address of whoever is visiting.
+      - TRUSTED_PROXIES=private
+    volumes:
+      - ./config:/config
+    expose:
+      - "8264"
+
+  caddy:
+    image: caddy:2.10
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      - CUE_HOST=${CUE_HOST}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./caddy-data:/data
+      - ./caddy-config:/config
+    depends_on:
+      - cue
+
+  flaresolverr:
+    image: ghcr.io/flaresolverr/flaresolverr:v3.5.2
+    restart: unless-stopped
+    environment:
+      - TZ=${TZ:-Etc/UTC}

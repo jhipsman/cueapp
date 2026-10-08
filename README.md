@@ -49,7 +49,10 @@ Cue is new. Movies and TV work end to end, and so do music, ebooks and audiobook
 | ![The episode list with a thumbnail, description and length for each episode](docs/images/watch/watch-show-episodes.png) | ![Rows of posters further down the Watch home](docs/images/watch/watch-home-rows.png) |
 | **Episodes**: a season picker and a card per episode, with what you've watched | **Rows**: trending, popular and genres, for movies and shows |
 
-<p align="center"><img src="docs/images/watch/watch-phone.png" alt="Watch on a phone" width="260" /></p>
+![Live TV: a guide with channel logos down the left and what's on across a timeline](docs/images/watch/watch-live-guide.png)
+**Live TV**: your IPTV provider's channels with their logos, a TV guide and Favourites ([how](docs/watch.md#live-tv))
+
+<p align="center"><img src="docs/images/watch/watch-phone.png" alt="Watch on a phone" width="260" /> <img src="docs/images/watch/watch-live-phone.png" alt="Live TV on a phone" width="260" /></p>
 
 ### Managing your library
 
@@ -69,6 +72,16 @@ Cue is new. Movies and TV work end to end, and so do music, ebooks and audiobook
 <p align="center"><img src="docs/images/phone-dashboard.png" alt="Cue on a phone" width="260" /></p>
 
 > **About these screenshots.** They were taken in demo mode or with sample data, so every movie, show, artist, poster and cover in them is made up (the books are old public-domain classics). That's on purpose: the pictures don't use anyone else's titles or artwork. In your own copy, Cue shows the real posters, artwork and details for whatever you search for and add.
+
+## Run it in the cloud
+
+Rent a small server (from about €4 a month), paste one command, and Cue runs there with an HTTPS address, so the Fire TV app and phones work from anywhere with your computer off:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/jhipsman/cueapp/HEAD/deploy/cloud/install.sh | sudo bash
+```
+
+Step by step, with which server to rent: **[Cue on a cloud server](docs/cloud.md)**.
 
 ## Install with Docker
 
