@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -121,5 +122,58 @@ func TestThumbFrames(t *testing.T) {
 	s.handleConvertProbe(rec, httptest.NewRequest("GET", "/api/play/convert?u="+url.QueryEscape(s.convertToken(clip)), nil))
 	if rec.Code != 200 {
 		t.Fatalf("probe a file: %d %s", rec.Code, rec.Body)
+	}
+}
+
+// Safari gets the conversion as HLS: a playlist that starts at the
+// beginning, and pieces of H.264 and AAC.
+func TestConvertHLSForSafari(t *testing.T) {
+	if !canConvert() {
+		t.Skip("no ffmpeg here")
+	}
+	dir := t.TempDir()
+	clip := filepath.Join(dir, "clip.mkv")
+	if out, err := exec.Command("ffmpeg", "-hide_banner", "-loglevel", "error", "-f", "lavfi", "-i", "testsrc=size=640x360:rate=25:duration=20",
+		"-f", "lavfi", "-i", "sine=duration=20", "-c:v", "libx264", "-pix_fmt", "yuv420p", "-c:a", "ac3", clip).CombinedOutput(); err != nil {
+		t.Skipf("can't make a clip here: %v %s", err, out)
+	}
+	files := httptest.NewServer(http.FileServer(http.Dir(dir)))
+	defer files.Close()
+	box, err := crypto.LoadOrCreateKey(filepath.Join(dir, "key"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	s := &Server{profileBox: box}
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /api/play/convert/hls", s.handleConvertHLS)
+	mux.HandleFunc("GET /api/play/convert/hls/{id}/{file}", s.handleConvertHLSFile)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+
+	resp, err := http.Get(srv.URL + "/api/play/convert/hls?u=" + url.QueryEscape(s.convertToken(files.URL+"/clip.mkv")) + "&t=4")
+	if err != nil {
+		t.Fatal(err)
+	}
+	body, _ := io.ReadAll(resp.Body)
+	resp.Body.Close()
+	if resp.StatusCode != 200 || !strings.HasPrefix(string(body), "#EXTM3U\n#EXT-X-START:TIME-OFFSET=0") || !strings.Contains(string(body), "seg_00000.ts") {
+		t.Fatalf("playlist: %d %q", resp.StatusCode, body)
+	}
+	seg, err := http.Get(strings.TrimSuffix(resp.Request.URL.String(), "index.m3u8") + "seg_00000.ts")
+	if err != nil {
+		t.Fatal(err)
+	}
+	data, _ := io.ReadAll(seg.Body)
+	seg.Body.Close()
+	out := filepath.Join(dir, "seg.ts")
+	_ = os.WriteFile(out, data, 0o644)
+	var info bytes.Buffer
+	cmd := exec.Command("ffprobe", "-v", "error", "-show_entries", "stream=codec_name", "-of", "csv=p=0", out)
+	cmd.Stdout = &info
+	if err := cmd.Run(); err != nil || !strings.Contains(info.String(), "h264") || !strings.Contains(info.String(), "aac") {
+		t.Fatalf("piece: %d bytes, codecs %q %v", len(data), info.String(), err)
+	}
+	if r, _ := http.Get(srv.URL + "/api/play/convert/hls/nope/index.m3u8"); r.StatusCode != 404 {
+		t.Errorf("unknown session: %d", r.StatusCode)
 	}
 }

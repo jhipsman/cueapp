@@ -206,6 +206,9 @@ func (s *Server) handleConvertProbe(w http.ResponseWriter, r *http.Request) {
 		"duration":  info.Duration,
 		"copyVideo": info.CopyVideo,
 		"stream":    "/api/play/convert/stream?u=" + url.QueryEscape(r.URL.Query().Get("u")),
+		// For Safari (iPhone, iPad, Mac), which plays a stream only as HLS
+		// or as a file it can fetch in pieces.
+		"hls": "/api/play/convert/hls?u=" + url.QueryEscape(r.URL.Query().Get("u")),
 	})
 }
 
@@ -234,7 +237,25 @@ func (s *Server) handleConvertStream(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	start, _ := strconv.ParseFloat(r.URL.Query().Get("t"), 64)
+	args := convertArgs(link, info, start)
+	args = append(args, "-f", "mp4",
+		"-movflags", "frag_keyframe+empty_moov+default_base_moof", "-frag_duration", "2000000", "pipe:1")
 
+	ffmpeg, _ := ffmpegOnce()
+	cmd := exec.CommandContext(r.Context(), ffmpeg, args...)
+	var errOut bytes.Buffer
+	cmd.Stderr = &errOut
+	w.Header().Set("Content-Type", "video/mp4")
+	w.Header().Set("Cache-Control", "no-store")
+	cmd.Stdout = flushWriter{w}
+	if err := cmd.Run(); err != nil && r.Context().Err() == nil {
+		slog.Info("play: convert", "err", err, "ffmpeg", redactURLText(firstLine(errOut.String()), link))
+	}
+}
+
+// convertArgs is ffmpeg's input and its picture and sound settings for a
+// conversion from start (seconds); the output format is the caller's.
+func convertArgs(link string, info probeInfo, start float64) []string {
 	args := []string{"-hide_banner", "-loglevel", "error", "-nostdin"}
 	if isWebLink(link) { // options only for web addresses (a recording is a file)
 		args = append(args, "-reconnect", "1", "-reconnect_streamed", "1", "-reconnect_delay_max", "5", "-user_agent", convertUA)
@@ -264,19 +285,7 @@ func (s *Server) handleConvertStream(w http.ResponseWriter, r *http.Request) {
 			args = append(args, "-c:a", "aac", "-ac", "2", "-b:a", "160k")
 		}
 	}
-	args = append(args, "-sn", "-dn", "-f", "mp4",
-		"-movflags", "frag_keyframe+empty_moov+default_base_moof", "-frag_duration", "2000000", "pipe:1")
-
-	ffmpeg, _ := ffmpegOnce()
-	cmd := exec.CommandContext(r.Context(), ffmpeg, args...)
-	var errOut bytes.Buffer
-	cmd.Stderr = &errOut
-	w.Header().Set("Content-Type", "video/mp4")
-	w.Header().Set("Cache-Control", "no-store")
-	cmd.Stdout = flushWriter{w}
-	if err := cmd.Run(); err != nil && r.Context().Err() == nil {
-		slog.Info("play: convert", "err", err, "ffmpeg", redactURLText(firstLine(errOut.String()), link))
-	}
+	return append(args, "-sn", "-dn")
 }
 
 // flushWriter sends each piece to the player as soon as ffmpeg makes it.

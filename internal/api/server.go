@@ -304,6 +304,10 @@ func (s *Server) Routes() http.Handler {
 	public.HandleFunc("GET /api/subs", s.handleSubsFile)
 	public.HandleFunc("GET /api/recording", s.handleRecordingFile)
 	public.HandleFunc("GET /api/thumb", s.handleThumb)
+	// Conversion for Safari: the sealed token, then a long random session
+	// id, are the key (play_convert_hls.go).
+	public.HandleFunc("GET /api/play/convert/hls", s.handleConvertHLS)
+	public.HandleFunc("GET /api/play/convert/hls/{id}/{file}", s.handleConvertHLSFile)
 
 	public.Handle("/api/", s.signedIn(s.protectedRoutes()))
 

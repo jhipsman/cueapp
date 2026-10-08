@@ -317,6 +317,14 @@ export interface LiveRecording {
   logo?: string
 }
 
+// safari says the browser is Safari (or any iPhone or iPad browser, all
+// Safari underneath), which needs a converted video as HLS.
+export function safari(): boolean {
+  const ua = navigator.userAgent
+  const ios = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1)
+  return ios || (/Safari\//.test(ua) && !/Chrome|Chromium|CriOS|Android|Edg|Firefox|FxiOS/.test(ua))
+}
+
 export interface PlayAnswer {
   title: string
   url: string // the original file
@@ -2300,7 +2308,9 @@ export const api = {
   getOMDb: () => get<{ set: boolean }>('/settings/omdb'),
   putOMDb: (apiKey: string) => put<{ set: boolean }>('/settings/omdb', { apiKey }),
   convertProbe: (token: string) =>
-    get<{ duration: number; copyVideo: boolean; stream: string }>(`/play/convert?u=${encodeURIComponent(token)}`),
+    get<{ duration: number; copyVideo: boolean; stream: string; hls: string }>(`/play/convert?u=${encodeURIComponent(token)}`)
+      // Safari plays a stream being made only as HLS.
+      .then((p) => ({ ...p, stream: safari() ? p.hls : p.stream })),
   saveProfileTheme: (t: WatchTheme) => put<WatchTheme>('/profile/theme', t),
   getYouTube: () => get<{ set: boolean }>('/settings/youtube'),
   putYouTube: (apiKey: string) => put<{ set: boolean }>('/settings/youtube', { apiKey }),
