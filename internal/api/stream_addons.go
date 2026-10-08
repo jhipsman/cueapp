@@ -272,17 +272,21 @@ func resolveAddonLink(ctx context.Context, link string) string {
 			return link
 		}
 		req.Header.Set("Range", "bytes=0-0") // only where it leads, not the file
+		// Add-ons behind Cloudflare turn away clients that don't look
+		// like a player.
+		req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36")
+		took := time.Now()
 		resp, err := client.Do(req)
 		if err != nil {
-			slog.Warn("play: open an add-on link", "err", netguard.CleanError(err))
+			slog.Warn("play: open an add-on link; the device gets the add-on's own link", "host", start.Host, "err", netguard.CleanError(err))
 			return link
 		}
+		ctype := resp.Header.Get("Content-Type")
 		resp.Body.Close()
 		loc := resp.Header.Get("Location")
 		if resp.StatusCode < 300 || resp.StatusCode >= 400 || loc == "" {
-			if resp.StatusCode >= 400 {
-				slog.Warn("play: open an add-on link", "status", resp.StatusCode, "url", netguard.RedactURL(cur.String()))
-			}
+			slog.Warn("play: an add-on link didn't lead to a file; the device gets the add-on's own link",
+				"host", start.Host, "status", resp.StatusCode, "type", ctype, "hops", cur != start, "took", time.Since(took).Round(time.Millisecond))
 			if cur == start {
 				return link
 			}
@@ -293,6 +297,7 @@ func resolveAddonLink(ctx context.Context, link string) string {
 			return link
 		}
 		if next.Host != start.Host {
+			slog.Info("play: add-on link opened on the server", "host", start.Host, "file host", next.Host, "took", time.Since(took).Round(time.Millisecond))
 			return next.String() // off the add-on: the debrid file
 		}
 		cur = next
