@@ -2,7 +2,7 @@ import { useEffect, useState, type FormEvent } from 'react'
 import { api } from '../api'
 import { useAuth } from '../AuthContext'
 import { useDarkPage } from '../useDarkPage'
-import BrandMark from '../components/BrandMark'
+import CueWordmark from '../components/CueWordmark'
 import PasswordStrength from '../components/PasswordStrength'
 import { titleFor } from '../documentTitle'
 import { FieldError, FormProblem, useValidation } from '../useValidation'
@@ -58,8 +58,7 @@ export default function Welcome() {
       <form className="auth-card" onSubmit={onSubmit}>
         <h1 className="sr-only">Create your Cue account</h1>
         <div className="auth-logo">
-          <BrandMark className="auth-mark" />
-          <span>Cue</span>
+          <CueWordmark className="auth-wordmark" />
         </div>
         <p className="auth-sub">Create your account. You&apos;ll be the owner: you add your family and change the settings.</p>
         {error && <p className="error-text">{error}</p>}

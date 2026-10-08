@@ -121,6 +121,9 @@ export default function VideoControls({ video, title, subtitle, onBack, live, no
     v.addEventListener('playing', go)
     v.addEventListener('canplay', go)
     sync()
+    // A video that was already playing (Live TV's window going full
+    // screen) sends no "playing" again.
+    setWaiting(v.readyState < 3)
     return () => {
       evs.forEach((e) => v.removeEventListener(e, sync))
       v.removeEventListener('waiting', wait)

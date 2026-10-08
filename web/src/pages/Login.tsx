@@ -2,7 +2,7 @@ import { useEffect, useState, type FormEvent } from 'react'
 import { api } from '../api'
 import { useAuth } from '../AuthContext'
 import { useDarkPage } from '../useDarkPage'
-import BrandMark from '../components/BrandMark'
+import CueWordmark from '../components/CueWordmark'
 import { DOCS_URL } from '../docs'
 import { titleFor } from '../documentTitle'
 import { required } from '../validate'
@@ -46,8 +46,7 @@ export default function Login() {
       <form className="auth-card" onSubmit={onSubmit}>
         <h1 className="sr-only">Sign in to Cue</h1>
         <div className="auth-logo">
-          <BrandMark className="auth-mark" />
-          <span>Cue</span>
+          <CueWordmark className="auth-wordmark" />
         </div>
         <p className="auth-sub">Sign in to continue</p>
         {error && <p className="error-text">{error}</p>}

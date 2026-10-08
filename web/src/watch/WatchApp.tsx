@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, NavLink, Route, Routes, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
-import BrandMark from '../components/BrandMark'
+import CueWordmark from '../components/CueWordmark'
 import Icon from '../components/Icon'
 import Home from './Home'
 import MyList from './MyList'
@@ -173,8 +173,7 @@ function TopBar() {
   return (
     <nav className={`wx-nav${solid ? ' solid' : ''}`}>
       <Link to="/watch" className="wx-brand" aria-label="Cue home">
-        <BrandMark className="wx-brand-mark" />
-        <span>Cue</span>
+        <CueWordmark />
       </Link>
       <div className="wx-links">
         <NavLink to="/watch" end>

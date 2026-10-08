@@ -75,7 +75,8 @@ Using Live TV:
 
 - **Groups** across the top are your provider's own (News, Sports...), plus **Favourites**: press the star next to a channel. Each profile has its own.
 - **Search finds what's on.** The search box at the top looks through the TV guide too: type a team, a game or a show ("Lakers", "Chiefs vs Bills") and it lists where it's **on now** and when it's **coming up** in the next day and a half, with the channel, plus channels by name. Pick one to start the channel.
-- **Pick a channel**, or any show in its row, to watch it. Up and down (or **Ch +** and **Ch −**) change channel within the group you opened it from.
+- **Watch while you browse.** Live TV is laid out like a TV box: the channel you're watching plays in a window at the top left, with what's on it now (and how far in), its description and what's next beside it; the groups and the guide are below. Pick a channel (or any show in its row) and the window switches to it, so you can flip through channels without leaving the guide. Pick the one playing again, or **Full screen**, to fill the screen; **Back** returns to the guide with it still playing. Full screen, up and down (or **Ch +** and **Ch −**) change channel within the group.
+- **Recent** at the top of the groups has the channels you watched last on that device.
 - **On the TV app**, the channel plays in the app's own player, straight from your provider. Up and down on the remote, or its channel buttons, change channel.
 - **In a browser or on a phone**, the channel plays through Cue, which lets a Cue on HTTPS play a provider's plain-http stream. It uses your server's bandwidth while you watch.
 

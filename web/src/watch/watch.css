@@ -50,11 +50,32 @@ html.watch-mode body {
 .wx-brand {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  font-weight: 800;
-  font-size: 1.45rem;
-  letter-spacing: -0.01em;
   color: var(--wx-text) !important;
+}
+/* The wordmark: the C mark, then "ue" in Sora, sized so the mark sits as a
+   capital beside the lower-case letters. */
+.cue-wordmark {
+  display: inline-flex;
+  align-items: flex-end;
+  line-height: 1;
+}
+.cue-wordmark-c {
+  width: 1.9rem;
+  height: 1.9rem;
+  margin-right: -0.3rem; /* the mark's own margin: "ue" tucks in like a letter */
+  filter: drop-shadow(0 0 10px rgba(52, 209, 191, 0.45));
+}
+.cue-wordmark-ue {
+  font-family: 'Sora', var(--font-display, sans-serif);
+  font-weight: 800;
+  font-size: 1.62rem;
+  letter-spacing: -0.06em;
+  line-height: 1.08;
+  background: linear-gradient(180deg, #ffffff 30%, #c9f4ee 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  padding-bottom: 0.08rem;
 }
 .wx-brand-mark {
   width: 30px;
@@ -1309,7 +1330,9 @@ html.tv-mode .wx-guide-star:focus {
 }
 /* While a player is open, the page under it doesn't scroll. */
 html.watch-mode:has(.wx-player),
-html.watch-mode:has(.wx-player) body {
+html.watch-mode:has(.wx-player) body,
+html.watch-mode:has(.wx-live-preview.is-full),
+html.watch-mode:has(.wx-live-preview.is-full) body {
   overflow: hidden;
   scrollbar-gutter: auto;
 }
@@ -1890,5 +1913,274 @@ html.tv-mode .wx-live-hit:focus {
 @media (max-width: 640px) {
   .wx-live-hits {
     grid-template-columns: 1fr;
+  }
+}
+
+/* ---- Live TV, laid out like a TV box: the channel playing in a window at
+   the top left with what's on beside it, the groups and the guide below. */
+.wx-live {
+  --live-top-h: clamp(200px, 33vh, 330px);
+  padding-top: 84px;
+}
+.wx-live-top {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 24px;
+  margin-bottom: 16px;
+}
+.wx-live-preview {
+  position: relative;
+  height: var(--live-top-h);
+  aspect-ratio: 16 / 9;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #000;
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.08),
+    0 18px 40px rgba(0, 0, 0, 0.45);
+}
+.wx-live-preview video {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: #000;
+  cursor: pointer;
+}
+.wx-live-preview.is-full {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  height: auto;
+  aspect-ratio: auto;
+  border-radius: 0;
+  box-shadow: none;
+}
+.wx-live-preview.is-full video {
+  cursor: default;
+}
+.wx-live-empty,
+.wx-live-tuning,
+.wx-live-problem {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 10px;
+  padding: 20px;
+  text-align: center;
+  color: var(--wx-dim);
+  background: radial-gradient(circle at 50% 40%, #1d2228, #0c0d10);
+}
+.wx-live-empty p {
+  margin: 0;
+}
+.wx-live-tuning {
+  background: rgba(0, 0, 0, 0.55);
+  color: var(--wx-text);
+}
+.wx-live-problem {
+  background: rgba(0, 0, 0, 0.75);
+  color: #fca5a5;
+}
+.wx-live-expand {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.wx-live-preview:hover .wx-live-expand,
+.wx-live-expand:focus {
+  opacity: 1;
+}
+.wx-live-info {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: var(--live-top-h);
+  overflow: hidden;
+}
+.wx-live-info h2 {
+  margin: 4px 0 0;
+  font-size: 1.6rem;
+  line-height: 1.15;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.wx-live-info-chan {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.wx-live-info-chan > span:nth-child(2) {
+  display: grid;
+  min-width: 0;
+}
+.wx-live-info-chan small {
+  color: var(--wx-dim);
+  font-size: 0.8rem;
+}
+.wx-live-info-chan b {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.wx-live-info-logo {
+  flex: none;
+  width: 64px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+}
+.wx-live-info-logo img {
+  max-width: 58px;
+  max-height: 34px;
+  object-fit: contain;
+}
+.wx-live-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: 4px;
+  padding: 3px 9px;
+  border: 1.5px solid var(--wx-accent);
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+.wx-live-badge i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--wx-accent);
+  animation: wx-pulse 1.6s ease-in-out infinite;
+}
+@keyframes wx-pulse {
+  50% {
+    opacity: 0.35;
+  }
+}
+.wx-live-time {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--wx-dim);
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+}
+.wx-live-progress {
+  flex: 1;
+  max-width: 320px;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.18);
+  overflow: hidden;
+}
+.wx-live-progress > div {
+  height: 100%;
+  background: var(--wx-accent);
+}
+.wx-live-desc {
+  margin: 0;
+  color: #c7c8cc;
+  font-size: 0.92rem;
+  line-height: 1.45;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.wx-live-next {
+  margin: 0;
+  color: var(--wx-dim);
+  font-size: 0.88rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.wx-live-next b {
+  color: var(--wx-text);
+  margin-right: 6px;
+}
+.wx-live-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: auto;
+  flex-wrap: wrap;
+}
+.wx-live .wx-live-side,
+.wx-live .wx-guide {
+  height: calc(100dvh - var(--live-top-h) - 136px);
+  min-height: 260px;
+}
+.wx-guide-row.playing .wx-guide-chan {
+  background: rgba(52, 209, 191, 0.14);
+  box-shadow: inset 4px 0 0 var(--wx-accent);
+}
+.wx-guide-row.playing .wx-guide-name small {
+  color: var(--wx-accent);
+  font-weight: 700;
+}
+.wx-guide-row.playing .wx-prog.now {
+  background: rgba(52, 209, 191, 0.16);
+}
+/* On a TV (laid out 1280 by 720). */
+html.tv-mode .wx-live {
+  --live-top-h: 230px;
+}
+html.tv-mode .wx-live .wx-live-side,
+html.tv-mode .wx-live .wx-guide {
+  height: calc(100vh - var(--live-top-h) - 130px);
+}
+html.tv-mode .wx-live-actions .wx-btn:focus {
+  transform: scale(1.04);
+}
+/* Phones: the window across the top, a short summary, then the guide. */
+@media (max-width: 640px) {
+  .wx-live {
+    padding-top: 74px;
+  }
+  .wx-live-top {
+    display: block;
+    margin: 0 calc(var(--wx-gutter) * -1) 10px;
+  }
+  .wx-live-preview {
+    width: 100%;
+    height: auto;
+    border-radius: 0;
+  }
+  .wx-live-info {
+    max-height: none;
+    padding: 10px var(--wx-gutter) 0;
+    gap: 6px;
+  }
+  .wx-live-info h2 {
+    font-size: 1.15rem;
+  }
+  .wx-live-desc,
+  .wx-live-next,
+  .wx-live-info-logo {
+    display: none;
+  }
+  .wx-live .wx-guide {
+    height: 52vh;
+    min-height: 240px;
   }
 }
