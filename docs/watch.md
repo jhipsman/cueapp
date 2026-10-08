@@ -61,6 +61,29 @@ TMDB doesn't have IMDb ratings, so Watch reads them from [OMDb](https://www.omdb
 
 Without a key, Watch shows TMDB's own score instead.
 
+## Live TV
+
+Add your IPTV provider and Watch gets a **Live TV** tab: every channel with its logo, a TV guide of what's on now and for the next hours, and Favourites per profile.
+
+![The Live TV guide](images/watch-live-guide.png)
+
+1. Find your provider's **Xtream Codes** login: a server address (usually with a port, like `http://line.example.com:8080`), a username and a password. Providers send it with the M3U link; if you only have an M3U link, the three are in it: `http://SERVER/get.php?username=USERNAME&password=PASSWORD&...`.
+2. Main profile only: **Settings > Streaming > Live TV**, fill them in and press **Save**. Cue checks the login with the provider.
+3. Open **Live TV** in Watch. The channels are there at once; the guide takes a minute or two the first time (providers' guides are large), and then reloads every few hours.
+
+Using Live TV:
+
+- **Groups** across the top are your provider's own (News, Sports...), plus **Favourites**: press the star next to a channel. Each profile has its own.
+- **Pick a channel**, or any show in its row, to watch it. Up and down (or **Ch +** and **Ch −**) change channel within the group you opened it from.
+- **On the TV app**, the channel plays in the app's own player, straight from your provider. Up and down on the remote, or its channel buttons, change channel.
+- **In a browser or on a phone**, the channel plays through Cue, which lets a Cue on HTTPS play a provider's plain-http stream. It uses your server's bandwidth while you watch.
+
+Things to know:
+
+- A channel counts as one of your provider's connections while it plays, wherever you watch it. If two TVs watch at once on a one-connection plan, the second is refused ("too many devices").
+- Channels the provider lists without a guide id show "No guide for this channel" and still play.
+- Your login is stored encrypted, and stream addresses that hold the password never reach the browser.
+
 ## For apps
 
 Everything Watch shows comes from the API, so a TV app can show the same things. All need a signed-in account (an API key from Settings > Profile, sent as `X-API-Key`) with permission to play, and the profile's token in `X-Cue-Profile`: list them with `GET /api/profiles`, and `POST /api/profiles/{id}/select` with `{"pin": "1234"}` (if it has one) answers with the token.
@@ -78,6 +101,10 @@ Everything Watch shows comes from the API, so a TV app can show the same things.
 | `GET /api/watch/progress/{kind}/{tmdbId}?season=&episode=` | where to resume |
 | `PUT /api/watch/progress` | save where you are: `{"kind","tmdbId","season","episode","position","duration"}` in seconds |
 | `DELETE /api/watch/progress/{kind}/{tmdbId}` | take a title off Continue Watching |
+| `GET /api/live/channels` | Live TV's groups and channels, with what's on now and next and the profile's favourites |
+| `GET /api/live/guide?ids=&from=&hours=` | the guide for those channels (up to 300), from a Unix time, up to 24 hours |
+| `PUT` / `DELETE /api/live/favorites/{id}` | star or unstar a channel for the profile |
+| `GET /api/live/play/{id}` | where a channel plays: `url` through Cue, and `direct` (the provider's) for the TV app |
 | `PUT` / `DELETE /api/watch/list/{kind}/{tmdbId}` | add to or remove from My List |
 
 `kind` is `movie` or `tv`.

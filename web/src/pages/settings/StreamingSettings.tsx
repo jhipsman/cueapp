@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { api, type StreamingSettings as Streaming } from '../../api'
 import Icon from '../../components/Icon'
+import IPTVCard from '../../components/IPTVCard'
 import PremiumizeCard from '../../components/PremiumizeCard'
 import StreamAddonsCard from '../../components/StreamAddonsCard'
 import Switch from '../../components/Switch'
@@ -56,6 +57,13 @@ export default function StreamingSettings() {
         <p style={{ color: 'var(--text-dim)', margin: '12px 0 0' }}>
           When no add-on has a stream, Cue searches your own <Link to="/settings/indexers">torrent sites</Link> and checks them with Premiumize.
         </p>
+      </fieldset>
+
+      <fieldset className="group folders span-all">
+        <legend>
+          <Icon name="tv" size={14} /> Live TV
+        </legend>
+        <IPTVCard />
       </fieldset>
 
       <div className="half-cols span-all">

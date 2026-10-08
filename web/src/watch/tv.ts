@@ -16,7 +16,7 @@ declare global {
 }
 
 export interface TVPlayerResult {
-  reason: 'ended' | 'error' | 'back'
+  reason: 'ended' | 'error' | 'back' | 'channel-up' | 'channel-down'
   position: number // seconds
   duration: number // seconds
   message?: string

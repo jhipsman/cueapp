@@ -107,7 +107,8 @@ class MainActivity : Activity() {
     // What Watch's pages can ask of the app.
     inner class Bridge {
         // play opens the player for {url, title, subtitle, startSec, kind,
-        // tmdbId, season, episode, token}.
+        // tmdbId, season, episode, token}, or a live channel {url, title,
+        // subtitle, live: true, token}.
         @JavascriptInterface
         fun play(json: String) {
             runOnUiThread {

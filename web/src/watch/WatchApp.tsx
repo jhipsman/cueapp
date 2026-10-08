@@ -7,6 +7,8 @@ import MyList from './MyList'
 import SearchPage from './SearchPage'
 import TitlePage from './TitlePage'
 import PlayerPage from './PlayerPage'
+import LivePage from './LivePage'
+import LivePlayer from './LivePlayer'
 import ManageProfiles from './ManageProfiles'
 import WhoIsWatching from './WhoIsWatching'
 import { Avatar, ProfilesProvider, useProfiles } from './profiles'
@@ -38,6 +40,7 @@ export default function WatchApp() {
         <Route path="profiles" element={<ManageProfiles />} />
         <Route path="play/movie/:tmdbId" element={<PlayerPage />} />
         <Route path="play/tv/:tmdbId/:season/:episode" element={<PlayerPage />} />
+        <Route path="live/play/:id" element={<LivePlayer />} />
         <Route
           path="*"
           element={
@@ -48,6 +51,7 @@ export default function WatchApp() {
                 <Route path="movies" element={<Home only="movie" />} />
                 <Route path="shows" element={<Home only="tv" />} />
                 <Route path="list" element={<MyList />} />
+                <Route path="live" element={<LivePage />} />
                 <Route path="search" element={<SearchPage />} />
                 <Route path="movie/:tmdbId" element={<TitlePage kind="movie" />} />
                 <Route path="tv/:tmdbId" element={<TitlePage kind="tv" />} />
@@ -109,6 +113,7 @@ function TopBar() {
   const location = useLocation()
   const [params] = useSearchParams()
   const [solid, setSolid] = useState(false)
+  const liveTV = useProfiles().data?.liveTV ?? false
   const [q, setQ] = useState(location.pathname.endsWith('/search') ? (params.get('q') ?? '') : '')
 
   useEffect(() => {
@@ -145,6 +150,7 @@ function TopBar() {
         <NavLink to="/watch/shows">Shows</NavLink>
         <NavLink to="/watch/movies">Movies</NavLink>
         <NavLink to="/watch/list">My List</NavLink>
+        {liveTV && <NavLink to="/watch/live">Live TV</NavLink>}
       </div>
       <div className="wx-nav-right">
         <label className="wx-search">

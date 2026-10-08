@@ -36,7 +36,8 @@ import java.net.URL
 // receiver as it is when they take it. It resumes where Watch said, saves
 // where you are to Cue every 15 seconds and on the way out, and tells Watch
 // how it ended (the end, an error, or Back) so Watch can play the next
-// episode or another version.
+// episode or another version. For a live channel ("live": true) it saves
+// nothing, and up and down change channel (Watch picks the next one).
 @OptIn(UnstableApi::class)
 class PlayerActivity : Activity() {
     private lateinit var player: ExoPlayer
@@ -45,6 +46,7 @@ class PlayerActivity : Activity() {
     private var server = ""
     private val main = Handler(Looper.getMainLooper())
     private var finished = false
+    private var live = false
 
     private val saver = object : Runnable {
         override fun run() {
@@ -58,6 +60,7 @@ class PlayerActivity : Activity() {
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         info = JSONObject(intent.getStringExtra(EXTRA_JSON) ?: "{}")
         server = intent.getStringExtra(EXTRA_SERVER) ?: ""
+        live = info.optBoolean("live")
 
         val renderers = DefaultRenderersFactory(this)
             .setEnableDecoderFallback(true)
@@ -98,20 +101,27 @@ class PlayerActivity : Activity() {
 
         player.addListener(object : Player.Listener {
             override fun onPlaybackStateChanged(state: Int) {
-                if (state == Player.STATE_ENDED) end("ended")
+                if (state == Player.STATE_ENDED) {
+                    if (live) end("error", "The channel stopped.") else end("ended")
+                }
             }
 
             override fun onPlayerError(error: PlaybackException) {
+                if (live && error.errorCode == PlaybackException.ERROR_CODE_BEHIND_LIVE_WINDOW) {
+                    player.seekToDefaultPosition() // fell behind: back to live
+                    player.prepare()
+                    return
+                }
                 end("error", error.errorCodeName)
             }
         })
 
         player.setMediaItem(MediaItem.fromUri(info.optString("url")))
         val start = (info.optDouble("startSec", 0.0) * 1000).toLong()
-        if (start > 0) player.seekTo(start)
+        if (start > 0 && !live) player.seekTo(start)
         player.prepare()
         player.playWhenReady = true
-        main.postDelayed(saver, SAVE_EVERY_MS)
+        if (!live) main.postDelayed(saver, SAVE_EVERY_MS)
     }
 
     private fun titleBlock(): View {
@@ -136,13 +146,27 @@ class PlayerActivity : Activity() {
     }
 
     // The remote: with the controls hidden, left and right skip back 10 s and
-    // forward 30 s, and OK pauses; anything else shows the controls.
+    // forward 30 s, and OK pauses; anything else shows the controls. On a
+    // live channel up and down (and the channel keys) change channel.
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
         if (event.keyCode == KeyEvent.KEYCODE_BACK) {
             if (event.action == KeyEvent.ACTION_UP) {
                 if (view.isControllerFullyVisible) view.hideController() else end("back")
             }
             return true
+        }
+        if (live && event.action == KeyEvent.ACTION_DOWN) {
+            when (event.keyCode) {
+                KeyEvent.KEYCODE_CHANNEL_UP, KeyEvent.KEYCODE_PAGE_UP -> { end("channel-up"); return true }
+                KeyEvent.KEYCODE_CHANNEL_DOWN, KeyEvent.KEYCODE_PAGE_DOWN -> { end("channel-down"); return true }
+            }
+            if (!view.isControllerFullyVisible) {
+                when (event.keyCode) {
+                    KeyEvent.KEYCODE_DPAD_UP -> { end("channel-up"); return true }
+                    KeyEvent.KEYCODE_DPAD_DOWN -> { end("channel-down"); return true }
+                    KeyEvent.KEYCODE_DPAD_LEFT, KeyEvent.KEYCODE_DPAD_RIGHT -> { view.showController(); return true }
+                }
+            }
         }
         if (event.action == KeyEvent.ACTION_DOWN && !view.isControllerFullyVisible) {
             when (event.keyCode) {
@@ -161,6 +185,7 @@ class PlayerActivity : Activity() {
     // saveProgress tells Cue where this profile is in the title, the same way
     // Watch in a browser does.
     private fun saveProgress() {
+        if (live) return
         val pos = player.currentPosition / 1000
         val dur = player.duration.let { if (it == C.TIME_UNSET) 0 else it / 1000 }
         if (pos < 5 || dur <= 0 || server.isEmpty()) return

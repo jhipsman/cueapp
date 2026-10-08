@@ -851,3 +851,275 @@ html.tv-mode .wx-row-arrow {
 html.tv-mode .wx-ep:focus {
   background: var(--wx-panel);
 }
+
+/* Live TV: the guide. Channels down a sticky left column, shows across a
+   timeline with a sticky row of times; both scroll inside the guide. */
+.wx-live {
+  --wx-chan-w: 230px;
+  padding-bottom: 20px;
+}
+.wx-live-head {
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.wx-live-head h2 {
+  margin: 0 0 12px;
+}
+.wx-chips {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 4px 2px 12px;
+  scrollbar-width: none;
+}
+.wx-chips button {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: transparent;
+  color: var(--wx-text);
+  border-radius: 999px;
+  padding: 7px 14px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.wx-chips button.active {
+  background: var(--wx-text);
+  color: var(--wx-bg);
+  border-color: var(--wx-text);
+}
+.wx-guide {
+  position: relative;
+  overflow: auto;
+  height: calc(100vh - 210px);
+  min-height: 320px;
+  border-radius: 10px;
+  background: var(--wx-panel);
+  overscroll-behavior: contain;
+}
+.wx-guide-inner {
+  position: relative;
+}
+.wx-guide-times,
+.wx-guide-row {
+  display: flex;
+}
+.wx-guide-times {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  height: 36px;
+  background: #23262c;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+.wx-guide-corner,
+.wx-guide-chan {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  flex: none;
+  width: var(--wx-chan-w);
+  background: #23262c;
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+}
+.wx-guide-corner {
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  padding: 0 14px;
+  font-weight: 700;
+}
+.wx-guide-slots {
+  position: relative;
+  flex: none;
+}
+.wx-guide-slots span {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  padding-left: 8px;
+  border-left: 1px solid rgba(255, 255, 255, 0.12);
+  color: var(--wx-dim);
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+.wx-guide-row {
+  height: 64px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+.wx-guide-chan {
+  display: flex;
+  align-items: stretch;
+}
+.wx-guide-chan-play {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 4px 0 10px;
+  background: none;
+  border: 0;
+  color: var(--wx-text);
+  text-align: left;
+  cursor: pointer;
+}
+.wx-guide-chan-play:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+.wx-guide-logo {
+  flex: none;
+  width: 64px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--wx-dim);
+  overflow: hidden;
+}
+.wx-guide-logo img {
+  max-width: 58px;
+  max-height: 38px;
+  object-fit: contain;
+}
+.wx-guide-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+  font-size: 0.92rem;
+}
+.wx-guide-name small {
+  display: block;
+  color: var(--wx-dim);
+  font-weight: 400;
+  font-size: 0.78rem;
+}
+.wx-guide-star {
+  flex: none;
+  width: 34px;
+  background: none;
+  border: 0;
+  color: rgba(255, 255, 255, 0.3);
+  cursor: pointer;
+}
+.wx-guide-star.on {
+  color: #facc15;
+}
+.wx-guide-star.on svg {
+  fill: currentColor;
+}
+.wx-guide-progs {
+  position: relative;
+  flex: none;
+}
+.wx-prog {
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 0;
+  overflow: clip;
+  border: 0;
+  border-left: 2px solid var(--wx-bg);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--wx-text);
+  text-align: left;
+  cursor: pointer;
+  border-radius: 4px;
+}
+.wx-prog:hover {
+  background: rgba(255, 255, 255, 0.14);
+}
+.wx-prog.now {
+  background: rgba(255, 255, 255, 0.11);
+}
+.wx-prog.past {
+  color: var(--wx-dim);
+}
+/* A show's name stays in view while the guide scrolls past its start. */
+.wx-prog-text,
+.wx-prog > b,
+.wx-prog > small {
+  position: sticky;
+  left: calc(var(--wx-chan-w) + 2px);
+  display: flex;
+  flex-direction: column;
+  max-width: 100%;
+  padding: 0 10px;
+}
+.wx-prog b,
+.wx-prog small {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.wx-prog b {
+  font-size: 0.9rem;
+}
+.wx-prog small {
+  color: var(--wx-dim);
+  font-size: 0.75rem;
+}
+.wx-prog.none {
+  color: var(--wx-dim);
+}
+.wx-guide-now {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--wx-accent);
+  z-index: 1;
+  pointer-events: none;
+}
+.wx-live-logo {
+  height: 40px;
+  max-width: 90px;
+  object-fit: contain;
+}
+@media (max-width: 640px) {
+  .wx-live {
+    --wx-chan-w: 112px;
+  }
+  .wx-guide {
+    height: calc(100vh - 190px);
+    border-radius: 0;
+    margin: 0 calc(var(--wx-gutter) * -1);
+  }
+  .wx-guide-chan-play {
+    flex-direction: column;
+    justify-content: center;
+    gap: 2px;
+    padding: 4px;
+  }
+  .wx-guide-logo {
+    width: 56px;
+    height: 32px;
+  }
+  .wx-guide-name {
+    font-size: 0.72rem;
+    max-width: 72px;
+    text-align: center;
+  }
+  .wx-guide-name small {
+    display: none;
+  }
+  .wx-guide-star {
+    width: 26px;
+  }
+  .wx-player-top .wx-btn.small {
+    padding: 6px 10px;
+  }
+}

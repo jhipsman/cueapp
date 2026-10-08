@@ -119,6 +119,55 @@ export interface StreamingSettings {
   maxResolution: '' | '1080' | '720'
 }
 
+// Live TV: an IPTV provider's channels and guide.
+export interface LiveProgramme {
+  title: string
+  desc?: string
+  start: string
+  stop: string
+}
+export interface LiveChannel {
+  id: string
+  num: number
+  name: string
+  category: string
+  logo?: string
+  favorite: boolean
+  now?: LiveProgramme
+  next?: LiveProgramme
+}
+export interface LiveChannels {
+  configured: boolean
+  categories?: { id: string; name: string }[]
+  channels?: LiveChannel[]
+  guideReady?: boolean
+  guideLoading?: boolean
+}
+export interface LiveGuide {
+  from: string
+  to: string
+  programmes: Record<string, LiveProgramme[]>
+  guideReady: boolean
+  guideLoading: boolean
+}
+export interface LivePlay {
+  id: string
+  num: number
+  name: string
+  url: string // through Cue, for browsers
+  direct?: string // the provider's own, for the TV app
+  logo?: string
+}
+export interface IPTVSettings {
+  set: boolean
+  server?: string
+  username?: string
+  expires?: string
+  channels?: number
+  guideChannels?: number
+  guideProblem?: string
+}
+
 // Watch profiles: a profile per person in the household.
 export interface WatchProfile {
   id: number
@@ -132,6 +181,7 @@ export interface WatchProfiles {
   active?: number // the profile this device is on
   avatars: string[]
   max: number
+  liveTV?: boolean // an IPTV provider is set up: Watch shows Live TV
 }
 
 // Watch: the streaming side (browse anything, play from Premiumize).
@@ -2138,6 +2188,14 @@ export const api = {
   removeWatchProfile: (id: number) => del<null>(`/profiles/${id}`),
   streamingSettings: () => get<StreamingSettings>('/settings/streaming'),
   putStreamingSettings: (body: Partial<StreamingSettings>) => put<StreamingSettings>('/settings/streaming', body),
+  liveChannels: () => get<LiveChannels>('/live/channels'),
+  liveGuide: (ids: string[], from: number, hours: number) =>
+    get<LiveGuide>(`/live/guide?ids=${encodeURIComponent(ids.join(','))}&from=${Math.floor(from / 1000)}&hours=${hours}`),
+  setLiveFavorite: (id: string, on: boolean) =>
+    on ? put<{ favorite: boolean }>(`/live/favorites/${encodeURIComponent(id)}`) : del<{ favorite: boolean }>(`/live/favorites/${encodeURIComponent(id)}`),
+  livePlay: (id: string) => get<LivePlay>(`/live/play/${encodeURIComponent(id)}`),
+  getIPTV: () => get<IPTVSettings>('/settings/iptv'),
+  putIPTV: (body: { server: string; username?: string; password?: string }) => put<IPTVSettings>('/settings/iptv', body),
   getOMDb: () => get<{ set: boolean }>('/settings/omdb'),
   putOMDb: (apiKey: string) => put<{ set: boolean }>('/settings/omdb', { apiKey }),
   playMovie: (id: number, option = 1, fresh = false) => get<PlayAnswer>(`/play/movies/${id}?option=${option}${fresh ? '&fresh=1' : ''}`),

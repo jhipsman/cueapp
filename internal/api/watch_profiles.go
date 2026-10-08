@@ -121,6 +121,7 @@ type profilesPayload struct {
 	Active   int64         `json:"active,omitempty"` // the one this device is on; 0 = none yet
 	Avatars  []string      `json:"avatars"`
 	Max      int           `json:"max"`
+	LiveTV   bool          `json:"liveTV"` // an IPTV provider is set up (live.go)
 }
 
 // GET /api/profiles: who can be picked, and which one this device is on.
@@ -131,7 +132,8 @@ func (s *Server) handleListWatchProfiles(w http.ResponseWriter, r *http.Request)
 		writeError(w, http.StatusInternalServerError, "Couldn't load the profiles.")
 		return
 	}
-	out := profilesPayload{Profiles: []profileView{}, Avatars: watch.AvatarColors, Max: watch.MaxProfiles}
+	_, live := s.iptvAccount()
+	out := profilesPayload{Profiles: []profileView{}, Avatars: watch.AvatarColors, Max: watch.MaxProfiles, LiveTV: live}
 	for _, p := range list {
 		out.Profiles = append(out.Profiles, viewWatchProfile(p))
 	}
