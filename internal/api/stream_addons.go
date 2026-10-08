@@ -6,11 +6,13 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
 
+	"github.com/rdborg/mediarium/internal/netguard"
 	"github.com/rdborg/mediarium/internal/parser"
 	"github.com/rdborg/mediarium/internal/quality"
 	"github.com/rdborg/mediarium/internal/settings"
@@ -235,4 +237,65 @@ func (s *Server) handleRemoveStreamAddon(w http.ResponseWriter, r *http.Request)
 	}
 	playCache.clear()
 	writeJSON(w, http.StatusOK, addonViews(list))
+}
+
+// addonLinkClient opens add-on links from the server (tests swap it). It
+// never follows a redirect: resolveAddonLink reads each one itself.
+var addonLinkClient = func() *http.Client {
+	c := &http.Client{Transport: netguard.Transport(), Timeout: 45 * time.Second}
+	c.CheckRedirect = func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }
+	return c
+}
+
+// resolveAddonLink opens an add-on's play link from the server and returns
+// where it leads: the debrid service's own link to the file.
+//
+// Comet (and others) only play a link from the IP address that asked for it,
+// and Cue asks from the server, while the TV or phone plays from somewhere
+// else (a cloud server and a home are never the same address). The add-on
+// answers its link with a redirect to the debrid file, and that one plays
+// from anywhere, so the device gets that instead. The redirect's target
+// itself is not opened. When the link doesn't redirect (it is the file, or
+// the add-on streams through itself), it is returned as it is.
+func resolveAddonLink(ctx context.Context, link string) string {
+	ctx, cancel := context.WithTimeout(ctx, 45*time.Second)
+	defer cancel()
+	start, err := url.Parse(link)
+	if err != nil {
+		return link
+	}
+	cur := start
+	client := addonLinkClient()
+	for range 5 {
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, cur.String(), nil)
+		if err != nil {
+			return link
+		}
+		req.Header.Set("Range", "bytes=0-0") // only where it leads, not the file
+		resp, err := client.Do(req)
+		if err != nil {
+			slog.Warn("play: open an add-on link", "err", netguard.CleanError(err))
+			return link
+		}
+		resp.Body.Close()
+		loc := resp.Header.Get("Location")
+		if resp.StatusCode < 300 || resp.StatusCode >= 400 || loc == "" {
+			if resp.StatusCode >= 400 {
+				slog.Warn("play: open an add-on link", "status", resp.StatusCode, "url", netguard.RedactURL(cur.String()))
+			}
+			if cur == start {
+				return link
+			}
+			return cur.String()
+		}
+		next, err := cur.Parse(loc)
+		if err != nil || (next.Scheme != "http" && next.Scheme != "https") {
+			return link
+		}
+		if next.Host != start.Host {
+			return next.String() // off the add-on: the debrid file
+		}
+		cur = next
+	}
+	return link
 }

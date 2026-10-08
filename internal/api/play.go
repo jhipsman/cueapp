@@ -338,8 +338,9 @@ func (s *Server) servePlay(w http.ResponseWriter, r *http.Request, t playTarget)
 		c := entry.candidates[i]
 		if c.URL != "" {
 			// A link from an add-on, already resolved with its debrid service.
+			// Opened here first, so the device gets the file's own address.
 			writeJSON(w, http.StatusOK, playAnswer{
-				Title: t.label, URL: c.URL, FileName: c.Release, SizeBytes: c.Size,
+				Title: t.label, URL: resolveAddonLink(ctx, c.URL), FileName: c.Release, SizeBytes: c.Size,
 				Release: c.Release, Quality: string(c.Tier), Source: c.Source,
 				Option: i + 1, Options: len(entry.candidates),
 			})
