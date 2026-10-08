@@ -22,7 +22,7 @@ export default function StreamingSettings() {
     api
       .streamingSettings()
       .then(setSt)
-      .catch(() => setSt({ streamingOnly: true, maxResolution: '' }))
+      .catch(() => setSt({ streamingOnly: true, maxResolution: '', englishOnly: true }))
   }, [])
 
   async function save(body: Partial<Streaming>, done: string) {
@@ -103,6 +103,20 @@ export default function StreamingSettings() {
           </Link>
         </fieldset>
       </div>
+
+      <fieldset className="group folders span-all">
+        <legend>
+          <Icon name="globe" size={14} /> Language
+        </legend>
+        <Switch
+          checked={st?.englishOnly ?? true}
+          disabled={!st || busy}
+          onChange={(v) => void save({ englishOnly: v }, v ? 'Play plays English versions only.' : 'Play plays versions in any language.')}
+          label="English only"
+          description="Play skips versions whose name or add-on says they're in other languages only (Italian, French, Latino…). Versions with English among several languages (MULTI, DUAL) still play."
+          showState
+        />
+      </fieldset>
 
       <fieldset className="group folders span-all">
         <legend>

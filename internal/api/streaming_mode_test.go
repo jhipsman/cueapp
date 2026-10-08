@@ -65,7 +65,7 @@ func TestBrowserAudioFirst(t *testing.T) {
 		{Release: "Addams.Family.1991.1080p", URL: "u6"}, // "dd" inside a word isn't Dolby
 	}
 	var got []string
-	for _, c := range browserAudioFirst(cands) {
+	for _, c := range browserAudioFirst(cands, false) {
 		got = append(got, c.URL+c.Hash)
 	}
 	want := "u4 abc u5 u6 u1 u2 u3"

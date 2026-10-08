@@ -71,11 +71,12 @@ func preferResolution(cands []playCandidate, maxRes int) []playCandidate {
 type streamingSettings struct {
 	StreamingOnly bool   `json:"streamingOnly"`
 	MaxResolution string `json:"maxResolution"` // "", "1080" or "720"
+	EnglishOnly   bool   `json:"englishOnly"`   // play English versions only (play_language.go)
 }
 
 func (s *Server) streamingSettingsNow() streamingSettings {
 	v, _ := s.Settings.Get(settings.KeyPlaybackMaxRes)
-	return streamingSettings{StreamingOnly: s.streamingOnly(), MaxResolution: v}
+	return streamingSettings{StreamingOnly: s.streamingOnly(), MaxResolution: v, EnglishOnly: s.englishOnly()}
 }
 
 // GET /api/settings/streaming
@@ -107,6 +108,7 @@ func (s *Server) handlePutStreamingSettings(w http.ResponseWriter, r *http.Reque
 	var req struct {
 		StreamingOnly *bool   `json:"streamingOnly"`
 		MaxResolution *string `json:"maxResolution"`
+		EnglishOnly   *bool   `json:"englishOnly"`
 	}
 	if err := decodeJSON(r, &req); err != nil {
 		writeError(w, http.StatusBadRequest, "That request couldn't be read.")
@@ -134,6 +136,16 @@ func (s *Server) handlePutStreamingSettings(w http.ResponseWriter, r *http.Reque
 			return
 		}
 	}
+	if req.EnglishOnly != nil {
+		v := "1"
+		if !*req.EnglishOnly {
+			v = "0"
+		}
+		if err := s.Settings.Set(settings.KeyPlaybackEnglishOnly, v, false); err != nil {
+			writeError(w, http.StatusInternalServerError, "The setting couldn't be saved.")
+			return
+		}
+	}
 	writeJSON(w, http.StatusOK, s.streamingSettingsNow())
 }
 
@@ -145,8 +157,14 @@ var cinemaAudio = regexp.MustCompile(`(?i)(^|[^a-z0-9])(dts(-?hd|-?x|-?ma)?|true
 // for Watch in a browser (the TV app plays every kind of sound). Versions
 // Premiumize finds itself come with its own browser-ready stream, so only
 // add-on links are judged, by their names.
-func browserAudioFirst(cands []playCandidate) []playCandidate {
-	silent := func(c playCandidate) bool { return c.URL != "" && cinemaAudio.MatchString(c.Release) }
+//
+// With Premiumize set up (converted), an add-on link whose torrent is known
+// gets Premiumize's converted copy, which has browser sound, so it isn't
+// judged either.
+func browserAudioFirst(cands []playCandidate, converted bool) []playCandidate {
+	silent := func(c playCandidate) bool {
+		return c.URL != "" && !(converted && c.Hash != "") && cinemaAudio.MatchString(c.Release)
+	}
 	out := append([]playCandidate(nil), cands...)
 	sort.SliceStable(out, func(i, j int) bool { return !silent(out[i]) && silent(out[j]) })
 	return out

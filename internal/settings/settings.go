@@ -33,12 +33,13 @@ const (
 
 	// Premiumize.me, a cloud downloader used in place of the built-in torrent
 	// engine (and, if chosen, the Usenet downloader). See internal/premiumize.
-	KeyPremiumizeAPIKey = "premiumize.api_key"      // encrypted; unset = Premiumize is not used
-	KeyStreamingOnly    = "app.streaming_only"      // "1" streaming only (Watch is the app, the download jobs rest), "0" the full library manager; unset = CUE_STREAMING_ONLY (on unless "0")
-	KeyPlaybackMaxRes   = "playback.max_resolution" // "" = the best there is; "1080" or "720" put bigger versions last (data saver)
-	KeyStreamAddons     = "streams.addons"          // encrypted JSON list of {url, name}: Stremio add-ons (Comet, Torrentio...) Play asks for streams first; unset = Cue's own search only
-	KeyIPTV             = "iptv.account"            // encrypted JSON {server, username, password}: an Xtream Codes login for Live TV; unset = no Live TV
-	KeyPremiumizeUseFor = "premiumize.use_for"      // "torrents" (the default when unset) | "usenet" | "both"
+	KeyPremiumizeAPIKey    = "premiumize.api_key"      // encrypted; unset = Premiumize is not used
+	KeyStreamingOnly       = "app.streaming_only"      // "1" streaming only (Watch is the app, the download jobs rest), "0" the full library manager; unset = CUE_STREAMING_ONLY (on unless "0")
+	KeyPlaybackMaxRes      = "playback.max_resolution" // "" = the best there is; "1080" or "720" put bigger versions last (data saver)
+	KeyStreamAddons        = "streams.addons"          // encrypted JSON list of {url, name}: Stremio add-ons (Comet, Torrentio...) Play asks for streams first; unset = Cue's own search only
+	KeyPlaybackEnglishOnly = "playback.english_only"   // "0" plays versions in any language; unset or "1" = English versions only
+	KeyIPTV                = "iptv.account"            // encrypted JSON {server, username, password}: an Xtream Codes login for Live TV; unset = no Live TV
+	KeyPremiumizeUseFor    = "premiumize.use_for"      // "torrents" (the default when unset) | "usenet" | "both"
 
 	// Automation (RSS sync, scheduled search, hunting).
 	KeyAutomationEnabled = "automation.enabled"         // "0" disables; anything else (including unset) enables

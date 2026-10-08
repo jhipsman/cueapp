@@ -73,6 +73,9 @@ export default function PlayerPage() {
   const [next, setNext] = useState<WatchEpisode | null>(null)
   const [countdown, setCountdown] = useState<number | null>(null)
   const resumeAt = useRef(0)
+  // How many times this title moved on by itself because a version had no
+  // sound; it stops after a couple, so it never runs through every version.
+  const silentSkips = useRef(0)
   const [resumeReady, setResumeReady] = useState(false)
   const loading = useRef(false)
   useDocumentTitle(answer?.title ?? 'Playing')
@@ -102,6 +105,7 @@ export default function PlayerPage() {
     setCountdown(null)
     setNote('')
     resumeAt.current = 0
+    silentSkips.current = 0
     setResumeReady(false)
     api
       .watchProgress(kind, tmdbId, season, episode)
@@ -218,12 +222,13 @@ export default function PlayerPage() {
       const silent =
         v.webkitAudioDecodedByteCount === 0 || v.mozHasAudio === false || (v.audioTracks !== undefined && v.audioTracks.length === 0)
       if (!silent) return
-      if (answer.option < answer.options) {
+      if (answer.option < answer.options && silentSkips.current < 2) {
+        silentSkips.current++
         resumeAt.current = Math.floor(v.currentTime)
         setNote(`Version ${answer.option} had no sound in this browser, so trying the next one.`)
         void load(answer.option + 1)
       } else {
-        setNote('This version has no sound in this browser. Try Open in VLC, or the TV app.')
+        setNote('No sound in this browser: its sound is Dolby or DTS. Pick another in Versions, or watch on the TV app.')
       }
     }, 2000)
     return () => clearInterval(t)

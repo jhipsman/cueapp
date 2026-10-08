@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"net/http"
 	"net/url"
+	"regexp"
 	"strconv"
 	"strings"
 	"sync"
@@ -103,11 +104,21 @@ func (s *Server) addonStreams(ctx context.Context, t playTarget) (links, hashes 
 		asked++
 		for _, st := range ans.streams {
 			label := st.Label()
-			c := playCandidate{Release: label, Size: st.Hints.VideoSize, Tier: quality.Classify(parser.Parse(label)), Source: name}
+			c := playCandidate{Release: label, Size: st.Hints.VideoSize, Tier: quality.Classify(parser.Parse(label)), Source: name,
+				NotEnglish: notEnglish(label, st.Name, st.Title, st.Description)}
 			switch {
 			case st.URL != "" && !seen[st.URL]:
 				seen[st.URL] = true
 				c.URL = st.URL
+				// The torrent behind the link, when the add-on says (or its
+				// link holds it): a browser can then get Premiumize's own
+				// converted copy, which plays with sound everywhere.
+				c.Hash = normalizeHash(st.InfoHash)
+				if c.Hash == "" {
+					if m := linkHash.FindString(st.URL); m != "" {
+						c.Hash = normalizeHash(m)
+					}
+				}
 				links = append(links, c)
 			case st.URL == "" && normalizeHash(st.InfoHash) != "":
 				h := normalizeHash(st.InfoHash)
@@ -238,6 +249,10 @@ func (s *Server) handleRemoveStreamAddon(w http.ResponseWriter, r *http.Request)
 	playCache.clear()
 	writeJSON(w, http.StatusOK, addonViews(list))
 }
+
+// linkHash finds a torrent's info hash in an add-on's play link (Comet and
+// Torrentio put it in the path).
+var linkHash = regexp.MustCompile(`(?i)\b[0-9a-f]{40}\b`)
 
 // addonLinkClient opens add-on links from the server (tests swap it). It
 // never follows a redirect: resolveAddonLink reads each one itself.

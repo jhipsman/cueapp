@@ -58,6 +58,8 @@ type playCandidate struct {
 	Source  string // the add-on it came from; "" for Cue's own search
 	Size    int64
 	Tier    quality.Tier
+	// NotEnglish: its name or the add-on says it's in other languages only.
+	NotEnglish bool
 }
 
 type playEntry struct {
@@ -327,9 +329,17 @@ func (s *Server) servePlay(w http.ResponseWriter, r *http.Request, t playTarget)
 	}
 	// The playback quality setting (a data saver) puts bigger versions last.
 	entry.candidates = preferResolution(entry.candidates, s.playbackMaxRes())
-	if r.URL.Query().Get("client") == "web" {
+	if s.englishOnly() {
+		var other bool
+		if entry.candidates, other = keepEnglish(entry.candidates); other {
+			writeError(w, http.StatusNotFound, fmt.Sprintf("Only versions of %s in other languages were found. Try again later, or allow every language in Settings > Streaming.", t.label))
+			return
+		}
+	}
+	web := r.URL.Query().Get("client") == "web"
+	if web {
 		// A web browser: versions it can play with sound first.
-		entry.candidates = browserAudioFirst(entry.candidates)
+		entry.candidates = browserAudioFirst(entry.candidates, pm != nil)
 	}
 	if option > len(entry.candidates) {
 		writeError(w, http.StatusNotFound, fmt.Sprintf("There are only %d versions of %s to play.", len(entry.candidates), t.label))
@@ -340,6 +350,22 @@ func (s *Server) servePlay(w http.ResponseWriter, r *http.Request, t playTarget)
 	// pack may not hold the episode wanted: then the next option is used.
 	for i := option - 1; i < len(entry.candidates); i++ {
 		c := entry.candidates[i]
+		if c.URL != "" && web && pm != nil && c.Hash != "" {
+			// A browser can't play most add-on files' sound (Dolby, DTS).
+			// Premiumize's converted copy of the same torrent plays
+			// everywhere, so it goes first, with the file itself behind it.
+			if files, err := pm.DirectDL(ctx, "magnet:?xt=urn:btih:"+c.Hash); err == nil {
+				if f, ok := pickPlayFile(files, t, s.releaseMapperFor(t)); ok && f.StreamLink != "" {
+					writeJSON(w, http.StatusOK, playAnswer{
+						Title: t.label, URL: f.Link, StreamURL: f.StreamLink,
+						FileName: path.Base(f.Path), SizeBytes: f.Size,
+						Release: c.Release, Quality: string(c.Tier), Source: c.Source,
+						Option: i + 1, Options: len(entry.candidates),
+					})
+					return
+				}
+			}
+		}
 		if c.URL != "" {
 			// A link from an add-on, already resolved with its debrid service.
 			// Opened here first, so the device gets the file's own address.
@@ -503,7 +529,7 @@ func (s *Server) findStreamable(ctx context.Context, pm *premiumize.Client, t pl
 		}
 		seen[h] = true
 		items = append(items, h)
-		cands = append(cands, playCandidate{Release: res.Title, Hash: h, Size: res.SizeBytes, Tier: quality.Classify(parser.Parse(res.Title))})
+		cands = append(cands, playCandidate{Release: res.Title, Hash: h, Size: res.SizeBytes, Tier: quality.Classify(parser.Parse(res.Title)), NotEnglish: notEnglish(res.Title)})
 	}
 	entry := playEntry{}
 	if len(items) == 0 {

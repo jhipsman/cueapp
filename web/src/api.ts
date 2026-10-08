@@ -117,6 +117,7 @@ const del = <T>(path: string) => request<T>(path, { method: 'DELETE' })
 export interface StreamingSettings {
   streamingOnly: boolean
   maxResolution: '' | '1080' | '720'
+  englishOnly: boolean // play English versions only
 }
 
 // Live TV: an IPTV provider's channels and guide.
