@@ -151,6 +151,11 @@ export interface LiveGuide {
   guideReady: boolean
   guideLoading: boolean
 }
+export interface LiveHit {
+  channel: LiveChannel
+  show?: LiveProgramme // empty for a channel found by its name
+  onNow: boolean
+}
 export interface LivePlay {
   id: string
   num: number
@@ -2199,6 +2204,7 @@ export const api = {
     get<LiveGuide>(`/live/guide?ids=${encodeURIComponent(ids.join(','))}&from=${Math.floor(from / 1000)}&hours=${hours}`),
   setLiveFavorite: (id: string, on: boolean) =>
     on ? put<{ favorite: boolean }>(`/live/favorites/${encodeURIComponent(id)}`) : del<{ favorite: boolean }>(`/live/favorites/${encodeURIComponent(id)}`),
+  liveSearch: (q: string) => get<{ hits: LiveHit[]; guideReady?: boolean }>(`/live/search?q=${encodeURIComponent(q)}`),
   livePlay: (id: string) => get<LivePlay>(`/live/play/${encodeURIComponent(id)}`),
   getIPTV: () => get<IPTVSettings>('/settings/iptv'),
   putIPTV: (body: { server: string; username?: string; password?: string }) => put<IPTVSettings>('/settings/iptv', body),

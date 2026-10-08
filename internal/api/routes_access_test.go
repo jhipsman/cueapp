@@ -146,6 +146,7 @@ var memberRoutes = []string{
 	"DELETE /api/watch/list/{kind}/{tmdbId}",
 	"GET /api/live/channels",
 	"GET /api/live/guide",
+	"GET /api/live/search",
 	"PUT /api/live/favorites/{id}",
 	"DELETE /api/live/favorites/{id}",
 	"GET /api/live/play/{id}",

@@ -74,6 +74,7 @@ Add your IPTV provider and Watch gets a **Live TV** tab: every channel with its 
 Using Live TV:
 
 - **Groups** across the top are your provider's own (News, Sports...), plus **Favourites**: press the star next to a channel. Each profile has its own.
+- **Search finds what's on.** The search box at the top looks through the TV guide too: type a team, a game or a show ("Lakers", "Chiefs vs Bills") and it lists where it's **on now** and when it's **coming up** in the next day and a half, with the channel, plus channels by name. Pick one to start the channel.
 - **Pick a channel**, or any show in its row, to watch it. Up and down (or **Ch +** and **Ch −**) change channel within the group you opened it from.
 - **On the TV app**, the channel plays in the app's own player, straight from your provider. Up and down on the remote, or its channel buttons, change channel.
 - **In a browser or on a phone**, the channel plays through Cue, which lets a Cue on HTTPS play a provider's plain-http stream. It uses your server's bandwidth while you watch.
@@ -102,6 +103,7 @@ Everything Watch shows comes from the API, so a TV app can show the same things.
 | `PUT /api/watch/progress` | save where you are: `{"kind","tmdbId","season","episode","position","duration"}` in seconds |
 | `DELETE /api/watch/progress/{kind}/{tmdbId}` | take a title off Continue Watching |
 | `GET /api/live/channels` | Live TV's groups and channels, with what's on now and next and the profile's favourites |
+| `GET /api/live/search?q=` | shows on now and coming up whose title has every word, and channels by name |
 | `GET /api/live/guide?ids=&from=&hours=` | the guide for those channels (up to 300), from a Unix time, up to 24 hours |
 | `PUT` / `DELETE /api/live/favorites/{id}` | star or unstar a channel for the profile |
 | `GET /api/live/play/{id}` | where a channel plays: `url` through Cue, and `direct` (the provider's) for the TV app |

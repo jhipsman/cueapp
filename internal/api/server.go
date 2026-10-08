@@ -484,6 +484,7 @@ func (s *Server) protectedRoutes() *routeTable {
 	// Live TV (live.go).
 	play.HandleFunc("GET /api/live/channels", s.handleLiveChannels)
 	play.HandleFunc("GET /api/live/guide", s.handleLiveGuide)
+	play.HandleFunc("GET /api/live/search", s.handleLiveSearch)
 	play.HandleFunc("PUT /api/live/favorites/{id}", s.handleLiveFavorite)
 	play.HandleFunc("DELETE /api/live/favorites/{id}", s.handleLiveFavorite)
 	play.HandleFunc("GET /api/live/play/{id}", s.handleLivePlay)

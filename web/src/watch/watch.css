@@ -1805,3 +1805,90 @@ html.tv-mode .wx-live-side li button:focus small {
     height: calc(100dvh - 250px - env(safe-area-inset-bottom));
   }
 }
+
+/* Search: Live TV results (games and shows on now or coming up, channels). */
+.wx-page section + section {
+  margin-top: 30px;
+}
+.wx-search-live h2,
+.wx-page section > h2 {
+  margin: 0 0 12px;
+  font-size: 1.25rem;
+}
+.wx-live-hits {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 12px;
+}
+.wx-live-hit {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  background: var(--wx-panel);
+  color: var(--wx-text);
+  text-align: left;
+  cursor: pointer;
+}
+.wx-live-hit:hover {
+  border-color: rgba(52, 209, 191, 0.6);
+}
+.wx-live-hit.now {
+  border-color: rgba(52, 209, 191, 0.35);
+}
+.wx-live-hit-logo {
+  flex: none;
+  width: 76px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+}
+.wx-live-hit-logo img {
+  max-width: 68px;
+  max-height: 40px;
+  object-fit: contain;
+}
+.wx-live-hit-body {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+.wx-live-hit-body b,
+.wx-live-hit-body small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.wx-live-hit-body small {
+  color: var(--wx-dim);
+}
+.wx-live-hit-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: var(--wx-accent);
+}
+.wx-live-hit-badge i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--wx-accent);
+}
+html.tv-mode .wx-live-hit:focus {
+  transform: scale(1.03);
+  border-color: var(--wx-accent);
+  box-shadow: 0 0 0 3px var(--wx-accent), 0 10px 26px rgba(0, 0, 0, 0.5);
+}
+@media (max-width: 640px) {
+  .wx-live-hits {
+    grid-template-columns: 1fr;
+  }
+}

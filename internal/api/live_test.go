@@ -224,3 +224,55 @@ func TestFetchLogoFromCarelessSites(t *testing.T) {
 		t.Fatal("a web page was taken for a logo")
 	}
 }
+
+func TestLiveSearch(t *testing.T) {
+	s := newBareServer(t)
+	prov := fakeIPTV(t)
+	user := &auth.User{ID: 1, Username: "a"}
+	if _, err := s.db.Exec(`INSERT INTO users (id, username, password_hash) VALUES (1, 'a', 'x')`); err != nil {
+		t.Fatal(err)
+	}
+	call := func(method, target, body string, h http.HandlerFunc) *httptest.ResponseRecorder {
+		r := httptest.NewRequest(method, target, strings.NewReader(body)).WithContext(auth.WithUser(context.Background(), user))
+		w := httptest.NewRecorder()
+		h(w, r)
+		return w
+	}
+	if w := call("PUT", "/", `{"server":"`+prov.URL+`","username":"me","password":"pw"}`, s.handlePutIPTV); w.Code != http.StatusOK {
+		t.Fatalf("save login: %d %s", w.Code, w.Body)
+	}
+	type answer struct {
+		Hits []struct {
+			Channel liveChannel `json:"channel"`
+			Show    *struct{ Title string }
+			OnNow   bool `json:"onNow"`
+		} `json:"hits"`
+		GuideReady bool `json:"guideReady"`
+	}
+	search := func(q string) answer {
+		var a answer
+		for range 200 { // the guide loads in the background
+			_ = json.Unmarshal(call("GET", "/api/live/search?q="+url.QueryEscape(q), "", s.handleLiveSearch).Body.Bytes(), &a)
+			if a.GuideReady {
+				break
+			}
+			time.Sleep(20 * time.Millisecond)
+		}
+		return a
+	}
+	if a := search("headlines"); len(a.Hits) != 1 || !a.Hits[0].OnNow || a.Hits[0].Show.Title != "Headlines" || a.Hits[0].Channel.Name != "News 24" {
+		t.Fatalf("on now: %+v", a)
+	}
+	if a := search("WEATHER"); len(a.Hits) != 1 || a.Hits[0].OnNow {
+		t.Fatalf("coming up: %+v", a)
+	}
+	if a := search("news 24"); len(a.Hits) != 1 || a.Hits[0].Show != nil || a.Hits[0].Channel.ID != "10" {
+		t.Fatalf("channel: %+v", a)
+	}
+	if a := search("vs"); len(a.Hits) != 0 {
+		t.Fatalf("filler words: %+v", a)
+	}
+	if got := searchWords("Lakers vs. Celtics @ 7"); strings.Join(got, ",") != "lakers,celtics,7" {
+		t.Fatalf("words: %v", got)
+	}
+}

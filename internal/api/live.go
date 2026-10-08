@@ -779,3 +779,129 @@ func (s *Server) handlePutIPTV(w http.ResponseWriter, r *http.Request) {
 	}
 	writeJSON(w, http.StatusOK, out)
 }
+
+// liveHit is one Live TV search result: a show on a channel (now or later),
+// or a channel itself (Show empty).
+type liveHit struct {
+	Channel liveChannel     `json:"channel"`
+	Show    *iptv.Programme `json:"show,omitempty"`
+	OnNow   bool            `json:"onNow"`
+}
+
+// searchWords splits a search into the words that must all appear, folding
+// the ways games are written ("Lakers vs Celtics", "Lakers v Celtics",
+// "Lakers @ Celtics") into the team names.
+func searchWords(q string) []string {
+	var out []string
+	for _, w := range strings.FieldsFunc(strings.ToLower(q), func(r rune) bool {
+		return !(r >= 'a' && r <= 'z' || r >= '0' && r <= '9' || r > 127 || r == '\'')
+	}) {
+		switch w {
+		case "vs", "v", "at", "versus", "and", "the":
+			continue
+		}
+		out = append(out, w)
+	}
+	return out
+}
+
+func matchesAll(text string, words []string) bool {
+	text = strings.ToLower(text)
+	for _, w := range words {
+		if !strings.Contains(text, w) {
+			return false
+		}
+	}
+	return len(words) > 0
+}
+
+// GET /api/live/search?q=: what's on now and coming up whose title (or
+// description) has every word searched for, and channels named that way.
+// Games first by when they start; one result per show, on the lowest
+// numbered channel carrying it.
+func (s *Server) handleLiveSearch(w http.ResponseWriter, r *http.Request) {
+	pid, ok := s.watchProfile(w, r)
+	if !ok {
+		return
+	}
+	words := searchWords(r.URL.Query().Get("q"))
+	if len(words) == 0 {
+		writeJSON(w, http.StatusOK, map[string]any{"hits": []liveHit{}})
+		return
+	}
+	_, chans, err := s.liveChannels(r.Context())
+	if errors.Is(err, errLiveNotSet) {
+		writeJSON(w, http.StatusOK, map[string]any{"hits": []liveHit{}})
+		return
+	}
+	if err != nil {
+		writeError(w, http.StatusBadGateway, liveProviderMessage(err))
+		return
+	}
+	favs, _ := s.WatchRepo.LiveFavorites(pid)
+	guide, _ := s.liveGuide()
+	now := time.Now()
+	view := func(ch iptv.Channel) liveChannel {
+		lc := liveChannel{ID: ch.ID, Num: ch.Num, Name: ch.Name, Category: ch.Category, Favorite: favs[ch.ID]}
+		if ch.Logo != "" {
+			lc.Logo = "/api/live/logo/" + url.PathEscape(ch.ID)
+		}
+		if ch.EPGID != "" {
+			lc.Now, lc.Next = guide.At(ch.EPGID, now)
+		}
+		return lc
+	}
+
+	type found struct {
+		hit   liveHit
+		title bool // matched in the title, not only the description
+	}
+	var shows []found
+	seenEPG := map[string]bool{}
+	var channels []liveHit
+	for _, ch := range chans { // by channel number
+		if len(channels) < 12 && matchesAll(ch.Name, words) {
+			channels = append(channels, liveHit{Channel: view(ch)})
+		}
+		if ch.EPGID == "" || seenEPG[ch.EPGID] {
+			continue
+		}
+		seenEPG[ch.EPGID] = true
+		for _, p := range guide[ch.EPGID] {
+			if !p.Stop.After(now) {
+				continue
+			}
+			inTitle := matchesAll(p.Title, words)
+			if !inTitle && !matchesAll(p.Title+" "+p.Desc, words) {
+				continue
+			}
+			pp := p
+			shows = append(shows, found{hit: liveHit{Channel: view(ch), Show: &pp, OnNow: !p.Start.After(now)}, title: inTitle})
+		}
+	}
+	// On now first, then by start; title matches before description ones.
+	slices.SortStableFunc(shows, func(a, b found) int {
+		if a.hit.OnNow != b.hit.OnNow {
+			if a.hit.OnNow {
+				return -1
+			}
+			return 1
+		}
+		if a.title != b.title {
+			if a.title {
+				return -1
+			}
+			return 1
+		}
+		return a.hit.Show.Start.Compare(b.hit.Show.Start)
+	})
+	hits := make([]liveHit, 0, 40)
+	for i, f := range shows {
+		if i >= 40 {
+			break
+		}
+		hits = append(hits, f.hit)
+	}
+	hits = append(hits, channels...)
+	writeJSON(w, http.StatusOK, map[string]any{"hits": hits, "guideReady": guide != nil})
+}
