@@ -32,6 +32,13 @@ export default function Home({ only }: { only?: WatchKind }) {
       </div>
     )
   }
+  // The first title on Continue Watching is the likeliest to be played next:
+  // its stream is looked up now, so Play starts at once.
+  const firstContinue = home?.rows.find((r) => r.key === 'continue')?.items[0]
+  useEffect(() => {
+    if (firstContinue) void api.prefetchPlay(firstContinue.kind, firstContinue.tmdbId, firstContinue.season ?? 0, firstContinue.episode ?? 0)
+  }, [firstContinue])
+
   if (!home) {
     return (
       <div>

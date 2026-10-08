@@ -106,8 +106,24 @@ function scrollBoxes(el: HTMLElement): boolean {
   return any
 }
 
+// Where the highlight was on each page, to put it back there when coming
+// back (Back from a title to the row it was opened from).
+const lastFocus = new Map<string, string>()
+const here = () => window.location.pathname + window.location.search
+
+function describe(el: Element): string {
+  return el.getAttribute('title') || el.getAttribute('aria-label') || (el.textContent ?? '').trim().slice(0, 80)
+}
+
+function remembered(): HTMLElement | null {
+  const want = lastFocus.get(here())
+  if (!want) return null
+  return Array.from(document.querySelectorAll<HTMLElement>(FOCUSABLE)).find((el) => visible(el) && describe(el) === want) ?? null
+}
+
 function focus(el: HTMLElement) {
   el.focus({ preventScroll: true })
+  lastFocus.set(here(), describe(el))
   // Inside the TV guide (its own scroll box): just bring the show into view.
   if (el.closest('.wx-guide')) {
     el.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' })
@@ -165,6 +181,10 @@ export function installTVNavigation(): () => void {
     if (next) focus(next)
   }
   window.addEventListener('keydown', onKey, true)
+  const onFocusIn = (e: FocusEvent) => {
+    if (e.target instanceof HTMLElement && e.target !== document.body) lastFocus.set(here(), describe(e.target))
+  }
+  document.addEventListener('focusin', onFocusIn)
   // Focus something to start from once the page has drawn.
   const t = window.setTimeout(() => {
     if (!document.activeElement || document.activeElement === document.body) {
@@ -174,6 +194,7 @@ export function installTVNavigation(): () => void {
   }, 600)
   return () => {
     window.removeEventListener('keydown', onKey, true)
+    document.removeEventListener('focusin', onFocusIn)
     window.clearTimeout(t)
   }
 }
@@ -182,11 +203,27 @@ export function installTVNavigation(): () => void {
 // when nothing on the new page has it.
 export function refocusSoon() {
   if (!onTV()) return
-  window.setTimeout(() => {
+  const page = here()
+  // The page may still be loading its rows: tried a few times.
+  let tries = 0
+  const attempt = () => {
+    if (here() !== page) return
+    tries++
     const a = document.activeElement as HTMLElement | null
-    if (!a || a === document.body || !document.body.contains(a) || !visible(a)) {
+    const lost = !a || a === document.body || !document.body.contains(a) || !visible(a)
+    const back = remembered()
+    if (back && (lost || tries === 1)) {
+      focus(back)
+      return
+    }
+    if (tries < 4 && lastFocus.has(page)) {
+      window.setTimeout(attempt, 500)
+      return
+    }
+    if (lost) {
       const first = firstFocusable()
       if (first) focus(first)
     }
-  }, 700)
+  }
+  window.setTimeout(attempt, 600)
 }

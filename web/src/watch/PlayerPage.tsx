@@ -752,6 +752,15 @@ export default function PlayerPage() {
                       },
                     ]
                   : []),
+                ...(answer.url && !onTV()
+                  ? [
+                      {
+                        label: 'Download',
+                        hint: answer.sizeBytes ? `Save it to watch offline (${(answer.sizeBytes / 1e9).toFixed(1)} GB)` : 'Save it to watch offline',
+                        href: answer.url,
+                      },
+                    ]
+                  : []),
                 ...playerApps(answer.url).map((a) => ({
                   label: `Open in ${a.name}`,
                   hint: 'Plays every kind of sound',

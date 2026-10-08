@@ -9,6 +9,7 @@ under [Unreleased]. How releases are cut: [docs/RELEASING.md](docs/RELEASING.md)
 ## [Unreleased]
 
 ### Added
+- **Quicker Play and a Download**: the first title on Continue Watching (and any card pointed at) is looked up ahead, so Play starts at once; the player's Versions menu has Download, to save a version for offline. On the TV, Back returns the highlight to the card you opened.
 - **Record Live TV**: Record on any show in the guide (or on now) and Cue records it on the server, even with nothing open, then keeps it 30 days in a new Recordings group, to play in the browser or the TV app.
 - **Follow a team or show**: Follow on a Live TV search ("Packers") and every game or episode in the guide gets a reminder by itself.
 - **Channel list on the TV**: in the TV app's live player, OK (or left) opens the channel list over the picture, with what's on each; up and down, OK to switch.

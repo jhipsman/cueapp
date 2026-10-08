@@ -481,7 +481,13 @@ export default function VideoControls({ video, title, subtitle, onBack, live, no
                     {menu.heading && <div className="vx-pop-head">{menu.heading}</div>}
                     {menu.items.map((it) =>
                       it.href ? (
-                        <a key={it.label} role="menuitem" href={it.href} onClick={() => setOpen(null)}>
+                        <a
+                          key={it.label}
+                          role="menuitem"
+                          href={it.href}
+                          onClick={() => setOpen(null)}
+                          {...(it.href.startsWith('http') ? { target: '_blank', rel: 'noreferrer', download: '' } : {})}
+                        >
                           {it.label}
                           {it.hint && <small>{it.hint}</small>}
                         </a>

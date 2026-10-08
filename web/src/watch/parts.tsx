@@ -1,6 +1,6 @@
 import { useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import type { WatchCard, WatchRatings } from '../api'
+import { api, type WatchCard, type WatchRatings } from '../api'
 import Icon from '../components/Icon'
 
 // Building blocks shared by the Watch pages.
@@ -11,6 +11,20 @@ export function titleHref(c: { kind: string; tmdbId: number }): string {
 
 export function playHref(kind: string, tmdbId: number, season?: number, episode?: number): string {
   return kind === 'tv' ? `/watch/play/tv/${tmdbId}/${season ?? 1}/${episode ?? 1}` : `/watch/play/movie/${tmdbId}`
+}
+
+// warmed: titles whose stream was looked up ahead already (this visit).
+const warmed = new Set<string>()
+
+// warm looks a Continue Watching card's stream up when it's pointed at
+// (hovered, or the TV's highlight lands on it), so Play starts at once.
+function warm(card: WatchCard) {
+  const plays = card.progress !== undefined || !!card.episode
+  if (!plays) return
+  const key = `${card.kind}:${card.tmdbId}:${card.season ?? 0}:${card.episode ?? 0}`
+  if (warmed.has(key)) return
+  warmed.add(key)
+  void api.prefetchPlay(card.kind, card.tmdbId, card.season ?? 0, card.episode ?? 0).catch(() => undefined)
 }
 
 export function epCode(season?: number, episode?: number): string {
@@ -26,7 +40,7 @@ export function Card({ card, wide }: { card: WatchCard; wide?: boolean }) {
   const open = () =>
     navigate(card.progress !== undefined || card.episode ? playHref(card.kind, card.tmdbId, card.season, card.episode) : titleHref(card))
   return (
-    <button className={`wx-card${wide ? ' wide' : ''}`} onClick={open} title={card.title}>
+    <button className={`wx-card${wide ? ' wide' : ''}`} onClick={open} title={card.title} onMouseEnter={() => warm(card)} onFocus={() => warm(card)}>
       {img ? <img src={img} alt={card.title} loading="lazy" /> : <div className="wx-card-fallback">{card.title}</div>}
       {wide && (
         <div className="wx-card-caption">
