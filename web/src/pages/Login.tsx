@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { api } from '../api'
 import { useAuth } from '../AuthContext'
+import { useDarkPage } from '../useDarkPage'
 import BrandMark from '../components/BrandMark'
 import { DOCS_URL } from '../docs'
 import { titleFor } from '../documentTitle'
@@ -8,7 +9,8 @@ import { required } from '../validate'
 import { FieldError, FormProblem, useValidation } from '../useValidation'
 
 export default function Login() {
-  const { refresh } = useAuth()
+  const { refresh, streamingOnly } = useAuth()
+  useDarkPage(streamingOnly)
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -66,9 +68,9 @@ export default function Login() {
         <details className="forgot">
           <summary>Forgot your password?</summary>
           <p>
-            Cue can&apos;t send reset emails. Ask an administrator to set a new password in Settings &gt; Accounts. If you&apos;re the only administrator, run this on the machine that runs Cue (swap 1000:1000 for your own PUID:PGID):
+            Cue can&apos;t send reset emails. Ask an administrator to set a new password in Settings &gt; Accounts. If you&apos;re the owner, run this on the server that runs Cue:
           </p>
-          <code className="forgot-cmd">docker exec -it -u 1000:1000 mediarium /app/app reset-password &lt;username&gt;</code>
+          <code className="forgot-cmd">cd /opt/cue &amp;&amp; docker compose exec -u 1000:1000 cue /app/app reset-password &lt;username&gt;</code>
           <p>
             It asks for a new password and signs that account out everywhere. Not using Docker? See{' '}
             <a href={`${DOCS_URL}/accounts.md`} target="_blank" rel="noreferrer">

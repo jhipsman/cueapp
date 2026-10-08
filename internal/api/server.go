@@ -702,6 +702,7 @@ func (s *Server) protectedRoutes() *routeTable {
 	admin.HandleFunc("PUT /api/profiles/{id}", s.handleUpdateWatchProfile)
 	admin.HandleFunc("DELETE /api/profiles/{id}", s.handleRemoveWatchProfile)
 	admin.HandleFunc("GET /api/settings/streaming", s.handleGetStreamingSettings)
+	admin.HandleFunc("GET /api/settings/streaming/setup", s.handleStreamingSetup)
 	admin.HandleFunc("GET /api/settings/iptv", s.handleGetIPTV)
 	admin.HandleFunc("PUT /api/settings/iptv", s.handlePutIPTV)
 	admin.HandleFunc("PUT /api/settings/streaming", s.handlePutStreamingSettings)

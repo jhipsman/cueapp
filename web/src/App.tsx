@@ -18,6 +18,7 @@ import Library from './pages/Library'
 import Login from './pages/Login'
 import MovieDetail from './pages/MovieDetail'
 import Onboarding from './pages/Onboarding'
+import Welcome from './pages/Welcome'
 import Profile from './pages/Profile'
 import Queue from './pages/Queue'
 import ImportLibrary from './pages/ImportLibrary'
@@ -69,7 +70,7 @@ function Front() {
 }
 
 function Gate() {
-  const { loading, offline, slow, firstRunNeeded, user, needsWizard, refresh } = useAuth()
+  const { loading, offline, slow, firstRunNeeded, user, needsWizard, streamingOnly, refresh } = useAuth()
   const admin = isAdmin(user)
 
   if (loading) {
@@ -85,7 +86,7 @@ function Gate() {
     return <Splash label={offline ? "Reconnecting to Cue" : "Loading"} />
   }
   if (firstRunNeeded) {
-    return <Onboarding />
+    return streamingOnly ? <Welcome /> : <Onboarding />
   }
   if (!user) {
     return <Login />

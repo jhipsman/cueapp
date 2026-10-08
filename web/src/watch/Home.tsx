@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api, type WatchHome, type WatchKind } from '../api'
 import Icon from '../components/Icon'
+import SetupCard from './SetupCard'
 import { useDocumentTitle } from '../documentTitle'
 import { playHref, Row, titleHref } from './parts'
 
@@ -75,12 +76,13 @@ export default function Home({ only }: { only?: WatchKind }) {
         </header>
       )}
       <div className="wx-rows" style={hero ? undefined : { marginTop: 90 }}>
+        {!only && <SetupCard />}
         {rows.map((r) => (
           <Row key={r.key} title={r.title} items={r.items} wide={r.key === 'continue'} />
         ))}
         {rows.length === 0 && (
           <p className="wx-dim" style={{ padding: '0 var(--wx-gutter)' }}>
-            Nothing to show yet. Check that a TMDB key is set in Settings.
+            Nothing to show yet. Cue needs its movie info key: the owner can add it in Settings.
           </p>
         )}
       </div>

@@ -6,8 +6,8 @@
   --wx-panel: #1b1d22;
   --wx-text: #f4f4f5;
   --wx-dim: #a6a8ae;
-  --wx-accent: #e2453c;
-  --wx-accent-text: #fff;
+  --wx-accent: #34d1bf; /* Cue cyan, from the logo */
+  --wx-accent-text: #06201d;
   --wx-gutter: clamp(16px, 4vw, 56px);
   min-height: 100vh;
   background: var(--wx-bg);
@@ -1402,7 +1402,7 @@ html.watch-mode:has(.wx-player) body {
   height: 9px;
   border-radius: 50%;
   background: var(--wx-accent);
-  box-shadow: 0 0 0 3px rgba(226, 69, 60, 0.3);
+  box-shadow: 0 0 0 3px rgba(52, 209, 191, 0.3);
 }
 .vx-pop-wrap {
   position: relative;
@@ -1524,4 +1524,63 @@ html.watch-mode:has(.wx-player) body {
   .vx-text-btn span {
     display: none;
   }
+}
+
+/* "Finish setting up" (SetupCard), for the owner on Watch's home. */
+.wx-setup {
+  margin: 0 var(--wx-gutter) 28px;
+  padding: 22px 24px;
+  max-width: 760px;
+  border-radius: 12px;
+  background: var(--wx-panel);
+  border: 1px solid rgba(52, 209, 191, 0.35);
+}
+.wx-setup h2 {
+  margin: 0 0 4px;
+}
+.wx-setup p {
+  margin: 0 0 14px;
+}
+.wx-setup ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+}
+.wx-setup li {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.wx-setup li > div {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+}
+.wx-setup li span:not(.wx-setup-mark) {
+  color: var(--wx-dim);
+  font-size: 0.9rem;
+}
+.wx-setup li small {
+  color: var(--wx-dim);
+  font-weight: 400;
+}
+.wx-setup li.done b {
+  color: var(--wx-dim);
+  text-decoration: line-through;
+}
+.wx-setup-mark {
+  flex: none;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  color: var(--wx-accent-text);
+}
+.wx-setup li.done .wx-setup-mark {
+  background: var(--wx-accent);
+  border-color: var(--wx-accent);
 }

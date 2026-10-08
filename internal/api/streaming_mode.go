@@ -83,6 +83,25 @@ func (s *Server) handleGetStreamingSettings(w http.ResponseWriter, r *http.Reque
 	writeJSON(w, http.StatusOK, s.streamingSettingsNow())
 }
 
+// streamingSetup is what Watch still needs, for the owner's "Finish setting
+// up" card: movie info (a TMDB key) and something to play from (Premiumize
+// or a stream add-on). Live TV is optional.
+type streamingSetup struct {
+	MovieInfo bool `json:"movieInfo"`
+	Streams   bool `json:"streams"`
+	LiveTV    bool `json:"liveTV"`
+}
+
+// GET /api/settings/streaming/setup
+func (s *Server) handleStreamingSetup(w http.ResponseWriter, r *http.Request) {
+	_, live := s.iptvAccount()
+	writeJSON(w, http.StatusOK, streamingSetup{
+		MovieInfo: s.TMDB().HasAPIKey(),
+		Streams:   s.premiumizeClient() != nil || len(s.savedAddons()) > 0,
+		LiveTV:    live,
+	})
+}
+
 // PUT /api/settings/streaming {"streamingOnly"?, "maxResolution"?}
 func (s *Server) handlePutStreamingSettings(w http.ResponseWriter, r *http.Request) {
 	var req struct {

@@ -14,6 +14,9 @@ interface AuthState {
   // True when someone is signed in but never finished the first-run wizard
   // (for example the page was closed halfway), so it resumes.
   needsWizard: boolean
+  // Cue is a family streaming app: the first run is only "create your
+  // account", and there is no setup wizard to resume.
+  streamingOnly: boolean
   refresh: () => Promise<void>
   setUser: (u: User | null) => void
 }
@@ -68,6 +71,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [firstRunNeeded, setFirstRunNeeded] = useState(false)
   const [user, setUser] = useState<User | null>(null)
   const [needsWizard, setNeedsWizard] = useState(false)
+  const [streamingOnly, setStreamingOnly] = useState(false)
   const retry = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 
   const refresh = useCallback(async () => {
@@ -76,12 +80,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const status = await withTimeout(api.onboardingStatus())
       setFirstRunNeeded(status.firstRunNeeded)
+      setStreamingOnly(!!status.streamingOnly)
       if (!status.firstRunNeeded) {
         try {
           const me = await withTimeout(api.me())
           setUser(me)
           try {
-            setNeedsWizard(!(await withTimeout(api.getSettings())).onboardingDone)
+            setNeedsWizard(!status.streamingOnly && !(await withTimeout(api.getSettings())).onboardingDone)
           } catch {
             setNeedsWizard(false)
           }
@@ -113,7 +118,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [refresh])
 
   return (
-    <AuthContext.Provider value={{ loading, offline, slow, firstRunNeeded, user, needsWizard, refresh, setUser }}>
+    <AuthContext.Provider value={{ loading, offline, slow, firstRunNeeded, user, needsWizard, streamingOnly, refresh, setUser }}>
       {children}
     </AuthContext.Provider>
   )

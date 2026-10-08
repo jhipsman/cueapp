@@ -368,6 +368,8 @@ export interface OnboardingStatus {
   // True when the visitor is not on the home network, so creating the first
   // account needs the one-time setup code from the Cue log.
   setupCodeRequired?: boolean
+  // Cue is a family streaming app: a first run only creates the account.
+  streamingOnly?: boolean
 }
 
 export type Role = 'admin' | 'member'
@@ -2188,6 +2190,7 @@ export const api = {
   updateWatchProfile: (id: number, body: { name?: string; avatar?: string; pin?: string }) =>
     put<{ profile: WatchProfile; token?: string }>(`/profiles/${id}`, body),
   removeWatchProfile: (id: number) => del<null>(`/profiles/${id}`),
+  streamingSetup: () => get<{ movieInfo: boolean; streams: boolean; liveTV: boolean }>('/settings/streaming/setup'),
   streamingSettings: () => get<StreamingSettings>('/settings/streaming'),
   putStreamingSettings: (body: Partial<StreamingSettings>) => put<StreamingSettings>('/settings/streaming', body),
   liveChannels: () => get<LiveChannels>('/live/channels'),

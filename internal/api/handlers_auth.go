@@ -32,7 +32,9 @@ func (s *Server) handleOnboardingStatus(w http.ResponseWriter, r *http.Request) 
 	// setupCodeRequired tells the sign-up page whether to ask for the setup
 	// code: only while no account exists, and only for someone who is not on
 	// the home network (setup.go).
-	writeJSON(w, http.StatusOK, map[string]bool{"firstRunNeeded": needed, "setupCodeRequired": needed && s.setupNeedsCode(r)})
+	// streamingOnly: Cue is a family streaming app, so a first run only
+	// creates the account (no setup wizard).
+	writeJSON(w, http.StatusOK, map[string]bool{"firstRunNeeded": needed, "setupCodeRequired": needed && s.setupNeedsCode(r), "streamingOnly": s.streamingOnly()})
 }
 
 type createAdminRequest struct {
