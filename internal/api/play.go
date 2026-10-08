@@ -338,6 +338,8 @@ func (s *Server) servePlay(w http.ResponseWriter, r *http.Request, t playTarget)
 		if cands := s.fallbackCandidates(ctx, t); len(cands) > 0 {
 			entry.candidates = cands
 			playCache.put(t.key, entry)
+		} else {
+			entry.nothing = strings.TrimSpace(entry.nothing + " " + s.fallbackTried())
 		}
 	}
 	if len(entry.candidates) == 0 {

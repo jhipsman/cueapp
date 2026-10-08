@@ -119,3 +119,24 @@ func TestYouTubeCandidates(t *testing.T) {
 		t.Fatalf("got %+v", got)
 	}
 }
+
+func TestCompilationParts(t *testing.T) {
+	got := compilationParts("Fraggle Rock: Scared Silly", `Join the Fraggle gang in three frightfully delightful episodes! Fraggle Rock: Scared Silly is bursting with Halloween fun! Include 3 ghostly episodes: “Terrible Tunnel,” “Scared Silly” and “A Dark & Stormy Night.”`)
+	var names []string
+	for _, p := range got {
+		if p.title != "Fraggle Rock" || !p.episode {
+			t.Errorf("part %+v", p)
+		}
+		names = append(names, p.name)
+	}
+	if strings.Join(names, "|") != "Scared Silly|Terrible Tunnel|A Dark & Stormy Night" {
+		t.Errorf("names = %q", names)
+	}
+	if compilationParts("Labyrinth", "") != nil {
+		t.Error("a plain film isn't a set of episodes")
+	}
+	w := got[0]
+	if !isEpisode("Fraggle Rock Season 3", "Fraggle Rock 3x13 - Scared Silly.mp4", w) || isEpisode("Fraggle Rock Season 3", "Fraggle Rock 3x12 - Wembley.mp4", w) {
+		t.Error("episode by name")
+	}
+}

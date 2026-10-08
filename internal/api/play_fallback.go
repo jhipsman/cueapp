@@ -108,6 +108,20 @@ func (s *Server) fallbackCandidates(ctx context.Context, t playTarget) []playCan
 			c, cancel := context.WithTimeout(ctx, 30*time.Second)
 			defer cancel()
 			arch = archiveCandidates(c, archiveorg.New(s.fallback.archiveBase), want)
+			// A film that's really a set of a show's episodes: those too.
+			parts := make([][]playCandidate, len(want.parts))
+			var pwg sync.WaitGroup
+			for i, p := range want.parts {
+				pwg.Add(1)
+				go func() {
+					defer pwg.Done()
+					parts[i] = archiveCandidates(c, archiveorg.New(s.fallback.archiveBase), p)
+				}()
+			}
+			pwg.Wait()
+			for _, p := range parts {
+				arch = append(arch, p...)
+			}
 		}()
 		go func() {
 			defer wg.Done()
@@ -117,7 +131,13 @@ func (s *Server) fallbackCandidates(ctx context.Context, t playTarget) []playCan
 			}
 			c, cancel := context.WithTimeout(ctx, 20*time.Second)
 			defer cancel()
-			yt = youtubeCandidates(c, youtube.New(key, s.fallback.youtubeBase), want)
+			yc := youtube.New(key, s.fallback.youtubeBase)
+			yt = youtubeCandidates(c, yc, want)
+			if len(yt) == 0 && len(want.parts) > 0 {
+				// One more search (each uses 100 of the day's units): the
+				// episode the film is named after.
+				yt = youtubeCandidates(c, yc, want.parts[0])
+			}
 		}()
 		wg.Wait()
 		cands := append(arch, yt...)
@@ -130,6 +150,15 @@ func (s *Server) fallbackCandidates(ctx context.Context, t playTarget) []playCan
 	return entry.candidates
 }
 
+// fallbackTried says, for the "nothing found" message, where else Play
+// looked.
+func (s *Server) fallbackTried() string {
+	if s.youtubeKey() != "" {
+		return "The Internet Archive and YouTube had nothing either."
+	}
+	return "The Internet Archive had nothing either. Add a free YouTube key in Settings > Streaming to look on YouTube too."
+}
+
 // fallbackWant is what is being looked for, in words.
 type fallbackWant struct {
 	title   string // the film or the show
@@ -138,11 +167,57 @@ type fallbackWant struct {
 	season  int
 	number  int
 	name    string // the episode's name, when TMDB has it
+	// parts: for a film that's a set of a show's episodes ("Fraggle Rock:
+	// Scared Silly", a DVD of three), each episode, by name.
+	parts []fallbackWant
+}
+
+var quoted = regexp.MustCompile(`[“"]([^”"]{3,60})[”"]`)
+
+// compilationParts sees whether a film is a set of a show's episodes: a
+// title like "Show: Name", with episode names quoted in its description.
+// The episode it's named after comes first.
+func compilationParts(title, overview string) []fallbackWant {
+	show, sub, ok := strings.Cut(title, ": ")
+	if !ok {
+		show, sub, ok = strings.Cut(title, " - ")
+	}
+	if !ok || strings.TrimSpace(show) == "" || strings.TrimSpace(sub) == "" {
+		return nil
+	}
+	names := []string{strings.TrimSpace(sub)}
+	for _, m := range quoted.FindAllStringSubmatch(overview, -1) {
+		n := strings.TrimRight(strings.TrimSpace(m[1]), ",.!?;:")
+		if len(strings.Fields(n)) > 8 || words(n) == "" {
+			continue
+		}
+		names = append(names, n)
+	}
+	var out []fallbackWant
+	seen := map[string]bool{}
+	for _, n := range names {
+		if seen[words(n)] || len(out) == 4 {
+			continue
+		}
+		seen[words(n)] = true
+		out = append(out, fallbackWant{title: strings.TrimSpace(show), episode: true, season: -1, number: -1, name: n})
+	}
+	return out
 }
 
 func (s *Server) fallbackWant(ctx context.Context, t playTarget) fallbackWant {
 	if t.movie != nil {
-		return fallbackWant{title: t.movie.Title, year: t.movie.Year}
+		w := fallbackWant{title: t.movie.Title, year: t.movie.Year}
+		var overview string
+		if tm := s.TMDB(); tm != nil && tm.HasAPIKey() && t.movie.TMDBID > 0 {
+			c, cancel := context.WithTimeout(ctx, 8*time.Second)
+			defer cancel()
+			if d, err := tm.GetMovieDetail(c, t.movie.TMDBID); err == nil {
+				overview = d.Overview
+			}
+		}
+		w.parts = compilationParts(t.movie.Title, overview)
+		return w
 	}
 	w := fallbackWant{episode: true, season: t.season, number: t.episode}
 	if t.series != nil {
@@ -271,10 +346,42 @@ func archiveCandidates(ctx context.Context, c *archiveorg.Client, w fallbackWant
 	if w.title == "" {
 		return nil
 	}
-	items, err := c.Search(ctx, w.title, 30)
-	if err != nil {
-		slog.Info("play: Internet Archive search", "title", w.title, "err", err)
-		return nil
+	// The likeliest uploads first: ones that name the episode, then the
+	// season, then the show's most downloaded.
+	show := "title:(" + archiveorg.Phrase(w.title) + ")"
+	var queries []string
+	if w.episode {
+		if w.name != "" {
+			queries = append(queries, show+" AND "+archiveorg.Phrase(w.name))
+		}
+		if w.season >= 0 {
+			queries = append(queries,
+				show+fmt.Sprintf(` AND (title:("season %d") OR title:("series %d") OR title:(S%02d) OR title:("%dx%02d"))`, w.season, w.season, w.season, w.season, w.number))
+		}
+	}
+	queries = append(queries, show)
+	results := make([][]archiveorg.Item, len(queries))
+	var qwg sync.WaitGroup
+	for i, q := range queries {
+		qwg.Add(1)
+		go func() {
+			defer qwg.Done()
+			var err error
+			if results[i], err = c.Query(ctx, q, 30); err != nil {
+				slog.Info("play: Internet Archive search", "title", w.title, "err", err)
+			}
+		}()
+	}
+	qwg.Wait()
+	seen := map[string]bool{}
+	var items []archiveorg.Item
+	for _, list := range results {
+		for _, it := range list {
+			if !seen[it.ID] {
+				seen[it.ID] = true
+				items = append(items, it)
+			}
+		}
 	}
 	var keep []archiveorg.Item
 	for _, it := range items {
@@ -288,7 +395,7 @@ func archiveCandidates(ctx context.Context, c *archiveorg.Client, w fallbackWant
 			}
 		}
 		keep = append(keep, it)
-		if len(keep) == 8 {
+		if len(keep) == 12 {
 			break
 		}
 	}

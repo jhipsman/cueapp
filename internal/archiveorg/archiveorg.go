@@ -70,9 +70,19 @@ func (c *Client) getJSON(ctx context.Context, u string, out any) error {
 // Search finds video items whose title has the phrase, most downloaded
 // first.
 func (c *Client) Search(ctx context.Context, phrase string, rows int) ([]Item, error) {
-	phrase = strings.ReplaceAll(strings.TrimSpace(phrase), `"`, "")
+	return c.Query(ctx, fmt.Sprintf(`title:(%s)`, Phrase(phrase)), rows)
+}
+
+// Phrase quotes words for a query.
+func Phrase(s string) string {
+	return `"` + strings.ReplaceAll(strings.TrimSpace(s), `"`, "") + `"`
+}
+
+// Query finds video items matching q (archive.org's search syntax, like
+// title:("Fraggle Rock") AND "Scared Silly"), most downloaded first.
+func (c *Client) Query(ctx context.Context, query string, rows int) ([]Item, error) {
 	q := url.Values{
-		"q":      {fmt.Sprintf(`title:("%s") AND mediatype:(movies)`, phrase)},
+		"q":      {query + " AND mediatype:(movies)"},
 		"fl[]":   {"identifier", "title"},
 		"sort[]": {"downloads desc"},
 		"rows":   {strconv.Itoa(rows)},
