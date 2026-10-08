@@ -75,6 +75,7 @@ type Server struct {
 	premiumizeBase    string         // tests point Premiumize elsewhere; "" = the real one (premiumize.go)
 	omdb              omdbState      // the OMDb client for the saved key (watch_api.go)
 	fallback          fallbackState  // Internet Archive and YouTube, when nothing else is found (play_fallback.go)
+	recorder          recorderState  // Live TV recordings running (live_record.go)
 	profileBox        *crypto.Box    // seals profile tokens (watch_profiles.go)
 	live              liveState      // Live TV's channel list and guide (live.go)
 
@@ -301,6 +302,7 @@ func (s *Server) Routes() http.Handler {
 	// A subtitle the player was handed: the signed address is the key, so
 	// the TV app's player can fetch it (watch_subtitles.go).
 	public.HandleFunc("GET /api/subs", s.handleSubsFile)
+	public.HandleFunc("GET /api/recording", s.handleRecordingFile)
 
 	public.Handle("/api/", s.signedIn(s.protectedRoutes()))
 
@@ -498,6 +500,13 @@ func (s *Server) protectedRoutes() *routeTable {
 	play.HandleFunc("DELETE /api/live/favorites/{id}", s.handleLiveFavorite)
 	play.HandleFunc("GET /api/live/play/{id}", s.handleLivePlay)
 	play.HandleFunc("GET /api/live/catchup/{id}", s.handleLiveCatchup)
+	play.HandleFunc("GET /api/live/recordings", s.handleLiveRecordings)
+	play.HandleFunc("PUT /api/live/recordings", s.handleAddLiveRecording)
+	play.HandleFunc("DELETE /api/live/recordings/{id}", s.handleDeleteLiveRecording)
+	play.HandleFunc("GET /api/live/recordings/{id}/play", s.handlePlayLiveRecording)
+	play.HandleFunc("GET /api/live/follows", s.handleLiveFollows)
+	play.HandleFunc("PUT /api/live/follows", s.handleSetLiveFollow)
+	play.HandleFunc("DELETE /api/live/follows", s.handleSetLiveFollow)
 	play.HandleFunc("GET /api/live/reminders", s.handleLiveReminders)
 	play.HandleFunc("PUT /api/live/reminders", s.handleAddLiveReminder)
 	play.HandleFunc("DELETE /api/live/reminders", s.handleRemoveLiveReminder)

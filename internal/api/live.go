@@ -1038,6 +1038,7 @@ func (s *Server) handleLiveReminders(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
+	s.applyFollows(pid)
 	list, err := s.WatchRepo.LiveReminders(pid, time.Now())
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "Couldn't load your reminders.")

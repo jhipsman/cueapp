@@ -50,7 +50,7 @@ type LiveReminder struct {
 // AddLiveReminder saves a reminder (again: no change).
 func (r *Repo) AddLiveReminder(profileID int64, rem LiveReminder) error {
 	_, err := r.db.Exec(`INSERT INTO live_reminders (profile_id, stream_id, start_at, stop_at, title) VALUES (?, ?, ?, ?, ?)
-		ON CONFLICT(profile_id, stream_id, start_at) DO UPDATE SET stop_at = excluded.stop_at, title = excluded.title`,
+		ON CONFLICT(profile_id, stream_id, start_at) DO UPDATE SET stop_at = excluded.stop_at, title = excluded.title, dismissed = 0`,
 		profileID, rem.StreamID, rem.Start.UTC().Format(time.RFC3339), rem.Stop.UTC().Format(time.RFC3339), rem.Title)
 	if err != nil {
 		return fmt.Errorf("save reminder: %w", err)
@@ -58,9 +58,18 @@ func (r *Repo) AddLiveReminder(profileID int64, rem LiveReminder) error {
 	return nil
 }
 
-// RemoveLiveReminder takes a reminder off.
+// AddFollowReminder adds a reminder a follow found, unless there is one
+// for the show already, or one was taken off.
+func (r *Repo) AddFollowReminder(profileID int64, rem LiveReminder) error {
+	_, err := r.db.Exec(`INSERT OR IGNORE INTO live_reminders (profile_id, stream_id, start_at, stop_at, title) VALUES (?, ?, ?, ?, ?)`,
+		profileID, rem.StreamID, rem.Start.UTC().Format(time.RFC3339), rem.Stop.UTC().Format(time.RFC3339), rem.Title)
+	return err
+}
+
+// RemoveLiveReminder takes a reminder off (kept as dismissed until the show
+// ends, so a follow doesn't add it again).
 func (r *Repo) RemoveLiveReminder(profileID int64, streamID string, start time.Time) error {
-	_, err := r.db.Exec(`DELETE FROM live_reminders WHERE profile_id = ? AND stream_id = ? AND start_at = ?`,
+	_, err := r.db.Exec(`UPDATE live_reminders SET dismissed = 1 WHERE profile_id = ? AND stream_id = ? AND start_at = ?`,
 		profileID, streamID, start.UTC().Format(time.RFC3339))
 	return err
 }
@@ -69,7 +78,7 @@ func (r *Repo) RemoveLiveReminder(profileID int64, streamID string, start time.T
 // soonest first. Ended ones are cleared on the way.
 func (r *Repo) LiveReminders(profileID int64, now time.Time) ([]LiveReminder, error) {
 	_, _ = r.db.Exec(`DELETE FROM live_reminders WHERE stop_at < ?`, now.UTC().Format(time.RFC3339))
-	rows, err := r.db.Query(`SELECT stream_id, start_at, stop_at, title FROM live_reminders WHERE profile_id = ? ORDER BY start_at`, profileID)
+	rows, err := r.db.Query(`SELECT stream_id, start_at, stop_at, title FROM live_reminders WHERE profile_id = ? AND dismissed = 0 ORDER BY start_at`, profileID)
 	if err != nil {
 		return nil, fmt.Errorf("list reminders: %w", err)
 	}
@@ -86,4 +95,34 @@ func (r *Repo) LiveReminders(profileID int64, now time.Time) ([]LiveReminder, er
 		out = append(out, rem)
 	}
 	return out, rows.Err()
+}
+
+// LiveFollows is the words profileID follows, oldest first.
+func (r *Repo) LiveFollows(profileID int64) ([]string, error) {
+	rows, err := r.db.Query(`SELECT phrase FROM live_follows WHERE profile_id = ? ORDER BY created_at`, profileID)
+	if err != nil {
+		return nil, fmt.Errorf("list follows: %w", err)
+	}
+	defer rows.Close()
+	out := []string{}
+	for rows.Next() {
+		var p string
+		if err := rows.Scan(&p); err != nil {
+			return nil, err
+		}
+		out = append(out, p)
+	}
+	return out, rows.Err()
+}
+
+// SetLiveFollow follows (on) or stops following words.
+func (r *Repo) SetLiveFollow(profileID int64, phrase string, on bool) error {
+	var err error
+	if on {
+		_, err = r.db.Exec(`INSERT OR IGNORE INTO live_follows (profile_id, phrase, created_at) VALUES (?, ?, ?)`,
+			profileID, phrase, time.Now().UTC().Format(time.RFC3339))
+	} else {
+		_, err = r.db.Exec(`DELETE FROM live_follows WHERE profile_id = ? AND phrase = ?`, profileID, phrase)
+	}
+	return err
 }
