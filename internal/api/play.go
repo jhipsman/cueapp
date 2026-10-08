@@ -373,8 +373,13 @@ func (s *Server) servePlay(w http.ResponseWriter, r *http.Request, t playTarget)
 		entry.candidates = browserFilesFirst(entry.candidates)
 	}
 	if option > len(entry.candidates) {
-		writeError(w, http.StatusNotFound, fmt.Sprintf("There are only %d versions of %s to play.", len(entry.candidates), t.label))
-		return
+		// Past every version found (none would play here): the Internet
+		// Archive's and YouTube's, if not added yet.
+		var added bool
+		if entry, added = s.addFallbacks(ctx, t, entry); !added || option > len(entry.candidates) {
+			writeError(w, http.StatusNotFound, fmt.Sprintf("None of the %d versions of %s found would play. %s", len(entry.candidates), t.label, s.fallbackTried()))
+			return
+		}
 	}
 
 	// Premiumize's cache can drop a release between the check and now, and a
@@ -444,7 +449,35 @@ func (s *Server) servePlay(w http.ResponseWriter, r *http.Request, t playTarget)
 		}))
 		return
 	}
-	writeError(w, http.StatusNotFound, fmt.Sprintf("None of the remaining versions of %s could be played. Try again with fresh=1 to search again.", t.label))
+	// None of them opened: the Internet Archive's and YouTube's finds.
+	before := len(entry.candidates)
+	if entry, added := s.addFallbacks(ctx, t, entry); added {
+		c := entry.candidates[before]
+		writeJSON(w, http.StatusOK, s.withConvert(web, playAnswer{
+			Title: t.label, URL: c.URL, YouTube: c.YouTube, FileName: c.Release, SizeBytes: c.Size,
+			Release: c.Release, Quality: string(c.Tier), Source: c.Source,
+			Option: before + 1, Options: len(entry.candidates),
+		}))
+		return
+	}
+	writeError(w, http.StatusNotFound, fmt.Sprintf("None of the remaining versions of %s could be played. %s", t.label, s.fallbackTried()))
+}
+
+// addFallbacks puts the Internet Archive's and YouTube's finds after the
+// versions found, once, and keeps the list; false when it adds none.
+func (s *Server) addFallbacks(ctx context.Context, t playTarget, entry playEntry) (playEntry, bool) {
+	for _, c := range entry.candidates {
+		if c.Source == sourceArchive || c.Source == sourceYouTube {
+			return entry, false // already there
+		}
+	}
+	more := s.fallbackCandidates(ctx, t)
+	if len(more) == 0 {
+		return entry, false
+	}
+	entry.candidates = append(append([]playCandidate(nil), entry.candidates...), more...)
+	playCache.put(t.key, entry)
+	return entry, true
 }
 
 func (s *Server) releaseMapperFor(t playTarget) func(parser.Release) parser.Release {

@@ -97,6 +97,9 @@ export default function PlayerPage() {
   // where in the video the conversion started, and how long the video is.
   const [conv, setConv] = useState<{ stream: string; duration: number; offset: number } | null>(null)
   const converting = useRef(false)
+  // Asked once past the last version: Cue then looks on the Internet
+  // Archive and YouTube.
+  const askedBeyond = useRef(false)
   const [error, setError] = useState('')
   const [note, setNote] = useState('')
   const [next, setNext] = useState<WatchEpisode | null>(null)
@@ -137,6 +140,7 @@ export default function PlayerPage() {
     setNote('')
     resumeAt.current = 0
     silentSkips.current = 0
+    askedBeyond.current = false
     setResumeReady(false)
     api
       .watchProgress(kind, tmdbId, season, episode)
@@ -215,7 +219,8 @@ export default function PlayerPage() {
         return
       }
       if (r.reason === 'error') {
-        if (answer.option < answer.options) {
+        if (answer.option < answer.options || !askedBeyond.current) {
+          if (answer.option >= answer.options) askedBeyond.current = true
           setNote(`Version ${answer.option} wouldn't play, so trying the next one.`)
           void load(answer.option + 1)
         } else {
@@ -348,7 +353,8 @@ export default function PlayerPage() {
   // The next version, or nothing more to try.
   function moveOn() {
     if (!answer) return
-    if (answer.option < answer.options) {
+    if (answer.option < answer.options || !askedBeyond.current) {
+      if (answer.option >= answer.options) askedBeyond.current = true
       setNote(`Version ${answer.option} wouldn't play here, so trying the next one.`)
       void load(answer.option + 1)
       return
