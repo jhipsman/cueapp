@@ -18,6 +18,7 @@ DIR=/opt/cue
 
 say() { printf '\n\033[1;36m==>\033[0m %s\n' "$*"; }
 die() { printf '\n\033[1;31mProblem:\033[0m %s\n' "$*" >&2; exit 1; }
+trap 'printf "\n\033[1;31mProblem:\033[0m the installer stopped at line %s. Send this to whoever is helping you.\n" "$LINENO" >&2' ERR
 
 [ "$(id -u)" = 0 ] || die "Run this as root: put sudo before bash."
 command -v curl >/dev/null || { apt-get update -qq && apt-get install -y -qq curl; }
@@ -39,7 +40,7 @@ curl -fsSL "$REPO_RAW/deploy/cloud/Caddyfile" -o Caddyfile
 # ---- The address ----
 # Kept from an earlier run unless CUE_HOST says otherwise.
 old_host=""
-[ -f .env ] && old_host="$(sed -n 's/^CUE_HOST=//p' .env | head -n1)"
+if [ -f .env ]; then old_host="$(sed -n 's/^CUE_HOST=//p' .env | head -n1)"; fi
 host="${CUE_HOST:-$old_host}"
 if [ -z "$host" ]; then
   ip="$(curl -fsS4 --max-time 10 https://api.ipify.org || curl -fsS4 --max-time 10 https://ifconfig.me || true)"
@@ -48,8 +49,12 @@ if [ -z "$host" ]; then
   # no domain of your own, and Let's Encrypt gives it a certificate.
   host="cue-${ip//./-}.sslip.io"
 fi
-tz="${TZ:-$( [ -f .env ] && sed -n 's/^TZ=//p' .env | head -n1 )}"
-[ -n "$tz" ] || tz="$(timedatectl show -p Timezone --value 2>/dev/null || echo Etc/UTC)"
+# (Each step here must succeed even when there's no .env yet: a failed
+# test inside $(...) would end the script silently under set -e.)
+tz="${TZ:-}"
+if [ -z "$tz" ] && [ -f .env ]; then tz="$(sed -n 's/^TZ=//p' .env | head -n1)"; fi
+if [ -z "$tz" ]; then tz="$(timedatectl show -p Timezone --value 2>/dev/null || true)"; fi
+[ -n "$tz" ] || tz=Etc/UTC
 cat > .env <<EOT
 CUE_HOST=$host
 TZ=$tz
