@@ -55,6 +55,17 @@ When you press Play:
 
 The add-on link holds your Premiumize key, so Cue stores it encrypted and only ever shows its address (like comet.elfhosted.com).
 
+## Hard-to-find shows (Internet Archive and YouTube)
+
+Old and little-known shows (Fraggle Rock, Johnny and the Sprites, It's a Big Big World) often aren't on the add-ons or torrent sites. When Play finds nothing there, it looks in two more places:
+
+1. **The Internet Archive** (archive.org), always. It looks for uploads named after the show and picks the episode by its number (S01E05, 1x05, "Season 1" with "05 - ...") or its name from TMDB. These files play in Cue's own player, on the TV app too.
+2. **YouTube**, with a free YouTube Data API key in **Settings > Streaming > Hard-to-find shows (YouTube)**. It takes full episodes and films only: the right length, the show's name and the episode's name or number in the title, no clips or trailers, and only videos YouTube lets play outside its site. They play in YouTube's own player, with Back, Next episode and Another version on top. Where you stopped isn't saved for these.
+
+To get a key: open [YouTube Data API v3](https://console.cloud.google.com/apis/library/youtube.googleapis.com) in Google Cloud, sign in, make a project if asked and press **Enable**; then in **Credentials** press **Create credentials > API key**. A free key allows about 100 searches a day; what was found for a title is kept for 12 hours.
+
+Nothing is downloaded from either. When Cue finds nothing at all, the player (and every title page) shows the free services that have it, like **Tubi**, **Pluto TV** or **The Roku Channel**, from TMDB's list, each opening a search for it there.
+
 ## IMDb ratings
 
 TMDB doesn't have IMDb ratings, so Watch reads them from [OMDb](https://www.omdbapi.com). Get a free key at omdbapi.com/apikey.aspx, click the activation link in OMDb's email, and paste the key into **Settings > Info, lists and subtitles > IMDb ratings (OMDb)**. A free key allows 1,000 lookups a day; each title is looked up at most once a day.
@@ -102,6 +113,7 @@ Everything Watch shows comes from the API, so a TV app can show the same things.
 | `GET /api/watch/tv/{tmdbId}/next?season=&episode=` | the episode after that one |
 | `GET /api/play/tmdb/movie/{tmdbId}` | what to play for a movie |
 | `GET /api/play/tmdb/tv/{tmdbId}/{season}/{episode}` | what to play for an episode |
+| `GET /api/watch/providers/{kind}/{tmdbId}?region=US` | the services it's free on (`free`) and on with a subscription (`subscription`), each `{"name","logo","url"}` |
 | `GET /api/watch/progress/{kind}/{tmdbId}?season=&episode=` | where to resume |
 | `PUT /api/watch/progress` | save where you are: `{"kind","tmdbId","season","episode","position","duration"}` in seconds |
 | `DELETE /api/watch/progress/{kind}/{tmdbId}` | take a title off Continue Watching |
@@ -115,3 +127,5 @@ Everything Watch shows comes from the API, so a TV app can show the same things.
 | `PUT` / `DELETE /api/watch/list/{kind}/{tmdbId}` | add to or remove from My List |
 
 `kind` is `movie` or `tv`.
+
+What to play can come back with `youtube` (a YouTube video's id) instead of a file: that plays in YouTube's embedded player (`https://www.youtube-nocookie.com/embed/{id}`).

@@ -19,6 +19,8 @@ const contentSecurityPolicy = "default-src 'self'; " +
 	// The live TV players (hls.js, mpegts.js) work in a background worker
 	// made from a blob; it runs only their own code, as the page does.
 	"worker-src 'self' blob:; " +
+	// A video found only on YouTube plays in YouTube's own player.
+	"frame-src https://www.youtube-nocookie.com https://www.youtube.com; " +
 	"object-src 'none'; " +
 	"base-uri 'self'; " +
 	"form-action 'self'; " +

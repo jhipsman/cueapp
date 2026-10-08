@@ -267,6 +267,24 @@ export interface WatchEpisode {
 }
 
 // One-click play: the best release Premiumize can stream at once.
+export interface WatchProvider {
+  name: string
+  logo?: string
+  url: string
+}
+
+// Where else a title streams (TMDB's list, from JustWatch).
+export interface WatchProviders {
+  free: WatchProvider[]
+  subscription: WatchProvider[]
+}
+
+// userRegion is the country from the browser's language ("en-GB" -> "GB").
+function userRegion(): string {
+  const m = /-([A-Za-z]{2})\b/.exec(navigator.language ?? '')
+  return m ? m[1].toUpperCase() : 'US'
+}
+
 export interface PlayAnswer {
   title: string
   url: string // the original file
@@ -278,6 +296,7 @@ export interface PlayAnswer {
   option: number // 1 = the best
   options: number
   source?: string // the stream add-on it came from, like "Comet"
+  youtube?: string // a YouTube video's id: it plays in YouTube's own player
 }
 
 // A Stremio add-on Play asks for streams (Comet, Torrentio...). The full
@@ -2230,6 +2249,10 @@ export const api = {
   putIPTV: (body: { server: string; username?: string; password?: string }) => put<IPTVSettings>('/settings/iptv', body),
   getOMDb: () => get<{ set: boolean }>('/settings/omdb'),
   putOMDb: (apiKey: string) => put<{ set: boolean }>('/settings/omdb', { apiKey }),
+  getYouTube: () => get<{ set: boolean }>('/settings/youtube'),
+  putYouTube: (apiKey: string) => put<{ set: boolean }>('/settings/youtube', { apiKey }),
+  watchProviders: (kind: 'movie' | 'tv', tmdbId: number) =>
+    get<WatchProviders>(`/watch/providers/${kind}/${tmdbId}?region=${userRegion()}`),
   playMovie: (id: number, option = 1, fresh = false) => get<PlayAnswer>(`/play/movies/${id}?option=${option}${fresh ? '&fresh=1' : ''}`),
   playEpisode: (seriesId: number, season: number, episode: number, option = 1, fresh = false) =>
     get<PlayAnswer>(`/play/series/${seriesId}/${season}/${episode}?option=${option}${fresh ? '&fresh=1' : ''}`),

@@ -39,6 +39,7 @@ const (
 	KeyStreamAddons        = "streams.addons"          // encrypted JSON list of {url, name}: Stremio add-ons (Comet, Torrentio...) Play asks for streams first; unset = Cue's own search only
 	KeyPlaybackEnglishOnly = "playback.english_only"   // "0" plays versions in any language; unset or "1" = English versions only
 	KeyIPTV                = "iptv.account"            // encrypted JSON {server, username, password}: an Xtream Codes login for Live TV; unset = no Live TV
+	KeyYouTubeAPIKey       = "youtube.api_key"         // encrypted; a YouTube Data API key: Play searches YouTube for a full episode or film when nothing else is found. Unset = no YouTube
 	KeyPremiumizeUseFor    = "premiumize.use_for"      // "torrents" (the default when unset) | "usenet" | "both"
 
 	// Automation (RSS sync, scheduled search, hunting).

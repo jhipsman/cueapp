@@ -2349,3 +2349,84 @@ html.tv-mode .wx-live .wx-guide {
 html.tv-mode .wx-live-hit-remind:focus {
   box-shadow: 0 0 0 3px var(--wx-accent);
 }
+
+/* A video found only on YouTube: YouTube's own player, with Cue's bar on top. */
+.wx-yt {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  background: #000;
+}
+.wx-yt iframe {
+  flex: 1;
+  width: 100%;
+  border: 0;
+}
+.wx-yt-bar {
+  order: -1;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: calc(10px + env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) 10px max(16px, env(safe-area-inset-left));
+  background: #0b0d10;
+}
+.wx-yt-title {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.wx-yt-title b,
+.wx-yt-title small {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.wx-yt-title small {
+  color: var(--wx-dim);
+}
+@media (max-width: 600px) {
+  .wx-yt-bar .wx-btn {
+    padding: 6px 10px;
+  }
+}
+
+/* "Free to watch on Tubi": services a title is on for free. */
+.wx-free {
+  margin-top: 14px;
+}
+.wx-free small {
+  color: var(--wx-dim);
+}
+.wx-free-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 6px;
+}
+.wx-player-center .wx-free-list {
+  justify-content: center;
+}
+.wx-provider {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 12px 5px 5px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: var(--wx-text);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 600;
+}
+.wx-provider:hover,
+.wx-provider:focus-visible {
+  border-color: var(--wx-accent);
+}
+.wx-provider img {
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+}

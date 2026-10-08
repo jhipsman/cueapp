@@ -6,6 +6,8 @@ import { useDocumentTitle } from '../documentTitle'
 import { epCode, playHref, Spinner } from './parts'
 import { onTV, type TVPlayerResult } from './tv'
 import VideoControls from './VideoControls'
+import FreeElsewhere from './FreeElsewhere'
+import YouTubePlayer from './YouTubePlayer'
 
 // How often where you are is saved while playing, and how long the "Next
 // episode" card counts down before playing it.
@@ -151,7 +153,7 @@ export default function PlayerPage() {
   // On a TV, the app's own player plays it (every format, Dolby and DTS
   // sound) and saves where you are; this page waits and acts on how it ended.
   useEffect(() => {
-    if (!onTV() || !answer || !resumeReady || error) return
+    if (!onTV() || !answer || answer.youtube || !resumeReady || error) return
     window.cueTvPlayerDone = (r: TVPlayerResult) => {
       window.cueTvPlayerDone = undefined
       if (r.reason === 'ended' || r.reason === 'next') {
@@ -285,10 +287,11 @@ export default function PlayerPage() {
       .then((n) => navigate(playHref('tv', tmdbId, n.season, n.episode), { replace: true }))
       .catch(() => setNote('That was the latest episode.'))
 
-  const playing = answer && !error && !onTV()
+  const yt = answer && !error ? answer.youtube : undefined
+  const playing = answer && !error && !onTV() && !yt
   return (
     <div className="wx-player">
-      {!playing && (
+      {!playing && !yt && (
         <div className="wx-player-top">
           <button className="wx-round" onClick={() => navigate(-1)} aria-label="Back">
             <Icon name="x" size={20} />
@@ -304,6 +307,7 @@ export default function PlayerPage() {
       {error && (
         <div className="wx-player-center">
           <p className="wx-error">{error}</p>
+          <FreeElsewhere kind={kind} tmdbId={tmdbId} />
           {answer && <OpenIn url={answer.url} onOpen={() => undefined} />}
           <div className="wx-actions" style={{ justifyContent: 'center' }}>
             <button className="wx-btn" onClick={() => void load(1, true)}>
@@ -316,7 +320,22 @@ export default function PlayerPage() {
         </div>
       )}
 
-      {answer && !error && onTV() && <Spinner label="Starting the player…" />}
+      {answer && !error && onTV() && !yt && <Spinner label="Starting the player…" />}
+      {answer && yt && (
+        <YouTubePlayer
+          id={yt}
+          title={answer.title}
+          note={note || `From YouTube · ${answer.release}`}
+          startSec={resumeAt.current}
+          onBack={() => navigate(-1)}
+          onEnded={() => {
+            if (kind === 'tv') void nextEpisode()
+          }}
+          onError={() => onError()}
+          onNext={kind === 'tv' ? () => void nextEpisode() : undefined}
+          onOther={answer.option < answer.options ? () => void load(answer.option + 1) : undefined}
+        />
+      )}
       {playing && (
         <>
           <video

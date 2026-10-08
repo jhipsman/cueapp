@@ -7,6 +7,7 @@ import PremiumizeCard from '../../components/PremiumizeCard'
 import StreamAddonsCard from '../../components/StreamAddonsCard'
 import Switch from '../../components/Switch'
 import { useToast } from '../../components/Toast'
+import YouTubeCard from '../../components/YouTubeCard'
 import { useModules } from '../../ModulesContext'
 
 // Settings > Streaming: everything Cue needs as a family streaming app, on
@@ -56,7 +57,11 @@ export default function StreamingSettings() {
         </div>
         <p style={{ color: 'var(--text-dim)', margin: '12px 0 0' }}>
           When no add-on has a stream, Cue searches your own <Link to="/settings/indexers">torrent sites</Link> and checks them with Premiumize.
+          When they have nothing either, it looks on the Internet Archive and YouTube.
         </p>
+        <div style={{ marginTop: 12 }}>
+          <YouTubeCard />
+        </div>
       </fieldset>
 
       <fieldset className="group folders span-all">

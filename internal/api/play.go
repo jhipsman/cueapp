@@ -60,6 +60,12 @@ type playCandidate struct {
 	Tier    quality.Tier
 	// NotEnglish: its name or the add-on says it's in other languages only.
 	NotEnglish bool
+	// YouTube is a YouTube video's id, played in YouTube's own player
+	// (play_fallback.go); URL is then "".
+	YouTube string
+	// Direct: URL plays as it is, without opening it first (the Internet
+	// Archive's files).
+	Direct bool
 }
 
 type playEntry struct {
@@ -186,6 +192,9 @@ type playAnswer struct {
 	// Source is the stream add-on this came from (like "Comet"); empty for
 	// Cue's own search.
 	Source string `json:"source,omitempty"`
+	// YouTube is set instead of URL for a YouTube video: its id, for
+	// YouTube's embedded player.
+	YouTube string `json:"youtube,omitempty"`
 }
 
 // GET /api/play/movies/{id}[?option=N][&fresh=1]
@@ -324,6 +333,14 @@ func (s *Server) servePlay(w http.ResponseWriter, r *http.Request, t playTarget)
 		return
 	}
 	if len(entry.candidates) == 0 {
+		// Nothing from the add-ons or the torrent sites: the Internet
+		// Archive and YouTube, for old and little-known shows.
+		if cands := s.fallbackCandidates(ctx, t); len(cands) > 0 {
+			entry.candidates = cands
+			playCache.put(t.key, entry)
+		}
+	}
+	if len(entry.candidates) == 0 {
 		writeError(w, http.StatusNotFound, entry.nothing)
 		return
 	}
@@ -350,6 +367,14 @@ func (s *Server) servePlay(w http.ResponseWriter, r *http.Request, t playTarget)
 	// pack may not hold the episode wanted: then the next option is used.
 	for i := option - 1; i < len(entry.candidates); i++ {
 		c := entry.candidates[i]
+		if c.YouTube != "" || c.Direct {
+			writeJSON(w, http.StatusOK, playAnswer{
+				Title: t.label, URL: c.URL, YouTube: c.YouTube, FileName: c.Release, SizeBytes: c.Size,
+				Release: c.Release, Quality: string(c.Tier), Source: c.Source,
+				Option: i + 1, Options: len(entry.candidates),
+			})
+			return
+		}
 		if c.URL != "" && web && pm != nil && c.Hash != "" {
 			// A browser can't play most add-on files' sound (Dolby, DTS).
 			// Premiumize's converted copy of the same torrent plays

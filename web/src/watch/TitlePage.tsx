@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { api, type WatchEpisode, type WatchKind, type WatchTitle } from '../api'
 import Icon from '../components/Icon'
 import { useDocumentTitle } from '../documentTitle'
+import FreeElsewhere from './FreeElsewhere'
 import { Card, epCode, minutes, playHref, Scores } from './parts'
 
 // A movie's or a show's page: the banner with ratings and Play, then for a
@@ -118,6 +119,7 @@ export default function TitlePage({ kind }: { kind: WatchKind }) {
                 {title.networks.join(', ')}
               </p>
             )}
+            <FreeElsewhere kind={kind} tmdbId={tmdbId} label="Also free on" />
           </div>
         </div>
 
