@@ -42,7 +42,7 @@ func (s *Server) handleWatchSkips(w http.ResponseWriter, r *http.Request) {
 	if kind == watch.KindMovie {
 		season, episode = 0, 0
 	}
-	ctx, cancel := context.WithTimeout(r.Context(), 6*time.Second)
+	ctx, cancel := context.WithTimeout(r.Context(), 4*time.Second)
 	defer cancel()
 
 	var out skipsAnswer

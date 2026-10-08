@@ -257,7 +257,7 @@ export default function PlayerPage() {
     // without them if TheIntroDB is slow).
     const skipsSoon = Promise.race([
       api.watchSkips(kind, tmdbId, season, episode, 0).catch(() => ({}) as WatchSkips),
-      new Promise<WatchSkips>((done) => setTimeout(() => done({}), 1500)),
+      new Promise<WatchSkips>((done) => setTimeout(() => done({}), 4500)),
     ])
     void skipsSoon.then((sk) => {
       if (cancelled) return
@@ -609,6 +609,21 @@ export default function PlayerPage() {
                   hint: answer.release,
                   disabled: true,
                 },
+                ...(kind === 'tv'
+                  ? [
+                      {
+                        label: skips?.intro || skips?.recap ? 'Skip intro is on' : 'Skip intro: no times yet',
+                        hint: !skips
+                          ? 'Looking them up…'
+                          : skips.source?.includes('theintrodb')
+                            ? 'Times from TheIntroDB'
+                            : skips.source === 'learned'
+                              ? 'Learned from a skip in this show'
+                              : 'Jump over the intro once and the rest of the show gets the button',
+                        disabled: true,
+                      },
+                    ]
+                  : []),
                 {
                   label: 'Try another version',
                   hint: answer.option < answer.options ? `Version ${answer.option + 1} of ${answer.options}` : 'This is the last one found',

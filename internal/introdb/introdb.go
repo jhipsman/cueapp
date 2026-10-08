@@ -56,14 +56,24 @@ func New(base string) *Client {
 }
 
 // Get is what TheIntroDB has for a movie (season 0) or an episode. duration
-// (seconds; 0 if not known) helps it pick times for the right cut.
+// (seconds; 0 if not known) helps it pick times for the right cut; when that
+// finds nothing, it asks again without it (times for another cut are
+// usually close).
 func (c *Client) Get(ctx context.Context, tmdbID, season, episode int, duration float64) (Segments, error) {
+	seg, err := c.get(ctx, tmdbID, season, episode, duration)
+	if err == nil && duration > 0 && seg.Intro == nil && seg.Recap == nil && seg.Credits == nil {
+		return c.get(ctx, tmdbID, season, episode, 0)
+	}
+	return seg, err
+}
+
+func (c *Client) get(ctx context.Context, tmdbID, season, episode int, duration float64) (Segments, error) {
 	q := url.Values{"tmdb_id": {strconv.Itoa(tmdbID)}}
 	if season > 0 && episode > 0 {
 		q.Set("season", strconv.Itoa(season))
 		q.Set("episode", strconv.Itoa(episode))
 	}
-	if duration > 0 {
+	if duration >= 300 { // TheIntroDB takes 5 minutes and longer
 		q.Set("duration_ms", strconv.FormatInt(int64(duration*1000), 10))
 	}
 	key := q.Encode()
