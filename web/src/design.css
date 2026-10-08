@@ -2889,7 +2889,6 @@ a.bar-label:hover { color: var(--accent); }
 .auth-wordmark.cue-wordmark { display: inline-flex; align-items: flex-end; line-height: 1; }
 .auth-wordmark .cue-wordmark-c { width: 3.2rem; height: 3.2rem; margin-right: -0.5rem; filter: drop-shadow(0 0 16px rgba(52, 209, 191, 0.5)); }
 .auth-wordmark .cue-wordmark-ue {
-  font-family: 'Sora', var(--font-display, sans-serif); font-weight: 800; font-size: 2.75rem; letter-spacing: -0.06em; line-height: 1.08;
-  background: linear-gradient(180deg, #ffffff 30%, #c9f4ee 100%); -webkit-background-clip: text; background-clip: text; color: transparent; padding-bottom: 0.12rem;
+  font-family: 'Sora', var(--font-display, sans-serif); font-weight: 800; font-size: 2.75rem; letter-spacing: -0.05em; line-height: 1.15;
+  color: var(--text); text-shadow: 0 2px 18px rgba(52, 209, 191, 0.25); padding: 0 0.06em 0.1rem 0;
 }
-:root[data-theme='light'] .auth-wordmark .cue-wordmark-ue { background: linear-gradient(180deg, #111827 30%, #134e4a 100%); -webkit-background-clip: text; background-clip: text; }

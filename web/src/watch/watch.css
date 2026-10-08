@@ -69,13 +69,11 @@ html.watch-mode body {
   font-family: 'Sora', var(--font-display, sans-serif);
   font-weight: 800;
   font-size: 1.62rem;
-  letter-spacing: -0.06em;
-  line-height: 1.08;
-  background: linear-gradient(180deg, #ffffff 30%, #c9f4ee 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  padding-bottom: 0.08rem;
+  letter-spacing: -0.05em;
+  line-height: 1.15;
+  color: #fff;
+  text-shadow: 0 1px 12px rgba(52, 209, 191, 0.25);
+  padding: 0 0.06em 0.06rem 0;
 }
 .wx-brand-mark {
   width: 30px;
