@@ -5,6 +5,7 @@ import Icon from '../components/Icon'
 import { useDocumentTitle } from '../documentTitle'
 import { epCode, playHref, Spinner } from './parts'
 import { onTV, type TVPlayerResult } from './tv'
+import VideoControls from './VideoControls'
 
 // How often where you are is saved while playing, and how long the "Next
 // episode" card counts down before playing it.
@@ -59,12 +60,16 @@ export default function PlayerPage() {
   const season = Number(params.season ?? 0)
   const episode = Number(params.episode ?? 0)
 
-  const video = useRef<HTMLVideoElement>(null)
+  const video = useRef<HTMLVideoElement | null>(null)
+  const [videoEl, setVideoEl] = useState<HTMLVideoElement | null>(null)
+  const videoRef = useCallback((el: HTMLVideoElement | null) => {
+    video.current = el
+    setVideoEl(el)
+  }, [])
   const [answer, setAnswer] = useState<PlayAnswer | null>(null)
   const [useOriginal, setUseOriginal] = useState(false)
   const [error, setError] = useState('')
   const [note, setNote] = useState('')
-  const [idle, setIdle] = useState(false)
   const [next, setNext] = useState<WatchEpisode | null>(null)
   const [countdown, setCountdown] = useState<number | null>(null)
   const resumeAt = useRef(0)
@@ -126,26 +131,6 @@ export default function PlayerPage() {
       save()
     }
   }, [save])
-
-  // Controls fade away while the mouse is still.
-  useEffect(() => {
-    let t: ReturnType<typeof setTimeout>
-    const wake = () => {
-      setIdle(false)
-      clearTimeout(t)
-      t = setTimeout(() => setIdle(true), 3000)
-    }
-    wake()
-    window.addEventListener('mousemove', wake)
-    window.addEventListener('keydown', wake)
-    window.addEventListener('touchstart', wake)
-    return () => {
-      clearTimeout(t)
-      window.removeEventListener('mousemove', wake)
-      window.removeEventListener('keydown', wake)
-      window.removeEventListener('touchstart', wake)
-    }
-  }, [])
 
   // A minute in, look the next episode up, so it starts at once too.
   useEffect(() => {
@@ -289,47 +274,26 @@ export default function PlayerPage() {
   }
 
   const src = answer ? (useOriginal ? answer.url : answer.streamUrl || answer.url) : ''
-  const label = kind === 'tv' ? epCode(season, episode) : ''
+  const nextEpisode = () =>
+    api
+      .watchNext(tmdbId, season, episode)
+      .then((n) => navigate(playHref('tv', tmdbId, n.season, n.episode), { replace: true }))
+      .catch(() => setNote('That was the latest episode.'))
 
+  const playing = answer && !error && !onTV()
   return (
-    <div className={`wx-player${idle && answer && !error ? ' idle' : ''}`}>
-      <div className="wx-player-top">
-        <button className="wx-round" onClick={() => navigate(-1)} aria-label="Back">
-          <Icon name="x" size={20} />
-        </button>
-        <div className="wx-player-title">
-          {answer?.title ?? 'Finding the best version…'}
-          {answer && (
-            <small>
-              {label && `${label} · `}
-              {answer.quality} · version {answer.option} of {answer.options}
-              {answer.source && ` · via ${answer.source}`}
-              {note && ` · ${note}`}
-            </small>
-          )}
+    <div className="wx-player">
+      {!playing && (
+        <div className="wx-player-top">
+          <button className="wx-round" onClick={() => navigate(-1)} aria-label="Back">
+            <Icon name="x" size={20} />
+          </button>
+          <div className="wx-player-title">
+            {answer?.title ?? 'Finding the best version…'}
+            {note && <small>{note}</small>}
+          </div>
         </div>
-        <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          {answer && <OpenIn url={answer.url} onOpen={() => video.current?.pause()} />}
-          {answer && answer.option < answer.options && (
-            <button className="wx-btn small" onClick={() => void load(answer.option + 1)}>
-              Try another version
-            </button>
-          )}
-          {kind === 'tv' && (
-            <button
-              className="wx-btn small"
-              onClick={() =>
-                api
-                  .watchNext(tmdbId, season, episode)
-                  .then((n) => navigate(playHref('tv', tmdbId, n.season, n.episode), { replace: true }))
-                  .catch(() => setNote('That was the latest episode.'))
-              }
-            >
-              Next episode
-            </button>
-          )}
-        </div>
-      </div>
+      )}
 
       {!answer && !error && <Spinner label="Finding the best version to play…" />}
       {error && (
@@ -348,20 +312,64 @@ export default function PlayerPage() {
       )}
 
       {answer && !error && onTV() && <Spinner label="Starting the player…" />}
-      {answer && !error && !onTV() && (
-        <video
-          key={src}
-          ref={video}
-          src={src}
-          controls
-          autoPlay
-          playsInline
-          onLoadedMetadata={onLoaded}
-          onTimeUpdate={onTime}
-          onPause={save}
-          onEnded={onEnded}
-          onError={onError}
-        />
+      {playing && (
+        <>
+          <video
+            key={src}
+            ref={videoRef}
+            src={src}
+            autoPlay
+            playsInline
+            onLoadedMetadata={onLoaded}
+            onTimeUpdate={onTime}
+            onPause={save}
+            onEnded={onEnded}
+            onError={onError}
+          />
+          <VideoControls
+            video={videoEl}
+            title={answer.title}
+            subtitle={answer.quality}
+            onBack={() => navigate(-1)}
+            note={note}
+            actions={
+              kind === 'tv' ? (
+                <button className="vx-text-btn" onClick={() => void nextEpisode()} aria-label="Next episode">
+                  <Icon name="skip-forward" size={22} fill="currentColor" />
+                  <span>Next episode</span>
+                </button>
+              ) : undefined
+            }
+            menu={{
+              label: 'Versions',
+              icon: 'layers',
+              heading: `Version ${answer.option} of ${answer.options}`,
+              items: [
+                {
+                  label: [answer.quality, answer.source && `via ${answer.source}`].filter(Boolean).join(' · ') || 'This version',
+                  hint: answer.release,
+                  disabled: true,
+                },
+                {
+                  label: 'Try another version',
+                  hint: answer.option < answer.options ? `Version ${answer.option + 1} of ${answer.options}` : 'This is the last one found',
+                  disabled: answer.option >= answer.options,
+                  onClick: () => {
+                    resumeAt.current = Math.floor(video.current?.currentTime ?? 0)
+                    void load(answer.option + 1)
+                  },
+                },
+                ...playerApps(answer.url).map((a) => ({
+                  label: `Open in ${a.name}`,
+                  hint: 'Plays every kind of sound',
+                  href: a.href,
+                  onClick: () => video.current?.pause(),
+                })),
+                { label: 'Search again', hint: 'Look for versions afresh', onClick: () => void load(1, true) },
+              ],
+            }}
+          />
+        </>
       )}
 
       {next && countdown !== null && (

@@ -7,6 +7,7 @@ import { useDocumentTitle } from '../documentTitle'
 import { channelsIn, liveHref } from './LivePage'
 import { Spinner } from './parts'
 import { onTV, type TVPlayerResult } from './tv'
+import VideoControls from './VideoControls'
 
 const hhmm = (s: string) => new Date(s).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
 
@@ -18,11 +19,15 @@ export default function LivePlayer() {
   const [params] = useSearchParams()
   const cat = params.get('cat') ?? 'all'
   const navigate = useNavigate()
-  const video = useRef<HTMLVideoElement>(null)
+  const video = useRef<HTMLVideoElement | null>(null)
+  const [videoEl, setVideoEl] = useState<HTMLVideoElement | null>(null)
+  const videoRef = useCallback((el: HTMLVideoElement | null) => {
+    video.current = el
+    setVideoEl(el)
+  }, [])
   const [play, setPlay] = useState<LivePlay | null>(null)
   const [channels, setChannels] = useState<LiveChannels | null>(null)
   const [error, setError] = useState('')
-  const [idle, setIdle] = useState(false)
   useDocumentTitle(play?.name ?? 'Live TV')
 
   const list = channelsIn(channels, cat)
@@ -142,53 +147,16 @@ export default function LivePlayer() {
     return () => window.removeEventListener('keydown', onKey)
   }, [navigate, zap])
 
-  // The overlay fades while nothing moves.
-  useEffect(() => {
-    let t: ReturnType<typeof setTimeout>
-    const wake = () => {
-      setIdle(false)
-      clearTimeout(t)
-      t = setTimeout(() => setIdle(true), 4000)
-    }
-    wake()
-    window.addEventListener('mousemove', wake)
-    window.addEventListener('keydown', wake)
-    window.addEventListener('touchstart', wake)
-    return () => {
-      clearTimeout(t)
-      window.removeEventListener('mousemove', wake)
-      window.removeEventListener('keydown', wake)
-      window.removeEventListener('touchstart', wake)
-    }
-  }, [id])
-
   return (
-    <div className={`wx-player wx-live-player${idle && play && !error ? ' idle' : ''}`}>
-      <div className="wx-player-top">
-        <button className="wx-round" onClick={() => navigate(-1)} aria-label="Back to the guide">
-          <Icon name="x" size={20} />
-        </button>
-        {(play?.logo || channel?.logo) && <img className="wx-live-logo" src={play?.logo || channel?.logo} alt="" />}
-        <div className="wx-player-title">
-          {play ? `${play.num ? play.num + '  ' : ''}${play.name}` : (channel?.name ?? 'Tuning in…')}
-          {channel?.now && (
-            <small>
-              Now: {channel.now.title} · until {hhmm(channel.now.stop)}
-              {channel.next && ` · Next: ${channel.next.title}`}
-            </small>
-          )}
+    <div className="wx-player wx-live-player">
+      {(!play || error || onTV()) && (
+        <div className="wx-player-top">
+          <button className="wx-round" onClick={() => navigate(-1)} aria-label="Back to the guide">
+            <Icon name="x" size={20} />
+          </button>
+          <div className="wx-player-title">{play ? `${play.num ? play.num + '  ' : ''}${play.name}` : (channel?.name ?? 'Tuning in…')}</div>
         </div>
-        {list.length > 1 && (
-          <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
-            <button className="wx-btn small" onClick={() => zap(-1)} aria-label="Previous channel">
-              Ch −
-            </button>
-            <button className="wx-btn small" onClick={() => zap(1)} aria-label="Next channel">
-              Ch +
-            </button>
-          </div>
-        )}
-      </div>
+      )}
 
       {!play && !error && <Spinner label="Tuning in…" />}
       {error && (
@@ -207,7 +175,48 @@ export default function LivePlayer() {
         </div>
       )}
       {play && !error && onTV() && <Spinner label="Starting the player…" />}
-      {play && !error && !onTV() && <video ref={video} controls autoPlay playsInline />}
+      {play && !error && !onTV() && (
+        <>
+          <video ref={videoRef} autoPlay playsInline />
+          <VideoControls
+            video={videoEl}
+            live
+            title={`${play.num ? play.num + '  ' : ''}${play.name}`}
+            subtitle={channel?.now ? `${channel.now.title} · until ${hhmm(channel.now.stop)}` : undefined}
+            onBack={() => navigate(-1)}
+            actions={
+              <>
+                {(play.logo || channel?.logo) && <img className="wx-live-logo" src={play.logo || channel?.logo} alt="" />}
+                {list.length > 1 && (
+                  <>
+                    <button className="vx-text-btn" onClick={() => zap(-1)} aria-label="Previous channel">
+                      <Icon name="chevron-down" size={22} />
+                      <span>Ch</span>
+                    </button>
+                    <button className="vx-text-btn" onClick={() => zap(1)} aria-label="Next channel">
+                      <Icon name="chevron-up" size={22} />
+                      <span>Ch</span>
+                    </button>
+                  </>
+                )}
+              </>
+            }
+            menu={
+              channel?.next
+                ? {
+                    label: "What's on",
+                    icon: 'tv',
+                    heading: "What's on",
+                    items: [
+                      ...(channel.now ? [{ label: `Now: ${channel.now.title}`, hint: `until ${hhmm(channel.now.stop)}`, disabled: true }] : []),
+                      { label: `Next: ${channel.next.title}`, hint: `${hhmm(channel.next.start)}–${hhmm(channel.next.stop)}`, disabled: true },
+                    ],
+                  }
+                : undefined
+            }
+          />
+        </>
+      )}
     </div>
   )
 }
