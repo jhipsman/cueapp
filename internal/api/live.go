@@ -38,15 +38,17 @@ import (
 
 	"github.com/rdborg/mediarium/internal/iptv"
 	"github.com/rdborg/mediarium/internal/settings"
+	"github.com/rdborg/mediarium/internal/watch"
 )
 
 const (
 	liveListFor    = 6 * time.Hour  // how long a channel list is used
 	liveGuideFor   = 4 * time.Hour  // how often the guide reloads
-	liveGuideBack  = 2 * time.Hour  // guide kept from this long ago...
+	liveGuideBack  = 2 * time.Hour  // guide kept from this long ago (channels with catch-up: their days, up to liveCatchupMax)...
 	liveGuideAhead = 36 * time.Hour // ...to this far ahead
 	liveSealPrefix = "cue-live:"
-	liveGuideMax   = 300 // channels in one guide answer
+	liveCatchupMax = 3 * 24 * time.Hour // the furthest back the guide keeps, for catch-up
+	liveGuideMax   = 300                // channels in one guide answer
 )
 
 // liveState is the Live TV caches, for the saved login.
@@ -141,6 +143,7 @@ func (s *Server) liveChannels(ctx context.Context) ([]iptv.Category, []iptv.Chan
 	defer cancel()
 	cats, catErr := c.Categories(lctx)
 	chans, err := c.Channels(lctx)
+	st, stErr := c.Status(lctx) // the provider's time zone, for catch-up
 	if err == nil && catErr != nil {
 		cats = nil // channels without group names still play
 	}
@@ -161,6 +164,9 @@ func (s *Server) liveChannels(ctx context.Context) ([]iptv.Category, []iptv.Chan
 		return nil, nil, err
 	}
 	s.live.cats, s.live.chans = cats, chans
+	if stErr == nil {
+		s.live.status = st
+	}
 	s.live.byID = make(map[string]iptv.Channel, len(chans))
 	for _, ch := range chans {
 		s.live.byID[ch.ID] = ch
@@ -189,20 +195,40 @@ func (s *Server) liveGuideLocked() (iptv.Guide, bool) {
 	if stale && !s.live.guideLoading && (s.live.guideErr == "" || time.Since(s.live.guideAt) > 30*time.Minute) {
 		s.live.guideLoading = true
 		wanted := map[string]bool{}
+		back := map[string]time.Duration{} // per guide id: how far back to keep
 		for _, ch := range s.live.chans {
-			if ch.EPGID != "" {
-				wanted[ch.EPGID] = true
+			if ch.EPGID == "" {
+				continue
 			}
+			wanted[ch.EPGID] = true
+			keep := liveGuideBack
+			if ch.CatchupDays > 0 {
+				keep = min(time.Duration(ch.CatchupDays)*24*time.Hour, liveCatchupMax)
+			}
+			back[ch.EPGID] = max(back[ch.EPGID], keep)
 		}
-		go s.loadLiveGuide(c, wanted)
+		go s.loadLiveGuide(c, wanted, back)
 	}
 	return s.live.guide, s.live.guideLoading
 }
 
-func (s *Server) loadLiveGuide(c *iptv.Client, wanted map[string]bool) {
+func (s *Server) loadLiveGuide(c *iptv.Client, wanted map[string]bool, back map[string]time.Duration) {
 	started := time.Now()
 	now := time.Now()
-	g, err := c.LoadGuide(context.Background(), wanted, now.Add(-liveGuideBack), now.Add(liveGuideAhead))
+	furthest := liveGuideBack
+	for _, d := range back {
+		furthest = max(furthest, d)
+	}
+	g, err := c.LoadGuide(context.Background(), wanted, now.Add(-furthest), now.Add(liveGuideAhead))
+	// Past shows are kept only for channels that can play them again.
+	for id, list := range g {
+		from := now.Add(-back[id])
+		i := 0
+		for i < len(list) && list[i].Stop.Before(from) {
+			i++
+		}
+		g[id] = list[i:]
+	}
 	s.live.mu.Lock()
 	defer s.live.mu.Unlock()
 	if s.live.client != c {
@@ -227,6 +253,7 @@ type liveChannel struct {
 	Category string          `json:"category"`
 	Logo     string          `json:"logo,omitempty"`
 	Favorite bool            `json:"favorite"`
+	Catchup  int             `json:"catchupDays,omitempty"` // days back the provider keeps it
 	Now      *iptv.Programme `json:"now,omitempty"`
 	Next     *iptv.Programme `json:"next,omitempty"`
 }
@@ -252,7 +279,7 @@ func (s *Server) handleLiveChannels(w http.ResponseWriter, r *http.Request) {
 	now := time.Now()
 	out := make([]liveChannel, 0, len(chans))
 	for _, ch := range chans {
-		lc := liveChannel{ID: ch.ID, Num: ch.Num, Name: ch.Name, Category: ch.Category, Favorite: favs[ch.ID]}
+		lc := liveChannel{ID: ch.ID, Num: ch.Num, Name: ch.Name, Category: ch.Category, Favorite: favs[ch.ID], Catchup: ch.CatchupDays}
 		if ch.Logo != "" {
 			lc.Logo = "/api/live/logo/" + url.PathEscape(ch.ID)
 		}
@@ -842,7 +869,7 @@ func (s *Server) handleLiveSearch(w http.ResponseWriter, r *http.Request) {
 	guide, _ := s.liveGuide()
 	now := time.Now()
 	view := func(ch iptv.Channel) liveChannel {
-		lc := liveChannel{ID: ch.ID, Num: ch.Num, Name: ch.Name, Category: ch.Category, Favorite: favs[ch.ID]}
+		lc := liveChannel{ID: ch.ID, Num: ch.Num, Name: ch.Name, Category: ch.Category, Favorite: favs[ch.ID], Catchup: ch.CatchupDays}
 		if ch.Logo != "" {
 			lc.Logo = "/api/live/logo/" + url.PathEscape(ch.ID)
 		}
@@ -904,4 +931,149 @@ func (s *Server) handleLiveSearch(w http.ResponseWriter, r *http.Request) {
 	}
 	hits = append(hits, channels...)
 	writeJSON(w, http.StatusOK, map[string]any{"hits": hits, "guideReady": guide != nil})
+}
+
+// GET /api/live/catchup/{id}?start=<unix>&stop=<unix>: where a show that has
+// aired (or started) on a channel with catch-up plays from its beginning.
+// Like /api/live/play: Cue's address for browsers, the provider's for the
+// TV app. The provider's recordings go back the channel's catch-up days.
+func (s *Server) handleLiveCatchup(w http.ResponseWriter, r *http.Request) {
+	ch, c, err := s.liveChannelByID(r.Context(), r.PathValue("id"))
+	switch {
+	case errors.Is(err, errLiveNotSet):
+		writeError(w, http.StatusNotFound, "Live TV isn't set up.")
+		return
+	case errors.Is(err, errLiveNoChannel):
+		writeError(w, http.StatusNotFound, "That channel isn't on your provider's list any more.")
+		return
+	case err != nil:
+		writeError(w, http.StatusBadGateway, liveProviderMessage(err))
+		return
+	}
+	if ch.CatchupDays <= 0 {
+		writeError(w, http.StatusNotFound, "Your provider doesn't keep this channel's past shows.")
+		return
+	}
+	startN, err1 := strconv.ParseInt(r.URL.Query().Get("start"), 10, 64)
+	stopN, err2 := strconv.ParseInt(r.URL.Query().Get("stop"), 10, 64)
+	if err1 != nil || err2 != nil || stopN <= startN {
+		writeError(w, http.StatusBadRequest, "Which show? (start and stop, as Unix times)")
+		return
+	}
+	start, stop := time.Unix(startN, 0), time.Unix(stopN, 0)
+	now := time.Now()
+	if start.After(now) {
+		writeError(w, http.StatusBadRequest, "That show hasn't started yet.")
+		return
+	}
+	if start.Before(now.Add(-time.Duration(ch.CatchupDays) * 24 * time.Hour)) {
+		writeError(w, http.StatusNotFound, fmt.Sprintf("Your provider keeps this channel for %d days; that show is older.", ch.CatchupDays))
+		return
+	}
+	minutes := int(stop.Sub(start).Minutes()) + 5 // a little over, as shows run late
+	s.live.mu.Lock()
+	tz := s.live.status.Timezone
+	formats := s.live.status.Formats
+	s.live.mu.Unlock()
+	loc := time.UTC
+	if tz != "" {
+		if l, err := time.LoadLocation(tz); err == nil {
+			loc = l
+		}
+	}
+	sealed, err := s.profileBox.Encrypt(liveSealPrefix + c.CatchupURL(ch.ID, start, minutes, "m3u8", loc))
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "Couldn't start that show.")
+		return
+	}
+	out := map[string]any{"id": ch.ID, "num": ch.Num, "name": ch.Name, "url": "/api/live/hls?u=" + url.QueryEscape(sealed), "catchup": true}
+	if ch.Logo != "" {
+		out["logo"] = "/api/live/logo/" + url.PathEscape(ch.ID)
+	}
+	if strings.Contains(r.UserAgent(), "CueTV/") {
+		format := "ts"
+		if len(formats) > 0 && !slices.Contains(formats, "ts") {
+			format = "m3u8"
+		}
+		out["direct"] = c.CatchupURL(ch.ID, start, minutes, format, loc)
+	}
+	writeJSON(w, http.StatusOK, out)
+}
+
+// GET /api/live/reminders: this profile's reminders, soonest first, each
+// with its channel.
+func (s *Server) handleLiveReminders(w http.ResponseWriter, r *http.Request) {
+	pid, ok := s.watchProfile(w, r)
+	if !ok {
+		return
+	}
+	list, err := s.WatchRepo.LiveReminders(pid, time.Now())
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "Couldn't load your reminders.")
+		return
+	}
+	s.live.mu.Lock()
+	byID := s.live.byID
+	s.live.mu.Unlock()
+	type item struct {
+		watch.LiveReminder
+		Channel string `json:"channel"`
+		Logo    string `json:"logo,omitempty"`
+	}
+	out := make([]item, 0, len(list))
+	for _, rem := range list {
+		it := item{LiveReminder: rem}
+		if ch, ok := byID[rem.StreamID]; ok {
+			it.Channel = ch.Name
+			if ch.Logo != "" {
+				it.Logo = "/api/live/logo/" + url.PathEscape(ch.ID)
+			}
+		}
+		out = append(out, it)
+	}
+	writeJSON(w, http.StatusOK, out)
+}
+
+// PUT /api/live/reminders {channelId, start, stop, title}: remind this
+// profile when a show starts.
+func (s *Server) handleAddLiveReminder(w http.ResponseWriter, r *http.Request) {
+	pid, ok := s.watchProfile(w, r)
+	if !ok {
+		return
+	}
+	var rem watch.LiveReminder
+	if err := decodeJSON(r, &rem); err != nil || rem.StreamID == "" || len(rem.StreamID) > 64 || rem.Start.IsZero() || !rem.Stop.After(rem.Start) {
+		writeError(w, http.StatusBadRequest, "Which show? (channelId, start, stop and title)")
+		return
+	}
+	if rem.Stop.Before(time.Now()) {
+		writeError(w, http.StatusBadRequest, "That show has ended.")
+		return
+	}
+	if len(rem.Title) > 300 {
+		rem.Title = rem.Title[:300]
+	}
+	if err := s.WatchRepo.AddLiveReminder(pid, rem); err != nil {
+		writeError(w, http.StatusInternalServerError, "Couldn't save the reminder.")
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
+// DELETE /api/live/reminders?channel=&start=<RFC 3339>: take a reminder off.
+func (s *Server) handleRemoveLiveReminder(w http.ResponseWriter, r *http.Request) {
+	pid, ok := s.watchProfile(w, r)
+	if !ok {
+		return
+	}
+	start, err := time.Parse(time.RFC3339, r.URL.Query().Get("start"))
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "Which show?")
+		return
+	}
+	if err := s.WatchRepo.RemoveLiveReminder(pid, r.URL.Query().Get("channel"), start); err != nil {
+		writeError(w, http.StatusInternalServerError, "Couldn't remove the reminder.")
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
 }

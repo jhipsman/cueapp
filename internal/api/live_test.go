@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"fmt"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -26,11 +27,11 @@ func fakeIPTV(t *testing.T) *httptest.Server {
 		case r.URL.Path == "/player_api.php" && (q.Get("username") != "me" || q.Get("password") != "pw"):
 			w.Write([]byte(`{"user_info":{"auth":0}}`))
 		case r.URL.Path == "/player_api.php" && q.Get("action") == "":
-			w.Write([]byte(`{"user_info":{"auth":1,"status":"Active","exp_date":"1893456000","allowed_output_formats":["m3u8","ts"]}}`))
+			w.Write([]byte(`{"user_info":{"auth":1,"status":"Active","exp_date":"1893456000","allowed_output_formats":["m3u8","ts"]},"server_info":{"timezone":"America/New_York"}}`))
 		case r.URL.Path == "/player_api.php" && q.Get("action") == "get_live_categories":
 			w.Write([]byte(`[{"category_id":"1","category_name":"News"}]`))
 		case r.URL.Path == "/player_api.php" && q.Get("action") == "get_live_streams":
-			w.Write([]byte(`[{"num":1,"name":"News 24","stream_type":"live","stream_id":10,"stream_icon":"` + srv.URL + `/logo.png","epg_channel_id":"news24","category_id":"1"},
+			w.Write([]byte(`[{"num":1,"name":"News 24","stream_type":"live","stream_id":10,"stream_icon":"` + srv.URL + `/logo.png","epg_channel_id":"news24","category_id":"1","tv_archive":1,"tv_archive_duration":"3"},
 				{"num":2,"name":"No Guide","stream_type":"live","stream_id":11,"category_id":"1"}]`))
 		case r.URL.Path == "/xmltv.php":
 			f := func(t time.Time) string { return t.Format("20060102150405 -0700") }
@@ -274,5 +275,76 @@ func TestLiveSearch(t *testing.T) {
 	}
 	if got := searchWords("Lakers vs. Celtics @ 7"); strings.Join(got, ",") != "lakers,celtics,7" {
 		t.Fatalf("words: %v", got)
+	}
+}
+
+func TestLiveCatchupAndReminders(t *testing.T) {
+	s := newBareServer(t)
+	prov := fakeIPTV(t)
+	user := &auth.User{ID: 1, Username: "a"}
+	if _, err := s.db.Exec(`INSERT INTO users (id, username, password_hash) VALUES (1, 'a', 'x')`); err != nil {
+		t.Fatal(err)
+	}
+	call := func(method, target, body, ua string, h http.HandlerFunc, pathValues ...string) *httptest.ResponseRecorder {
+		r := httptest.NewRequest(method, target, strings.NewReader(body)).WithContext(auth.WithUser(context.Background(), user))
+		if ua != "" {
+			r.Header.Set("User-Agent", ua)
+		}
+		for i := 0; i+1 < len(pathValues); i += 2 {
+			r.SetPathValue(pathValues[i], pathValues[i+1])
+		}
+		w := httptest.NewRecorder()
+		h(w, r)
+		return w
+	}
+	if w := call("PUT", "/", `{"server":"`+prov.URL+`","username":"me","password":"pw"}`, "", s.handlePutIPTV); w.Code != http.StatusOK {
+		t.Fatalf("save login: %d %s", w.Code, w.Body)
+	}
+	var chans struct{ Channels []liveChannel }
+	_ = json.Unmarshal(call("GET", "/", "", "", s.handleLiveChannels).Body.Bytes(), &chans)
+	if len(chans.Channels) != 2 || chans.Channels[0].Catchup != 3 || chans.Channels[1].Catchup != 0 {
+		t.Fatalf("catch-up days: %+v", chans.Channels)
+	}
+
+	// An hour-long show from two hours ago, in the provider's time zone.
+	start := time.Now().Add(-2 * time.Hour).Truncate(time.Minute)
+	q := fmt.Sprintf("/?start=%d&stop=%d", start.Unix(), start.Add(time.Hour).Unix())
+	w := call("GET", q, "", "Mozilla/5.0 CueTV/1", s.handleLiveCatchup, "id", "10")
+	var a struct{ URL, Direct string }
+	_ = json.Unmarshal(w.Body.Bytes(), &a)
+	ny, _ := time.LoadLocation("America/New_York")
+	want := fmt.Sprintf("%s/timeshift/me/pw/65/%s/10.ts", prov.URL, start.In(ny).Format("2006-01-02:15-04"))
+	if w.Code != http.StatusOK || a.Direct != want || !strings.HasPrefix(a.URL, "/api/live/hls?u=") {
+		t.Fatalf("catch-up: %d %s (want direct %s)", w.Code, w.Body, want)
+	}
+	if w := call("GET", q, "", "", s.handleLiveCatchup, "id", "11"); w.Code != http.StatusNotFound {
+		t.Fatalf("no catch-up on 11: %d", w.Code)
+	}
+	old := time.Now().Add(-5 * 24 * time.Hour)
+	if w := call("GET", fmt.Sprintf("/?start=%d&stop=%d", old.Unix(), old.Add(time.Hour).Unix()), "", "", s.handleLiveCatchup, "id", "10"); w.Code != http.StatusNotFound {
+		t.Fatalf("older than kept: %d", w.Code)
+	}
+
+	// Reminders.
+	later := time.Now().Add(3 * time.Hour).UTC().Truncate(time.Second)
+	body := fmt.Sprintf(`{"channelId":"10","start":%q,"stop":%q,"title":"Chiefs vs Bills"}`, later.Format(time.RFC3339), later.Add(3*time.Hour).Format(time.RFC3339))
+	if w := call("PUT", "/", body, "", s.handleAddLiveReminder); w.Code != http.StatusNoContent {
+		t.Fatalf("add reminder: %d %s", w.Code, w.Body)
+	}
+	var rems []struct {
+		ChannelID string `json:"channelId"`
+		Title     string
+		Channel   string
+	}
+	_ = json.Unmarshal(call("GET", "/", "", "", s.handleLiveReminders).Body.Bytes(), &rems)
+	if len(rems) != 1 || rems[0].Title != "Chiefs vs Bills" || rems[0].Channel != "News 24" {
+		t.Fatalf("reminders: %+v", rems)
+	}
+	if w := call("DELETE", "/?channel=10&start="+url.QueryEscape(later.Format(time.RFC3339)), "", "", s.handleRemoveLiveReminder); w.Code != http.StatusNoContent {
+		t.Fatalf("remove: %d", w.Code)
+	}
+	_ = json.Unmarshal(call("GET", "/", "", "", s.handleLiveReminders).Body.Bytes(), &rems)
+	if len(rems) != 0 {
+		t.Fatalf("after removing: %+v", rems)
 	}
 }

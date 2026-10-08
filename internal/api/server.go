@@ -488,6 +488,10 @@ func (s *Server) protectedRoutes() *routeTable {
 	play.HandleFunc("PUT /api/live/favorites/{id}", s.handleLiveFavorite)
 	play.HandleFunc("DELETE /api/live/favorites/{id}", s.handleLiveFavorite)
 	play.HandleFunc("GET /api/live/play/{id}", s.handleLivePlay)
+	play.HandleFunc("GET /api/live/catchup/{id}", s.handleLiveCatchup)
+	play.HandleFunc("GET /api/live/reminders", s.handleLiveReminders)
+	play.HandleFunc("PUT /api/live/reminders", s.handleAddLiveReminder)
+	play.HandleFunc("DELETE /api/live/reminders", s.handleRemoveLiveReminder)
 	play.HandleFunc("GET /api/live/hls", s.handleLiveHLS)
 	play.HandleFunc("GET /api/live/logo/{id}", s.handleLiveLogo)
 

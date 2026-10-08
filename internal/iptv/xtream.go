@@ -77,6 +77,9 @@ type Status struct {
 	Expires        time.Time `json:"expires,omitempty"`
 	MaxConnections int       `json:"maxConnections,omitempty"`
 	Formats        []string  `json:"formats,omitempty"` // "m3u8", "ts"
+	// Timezone is the provider's own (catch-up addresses give times in it);
+	// "" when it doesn't say.
+	Timezone string `json:"timezone,omitempty"`
 }
 
 // Category is a group of channels.
@@ -93,6 +96,9 @@ type Channel struct {
 	Logo     string `json:"-"` // the provider's logo address (served through Cue)
 	Category string `json:"category"`
 	EPGID    string `json:"-"` // the channel's id in the XMLTV guide
+	// CatchupDays is how many days back the provider keeps the channel
+	// (catch-up / timeshift); 0 when it doesn't.
+	CatchupDays int `json:"catchupDays,omitempty"`
 }
 
 // Client talks to one Xtream Codes account.
@@ -150,6 +156,9 @@ func (c *Client) Status(ctx context.Context) (Status, error) {
 			MaxConnections flex     `json:"max_connections"`
 			Formats        []string `json:"allowed_output_formats"`
 		} `json:"user_info"`
+		ServerInfo struct {
+			Timezone flex `json:"timezone"`
+		} `json:"server_info"`
 	}
 	if err := c.api(ctx, "", &out); err != nil {
 		return Status{}, err
@@ -158,7 +167,7 @@ func (c *Client) Status(ctx context.Context) (Status, error) {
 	if ui.Auth != "1" {
 		return Status{}, ErrBadLogin
 	}
-	st := Status{Status: string(ui.Status), Formats: ui.Formats}
+	st := Status{Status: string(ui.Status), Formats: ui.Formats, Timezone: strings.TrimSpace(string(out.ServerInfo.Timezone))}
 	st.Active = strings.EqualFold(st.Status, "active")
 	if n, err := strconv.ParseInt(string(ui.ExpDate), 10, 64); err == nil && n > 0 {
 		st.Expires = time.Unix(n, 0).UTC()
@@ -193,6 +202,8 @@ func (c *Client) Channels(ctx context.Context) ([]Channel, error) {
 		Icon     flex `json:"stream_icon"`
 		EPGID    flex `json:"epg_channel_id"`
 		Category flex `json:"category_id"`
+		Archive  flex `json:"tv_archive"`
+		Days     flex `json:"tv_archive_duration"`
 	}
 	if err := c.api(ctx, "get_live_streams", &raw); err != nil {
 		return nil, err
@@ -203,9 +214,16 @@ func (c *Client) Channels(ctx context.Context) ([]Channel, error) {
 			continue
 		}
 		n, _ := strconv.Atoi(string(r.Num))
+		days := 0
+		if r.Archive == "1" {
+			days, _ = strconv.Atoi(string(r.Days))
+			if days <= 0 {
+				days = 1
+			}
+		}
 		out = append(out, Channel{
 			ID: string(r.ID), Num: n, Name: strings.TrimSpace(string(r.Name)), Logo: strings.TrimSpace(string(r.Icon)),
-			Category: string(r.Category), EPGID: strings.TrimSpace(string(r.EPGID)),
+			Category: string(r.Category), EPGID: strings.TrimSpace(string(r.EPGID)), CatchupDays: days,
 		})
 	}
 	sort.SliceStable(out, func(i, j int) bool { return out[i].Num < out[j].Num })
@@ -219,6 +237,20 @@ func (c *Client) StreamURL(id, format string) string {
 		format = "m3u8"
 	}
 	return fmt.Sprintf("%s/live/%s/%s/%s.%s", c.acct.Server, url.PathEscape(c.acct.Username), url.PathEscape(c.acct.Password), url.PathEscape(id), format)
+}
+
+// CatchupURL is where a past show plays from the provider's recordings:
+// start (in the provider's time zone, loc) and the minutes to play. Format
+// as for StreamURL. It holds the password: never log it or show it.
+func (c *Client) CatchupURL(id string, start time.Time, minutes int, format string, loc *time.Location) string {
+	if format != "ts" {
+		format = "m3u8"
+	}
+	if loc == nil {
+		loc = time.UTC
+	}
+	return fmt.Sprintf("%s/timeshift/%s/%s/%d/%s/%s.%s", c.acct.Server, url.PathEscape(c.acct.Username), url.PathEscape(c.acct.Password),
+		max(minutes, 1), start.In(loc).Format("2006-01-02:15-04"), url.PathEscape(id), format)
 }
 
 // GuideURL is the account's full XMLTV guide.
