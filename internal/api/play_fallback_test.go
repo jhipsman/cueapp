@@ -140,3 +140,23 @@ func TestCompilationParts(t *testing.T) {
 		t.Error("episode by name")
 	}
 }
+
+func TestForeignText(t *testing.T) {
+	for _, c := range []struct {
+		text string
+		want bool
+	}{
+		{"Рокси Хантер и тайна шамана · roxy.avi", true},
+		{"Roxy Hunter and the Mystery of the Moody Ghost (2007) Russian dub", true},
+		{"Roxy Hunter and the Mystery of the Moody Ghost", false},
+		{"Fraggle Rock S03E13 Scared Silly", false},
+		{"Roxy Hunter (English and Russian audio)", false},
+	} {
+		if got := foreignText(c.text); got != c.want {
+			t.Errorf("foreignText(%q) = %v", c.text, got)
+		}
+	}
+	if !languageNotEnglish("rus") || !languageNotEnglish("Russian") || languageNotEnglish("eng") || languageNotEnglish("English") || languageNotEnglish("") || languageNotEnglish("en-GB") {
+		t.Error("languageNotEnglish")
+	}
+}

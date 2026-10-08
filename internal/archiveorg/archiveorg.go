@@ -47,7 +47,8 @@ type Video struct {
 	URL      string
 	Size     int64
 	Length   time.Duration
-	Original bool // the uploaded file, not a copy archive.org made
+	Original bool   // the uploaded file, not a copy archive.org made
+	Language string // the item's language as the uploader gave it ("eng", "Russian"); "" when not given
 }
 
 func (c *Client) getJSON(ctx context.Context, u string, out any) error {
@@ -139,6 +140,7 @@ func (c *Client) Videos(ctx context.Context, item Item) ([]Video, error) {
 			// Borrow-only uploads (the lending library): their files
 			// can't be downloaded.
 			Restricted json.RawMessage `json:"access-restricted-item"`
+			Language   json.RawMessage `json:"language"`
 		} `json:"metadata"`
 		Files []struct {
 			Name   string `json:"name"`
@@ -175,6 +177,7 @@ func (c *Client) Videos(ctx context.Context, item Item) ([]Video, error) {
 			Item: item.ID, Title: title, Name: f.Name, Size: size, Length: parseLength(f.Length),
 			URL:      c.base + "/download/" + url.PathEscape(item.ID) + "/" + strings.Join(segs, "/"),
 			Original: f.Source == "original",
+			Language: oneString(meta.Metadata.Language),
 		})
 	}
 	return out, nil

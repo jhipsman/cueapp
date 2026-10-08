@@ -41,6 +41,9 @@ type Video struct {
 	Channel    string
 	Length     time.Duration
 	Embeddable bool
+	// Language is the video's spoken language, when its uploader set it
+	// ("en", "ru"); "" when not.
+	Language string
 }
 
 func (c *Client) get(ctx context.Context, endpoint string, q url.Values, out any) error {
@@ -110,9 +113,13 @@ func (c *Client) Search(ctx context.Context, q string, max int) ([]Video, error)
 			Status struct {
 				Embeddable bool `json:"embeddable"`
 			} `json:"status"`
+			Snippet struct {
+				AudioLanguage string `json:"defaultAudioLanguage"`
+				Language      string `json:"defaultLanguage"`
+			} `json:"snippet"`
 		} `json:"items"`
 	}
-	if err := c.get(ctx, "videos", url.Values{"part": {"contentDetails,status"}, "id": {strings.Join(ids, ",")}}, &details); err != nil {
+	if err := c.get(ctx, "videos", url.Values{"part": {"contentDetails,status,snippet"}, "id": {strings.Join(ids, ",")}}, &details); err != nil {
 		return nil, err
 	}
 	byID := map[string]int{}
@@ -123,6 +130,10 @@ func (c *Client) Search(ctx context.Context, q string, max int) ([]Video, error)
 		if i, ok := byID[d.ID]; ok {
 			out[i].Length = parseISODuration(d.ContentDetails.Duration)
 			out[i].Embeddable = d.Status.Embeddable
+			out[i].Language = d.Snippet.AudioLanguage
+			if out[i].Language == "" {
+				out[i].Language = d.Snippet.Language
+			}
 		}
 	}
 	return out, nil

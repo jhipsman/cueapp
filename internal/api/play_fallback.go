@@ -459,14 +459,25 @@ func archiveCandidates(ctx context.Context, c *archiveorg.Client, w fallbackWant
 			picks = append(picks, *best)
 		}
 	}
-	slices.SortStableFunc(picks, func(a, b pick) int { return b.score - a.score })
+	// Other languages last, so they don't crowd out English ones.
+	foreign := func(p pick) bool { return languageNotEnglish(p.v.Language) || foreignText(p.v.Title+" "+p.v.Name) }
+	slices.SortStableFunc(picks, func(a, b pick) int {
+		if fa, fb := foreign(a), foreign(b); fa != fb {
+			if fa {
+				return 1
+			}
+			return -1
+		}
+		return b.score - a.score
+	})
 	var out []playCandidate
 	for _, p := range picks {
 		if len(out) == fallbackMax {
 			break
 		}
 		name := p.v.Name[strings.LastIndex(p.v.Name, "/")+1:]
-		out = append(out, playCandidate{Release: p.v.Title + " · " + name, URL: p.v.URL, Source: sourceArchive, Size: p.v.Size, Direct: true})
+		out = append(out, playCandidate{Release: p.v.Title + " · " + name, URL: p.v.URL, Source: sourceArchive, Size: p.v.Size, Direct: true,
+			NotEnglish: foreign(p)})
 	}
 	return out
 }
@@ -498,6 +509,9 @@ func youtubeCandidates(ctx context.Context, c *youtube.Client, w fallbackWant) [
 	for _, v := range vids {
 		if len(out) == fallbackMax {
 			break
+		}
+		if languageNotEnglish(v.Language) || foreignText(v.Title+" "+v.Channel) {
+			continue // YouTube has plenty: only English ones
 		}
 		if !v.Embeddable || !hasTitle(v.Title+" "+v.Channel, w.title) || notWhole.MatchString(v.Title) {
 			continue

@@ -82,3 +82,41 @@ func keepEnglish(cands []playCandidate) (out []playCandidate, other bool) {
 	}
 	return out, len(out) == 0 && len(cands) > 0
 }
+
+// otherLanguageWords are what uploads on the Internet Archive and YouTube
+// say when they're dubbed or in another language.
+var otherLanguageWords = regexp.MustCompile(`(?i)\b(dubbed|dub|dublado|doblaje|doblado|synchro|vf|vostfr|castellano|latino|espa[nñ]ol|fran[cç]ais|deutsch|italiano|portugu[eê]s|russian|rus|polski|t[uü]rk[cç]e|hindi|tamil|telugu|arabic|chinese|japanese|korean)\b`)
+
+// foreignText says text from the Internet Archive or YouTube is about a
+// version in another language: words that say so, or mostly letters of
+// another alphabet (Cyrillic, Greek, Arabic, Hebrew, Chinese...).
+func foreignText(text string) bool {
+	if otherLanguageWords.MatchString(text) && !regexp.MustCompile(`(?i)\benglish\b`).MatchString(text) {
+		return true
+	}
+	var latin, other int
+	for _, r := range text {
+		switch {
+		case r < 0x80:
+			if r >= 'A' && r <= 'Z' || r >= 'a' && r <= 'z' {
+				latin++
+			}
+		case r >= 0x00C0 && r <= 0x024F: // accented Latin
+			latin++
+		case r >= 0x0370 && r <= 0x1FFF, r >= 0x3040 && r <= 0x9FFF, r >= 0xAC00 && r <= 0xD7AF:
+			other++
+		}
+	}
+	return other > 3 && other*2 > latin
+}
+
+// languageNotEnglish reads a language field (archive.org's "eng",
+// "English", "rus"; YouTube's "en-GB", "ru"): true when one is given and
+// it isn't English.
+func languageNotEnglish(lang string) bool {
+	l := strings.ToLower(strings.TrimSpace(lang))
+	if l == "" || l == "und" || l == "zxx" || l == "mul" {
+		return false
+	}
+	return !(strings.HasPrefix(l, "en") || l == "eng")
+}
