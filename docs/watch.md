@@ -66,6 +66,10 @@ To get a key: open [YouTube Data API v3](https://console.cloud.google.com/apis/l
 
 Nothing is downloaded from either. When Cue finds nothing at all, the player (and every title page) shows the free services that have it, like **Tubi**, **Pluto TV** or **The Roku Channel**, from TMDB's list, each opening a search for it there.
 
+## Subtitles
+
+Press **CC** in the player (or **Subtitles** in the TV app) and Cue finds English subtitles on OpenSubtitles for what's playing, the one made for that release first. The CC menu sets the text size and a dark band behind the lines, and **Out of time? Try another** swaps in the next one. Turned on, they show from the start of everything you play on that device. Each subtitle is downloaded once and kept on the server; OpenSubtitles allows a set number of downloads a day.
+
 ## Skip intro
 
 Episodes show **Skip intro** (and **Skip recap**) while one is playing, and when the credits start the next episode is offered with a countdown, in the browser and in the TV app (where the remote's OK presses Skip). Cue learns the times from your household: jump over the intro once (with the remote's right button or the time bar), or press **Next episode** during the credits, and every other episode of that show gets the button too. Until then it uses [TheIntroDB](https://theintrodb.org), whose users submit times for each cut of an episode (picked by the video's length). If its times are off for your version, skip the intro yourself once: yours are used from then on.

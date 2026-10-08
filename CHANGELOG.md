@@ -9,6 +9,7 @@ under [Unreleased]. How releases are cut: [docs/RELEASING.md](docs/RELEASING.md)
 ## [Unreleased]
 
 ### Added
+- **Subtitles in Watch**: a CC button in the player finds English subtitles on OpenSubtitles for whatever is playing (the one made for that release first), with text size, a dark band behind them, and "Try another" for one that's out of time; the TV app's Subtitles button finds them too, and they show from the start when they're on. Each is downloaded once and kept.
 - **Skip intro**: a Skip intro (and Skip recap) button in the browser and the TV app, and the next episode offered when the credits start. Times come from TheIntroDB, and otherwise Cue learns them from what your household skips: jump over an intro once (or press Next during the credits) and the rest of the season gets the button.
 - **A smarter home screen**: "Because you watched…" rows from each profile's recent titles, a New episodes row for shows you follow with an episode out in the last two weeks (and a New episode badge on Continue Watching), and title pages show the streaming services a title is on.
 - **Plays in any browser**: when a browser can't open a version (MKV or AVI, Xvid or HEVC pictures, Dolby or DTS sound, or silent), Cue converts it as it plays with ffmpeg (now in the image), copying the picture when it can and making English stereo sound; moving through the video carries on from that point.

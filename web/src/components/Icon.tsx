@@ -61,6 +61,7 @@ const PATHS: Record<string, string> = {
   minimize: 'M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3',
   'skip-forward': 'M5 4l10 8-10 8V4zM19 5v14',
   gauge: 'M12 14l4-4M3.34 19a10 10 0 1 1 17.32 0',
+  captions: 'M4 5h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2zM10.5 10.2a2.6 2.6 0 1 0 0 3.6M17.5 10.2a2.6 2.6 0 1 0 0 3.6',
   layers: 'M12 2 2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5',
   'chevron-right': 'M9 18l6-6-6-6',
   'chevron-left': 'M15 18l-6-6 6-6',

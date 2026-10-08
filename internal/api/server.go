@@ -298,6 +298,9 @@ func (s *Server) Routes() http.Handler {
 	public.HandleFunc("POST /api/auth/logout", s.handleLogout)
 	// Calendar apps read the feed without signing in; the secret address is the key.
 	public.HandleFunc("GET /api/calendar/feed/{file}", s.handleCalendarFeed)
+	// A subtitle the player was handed: the signed address is the key, so
+	// the TV app's player can fetch it (watch_subtitles.go).
+	public.HandleFunc("GET /api/subs", s.handleSubsFile)
 
 	public.Handle("/api/", s.signedIn(s.protectedRoutes()))
 
@@ -480,6 +483,7 @@ func (s *Server) protectedRoutes() *routeTable {
 	play.HandleFunc("GET /api/watch/tv/{tmdbId}/next", s.handleWatchNext)
 	play.HandleFunc("GET /api/watch/providers/{kind}/{tmdbId}", s.handleWatchProviders)
 	play.HandleFunc("GET /api/watch/skips/{kind}/{tmdbId}", s.handleWatchSkips)
+	play.HandleFunc("GET /api/watch/subtitles/{kind}/{tmdbId}", s.handleWatchSubtitles)
 	play.HandleFunc("POST /api/watch/skips/learn", s.handleLearnSkip)
 	play.HandleFunc("PUT /api/watch/progress", s.handlePutWatchProgress)
 	play.HandleFunc("GET /api/watch/progress/{kind}/{tmdbId}", s.handleGetWatchProgress)

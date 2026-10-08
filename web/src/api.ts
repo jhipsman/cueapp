@@ -2230,6 +2230,10 @@ export const api = {
   watchSearch: (q: string) => get<WatchCard[]>(`/watch/search?q=${encodeURIComponent(q)}`),
   watchTitle: (kind: WatchKind, tmdbId: number) => get<WatchTitle>(`/watch/${kind}/${tmdbId}`),
   watchSeason: (tmdbId: number, season: number) => get<WatchEpisode[]>(`/watch/tv/${tmdbId}/season/${season}`),
+  watchSubtitles: (kind: 'movie' | 'tv', tmdbId: number, season: number, episode: number, release: string, choice = 0) =>
+    get<{ url: string; label: string; choice: number; choices: number }>(
+      `/watch/subtitles/${kind}/${tmdbId}?season=${season}&episode=${episode}&release=${encodeURIComponent(release)}&choice=${choice}`,
+    ),
   watchSkips: (kind: 'movie' | 'tv', tmdbId: number, season: number, episode: number, duration: number) =>
     get<WatchSkips>(`/watch/skips/${kind}/${tmdbId}?season=${season}&episode=${episode}&duration=${Math.round(duration)}`),
   learnSkip: (b: { kind: 'movie' | 'tv'; tmdbId: number; season: number; segment: 'intro' | 'credits'; start: number; end?: number; duration?: number }) =>

@@ -7,6 +7,7 @@ import android.graphics.Color
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
 import android.graphics.drawable.StateListDrawable
+import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -26,6 +27,7 @@ import android.widget.Toast
 import androidx.annotation.OptIn
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
+import androidx.media3.common.MimeTypes
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.common.Tracks
@@ -36,6 +38,8 @@ import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.ui.AspectRatioFrameLayout
+import androidx.media3.ui.CaptionStyleCompat
+import androidx.media3.ui.SubtitleView
 import androidx.media3.ui.PlayerView
 import androidx.media3.ui.TrackSelectionDialogBuilder
 import org.json.JSONObject
@@ -109,6 +113,10 @@ class PlayerActivity : Activity() {
     private var jumpTo = -1L
     private val jumpDone = Runnable { learnIntro() }
     private var skipsAsked = false
+    // An English subtitle from OpenSubtitles added to the video (Watch
+    // finds it when subtitles are on, or Subtitles here asks for one).
+    private var externalSubs = false
+    private var subsAsking = false
 
     // Sizes follow the screen, not the TV's density or font-size setting
     // (Google TV boxes differ there): 1 unit is 1/960 of the screen's width.
@@ -173,7 +181,8 @@ class PlayerActivity : Activity() {
             .build()
         player.trackSelectionParameters = player.trackSelectionParameters.buildUpon()
             .setPreferredAudioLanguage("en")
-            .setPreferredTextLanguage(null)
+            // Subtitles show from the start when they're on in Watch.
+            .setPreferredTextLanguage(if (info.optBoolean("subsOn") && info.optString("subtitleUrl").isNotEmpty()) "en" else null)
             .build()
 
         val video = PlayerView(this).apply {
@@ -182,6 +191,7 @@ class PlayerActivity : Activity() {
             resizeMode = AspectRatioFrameLayout.RESIZE_MODE_FIT
             setShutterBackgroundColor(Color.BLACK)
             setKeepContentOnPlayerReset(true)
+            styleSubtitles(subtitleView)
         }
         spinner = ProgressBar(this).apply {
             isIndeterminate = true
@@ -284,7 +294,7 @@ class PlayerActivity : Activity() {
             }
         })
 
-        player.setMediaItem(MediaItem.fromUri(info.optString("url")))
+        player.setMediaItem(mediaItem(info.optString("subtitleUrl")))
         val start = (info.optDouble("startSec", 0.0) * 1000).toLong()
         if (start > 0 && !live) player.seekTo(start)
         player.prepare()
@@ -364,7 +374,7 @@ class PlayerActivity : Activity() {
                 addView(pill("Other version", R.drawable.ic_cue_versions) { end("other") })
             }
             addView(pill("Audio", R.drawable.ic_cue_audio) { chooseTrack(C.TRACK_TYPE_AUDIO, "Audio") })
-            addView(pill("Subtitles", R.drawable.ic_cue_subtitles) { chooseTrack(C.TRACK_TYPE_TEXT, "Subtitles") })
+            addView(pill("Subtitles", R.drawable.ic_cue_subtitles) { subtitlesPressed() })
         }
         val bottom = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
@@ -709,6 +719,96 @@ class PlayerActivity : Activity() {
         postJson("/api/watch/skips/learn", JSONObject()
             .put("kind", info.optString("kind")).put("tmdbId", info.optInt("tmdbId")).put("season", info.optInt("season"))
             .put("segment", "credits").put("start", pos / 1000.0).put("duration", dur / 1000.0))
+    }
+
+    // ---- Subtitles ----
+
+    // mediaItem is the video, with Watch's subtitle added when there is one.
+    private fun mediaItem(subtitleUrl: String): MediaItem {
+        val b = MediaItem.Builder().setUri(info.optString("url"))
+        if (subtitleUrl.isNotEmpty() && !live) {
+            externalSubs = true
+            b.setSubtitleConfigurations(listOf(
+                MediaItem.SubtitleConfiguration.Builder(Uri.parse(subtitleUrl))
+                    .setMimeType(MimeTypes.TEXT_VTT)
+                    .setLanguage("en")
+                    .setLabel("English (OpenSubtitles)")
+                    .setSelectionFlags(C.SELECTION_FLAG_DEFAULT)
+                    .build(),
+            ))
+        }
+        return b.build()
+    }
+
+    // styleSubtitles: the size and dark band chosen in Watch.
+    private fun styleSubtitles(view: SubtitleView?) {
+        view ?: return
+        val scale = when (info.optString("subsSize")) {
+            "small" -> 0.85f
+            "large" -> 1.35f
+            else -> 1.1f
+        }
+        view.setFractionalTextSize(SubtitleView.DEFAULT_TEXT_SIZE_FRACTION * scale)
+        val band = info.optBoolean("subsBand", true)
+        view.setStyle(CaptionStyleCompat(
+            Color.WHITE,
+            if (band) 0xB8000000.toInt() else Color.TRANSPARENT,
+            Color.TRANSPARENT,
+            if (band) CaptionStyleCompat.EDGE_TYPE_NONE else CaptionStyleCompat.EDGE_TYPE_DROP_SHADOW,
+            Color.BLACK,
+            null,
+        ))
+    }
+
+    // subtitlesPressed: the first time, without a subtitle from Watch, Cue is
+    // asked for an English one (it's added and shown); after that, the list
+    // of subtitles to choose from.
+    private fun subtitlesPressed() {
+        if (externalSubs || live || catchup || server.isEmpty()) {
+            chooseTrack(C.TRACK_TYPE_TEXT, "Subtitles")
+            return
+        }
+        if (subsAsking) return
+        subsAsking = true
+        Toast.makeText(this, "Finding English subtitles…", Toast.LENGTH_SHORT).show()
+        val kind = info.optString("kind")
+        val path = "/api/watch/subtitles/$kind/${info.optInt("tmdbId")}?season=${info.optInt("season")}&episode=${info.optInt("episode")}&release=${Uri.encode(info.optString("release"))}"
+        val cookie = CookieManager.getInstance().getCookie(server)
+        val token = info.optString("token")
+        Thread {
+            var url = ""
+            var problem = "Couldn't find subtitles for this."
+            try {
+                val c = URL("$server$path").openConnection() as HttpURLConnection
+                c.connectTimeout = 10000
+                c.readTimeout = 30000
+                if (cookie != null) c.setRequestProperty("Cookie", cookie)
+                if (token.isNotEmpty()) c.setRequestProperty("X-Cue-Profile", token)
+                val ok = c.responseCode == 200
+                val text = (if (ok) c.inputStream else c.errorStream)?.bufferedReader()?.use { it.readText() } ?: ""
+                c.disconnect()
+                val j = JSONObject(text.ifEmpty { "{}" })
+                if (ok) url = server + j.optString("url") else j.optString("error").takeIf { it.isNotEmpty() }?.let { problem = it }
+            } catch (_: Exception) {
+            }
+            main.post {
+                subsAsking = false
+                if (finished) return@post
+                if (url.isEmpty()) {
+                    Toast.makeText(this, problem, Toast.LENGTH_LONG).show()
+                    return@post
+                }
+                val pos = player.currentPosition
+                val playing = player.playWhenReady
+                player.trackSelectionParameters = player.trackSelectionParameters.buildUpon()
+                    .setPreferredTextLanguage("en")
+                    .build()
+                player.setMediaItem(mediaItem(url), pos)
+                player.prepare()
+                player.playWhenReady = playing
+                Toast.makeText(this, "English subtitles on", Toast.LENGTH_SHORT).show()
+            }
+        }.start()
     }
 
     // fetchSkips asks Cue for the skip times now the video's length is

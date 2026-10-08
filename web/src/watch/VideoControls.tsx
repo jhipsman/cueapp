@@ -36,6 +36,8 @@ interface Props {
   actions?: ReactNode
   // The "Versions" (or other) menu, with its heading.
   menu?: { label: string; icon: 'layers' | 'tv'; heading?: string; items: MenuItem[] }
+  // Subtitles: the CC button (lit when on) and its menu.
+  captions?: { on: boolean; items: (MenuItem & { checked?: boolean })[] }
 }
 
 const SPEEDS = [0.5, 0.75, 1, 1.25, 1.5, 2]
@@ -79,7 +81,7 @@ function Skip({ back }: { back?: boolean }) {
   )
 }
 
-export default function VideoControls({ video, title, subtitle, onBack, live, note, actions, menu, timeline }: Props) {
+export default function VideoControls({ video, title, subtitle, onBack, live, note, actions, menu, timeline, captions }: Props) {
   const root = useRef<HTMLDivElement>(null)
   const bar = useRef<HTMLDivElement>(null)
   const [playing, setPlaying] = useState(false)
@@ -91,7 +93,7 @@ export default function VideoControls({ video, title, subtitle, onBack, live, no
   const [waiting, setWaiting] = useState(true)
   const [full, setFull] = useState(false)
   const [idle, setIdle] = useState(false)
-  const [open, setOpen] = useState<'menu' | 'speed' | null>(null)
+  const [open, setOpen] = useState<'menu' | 'speed' | 'cc' | null>(null)
   const [speed, setSpeed] = useState(1)
   const [hover, setHover] = useState<number | null>(null) // 0..1 along the bar
   const [dragging, setDragging] = useState(false)
@@ -436,6 +438,39 @@ export default function VideoControls({ video, title, subtitle, onBack, live, no
 
           <div className="vx-right">
             {actions}
+            {captions && (
+              <div className="vx-pop-wrap">
+                <button
+                  className={`vx-icon${captions.on ? ' lit' : ''}`}
+                  onClick={() => setOpen(open === 'cc' ? null : 'cc')}
+                  aria-label="Subtitles"
+                  aria-expanded={open === 'cc'}
+                >
+                  <Icon name="captions" size={26} />
+                </button>
+                {open === 'cc' && (
+                  <div className="vx-pop" role="menu">
+                    <div className="vx-pop-head">Subtitles</div>
+                    {captions.items.map((it) => (
+                      <button
+                        key={it.label}
+                        role={it.checked === undefined ? 'menuitem' : 'menuitemradio'}
+                        aria-checked={it.checked}
+                        className={it.checked ? 'on' : ''}
+                        disabled={it.disabled}
+                        onClick={() => {
+                          setOpen(null)
+                          it.onClick?.()
+                        }}
+                      >
+                        {it.label}
+                        {it.hint && <small>{it.hint}</small>}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
             {menu && (
               <div className="vx-pop-wrap">
                 <button className="vx-icon" onClick={() => setOpen(open === 'menu' ? null : 'menu')} aria-label={menu.label} aria-expanded={open === 'menu'}>

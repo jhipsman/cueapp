@@ -4,6 +4,7 @@ import { api, profileToken, type PlayAnswer, type WatchEpisode, type WatchSkips 
 import Icon from '../components/Icon'
 import { useDocumentTitle } from '../documentTitle'
 import { epCode, playHref, Spinner } from './parts'
+import { loadSubsPrefs, saveSubsPrefs, type SubsPrefs } from './subsPrefs'
 import { savedTheme } from './theme'
 import { onTV, type TVPlayerResult } from './tv'
 import VideoControls from './VideoControls'
@@ -118,6 +119,10 @@ export default function PlayerPage() {
   const ownSeek = useRef(false) // a jump Cue made (resume, a skip button), not the viewer
   const jump = useRef<{ from: number; to: number; timer: number } | null>(null)
   const creditsDone = useRef(false)
+  // Subtitles: how they're shown, and the one found for this video.
+  const [subsPrefs, setSubsPrefs] = useState<SubsPrefs>(loadSubsPrefs)
+  const [subs, setSubs] = useState<{ url: string; choice: number; choices: number } | null>(null)
+  const [subsNote, setSubsNote] = useState('')
   const [error, setError] = useState('')
   const [note, setNote] = useState('')
   const [next, setNext] = useState<WatchEpisode | null>(null)
@@ -141,6 +146,8 @@ export default function PlayerPage() {
         setConv(null)
         setSkips(null)
         setLength(0)
+        setSubs(null)
+        setSubsNote('')
         creditsDone.current = false
         converting.current = false
         setUseOriginal(!a.streamUrl)
@@ -259,7 +266,18 @@ export default function PlayerPage() {
       api.watchSkips(kind, tmdbId, season, episode, 0).catch(() => ({}) as WatchSkips),
       new Promise<WatchSkips>((done) => setTimeout(() => done({}), 2000)),
     ])
-    void skipsSoon.then((sk) => {
+    // Subtitles too, when they're on (or the TV app finds them when asked).
+    const prefs = loadSubsPrefs()
+    const subsSoon = prefs.on
+      ? Promise.race([
+          api
+            .watchSubtitles(kind, tmdbId, season, episode, answer.release)
+            .then((r) => new URL(r.url, window.location.href).toString())
+            .catch(() => ''),
+          new Promise<string>((done) => setTimeout(() => done(''), 8000)),
+        ])
+      : Promise.resolve('')
+    void Promise.all([skipsSoon, subsSoon]).then(([sk, subtitleUrl]) => {
       if (cancelled) return
       window.CueTV?.play(
         JSON.stringify({
@@ -280,6 +298,11 @@ export default function PlayerPage() {
           recapEnd: sk.recap?.end ?? 0,
           creditsStart: sk.creditsStart ?? 0,
           creditsFromEnd: sk.creditsFromEnd ?? 0,
+          subtitleUrl,
+          subsOn: prefs.on,
+          subsSize: prefs.size,
+          subsBand: prefs.band,
+          release: answer.release,
         }),
       )
     })
@@ -335,6 +358,46 @@ export default function PlayerPage() {
     }, 2000)
     return () => clearInterval(t)
   }, [answer, useOriginal, conv, load])
+
+  // Subtitles, when they're on (each one found uses a download from the
+  // day's OpenSubtitles allowance, so only then).
+  const subsWanted = subsPrefs.on && !!answer && !answer.youtube && !onTV()
+  useEffect(() => {
+    if (!subsWanted || !answer || subs) return
+    let live = true
+    setSubsNote('Finding subtitles…')
+    api
+      .watchSubtitles(kind, tmdbId, season, episode, answer.release)
+      .then((r) => {
+        if (!live) return
+        setSubs(r)
+        setSubsNote('')
+      })
+      .catch((e) => live && setSubsNote(e instanceof Error ? e.message : String(e)))
+    return () => {
+      live = false
+    }
+  }, [subsWanted, answer, subs, kind, tmdbId, season, episode])
+
+  // Show or hide the track as the setting says (the <track> loads with the
+  // video, hidden).
+  useEffect(() => {
+    const v = videoEl
+    if (!v) return
+    const apply = () => {
+      for (const t of Array.from(v.textTracks)) t.mode = subsPrefs.on ? 'showing' : 'disabled'
+    }
+    apply()
+    v.textTracks.addEventListener?.('addtrack', apply)
+    return () => v.textTracks.removeEventListener?.('addtrack', apply)
+  }, [videoEl, subs, subsPrefs.on, conv])
+
+  const setPrefs = (p: Partial<SubsPrefs>) =>
+    setSubsPrefs((old) => {
+      const next = { ...old, ...p }
+      saveSubsPrefs(next)
+      return next
+    })
 
   // The skip times, once the video's length is known (it picks the cut).
   useEffect(() => {
@@ -550,6 +613,7 @@ export default function PlayerPage() {
             key={src}
             ref={videoRef}
             src={src}
+            className={`cue-${subsPrefs.size}${subsPrefs.band ? ' cue-band' : ''}`}
             autoPlay
             playsInline
             onLoadedMetadata={onLoaded}
@@ -558,7 +622,18 @@ export default function PlayerPage() {
             onPause={save}
             onEnded={onEnded}
             onError={onError}
-          />
+          >
+            {subs && (
+              <track
+                key={`${subs.url}-${conv?.offset ?? 0}`}
+                kind="subtitles"
+                srcLang="en"
+                label="English"
+                src={`${subs.url}${conv?.stream && conv.offset > 0 ? `&shift=${conv.offset}` : ''}`}
+                default={subsPrefs.on}
+              />
+            )}
+          </video>
           <VideoControls
             video={videoEl}
             title={answer.title}
@@ -579,7 +654,40 @@ export default function PlayerPage() {
                 : undefined
             }
             onBack={() => navigate(-1)}
-            note={note}
+            note={note || subsNote}
+            captions={{
+              on: subsPrefs.on,
+              items: [
+                { label: 'Off', checked: !subsPrefs.on, onClick: () => setPrefs({ on: false }) },
+                { label: 'English', checked: subsPrefs.on, onClick: () => setPrefs({ on: true }) },
+                ...(subs && subs.choices > 1
+                  ? [
+                      {
+                        label: 'Out of time? Try another',
+                        hint: `Subtitle ${subs.choice + 1} of ${subs.choices}`,
+                        onClick: () => {
+                          setPrefs({ on: true })
+                          setSubsNote('Finding another subtitle…')
+                          api
+                            .watchSubtitles(kind, tmdbId, season, episode, answer.release, (subs.choice + 1) % subs.choices)
+                            .then((r) => {
+                              setSubs(r)
+                              setSubsNote('')
+                            })
+                            .catch((e) => setSubsNote(e instanceof Error ? e.message : String(e)))
+                        },
+                      },
+                    ]
+                  : []),
+                { label: 'Small text', checked: subsPrefs.size === 'small', onClick: () => setPrefs({ size: 'small' }) },
+                { label: 'Medium text', checked: subsPrefs.size === 'medium', onClick: () => setPrefs({ size: 'medium' }) },
+                { label: 'Large text', checked: subsPrefs.size === 'large', onClick: () => setPrefs({ size: 'large' }) },
+                {
+                  label: subsPrefs.band ? 'Dark band behind: on' : 'Dark band behind: off',
+                  onClick: () => setPrefs({ band: !subsPrefs.band }),
+                },
+              ],
+            }}
             actions={
               kind === 'tv' ? (
                 <button
