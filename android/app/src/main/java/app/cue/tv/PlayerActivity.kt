@@ -45,6 +45,8 @@ import androidx.media3.exoplayer.audio.AudioCapabilities
 import androidx.media3.exoplayer.audio.AudioSink
 import androidx.media3.exoplayer.audio.DefaultAudioSink
 import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.exoplayer.analytics.AnalyticsListener
+import androidx.media3.exoplayer.trackselection.DefaultTrackSelector
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.CaptionStyleCompat
@@ -75,6 +77,8 @@ class PlayerActivity : Activity() {
     private var surround = true // Dolby and DTS sent on as they are (see buildPlayer)
     private var soundButton: TextView? = null
     private var rateMatched = false
+    private var pictureLabel = ""
+    private var softwarePicture = false // decoded by the processor, not the box's video chip
     private lateinit var info: JSONObject
     private var server = ""
     private val main = Handler(Looper.getMainLooper())
@@ -300,11 +304,8 @@ class PlayerActivity : Activity() {
                     w >= 1200 -> "720p"
                     else -> "SD (${videoSize.height}p)"
                 }
-                val base = info.optString("subtitle")
-                subtitle?.apply {
-                    text = listOf(base, "Picture $label").filter { it.isNotEmpty() }.joinToString("  ·  ")
-                    visibility = View.VISIBLE
-                }
+                pictureLabel = label
+                showPictureLabel()
             }
 
             override fun onPlayerError(error: PlaybackException) {
@@ -501,7 +502,16 @@ class PlayerActivity : Activity() {
             .setConnectTimeoutMs(15000)
             .setReadTimeoutMs(30000)
             .setUserAgent("CueTV/1")
+        // Live TV is tunneled when the box can: the picture goes from the
+        // video chip straight to the screen, as in the TV's own apps and
+        // IPTV players, which is what deinterlaces live channels properly
+        // (and keeps sound in step) on Google TV boxes. The player turns it
+        // off by itself when the box or the sound can't do it.
+        val selector = DefaultTrackSelector(this).apply {
+            setParameters(buildUponParameters().setTunnelingEnabled(live))
+        }
         val p = ExoPlayer.Builder(this, renderers)
+            .setTrackSelector(selector)
             .setMediaSourceFactory(DefaultMediaSourceFactory(http))
             .setSeekBackIncrementMs(10_000)
             .setSeekForwardIncrementMs(10_000)
@@ -511,7 +521,26 @@ class PlayerActivity : Activity() {
             // Subtitles show from the start when they're on in Watch.
             .setPreferredTextLanguage(if (info.optBoolean("subsOn") && info.optString("subtitleUrl").isNotEmpty()) "en" else null)
             .build()
+        p.addAnalyticsListener(object : AnalyticsListener {
+            override fun onVideoDecoderInitialized(eventTime: AnalyticsListener.EventTime, decoderName: String, initializedTimestampMs: Long, initializationDurationMs: Long) {
+                val n = decoderName.lowercase()
+                softwarePicture = n.contains("ffmpeg") || n.startsWith("c2.android.") || n.startsWith("omx.google.")
+                showPictureLabel()
+            }
+        })
         return p
+    }
+
+    // The line under the title: what's on, the picture's size, and whether
+    // the box's video chip is decoding it (when it isn't, the picture is
+    // softer and live TV can't be deinterlaced).
+    private fun showPictureLabel() {
+        if (pictureLabel.isEmpty()) return
+        val picture = "Picture $pictureLabel" + if (softwarePicture) " (software decoding)" else ""
+        subtitle?.apply {
+            text = listOf(info.optString("subtitle"), picture).filter { it.isNotEmpty() }.joinToString("  ·  ")
+            visibility = View.VISIBLE
+        }
     }
 
     private fun soundLabel() = if (surround) "Surround on" else "Surround off"
