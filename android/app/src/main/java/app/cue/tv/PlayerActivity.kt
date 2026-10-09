@@ -11,11 +11,13 @@ import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
 import android.graphics.drawable.StateListDrawable
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.util.TypedValue
 import android.view.Gravity
+import android.view.Display
 import android.view.KeyEvent
 import android.view.View
 import android.view.ViewGroup
@@ -68,6 +70,11 @@ import java.net.URL
 @OptIn(UnstableApi::class)
 class PlayerActivity : Activity() {
     private lateinit var player: ExoPlayer
+    private lateinit var video: PlayerView
+    private lateinit var listener: Player.Listener
+    private var surround = true // Dolby and DTS sent on as they are (see buildPlayer)
+    private var soundButton: TextView? = null
+    private var rateMatched = false
     private lateinit var info: JSONObject
     private var server = ""
     private val main = Handler(Looper.getMainLooper())
@@ -176,40 +183,10 @@ class PlayerActivity : Activity() {
         creditsStart = ms("creditsStart"); creditsFromEnd = ms("creditsFromEnd")
         hasOther = info.optBoolean("hasOther")
 
-        // Sound: the box's own decoders first (they keep it in step with the
-        // picture), the app's FFmpeg ones only for what the box can't decode
-        // (DTS, TrueHD), and always decoded here rather than passed to the TV
-        // as it is: a TV or soundbar that says it takes Dolby and then plays
-        // nothing was the silent La Brea, and software-decoded surround on
-        // every format put voices out of step on some Google TV boxes.
-        val renderers = object : DefaultRenderersFactory(this) {
-            override fun buildAudioSink(context: Context, enableFloatOutput: Boolean, enableAudioTrackPlaybackParams: Boolean): AudioSink =
-                DefaultAudioSink.Builder(context)
-                    .setAudioCapabilities(AudioCapabilities.DEFAULT_AUDIO_CAPABILITIES)
-                    .setEnableFloatOutput(enableFloatOutput)
-                    .setEnableAudioTrackPlaybackParams(enableAudioTrackPlaybackParams)
-                    .build()
-        }
-            .setEnableDecoderFallback(true)
-            .setExtensionRendererMode(DefaultRenderersFactory.EXTENSION_RENDERER_MODE_ON)
-        // Debrid links often redirect, sometimes from http to https.
-        val http = DefaultHttpDataSource.Factory()
-            .setAllowCrossProtocolRedirects(true)
-            .setConnectTimeoutMs(15000)
-            .setReadTimeoutMs(30000)
-            .setUserAgent("CueTV/1")
-        player = ExoPlayer.Builder(this, renderers)
-            .setMediaSourceFactory(DefaultMediaSourceFactory(http))
-            .setSeekBackIncrementMs(10_000)
-            .setSeekForwardIncrementMs(10_000)
-            .build()
-        player.trackSelectionParameters = player.trackSelectionParameters.buildUpon()
-            .setPreferredAudioLanguage("en")
-            // Subtitles show from the start when they're on in Watch.
-            .setPreferredTextLanguage(if (info.optBoolean("subsOn") && info.optString("subtitleUrl").isNotEmpty()) "en" else null)
-            .build()
+        surround = getSharedPreferences("player", MODE_PRIVATE).getBoolean("surround", true)
+        player = buildPlayer()
 
-        val video = PlayerView(this).apply {
+        video = PlayerView(this).apply {
             player = this@PlayerActivity.player
             useController = false
             resizeMode = AspectRatioFrameLayout.RESIZE_MODE_FIT
@@ -264,7 +241,7 @@ class PlayerActivity : Activity() {
         }
         setContentView(root)
 
-        player.addListener(object : Player.Listener {
+        listener = object : Player.Listener {
             override fun onPlaybackStateChanged(state: Int) {
                 if (state == Player.STATE_READY && !skipsAsked && !live && !catchup) {
                     skipsAsked = true
@@ -315,6 +292,7 @@ class PlayerActivity : Activity() {
                 // than its name says.
                 val w = videoSize.width
                 if (w <= 0) return
+                matchRefreshRate()
                 // By width: a film cropped wide is 1920 x 800 and still 1080p.
                 val label = when {
                     w >= 3200 -> "4K"
@@ -330,6 +308,13 @@ class PlayerActivity : Activity() {
             }
 
             override fun onPlayerError(error: PlaybackException) {
+                if (surround && (error.errorCode == PlaybackException.ERROR_CODE_AUDIO_TRACK_INIT_FAILED ||
+                        error.errorCode == PlaybackException.ERROR_CODE_AUDIO_TRACK_WRITE_FAILED)) {
+                    // The TV or receiver said it takes this sound and then
+                    // didn't: Cue decodes it instead, for this video.
+                    setSurround(false, remember = false)
+                    return
+                }
                 if (!started && alts.isNotEmpty()) {
                     player.setMediaItem(MediaItem.fromUri(alts.removeFirst()))
                     player.prepare()
@@ -343,7 +328,8 @@ class PlayerActivity : Activity() {
                 }
                 end("error", error.errorCodeName)
             }
-        })
+        }
+        player.addListener(listener)
 
         player.setMediaItem(mediaItem(info.optString("subtitleUrl")))
         val start = (info.optDouble("startSec", 0.0) * 1000).toLong()
@@ -426,6 +412,7 @@ class PlayerActivity : Activity() {
                 addView(pill("Other version", R.drawable.ic_cue_versions) { end("other") })
             }
             addView(pill("Audio", R.drawable.ic_cue_audio) { chooseTrack(C.TRACK_TYPE_AUDIO, "Audio") })
+            soundButton = pill(soundLabel(), R.drawable.ic_cue_audio) { setSurround(!surround) }.also { addView(it) }
             addView(pill("Subtitles", R.drawable.ic_cue_subtitles) { subtitlesPressed() })
         }
         val bottom = LinearLayout(this).apply {
@@ -486,6 +473,97 @@ class PlayerActivity : Activity() {
         isFocusableInTouchMode = true
         setOnClickListener { onClick() }
         layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, px(42)).apply { marginEnd = px(8) }
+    }
+
+    // Sound: the box's own decoders first, the app's FFmpeg ones only for
+    // what the box can't decode (DTS, TrueHD); the picture likewise, since
+    // FFmpeg decoding it on the box is soft, can't deinterlace live TV and
+    // can't keep the voices in step. With Surround on, Dolby and DTS go to
+    // the TV or receiver as they are when it says it takes them, so they
+    // reach surround speakers; off, Cue decodes the sound itself, for a TV
+    // that says it takes Dolby and then plays nothing.
+    private fun buildPlayer(): ExoPlayer {
+        val passthrough = surround
+        val renderers = object : DefaultRenderersFactory(this) {
+            override fun buildAudioSink(context: Context, enableFloatOutput: Boolean, enableAudioTrackPlaybackParams: Boolean): AudioSink {
+                val sink = DefaultAudioSink.Builder(context)
+                    .setEnableFloatOutput(enableFloatOutput)
+                    .setEnableAudioTrackPlaybackParams(enableAudioTrackPlaybackParams)
+                if (!passthrough) sink.setAudioCapabilities(AudioCapabilities.DEFAULT_AUDIO_CAPABILITIES)
+                return sink.build()
+            }
+        }
+            .setEnableDecoderFallback(true)
+            .setExtensionRendererMode(DefaultRenderersFactory.EXTENSION_RENDERER_MODE_ON)
+        // Debrid links often redirect, sometimes from http to https.
+        val http = DefaultHttpDataSource.Factory()
+            .setAllowCrossProtocolRedirects(true)
+            .setConnectTimeoutMs(15000)
+            .setReadTimeoutMs(30000)
+            .setUserAgent("CueTV/1")
+        val p = ExoPlayer.Builder(this, renderers)
+            .setMediaSourceFactory(DefaultMediaSourceFactory(http))
+            .setSeekBackIncrementMs(10_000)
+            .setSeekForwardIncrementMs(10_000)
+            .build()
+        p.trackSelectionParameters = p.trackSelectionParameters.buildUpon()
+            .setPreferredAudioLanguage("en")
+            // Subtitles show from the start when they're on in Watch.
+            .setPreferredTextLanguage(if (info.optBoolean("subsOn") && info.optString("subtitleUrl").isNotEmpty()) "en" else null)
+            .build()
+        return p
+    }
+
+    private fun soundLabel() = if (surround) "Surround on" else "Surround off"
+
+    // Surround on or off: the player is made again with the new sound and
+    // carries on from the same place. Remembered on this TV unless it was
+    // turned off because the sound failed.
+    private fun setSurround(on: Boolean, remember: Boolean = true) {
+        surround = on
+        if (remember) getSharedPreferences("player", MODE_PRIVATE).edit().putBoolean("surround", on).apply()
+        soundButton?.text = soundLabel()
+        val item = player.currentMediaItem
+        val pos = player.currentPosition
+        val playing = player.playWhenReady
+        player.removeListener(listener)
+        player.release()
+        player = buildPlayer()
+        player.addListener(listener)
+        video.player = player
+        if (item != null) player.setMediaItem(item)
+        if (!live && pos > 0) player.seekTo(pos)
+        player.prepare()
+        player.playWhenReady = playing
+        Toast.makeText(
+            this,
+            if (on) "Surround on: Dolby and DTS go to your TV or speakers as they are." else "Surround off: Cue decodes the sound itself.",
+            Toast.LENGTH_SHORT,
+        ).show()
+    }
+
+    // The TV's refresh rate matched to the video's frame rate, as the TV's
+    // own apps do: film at 24 frames a second on a 60 Hz screen stutters,
+    // and 50 Hz channels do too. Same resolution only, and only when the
+    // current rate isn't already a match (switching blanks the screen for a
+    // moment).
+    private fun matchRefreshRate() {
+        if (rateMatched || Build.VERSION.SDK_INT < Build.VERSION_CODES.M) return
+        val fps = player.videoFormat?.frameRate ?: return
+        if (fps < 10f) return
+        rateMatched = true
+        val display: Display = window.decorView.display ?: return
+        val now = display.mode
+        fun fits(hz: Float): Boolean {
+            val n = Math.round(hz / fps)
+            return n >= 1 && Math.abs(hz - n * fps) < 0.05f * n
+        }
+        if (fits(now.refreshRate)) return
+        val same = display.supportedModes.filter {
+            it.physicalWidth == now.physicalWidth && it.physicalHeight == now.physicalHeight && fits(it.refreshRate)
+        }
+        val best = same.filter { it.refreshRate >= 47f }.minByOrNull { it.refreshRate } ?: same.minByOrNull { it.refreshRate } ?: return
+        window.attributes = window.attributes.also { it.preferredDisplayModeId = best.modeId }
     }
 
     private fun chooseTrack(type: Int, title: String) {
