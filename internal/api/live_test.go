@@ -151,6 +151,13 @@ func TestLiveTV(t *testing.T) {
 	if play.Direct != prov.URL+"/live/me/pw/10.ts" {
 		t.Fatalf("tv play: %s", tw.Body)
 	}
+	r.Header.Set("User-Agent", "CueAppleTV/1 CFNetwork")
+	tw = httptest.NewRecorder()
+	s.handleLivePlay(tw, r)
+	_ = json.Unmarshal(tw.Body.Bytes(), &play)
+	if play.Direct != prov.URL+"/live/me/pw/10.m3u8" {
+		t.Fatalf("apple tv play: %s", tw.Body)
+	}
 
 	// The playlist comes back with every address pointed through Cue.
 	w = call("GET", play.URL, "", s.handleLiveHLS)

@@ -426,6 +426,9 @@ func (s *Server) handleLivePlay(w http.ResponseWriter, r *http.Request) {
 			format = "m3u8"
 		}
 		out["direct"] = c.StreamURL(ch.ID, format)
+	} else if strings.Contains(r.UserAgent(), "CueAppleTV/") {
+		// The Apple TV app's player plays HLS, not a bare MPEG-TS stream.
+		out["direct"] = c.StreamURL(ch.ID, "m3u8")
 	}
 	writeJSON(w, http.StatusOK, out)
 }

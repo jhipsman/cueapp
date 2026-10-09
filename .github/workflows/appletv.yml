@@ -1,0 +1,33 @@
+# Checks that Cue's Apple TV app compiles. It can't be signed or installed
+# from here: that's done on a Mac with Xcode (see appletv/README.md).
+name: Apple TV app
+
+on:
+  push:
+    paths:
+      - "appletv/**"
+      - ".github/workflows/appletv.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: appletv-app
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Pick Xcode (the oldest 15 or later, nearest what a 2017 Mac runs)
+        run: |
+          ls -d /Applications/Xcode_*.app || true
+          pick=$(ls -d /Applications/Xcode_1[5-9]*.app /Applications/Xcode_2*.app 2>/dev/null | sort -V | head -1)
+          if [ -n "$pick" ]; then sudo xcode-select -s "$pick"; fi
+          xcodebuild -version
+
+      - name: Build for the simulator (no signing)
+        run: |
+          xcodebuild -project appletv/CueTV.xcodeproj -target CueTV -configuration Debug \
+            -sdk appletvsimulator CODE_SIGNING_ALLOWED=NO build | tail -60
+          test "${PIPESTATUS[0]}" -eq 0
