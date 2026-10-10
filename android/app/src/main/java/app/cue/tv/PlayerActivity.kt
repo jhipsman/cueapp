@@ -539,13 +539,17 @@ class PlayerActivity : Activity() {
             .setConnectTimeoutMs(15000)
             .setReadTimeoutMs(30000)
             .setUserAgent("CueTV/1")
-        // Live TV is tunneled when the TV can: the picture goes from the
-        // video chip straight to the screen, as IPTV players do, which
-        // deinterlaces live channels properly. The player turns it off by
-        // itself when the TV or the sound can't do it. (Not for films: it
-        // hides the frames' times, which matchRefreshRate needs.)
+        // Tunneled when the TV can: the picture goes from the video chip
+        // straight to the screen, timed by the chip, as Netflix and IPTV
+        // players do. Live TV always (it deinterlaces channels properly);
+        // films and shows when the TV can't change its refresh rate (many
+        // TCL and other built-in Google TVs stay at 60 Hz), where the chip
+        // timing the frames is what keeps 24 fps films smooth. Where the TV
+        // can change it, they aren't tunneled, so the frame rate can be
+        // measured and the TV switched (matchRefreshRate). The player turns
+        // tunneling off by itself when the TV or the sound can't do it.
         val selector = DefaultTrackSelector(this).apply {
-            setParameters(buildUponParameters().setTunnelingEnabled(live))
+            setParameters(buildUponParameters().setTunnelingEnabled(live || !canChangeRefreshRate()))
         }
         val p = ExoPlayer.Builder(this, renderers)
             .setTrackSelector(selector)
@@ -618,6 +622,9 @@ class PlayerActivity : Activity() {
         f.sampleMimeType?.substringAfter('/')?.uppercase()?.let { out += it.replace("AVC", "H.264").replace("HEVC", "H.265") }
         frameRate()?.let { out += String.format(java.util.Locale.US, "%.3f fps", it) }
         window.decorView.display?.let { out += String.format(java.util.Locale.US, "TV %.2f Hz", it.refreshRate) }
+        refreshRates().takeIf { it.isNotEmpty() }?.let { rates ->
+            out += "TV offers " + rates.joinToString("/") { String.format(java.util.Locale.US, "%.0f", it) } + " Hz"
+        }
         if (f.bitrate > 0) out += "${f.bitrate / 1_000_000} Mbps"
         val ahead = (player.bufferedPosition - player.currentPosition) / 1000
         out += "${ahead}s loaded ahead"
@@ -659,6 +666,22 @@ class PlayerActivity : Activity() {
     // and 50 Hz channels do too. Same resolution only, and only when the
     // current rate isn't already a match (switching blanks the screen for a
     // moment).
+    // The refresh rates the TV offers at its current resolution.
+    private fun refreshRates(): List<Float> {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) return emptyList()
+        val display = window.decorView.display ?: windowManager.defaultDisplay ?: return emptyList()
+        val now = display.mode
+        return display.supportedModes
+            .filter { it.physicalWidth == now.physicalWidth && it.physicalHeight == now.physicalHeight }
+            .map { it.refreshRate }
+            .distinctBy { Math.round(it * 10) }
+            .sorted()
+    }
+
+    // Whether the TV can show films at their own rate: a 24, 25, 30, 48
+    // or 50 Hz mode alongside 60.
+    private fun canChangeRefreshRate(): Boolean = refreshRates().any { it < 55f }
+
     private fun frameRate(): Float? =
         player.videoFormat?.frameRate?.takeIf { it > 0 } ?: measuredFps.takeIf { it > 0 }
 
