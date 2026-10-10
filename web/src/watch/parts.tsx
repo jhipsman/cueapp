@@ -2,6 +2,7 @@ import { createContext, useContext, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api, type WatchCard, type WatchRatings } from '../api'
 import Icon from '../components/Icon'
+import { onTV } from './tv'
 
 // Building blocks shared by the Watch pages.
 
@@ -40,7 +41,9 @@ export const SpotlightContext = createContext<((c: WatchCard) => void) | null>(n
 export function Card({ card, wide }: { card: WatchCard; wide?: boolean }) {
   const navigate = useNavigate()
   const spotlight = useContext(SpotlightContext)
-  const img = wide ? card.backdropUrl || card.posterUrl : card.posterUrl
+  let img = wide ? card.backdropUrl || card.posterUrl : card.posterUrl
+  // A TV's posters are small: a smaller picture loads and draws faster.
+  if (img && onTV()) img = img.replace('/t/p/w500/', '/t/p/w342/').replace('/t/p/w1280/', '/t/p/w780/')
   // Continue Watching plays straight away; anything else opens its page.
   const open = () =>
     navigate(card.progress !== undefined || card.episode ? playHref(card.kind, card.tmdbId, card.season, card.episode) : titleHref(card))
