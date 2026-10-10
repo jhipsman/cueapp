@@ -90,6 +90,7 @@ class PlayerActivity : Activity() {
     private var softwarePicture = false // decoded by the processor, not the box's video chip
     private var decoderName = ""
     private var droppedFrames = 0
+    private var soundOut = "" // how the sound leaves the TV: as it is (Dolby, DTS) or decoded, and channels
     private var stats: TextView? = null
     private lateinit var info: JSONObject
     private var server = ""
@@ -597,6 +598,17 @@ class PlayerActivity : Activity() {
             override fun onDroppedVideoFrames(eventTime: AnalyticsListener.EventTime, droppedFrames: Int, elapsedMs: Long) {
                 this@PlayerActivity.droppedFrames += droppedFrames
             }
+
+            override fun onAudioTrackInitialized(eventTime: AnalyticsListener.EventTime, audioTrackConfig: AudioSink.AudioTrackConfig) {
+                soundOut = when (audioTrackConfig.encoding) {
+                    C.ENCODING_AC3 -> "sent as Dolby Digital"
+                    C.ENCODING_E_AC3 -> "sent as Dolby Digital Plus"
+                    C.ENCODING_E_AC3_JOC -> "sent as Dolby Atmos"
+                    C.ENCODING_DOLBY_TRUEHD -> "sent as Dolby TrueHD"
+                    C.ENCODING_DTS, C.ENCODING_DTS_HD -> "sent as DTS"
+                    else -> "decoded to ${Integer.bitCount(audioTrackConfig.channelConfig)} channels"
+                }
+            }
         })
         return p
     }
@@ -630,6 +642,18 @@ class PlayerActivity : Activity() {
         out += "${ahead}s loaded ahead"
         out += "$droppedFrames dropped frames"
         if (decoderName.isNotEmpty()) out += decoderName
+        player.audioFormat?.let { a ->
+            val codec = (a.sampleMimeType ?: "").substringAfter('/').uppercase()
+                .replace("EAC3-JOC", "E-AC3 Atmos").replace("EAC3", "E-AC3").replace("MP4A-LATM", "AAC").replace("VND.DTS", "DTS")
+            val ch = when (a.channelCount) {
+                1 -> "mono"
+                2 -> "stereo"
+                6 -> "5.1"
+                8 -> "7.1"
+                else -> if (a.channelCount > 0) "${a.channelCount} ch" else ""
+            }
+            out += listOf("Sound $codec $ch".trim(), soundOut).filter { it.isNotEmpty() }.joinToString(", ")
+        }
         return out.joinToString("  ·  ")
     }
 
