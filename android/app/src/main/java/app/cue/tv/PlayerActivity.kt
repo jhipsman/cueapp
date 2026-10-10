@@ -363,7 +363,7 @@ class PlayerActivity : Activity() {
             text = info.optString("title")
             setTextColor(Color.WHITE)
             size(22f)
-            typeface = Typeface.create("sans-serif-medium", Typeface.BOLD)
+            typeface = Fonts.display(this@PlayerActivity)
             setShadowLayer(8f, 0f, 2f, Color.BLACK)
         }
         val sub = TextView(this).also { subtitle = it }.apply {
@@ -382,7 +382,7 @@ class PlayerActivity : Activity() {
             addView(TextView(this@PlayerActivity).also { stats = it }.apply {
                 setTextColor(0xFF8E9096.toInt())
                 size(11f)
-                typeface = Typeface.MONOSPACE
+                typeface = Fonts.mono(this@PlayerActivity)
                 setPadding(0, px(6), 0, 0)
             })
         }
@@ -399,7 +399,7 @@ class PlayerActivity : Activity() {
         timeLeft = TextView(this).apply {
             setTextColor(Color.WHITE)
             size(13f)
-            typeface = Typeface.MONOSPACE
+            typeface = Fonts.mono(this@PlayerActivity)
         }
         val timeRow = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
@@ -454,7 +454,7 @@ class PlayerActivity : Activity() {
         text = "●  LIVE"
         setTextColor(Color.WHITE)
         size(12f)
-        typeface = Typeface.DEFAULT_BOLD
+        typeface = Fonts.text(this@PlayerActivity, 700)
         letterSpacing = 0.08f
         setPadding(px(12), px(5), px(12), px(5))
         background = GradientDrawable().apply {
@@ -469,7 +469,7 @@ class PlayerActivity : Activity() {
     private fun pill(label: String, icon: Int, onClick: () -> Unit): TextView = TextView(this).apply {
         text = label
         size(14f)
-        typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL)
+        typeface = Fonts.text(this@PlayerActivity, 500)
         val colors = ColorStateList(
             arrayOf(intArrayOf(android.R.attr.state_focused), intArrayOf()),
             intArrayOf(0xFF0B0C0F.toInt(), Color.WHITE),
@@ -926,7 +926,7 @@ class PlayerActivity : Activity() {
 
     private fun buildSkipButton(): TextView = TextView(this).apply {
         size(16f)
-        typeface = Typeface.create("sans-serif-medium", Typeface.BOLD)
+        typeface = Fonts.text(this@PlayerActivity, 600)
         gravity = Gravity.CENTER
         setPadding(px(22), 0, px(22), 0)
         val colors = ColorStateList(
@@ -1076,7 +1076,7 @@ class PlayerActivity : Activity() {
                 text = info.optString("title")
                 setTextColor(Color.WHITE)
                 size(30f)
-                typeface = Typeface.create("sans-serif-medium", Typeface.BOLD)
+                typeface = Fonts.display(this@PlayerActivity)
                 maxLines = 2
             })
             addView(TextView(this@PlayerActivity).apply {
@@ -1140,7 +1140,7 @@ class PlayerActivity : Activity() {
         val time = TextView(this@PlayerActivity).apply {
             setTextColor(Color.WHITE)
             size(13f)
-            typeface = Typeface.MONOSPACE
+            typeface = Fonts.mono(this@PlayerActivity)
             setPadding(0, px(4), 0, px(2))
         }
         frameTime = time
@@ -1208,7 +1208,7 @@ class PlayerActivity : Activity() {
             text = "Channels"
             setTextColor(0xFFC7C8CC.toInt())
             size(13f)
-            typeface = Typeface.DEFAULT_BOLD
+            typeface = Fonts.text(this@PlayerActivity, 700)
             letterSpacing = 0.08f
             setPadding(px(12), 0, 0, px(10))
         })

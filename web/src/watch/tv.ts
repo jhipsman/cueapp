@@ -149,12 +149,23 @@ function focus(el: HTMLElement) {
       row.scrollBy({ left: er.left - rr.left - pad, behavior: 'smooth' })
     }
   }
-  // The page: the top bar and the banner show the top; anything else sits a
-  // third of the way down the screen.
+  // The page: the top bar and the banner show the top.
   const r = el.getBoundingClientRect()
   if (el.closest('.wx-nav, .wx-hero')) {
     window.scrollTo({ top: 0, behavior: 'smooth' })
-  } else if (r.top < 110 || r.bottom > window.innerHeight - 40) {
+    return
+  }
+  // Home on a TV: the highlighted row comes up right under the banner,
+  // which stays put.
+  const banner = document.querySelector('.wx-tvhome .wx-hero')
+  const section = el.closest<HTMLElement>('.wx-row, .wx-setup')
+  if (banner && section) {
+    const top = section.getBoundingClientRect().top - banner.getBoundingClientRect().bottom
+    if (Math.abs(top) > 2) window.scrollBy({ top, behavior: 'smooth' })
+    return
+  }
+  // Anything else sits a third of the way down the screen.
+  if (r.top < 60 || r.bottom > window.innerHeight - 40) {
     window.scrollBy({ top: r.top - window.innerHeight * 0.32, behavior: 'smooth' })
   }
 }

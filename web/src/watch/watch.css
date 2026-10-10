@@ -2914,3 +2914,90 @@ html.tv-mode .wx-grid {
   grid-template-columns: repeat(auto-fill, 152px);
   gap: 22px 14px;
 }
+
+.wx-card-new.inline {
+  position: static;
+}
+
+/* ---- TV: Home as the TV's own apps lay it out. The banner stays at the top
+   (solid, so the rows slide under it) and shows the highlighted poster; the
+   top bar scrolls away with the page instead of sitting over it. */
+html.tv-mode .wx-nav {
+  position: absolute;
+}
+html.tv-mode .wx-tvhome .wx-hero {
+  position: fixed;
+  inset: 0 0 auto 0;
+  z-index: 5;
+  height: 58vh;
+  min-height: 0;
+  padding: 0 var(--wx-gutter) 26px;
+  background-color: var(--wx-bg);
+  background-position: center 20%;
+  transition: background-image 0.35s ease;
+}
+html.tv-mode .wx-tvhome .wx-hero::before {
+  background:
+    linear-gradient(to right, rgba(var(--wx-bg-rgb), 0.95) 0%, rgba(var(--wx-bg-rgb), 0.6) 42%, rgba(var(--wx-bg-rgb), 0) 72%),
+    linear-gradient(to top, var(--wx-bg) 0%, rgba(var(--wx-bg-rgb), 0) 40%);
+}
+html.tv-mode .wx-tvhome .wx-hero-body {
+  max-width: 560px;
+  animation: wx-tv-fade 0.3s ease;
+}
+html.tv-mode .wx-tvhome .wx-hero h1 {
+  font-size: 2.5rem;
+  margin-bottom: 8px;
+}
+html.tv-mode .wx-tvhome .wx-overview {
+  font-size: 0.98rem;
+  margin-bottom: 14px;
+}
+html.tv-mode .wx-tvhome .wx-overview.clamp {
+  -webkit-line-clamp: 3;
+}
+html.tv-mode .wx-tvhome .wx-rows {
+  position: relative;
+  z-index: 1;
+  margin-top: 58vh;
+  /* Room for the last row to come up under the banner. */
+  padding-bottom: 42vh;
+}
+@keyframes wx-tv-fade {
+  from {
+    opacity: 0.25;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* ---- TV: lighter drawing, for the slower chips in TVs. No glow halos,
+   no blur behind panels; the focus ring stays. */
+html.tv-mode .wx * {
+  backdrop-filter: none !important;
+}
+html.tv-mode .wx-card:focus {
+  box-shadow: 0 0 0 3px var(--wx-accent), 0 10px 24px rgba(0, 0, 0, 0.6);
+}
+html.tv-mode .wx-btn:focus {
+  box-shadow: 0 0 0 3px var(--wx-accent), 0 8px 20px rgba(0, 0, 0, 0.45);
+}
+
+/* A row inside a page (the TV's "More like this") runs edge to edge like
+   Home's, its posters lined up with the page's text. */
+.wx-page > .wx-row {
+  margin-left: calc(-1 * var(--wx-gutter));
+  margin-right: calc(-1 * var(--wx-gutter));
+}
+.wx-page > .wx-row h2 {
+  margin-left: var(--wx-gutter);
+}
+/* TV posters a little smaller: more to a row, and the next row's name
+   shows under the banner. */
+html.tv-mode .wx-card {
+  width: 132px;
+}
+html.tv-mode .wx-card.wide {
+  width: 252px;
+}

@@ -1,4 +1,4 @@
-import { useRef } from 'react'
+import { createContext, useContext, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api, type WatchCard, type WatchRatings } from '../api'
 import Icon from '../components/Icon'
@@ -31,16 +31,30 @@ export function epCode(season?: number, episode?: number): string {
   return `S${season ?? 0}:E${episode ?? 0}`
 }
 
+// SpotlightContext: on the TV's Home, a card the highlight lands on is
+// shown big in the banner (see Home).
+export const SpotlightContext = createContext<((c: WatchCard) => void) | null>(null)
+
 // Card is a poster, or (wide) a landscape image with a caption and a
 // progress bar, as on Continue Watching.
 export function Card({ card, wide }: { card: WatchCard; wide?: boolean }) {
   const navigate = useNavigate()
+  const spotlight = useContext(SpotlightContext)
   const img = wide ? card.backdropUrl || card.posterUrl : card.posterUrl
   // Continue Watching plays straight away; anything else opens its page.
   const open = () =>
     navigate(card.progress !== undefined || card.episode ? playHref(card.kind, card.tmdbId, card.season, card.episode) : titleHref(card))
   return (
-    <button className={`wx-card${wide ? ' wide' : ''}`} onClick={open} title={card.title} onMouseEnter={() => warm(card)} onFocus={() => warm(card)}>
+    <button
+      className={`wx-card${wide ? ' wide' : ''}`}
+      onClick={open}
+      title={card.title}
+      onMouseEnter={() => warm(card)}
+      onFocus={() => {
+        warm(card)
+        spotlight?.(card)
+      }}
+    >
       {img ? <img src={img} alt={card.title} loading="lazy" /> : <div className="wx-card-fallback">{card.title}</div>}
       {wide && (
         <div className="wx-card-caption">

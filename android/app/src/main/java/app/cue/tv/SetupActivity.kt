@@ -32,7 +32,7 @@ class SetupActivity : Activity() {
             text = "Cue"
             setTextColor(teal)
             textSize = 44f
-            typeface = Typeface.DEFAULT_BOLD
+            typeface = Fonts.display(this@SetupActivity)
         }
         val intro = TextView(this).apply {
             text = "Enter your Cue address, like cuetv.me. For Cue on a computer at home, its address, like 192.168.1.20."

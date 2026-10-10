@@ -4,7 +4,8 @@ import { api, type WatchEpisode, type WatchKind, type WatchTitle } from '../api'
 import Icon from '../components/Icon'
 import { useDocumentTitle } from '../documentTitle'
 import FreeElsewhere from './FreeElsewhere'
-import { Card, epCode, minutes, playHref, Scores } from './parts'
+import { Card, epCode, minutes, playHref, Row, Scores } from './parts'
+import { onTV } from './tv'
 
 // A movie's or a show's page: the banner with ratings and Play, then for a
 // show its seasons and episodes, then cast and "More like this".
@@ -127,7 +128,8 @@ export default function TitlePage({ kind }: { kind: WatchKind }) {
           <Episodes tmdbId={tmdbId} seasons={title.seasons} season={season} onSeason={setSeason} />
         )}
 
-        {title.more.length > 0 && (
+        {title.more.length > 0 && onTV() && <Row title="More like this" items={title.more.slice(0, 18)} />}
+        {title.more.length > 0 && !onTV() && (
           <>
             <h2>More like this</h2>
             <div className="wx-grid">
