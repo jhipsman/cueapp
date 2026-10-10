@@ -10,6 +10,7 @@ import android.graphics.Color
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
 import android.graphics.drawable.StateListDrawable
+import android.media.MediaFormat
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -34,6 +35,7 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.annotation.OptIn
 import androidx.media3.common.C
+import androidx.media3.common.Format
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MimeTypes
 import androidx.media3.common.PlaybackException
@@ -49,6 +51,7 @@ import androidx.media3.exoplayer.audio.DefaultAudioSink
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.Renderer
 import androidx.media3.exoplayer.mediacodec.MediaCodecSelector
+import androidx.media3.exoplayer.video.VideoFrameMetadataListener
 import androidx.media3.exoplayer.video.VideoRendererEventListener
 import androidx.media3.exoplayer.analytics.AnalyticsListener
 import androidx.media3.exoplayer.trackselection.DefaultTrackSelector
@@ -82,6 +85,7 @@ class PlayerActivity : Activity() {
     private var surround = true // Dolby and DTS sent on as they are (see buildPlayer)
     private var soundButton: TextView? = null
     private var rateMatched = false
+    private var measuredFps = 0f // from the frames' own times, when the file doesn't say
     private var pictureLabel = ""
     private var softwarePicture = false // decoded by the processor, not the box's video chip
     private var decoderName = ""
@@ -535,13 +539,13 @@ class PlayerActivity : Activity() {
             .setConnectTimeoutMs(15000)
             .setReadTimeoutMs(30000)
             .setUserAgent("CueTV/1")
-        // Tunneled when the TV can: the picture goes from the video chip
-        // straight to the screen, timed by the chip, as Netflix and IPTV
-        // players do. That paces frames evenly, deinterlaces live channels
-        // properly and keeps sound in step. The player turns it off by
-        // itself when the TV or the sound can't do it.
+        // Live TV is tunneled when the TV can: the picture goes from the
+        // video chip straight to the screen, as IPTV players do, which
+        // deinterlaces live channels properly. The player turns it off by
+        // itself when the TV or the sound can't do it. (Not for films: it
+        // hides the frames' times, which matchRefreshRate needs.)
         val selector = DefaultTrackSelector(this).apply {
-            setParameters(buildUponParameters().setTunnelingEnabled(true))
+            setParameters(buildUponParameters().setTunnelingEnabled(live))
         }
         val p = ExoPlayer.Builder(this, renderers)
             .setTrackSelector(selector)
@@ -557,6 +561,27 @@ class PlayerActivity : Activity() {
         // The frame rate is asked for in matchRefreshRate, in a way the TV
         // follows even when switching isn't seamless.
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) p.videoChangeFrameRateStrategy = C.VIDEO_CHANGE_FRAME_RATE_STRATEGY_OFF
+        // Many files (MKV especially) don't say their frame rate: it's
+        // measured from the gaps between the first frames' times instead.
+        p.setVideoFrameMetadataListener(object : VideoFrameMetadataListener {
+            private val gaps = ArrayList<Long>()
+            private var last = -1L
+            override fun onVideoFrameAboutToBeRendered(presentationTimeUs: Long, releaseTimeNs: Long, format: Format, mediaFormat: MediaFormat?) {
+                if (gaps.size >= FPS_SAMPLES) return
+                if (last >= 0) {
+                    val gap = presentationTimeUs - last
+                    if (gap in 5_000L..100_000L) gaps += gap
+                }
+                last = presentationTimeUs
+                if (gaps.size == FPS_SAMPLES) {
+                    val fps = 1_000_000f / gaps.sorted()[FPS_SAMPLES / 2]
+                    main.post {
+                        measuredFps = fps
+                        matchRefreshRate()
+                    }
+                }
+            }
+        })
         p.addAnalyticsListener(object : AnalyticsListener {
             override fun onVideoDecoderInitialized(eventTime: AnalyticsListener.EventTime, decoderName: String, initializedTimestampMs: Long, initializationDurationMs: Long) {
                 this@PlayerActivity.decoderName = decoderName
@@ -591,7 +616,7 @@ class PlayerActivity : Activity() {
         val f = player.videoFormat ?: return ""
         val out = mutableListOf("${f.width}x${f.height}")
         f.sampleMimeType?.substringAfter('/')?.uppercase()?.let { out += it.replace("AVC", "H.264").replace("HEVC", "H.265") }
-        if (f.frameRate > 0) out += String.format(java.util.Locale.US, "%.3f fps", f.frameRate)
+        frameRate()?.let { out += String.format(java.util.Locale.US, "%.3f fps", it) }
         window.decorView.display?.let { out += String.format(java.util.Locale.US, "TV %.2f Hz", it.refreshRate) }
         if (f.bitrate > 0) out += "${f.bitrate / 1_000_000} Mbps"
         val ahead = (player.bufferedPosition - player.currentPosition) / 1000
@@ -634,9 +659,12 @@ class PlayerActivity : Activity() {
     // and 50 Hz channels do too. Same resolution only, and only when the
     // current rate isn't already a match (switching blanks the screen for a
     // moment).
+    private fun frameRate(): Float? =
+        player.videoFormat?.frameRate?.takeIf { it > 0 } ?: measuredFps.takeIf { it > 0 }
+
     private fun matchRefreshRate() {
         if (rateMatched || Build.VERSION.SDK_INT < Build.VERSION_CODES.M) return
-        val fps = player.videoFormat?.frameRate ?: return
+        val fps = frameRate() ?: return
         if (fps < 10f) return
         rateMatched = true
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -1462,6 +1490,7 @@ class PlayerActivity : Activity() {
         const val RESULT_DURATION = "duration"
         const val RESULT_MESSAGE = "message"
         private const val SAVE_EVERY_MS = 15_000L
+        private const val FPS_SAMPLES = 48
         private const val MATCH = ViewGroup.LayoutParams.MATCH_PARENT
     }
 }
