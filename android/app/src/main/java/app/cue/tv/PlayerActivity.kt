@@ -19,6 +19,8 @@ import android.util.TypedValue
 import android.view.Gravity
 import android.view.Display
 import android.view.KeyEvent
+import android.view.Surface
+import android.view.SurfaceView
 import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
@@ -45,6 +47,9 @@ import androidx.media3.exoplayer.audio.AudioCapabilities
 import androidx.media3.exoplayer.audio.AudioSink
 import androidx.media3.exoplayer.audio.DefaultAudioSink
 import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.exoplayer.Renderer
+import androidx.media3.exoplayer.mediacodec.MediaCodecSelector
+import androidx.media3.exoplayer.video.VideoRendererEventListener
 import androidx.media3.exoplayer.analytics.AnalyticsListener
 import androidx.media3.exoplayer.trackselection.DefaultTrackSelector
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
@@ -258,6 +263,7 @@ class PlayerActivity : Activity() {
             }
 
             override fun onRenderedFirstFrame() {
+                matchRefreshRate()
                 hideStartScreen()
             }
 
@@ -493,6 +499,23 @@ class PlayerActivity : Activity() {
                 if (!passthrough) sink.setAudioCapabilities(AudioCapabilities.DEFAULT_AUDIO_CAPABILITIES)
                 return sink.build()
             }
+
+            // The picture only ever on the TV's video chip: FFmpeg would take
+            // a 4K film the chip says is beyond it (often it isn't), and
+            // decoding 4K on the processor stutters and drops frames.
+            override fun buildVideoRenderers(
+                context: Context,
+                extensionRendererMode: Int,
+                mediaCodecSelector: MediaCodecSelector,
+                enableDecoderFallback: Boolean,
+                eventHandler: Handler,
+                eventListener: VideoRendererEventListener,
+                allowedVideoJoiningTimeMs: Long,
+                out: ArrayList<Renderer>,
+            ) = super.buildVideoRenderers(
+                context, DefaultRenderersFactory.EXTENSION_RENDERER_MODE_OFF, mediaCodecSelector, enableDecoderFallback,
+                eventHandler, eventListener, allowedVideoJoiningTimeMs, out,
+            )
         }
             .setEnableDecoderFallback(true)
             .setExtensionRendererMode(DefaultRenderersFactory.EXTENSION_RENDERER_MODE_ON)
@@ -521,6 +544,9 @@ class PlayerActivity : Activity() {
             // Subtitles show from the start when they're on in Watch.
             .setPreferredTextLanguage(if (info.optBoolean("subsOn") && info.optString("subtitleUrl").isNotEmpty()) "en" else null)
             .build()
+        // The frame rate is asked for in matchRefreshRate, in a way the TV
+        // follows even when switching isn't seamless.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) p.videoChangeFrameRateStrategy = C.VIDEO_CHANGE_FRAME_RATE_STRATEGY_OFF
         p.addAnalyticsListener(object : AnalyticsListener {
             override fun onVideoDecoderInitialized(eventTime: AnalyticsListener.EventTime, decoderName: String, initializedTimestampMs: Long, initializationDurationMs: Long) {
                 val n = decoderName.lowercase()
@@ -581,6 +607,16 @@ class PlayerActivity : Activity() {
         val fps = player.videoFormat?.frameRate ?: return
         if (fps < 10f) return
         rateMatched = true
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            // Android 12 and later (Google TV): the rate asked for on the
+            // video's own surface. The TV switches to it unless "Match
+            // content frame rate" is Never in its display settings.
+            val surface = (video.videoSurfaceView as? SurfaceView)?.holder?.surface
+            if (surface != null && surface.isValid) {
+                surface.setFrameRate(fps, Surface.FRAME_RATE_COMPATIBILITY_FIXED_SOURCE, Surface.CHANGE_FRAME_RATE_ALWAYS)
+                return
+            }
+        }
         val display: Display = window.decorView.display ?: return
         val now = display.mode
         fun fits(hz: Float): Boolean {
