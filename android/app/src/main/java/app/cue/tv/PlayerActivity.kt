@@ -84,6 +84,9 @@ class PlayerActivity : Activity() {
     private var rateMatched = false
     private var pictureLabel = ""
     private var softwarePicture = false // decoded by the processor, not the box's video chip
+    private var decoderName = ""
+    private var droppedFrames = 0
+    private var stats: TextView? = null
     private lateinit var info: JSONObject
     private var server = ""
     private val main = Handler(Looper.getMainLooper())
@@ -164,6 +167,7 @@ class PlayerActivity : Activity() {
     private val ticker = object : Runnable {
         override fun run() {
             refreshTime()
+            if (controls.visibility == View.VISIBLE) stats?.text = statsText()
             main.postDelayed(this, 300)
         }
     }
@@ -371,6 +375,12 @@ class PlayerActivity : Activity() {
             background = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(0xCC000000.toInt(), 0x00000000))
             addView(title)
             addView(sub)
+            addView(TextView(this@PlayerActivity).also { stats = it }.apply {
+                setTextColor(0xFF8E9096.toInt())
+                size(11f)
+                typeface = Typeface.MONOSPACE
+                setPadding(0, px(6), 0, 0)
+            })
         }
 
         timeBar = TimeBar(this).apply {
@@ -525,13 +535,13 @@ class PlayerActivity : Activity() {
             .setConnectTimeoutMs(15000)
             .setReadTimeoutMs(30000)
             .setUserAgent("CueTV/1")
-        // Live TV is tunneled when the box can: the picture goes from the
-        // video chip straight to the screen, as in the TV's own apps and
-        // IPTV players, which is what deinterlaces live channels properly
-        // (and keeps sound in step) on Google TV boxes. The player turns it
-        // off by itself when the box or the sound can't do it.
+        // Tunneled when the TV can: the picture goes from the video chip
+        // straight to the screen, timed by the chip, as Netflix and IPTV
+        // players do. That paces frames evenly, deinterlaces live channels
+        // properly and keeps sound in step. The player turns it off by
+        // itself when the TV or the sound can't do it.
         val selector = DefaultTrackSelector(this).apply {
-            setParameters(buildUponParameters().setTunnelingEnabled(live))
+            setParameters(buildUponParameters().setTunnelingEnabled(true))
         }
         val p = ExoPlayer.Builder(this, renderers)
             .setTrackSelector(selector)
@@ -549,9 +559,14 @@ class PlayerActivity : Activity() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) p.videoChangeFrameRateStrategy = C.VIDEO_CHANGE_FRAME_RATE_STRATEGY_OFF
         p.addAnalyticsListener(object : AnalyticsListener {
             override fun onVideoDecoderInitialized(eventTime: AnalyticsListener.EventTime, decoderName: String, initializedTimestampMs: Long, initializationDurationMs: Long) {
+                this@PlayerActivity.decoderName = decoderName
                 val n = decoderName.lowercase()
                 softwarePicture = n.contains("ffmpeg") || n.startsWith("c2.android.") || n.startsWith("omx.google.")
                 showPictureLabel()
+            }
+
+            override fun onDroppedVideoFrames(eventTime: AnalyticsListener.EventTime, droppedFrames: Int, elapsedMs: Long) {
+                this@PlayerActivity.droppedFrames += droppedFrames
             }
         })
         return p
@@ -567,6 +582,23 @@ class PlayerActivity : Activity() {
             text = listOf(info.optString("subtitle"), picture).filter { it.isNotEmpty() }.joinToString("  ·  ")
             visibility = View.VISIBLE
         }
+    }
+
+    // What's playing and how, under the title while the controls show: to
+    // tell a stream that's too much for the network or the TV from a
+    // picture problem. Dropped frames climbing means the TV can't keep up.
+    private fun statsText(): String {
+        val f = player.videoFormat ?: return ""
+        val out = mutableListOf("${f.width}x${f.height}")
+        f.sampleMimeType?.substringAfter('/')?.uppercase()?.let { out += it.replace("AVC", "H.264").replace("HEVC", "H.265") }
+        if (f.frameRate > 0) out += String.format(java.util.Locale.US, "%.3f fps", f.frameRate)
+        window.decorView.display?.let { out += String.format(java.util.Locale.US, "TV %.2f Hz", it.refreshRate) }
+        if (f.bitrate > 0) out += "${f.bitrate / 1_000_000} Mbps"
+        val ahead = (player.bufferedPosition - player.currentPosition) / 1000
+        out += "${ahead}s loaded ahead"
+        out += "$droppedFrames dropped frames"
+        if (decoderName.isNotEmpty()) out += decoderName
+        return out.joinToString("  ·  ")
     }
 
     private fun soundLabel() = if (surround) "Surround on" else "Surround off"
