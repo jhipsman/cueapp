@@ -6,7 +6,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/rdborg/mediarium/web"
+	"github.com/jhipsman/cueapp/web"
 )
 
 // After an update the browser must load the new interface, not the old one it

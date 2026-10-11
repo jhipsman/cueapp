@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/crypto"
+	"github.com/jhipsman/cueapp/internal/crypto"
 )
 
 // Repo persists configured indexer instances, decrypting/encrypting API

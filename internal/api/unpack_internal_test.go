@@ -9,7 +9,7 @@ import (
 	"syscall"
 	"testing"
 
-	"github.com/rdborg/mediarium/internal/organizer"
+	"github.com/jhipsman/cueapp/internal/organizer"
 )
 
 // A full disk or a missing 7z is our setup's fault and must never blocklist

@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/rdborg/mediarium/internal/music"
+	"github.com/jhipsman/cueapp/internal/music"
 )
 
 func TestUpdateArtistFollowingAndProfile(t *testing.T) {

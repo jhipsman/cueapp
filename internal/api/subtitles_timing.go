@@ -11,8 +11,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/rdborg/mediarium/internal/mediafiles"
-	"github.com/rdborg/mediarium/internal/subtitles"
+	"github.com/jhipsman/cueapp/internal/mediafiles"
+	"github.com/jhipsman/cueapp/internal/subtitles"
 )
 
 // Subtitle timing (a title's Files panel): move a subtitle earlier or later,

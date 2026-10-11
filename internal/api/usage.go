@@ -6,11 +6,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/metadata"
-	"github.com/rdborg/mediarium/internal/settings"
-	"github.com/rdborg/mediarium/internal/subtitles"
-	"github.com/rdborg/mediarium/internal/trakt"
-	"github.com/rdborg/mediarium/internal/usage"
+	"github.com/jhipsman/cueapp/internal/metadata"
+	"github.com/jhipsman/cueapp/internal/settings"
+	"github.com/jhipsman/cueapp/internal/subtitles"
+	"github.com/jhipsman/cueapp/internal/trakt"
+	"github.com/jhipsman/cueapp/internal/usage"
 )
 
 // Service ids used by the usage record and GET /api/usage.

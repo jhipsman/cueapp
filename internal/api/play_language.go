@@ -4,8 +4,8 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/rdborg/mediarium/internal/parser"
-	"github.com/rdborg/mediarium/internal/settings"
+	"github.com/jhipsman/cueapp/internal/parser"
+	"github.com/jhipsman/cueapp/internal/settings"
 )
 
 // Watch plays English versions only (Settings > Streaming, on unless

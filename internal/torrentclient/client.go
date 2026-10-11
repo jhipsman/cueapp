@@ -18,7 +18,7 @@ import (
 	"github.com/anacrolix/torrent"
 	"github.com/anacrolix/torrent/storage"
 
-	"github.com/rdborg/mediarium/internal/speed"
+	"github.com/jhipsman/cueapp/internal/speed"
 )
 
 // DefaultListenPort is the port the engine listens on for incoming peer

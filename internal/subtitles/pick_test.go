@@ -7,7 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/rdborg/mediarium/internal/subtitles"
+	"github.com/jhipsman/cueapp/internal/subtitles"
 )
 
 func TestPickPrefersTheSameRelease(t *testing.T) {

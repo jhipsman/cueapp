@@ -11,10 +11,10 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/rdborg/mediarium/internal/download"
-	"github.com/rdborg/mediarium/internal/indexers"
-	"github.com/rdborg/mediarium/internal/library"
-	"github.com/rdborg/mediarium/internal/quality"
+	"github.com/jhipsman/cueapp/internal/download"
+	"github.com/jhipsman/cueapp/internal/indexers"
+	"github.com/jhipsman/cueapp/internal/library"
+	"github.com/jhipsman/cueapp/internal/quality"
 )
 
 // snapshot is everything read from the other apps; an app that wasn't

@@ -14,9 +14,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/backup"
-	"github.com/rdborg/mediarium/internal/crypto"
-	"github.com/rdborg/mediarium/internal/store"
+	"github.com/jhipsman/cueapp/internal/backup"
+	"github.com/jhipsman/cueapp/internal/crypto"
+	"github.com/jhipsman/cueapp/internal/store"
 )
 
 var fixedNow = time.Date(2026, 9, 28, 14, 30, 5, 0, time.UTC)

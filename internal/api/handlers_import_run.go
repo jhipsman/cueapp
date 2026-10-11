@@ -12,10 +12,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/libimport"
-	"github.com/rdborg/mediarium/internal/library"
-	"github.com/rdborg/mediarium/internal/quality"
-	"github.com/rdborg/mediarium/internal/settings"
+	"github.com/jhipsman/cueapp/internal/libimport"
+	"github.com/jhipsman/cueapp/internal/library"
+	"github.com/jhipsman/cueapp/internal/quality"
+	"github.com/jhipsman/cueapp/internal/settings"
 )
 
 // Confirming a reviewed import only writes down the titles, with what the

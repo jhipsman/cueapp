@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/rdborg/mediarium/internal/library"
+	"github.com/jhipsman/cueapp/internal/library"
 )
 
 // newRichTMDB serves genre tables, list endpoints carrying genre_ids and vote

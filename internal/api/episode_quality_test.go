@@ -3,7 +3,7 @@ package api_test
 import (
 	"testing"
 
-	"github.com/rdborg/mediarium/internal/library"
+	"github.com/jhipsman/cueapp/internal/library"
 )
 
 // Episodes that an earlier version imported as Unknown get a quality read from

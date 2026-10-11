@@ -18,7 +18,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/netguard"
+	"github.com/jhipsman/cueapp/internal/netguard"
 	"golang.org/x/net/html/charset"
 	"golang.org/x/net/publicsuffix"
 )

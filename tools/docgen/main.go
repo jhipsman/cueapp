@@ -19,7 +19,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/rdborg/mediarium/internal/problems"
+	"github.com/jhipsman/cueapp/internal/problems"
 )
 
 func main() {

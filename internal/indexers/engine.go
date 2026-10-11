@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/problems"
+	"github.com/jhipsman/cueapp/internal/problems"
 )
 
 // Protocol distinguishes Usenet (Newznab) from torrent (Torznab) indexers.

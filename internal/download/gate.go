@@ -11,7 +11,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/problems"
+	"github.com/jhipsman/cueapp/internal/problems"
 )
 
 // A news server login may only have so many connections open at once. Each

@@ -27,7 +27,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/netguard"
+	"github.com/jhipsman/cueapp/internal/netguard"
 )
 
 // DefaultBaseURL is the public MusicBrainz server.

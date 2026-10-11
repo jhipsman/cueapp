@@ -9,8 +9,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/rdborg/mediarium/internal/library"
-	"github.com/rdborg/mediarium/internal/queue"
+	"github.com/jhipsman/cueapp/internal/library"
+	"github.com/jhipsman/cueapp/internal/queue"
 )
 
 func signUpAdmin(t *testing.T, client *http.Client, base string) {

@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
-	migrations "github.com/rdborg/mediarium/db"
-	"github.com/rdborg/mediarium/internal/store"
+	migrations "github.com/jhipsman/cueapp/db"
+	"github.com/jhipsman/cueapp/internal/store"
 )
 
 // migrationNames lists the embedded migration files in order.

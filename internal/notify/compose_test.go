@@ -14,7 +14,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/notify"
+	"github.com/jhipsman/cueapp/internal/notify"
 )
 
 var composeAt = time.Date(2026, 9, 30, 14, 5, 0, 0, time.UTC)

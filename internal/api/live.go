@@ -37,9 +37,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/iptv"
-	"github.com/rdborg/mediarium/internal/settings"
-	"github.com/rdborg/mediarium/internal/watch"
+	"github.com/jhipsman/cueapp/internal/iptv"
+	"github.com/jhipsman/cueapp/internal/settings"
+	"github.com/jhipsman/cueapp/internal/watch"
 )
 
 const (

@@ -10,8 +10,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/fsinfo"
-	"github.com/rdborg/mediarium/internal/settings"
+	"github.com/jhipsman/cueapp/internal/fsinfo"
+	"github.com/jhipsman/cueapp/internal/settings"
 )
 
 // moviesRoot is where movies are organized: the Settings value, falling back

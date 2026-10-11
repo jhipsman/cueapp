@@ -9,8 +9,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/auth"
-	"github.com/rdborg/mediarium/internal/httpsec"
+	"github.com/jhipsman/cueapp/internal/auth"
+	"github.com/jhipsman/cueapp/internal/httpsec"
 )
 
 // handleVersion reports the running build's version (version-pinned

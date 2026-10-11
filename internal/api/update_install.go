@@ -11,9 +11,9 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/auth"
-	"github.com/rdborg/mediarium/internal/selfupdate"
-	"github.com/rdborg/mediarium/internal/updatecheck"
+	"github.com/jhipsman/cueapp/internal/auth"
+	"github.com/jhipsman/cueapp/internal/selfupdate"
+	"github.com/jhipsman/cueapp/internal/updatecheck"
 )
 
 // updateError is a refusal with the sentence to show and the HTTP status.

@@ -33,7 +33,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/semver"
+	"github.com/jhipsman/cueapp/internal/semver"
 )
 
 // File names inside the update folder. The entrypoint script uses the same

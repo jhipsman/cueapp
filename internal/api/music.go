@@ -6,10 +6,10 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/rdborg/mediarium/internal/listenbrainz"
-	"github.com/rdborg/mediarium/internal/musicbrainz"
-	"github.com/rdborg/mediarium/internal/organizer"
-	"github.com/rdborg/mediarium/internal/settings"
+	"github.com/jhipsman/cueapp/internal/listenbrainz"
+	"github.com/jhipsman/cueapp/internal/musicbrainz"
+	"github.com/jhipsman/cueapp/internal/organizer"
+	"github.com/jhipsman/cueapp/internal/settings"
 )
 
 // musicState is the music module's in-memory state.

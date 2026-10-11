@@ -9,7 +9,7 @@ import (
 	"syscall"
 	"testing"
 
-	"github.com/rdborg/mediarium/internal/plainerror"
+	"github.com/jhipsman/cueapp/internal/plainerror"
 )
 
 func TestMessage(t *testing.T) {

@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/vpn"
+	"github.com/jhipsman/cueapp/internal/vpn"
 )
 
 type vpnConfigPayload struct {

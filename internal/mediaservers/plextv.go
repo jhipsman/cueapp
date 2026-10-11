@@ -13,7 +13,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/netguard"
+	"github.com/jhipsman/cueapp/internal/netguard"
 )
 
 // Sign in with Plex uses plex.tv's PIN flow, the one other Plex apps use:

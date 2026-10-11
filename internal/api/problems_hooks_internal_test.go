@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/monitor"
-	"github.com/rdborg/mediarium/internal/problems"
-	"github.com/rdborg/mediarium/internal/store"
+	"github.com/jhipsman/cueapp/internal/monitor"
+	"github.com/jhipsman/cueapp/internal/problems"
+	"github.com/jhipsman/cueapp/internal/store"
 )
 
 func hookLog(t *testing.T) *problems.Log {

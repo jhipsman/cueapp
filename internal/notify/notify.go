@@ -19,8 +19,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/netguard"
-	"github.com/rdborg/mediarium/internal/plainerror"
+	"github.com/jhipsman/cueapp/internal/netguard"
+	"github.com/jhipsman/cueapp/internal/plainerror"
 )
 
 // Event is one activity-feed-worthy occurrence.

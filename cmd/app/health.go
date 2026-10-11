@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/selfupdate"
+	"github.com/jhipsman/cueapp/internal/selfupdate"
 )
 
 // markHealthyWhenAnswering clears the start counter of an installed update

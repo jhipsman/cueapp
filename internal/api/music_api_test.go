@@ -11,7 +11,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/rdborg/mediarium/internal/api"
+	"github.com/jhipsman/cueapp/internal/api"
 )
 
 // newFakeMusicBrainz serves the testdata/musicbrainz fixtures: one artist

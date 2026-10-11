@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/rdborg/mediarium/internal/backup"
+	"github.com/jhipsman/cueapp/internal/backup"
 )
 
 // FuzzStage feeds arbitrary bytes as an uploaded backup. Whatever they are,

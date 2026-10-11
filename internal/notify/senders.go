@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/netguard"
+	"github.com/jhipsman/cueapp/internal/netguard"
 )
 
 func newHTTPClient() *http.Client { return netguard.Client(10 * time.Second) }

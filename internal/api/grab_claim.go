@@ -6,8 +6,8 @@ import (
 	"log"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/blocklist"
-	"github.com/rdborg/mediarium/internal/library"
+	"github.com/jhipsman/cueapp/internal/blocklist"
+	"github.com/jhipsman/cueapp/internal/library"
 )
 
 // errAlreadyGrabbed is what an automatic grab is refused with when what it

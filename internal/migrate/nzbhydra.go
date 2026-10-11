@@ -7,7 +7,7 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/rdborg/mediarium/internal/indexers"
+	"github.com/jhipsman/cueapp/internal/indexers"
 )
 
 // NZBHydra2 presents everything it searches as ONE Newznab endpoint

@@ -9,10 +9,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/indexers"
-	"github.com/rdborg/mediarium/internal/library"
-	"github.com/rdborg/mediarium/internal/premiumize"
-	"github.com/rdborg/mediarium/internal/settings"
+	"github.com/jhipsman/cueapp/internal/indexers"
+	"github.com/jhipsman/cueapp/internal/library"
+	"github.com/jhipsman/cueapp/internal/premiumize"
+	"github.com/jhipsman/cueapp/internal/settings"
 )
 
 const (

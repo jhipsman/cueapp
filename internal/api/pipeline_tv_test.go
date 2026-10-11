@@ -13,7 +13,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/api"
+	"github.com/jhipsman/cueapp/internal/api"
 )
 
 // nntpArticle is one file's worth of content to serve, addressed by the

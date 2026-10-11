@@ -10,8 +10,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/rdborg/mediarium/internal/organizer"
-	"github.com/rdborg/mediarium/internal/queue"
+	"github.com/jhipsman/cueapp/internal/organizer"
+	"github.com/jhipsman/cueapp/internal/queue"
 )
 
 // One active download per library item, and retrying a failed Usenet

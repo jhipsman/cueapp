@@ -7,11 +7,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/metadata"
-	"github.com/rdborg/mediarium/internal/plainerror"
-	"github.com/rdborg/mediarium/internal/settings"
-	"github.com/rdborg/mediarium/internal/subtitles"
-	"github.com/rdborg/mediarium/internal/trakt"
+	"github.com/jhipsman/cueapp/internal/metadata"
+	"github.com/jhipsman/cueapp/internal/plainerror"
+	"github.com/jhipsman/cueapp/internal/settings"
+	"github.com/jhipsman/cueapp/internal/subtitles"
+	"github.com/jhipsman/cueapp/internal/trakt"
 )
 
 // BuiltinKeys are the app-wide API keys an official release ships with, so

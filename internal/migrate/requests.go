@@ -8,7 +8,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/rdborg/mediarium/internal/library"
+	"github.com/jhipsman/cueapp/internal/library"
 )
 
 // Overseerr/Jellyseerr and Ombi hold what people asked for. Requests that

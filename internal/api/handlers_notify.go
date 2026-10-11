@@ -10,8 +10,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/notify"
-	"github.com/rdborg/mediarium/internal/plainerror"
+	"github.com/jhipsman/cueapp/internal/notify"
+	"github.com/jhipsman/cueapp/internal/plainerror"
 )
 
 // notifyEvent fires every configured notification target that

@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/rdborg/mediarium/internal/selfupdate"
+	"github.com/jhipsman/cueapp/internal/selfupdate"
 )
 
 // controlPayload says what the Restart and Shut down buttons can do here.

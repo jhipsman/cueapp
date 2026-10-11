@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/problems"
-	"github.com/rdborg/mediarium/internal/settings"
+	"github.com/jhipsman/cueapp/internal/problems"
+	"github.com/jhipsman/cueapp/internal/settings"
 )
 
 // The problem log (Settings > System > Logs and errors). Every route here is

@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/rdborg/mediarium/internal/updatecheck"
+	"github.com/jhipsman/cueapp/internal/updatecheck"
 )
 
 // A key pair made for the test only.

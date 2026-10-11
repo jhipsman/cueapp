@@ -29,8 +29,8 @@ import (
 	"time"
 	"unicode"
 
-	migrations "github.com/rdborg/mediarium/db"
-	"github.com/rdborg/mediarium/internal/crypto"
+	migrations "github.com/jhipsman/cueapp/db"
+	"github.com/jhipsman/cueapp/internal/crypto"
 	_ "modernc.org/sqlite" // registers the "sqlite" driver used to inspect staged databases
 )
 

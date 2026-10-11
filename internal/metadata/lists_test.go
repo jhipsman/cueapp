@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/metadata"
+	"github.com/jhipsman/cueapp/internal/metadata"
 )
 
 func TestDiscoverLists(t *testing.T) {

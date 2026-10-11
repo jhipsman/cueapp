@@ -10,7 +10,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/rdborg/mediarium/internal/indexers"
+	"github.com/jhipsman/cueapp/internal/indexers"
 )
 
 const hydraKey = "nzbhydra-fixture-key-0008"

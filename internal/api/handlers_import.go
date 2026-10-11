@@ -13,9 +13,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/libimport"
-	"github.com/rdborg/mediarium/internal/library"
-	"github.com/rdborg/mediarium/internal/metadata"
+	"github.com/jhipsman/cueapp/internal/libimport"
+	"github.com/jhipsman/cueapp/internal/library"
+	"github.com/jhipsman/cueapp/internal/metadata"
 )
 
 // Importing an existing library is a background job the UI polls: scanning a

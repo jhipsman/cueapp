@@ -6,8 +6,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/notify"
-	"github.com/rdborg/mediarium/internal/settings"
+	"github.com/jhipsman/cueapp/internal/notify"
+	"github.com/jhipsman/cueapp/internal/settings"
 )
 
 // Quiet hours: between two hours (say 23:00 and 7:00) everyday messages

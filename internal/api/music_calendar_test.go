@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/library"
-	"github.com/rdborg/mediarium/internal/music"
+	"github.com/jhipsman/cueapp/internal/library"
+	"github.com/jhipsman/cueapp/internal/music"
 )
 
 func TestCalendarListsMonitoredAlbums(t *testing.T) {

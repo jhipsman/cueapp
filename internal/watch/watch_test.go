@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/store"
-	"github.com/rdborg/mediarium/internal/watch"
+	"github.com/jhipsman/cueapp/internal/store"
+	"github.com/jhipsman/cueapp/internal/watch"
 )
 
 func TestProgressAndList(t *testing.T) {

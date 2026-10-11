@@ -11,8 +11,8 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/problems"
-	"github.com/rdborg/mediarium/internal/speed"
+	"github.com/jhipsman/cueapp/internal/problems"
+	"github.com/jhipsman/cueapp/internal/speed"
 )
 
 // ClientConfig is one configured Usenet server (a news server account from

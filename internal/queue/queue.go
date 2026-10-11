@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/crypto"
+	"github.com/jhipsman/cueapp/internal/crypto"
 )
 
 func nowRFC3339() string { return time.Now().UTC().Format(time.RFC3339Nano) }

@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/rdborg/mediarium/internal/libimport"
+	"github.com/jhipsman/cueapp/internal/libimport"
 )
 
 func TestScanTVSpecialsAreSeasonZero(t *testing.T) {

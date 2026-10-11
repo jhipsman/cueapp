@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/problems"
+	"github.com/jhipsman/cueapp/internal/problems"
 )
 
 // ServerStore is what the Refresher needs from the Repo.

@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/library"
-	"github.com/rdborg/mediarium/internal/queue"
+	"github.com/jhipsman/cueapp/internal/library"
+	"github.com/jhipsman/cueapp/internal/queue"
 )
 
 func seedItem(t *testing.T, repo *queue.Repo, movieID int64, status queue.Status) int64 {

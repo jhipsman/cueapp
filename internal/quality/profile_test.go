@@ -3,8 +3,8 @@ package quality_test
 import (
 	"testing"
 
-	"github.com/rdborg/mediarium/internal/parser"
-	"github.com/rdborg/mediarium/internal/quality"
+	"github.com/jhipsman/cueapp/internal/parser"
+	"github.com/jhipsman/cueapp/internal/quality"
 )
 
 func TestClassify(t *testing.T) {

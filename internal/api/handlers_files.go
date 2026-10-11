@@ -12,8 +12,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/library"
-	"github.com/rdborg/mediarium/internal/mediafiles"
+	"github.com/jhipsman/cueapp/internal/library"
+	"github.com/jhipsman/cueapp/internal/mediafiles"
 )
 
 // libraryRoots are the folders a title's files may be read from.

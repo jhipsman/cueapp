@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/rdborg/mediarium/internal/auth"
+	"github.com/jhipsman/cueapp/internal/auth"
 )
 
 func TestSkipsLearnedFromTheHousehold(t *testing.T) {

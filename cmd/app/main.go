@@ -18,14 +18,14 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/api"
-	"github.com/rdborg/mediarium/internal/backup"
-	"github.com/rdborg/mediarium/internal/config"
-	"github.com/rdborg/mediarium/internal/crypto"
-	"github.com/rdborg/mediarium/internal/httpsec"
-	"github.com/rdborg/mediarium/internal/logbuf"
-	"github.com/rdborg/mediarium/internal/selfupdate"
-	"github.com/rdborg/mediarium/internal/store"
+	"github.com/jhipsman/cueapp/internal/api"
+	"github.com/jhipsman/cueapp/internal/backup"
+	"github.com/jhipsman/cueapp/internal/config"
+	"github.com/jhipsman/cueapp/internal/crypto"
+	"github.com/jhipsman/cueapp/internal/httpsec"
+	"github.com/jhipsman/cueapp/internal/logbuf"
+	"github.com/jhipsman/cueapp/internal/selfupdate"
+	"github.com/jhipsman/cueapp/internal/store"
 )
 
 // defaultTMDBAPIKey is empty in source control on purpose (no secrets in

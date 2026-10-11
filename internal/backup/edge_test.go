@@ -9,10 +9,10 @@ import (
 	"strings"
 	"testing"
 
-	migrations "github.com/rdborg/mediarium/db"
-	"github.com/rdborg/mediarium/internal/backup"
-	"github.com/rdborg/mediarium/internal/crypto"
-	"github.com/rdborg/mediarium/internal/store"
+	migrations "github.com/jhipsman/cueapp/db"
+	"github.com/jhipsman/cueapp/internal/backup"
+	"github.com/jhipsman/cueapp/internal/crypto"
+	"github.com/jhipsman/cueapp/internal/store"
 )
 
 // A config folder whose name holds characters that mean something inside a

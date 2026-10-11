@@ -3,7 +3,7 @@ package store_test
 import (
 	"testing"
 
-	migrations "github.com/rdborg/mediarium/db"
+	migrations "github.com/jhipsman/cueapp/db"
 )
 
 // Migration 0026 sets the subtitles switch on once, for an install that was

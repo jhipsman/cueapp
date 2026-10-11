@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/rdborg/mediarium/internal/library"
+	"github.com/jhipsman/cueapp/internal/library"
 )
 
 // Any account may ask for a subtitle, so the refusal for a video that has gone

@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/settings"
+	"github.com/jhipsman/cueapp/internal/settings"
 )
 
 // How often the two automatic loops run, and the limits Settings enforces.

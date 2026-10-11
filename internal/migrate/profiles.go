@@ -5,7 +5,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/rdborg/mediarium/internal/quality"
+	"github.com/jhipsman/cueapp/internal/quality"
 )
 
 // ProfileMapping says which Cue quality profile a Radarr/Sonarr

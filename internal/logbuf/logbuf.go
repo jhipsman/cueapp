@@ -9,7 +9,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/rdborg/mediarium/internal/netguard"
+	"github.com/jhipsman/cueapp/internal/netguard"
 )
 
 // Lines is how many log lines Default keeps.

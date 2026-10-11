@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/rdborg/mediarium/internal/library"
+	"github.com/jhipsman/cueapp/internal/library"
 )
 
 func TestPreferredLanguageSetting(t *testing.T) {

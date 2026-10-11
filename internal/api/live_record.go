@@ -18,8 +18,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/fsinfo"
-	"github.com/rdborg/mediarium/internal/watch"
+	"github.com/jhipsman/cueapp/internal/fsinfo"
+	"github.com/jhipsman/cueapp/internal/watch"
 )
 
 // Live TV recording: Cue records a show on the server, from just before it

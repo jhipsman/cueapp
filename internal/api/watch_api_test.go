@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/rdborg/mediarium/internal/auth"
+	"github.com/jhipsman/cueapp/internal/auth"
 )
 
 // fakeTMDBForWatch serves one movie (550) and one show (1399) with two

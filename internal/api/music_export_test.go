@@ -4,8 +4,8 @@ import (
 	"context"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/listenbrainz"
-	"github.com/rdborg/mediarium/internal/musicbrainz"
+	"github.com/jhipsman/cueapp/internal/listenbrainz"
+	"github.com/jhipsman/cueapp/internal/musicbrainz"
 )
 
 // TestSetListenBrainz points the Discover lists at a fake server.

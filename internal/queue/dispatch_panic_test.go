@@ -3,7 +3,7 @@ package queue_test
 import (
 	"testing"
 
-	"github.com/rdborg/mediarium/internal/queue"
+	"github.com/jhipsman/cueapp/internal/queue"
 )
 
 // A Start that panics must not keep its place: the item is reported as not

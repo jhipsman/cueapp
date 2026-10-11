@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/rdborg/mediarium/internal/download"
+	"github.com/jhipsman/cueapp/internal/download"
 )
 
 // refusingNNTP answers like a full provider: a greeting, then "502 Too many

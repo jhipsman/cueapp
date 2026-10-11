@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/listenbrainz"
+	"github.com/jhipsman/cueapp/internal/listenbrainz"
 )
 
 func newClient(t *testing.T, h http.HandlerFunc, opts ...listenbrainz.Option) (*listenbrainz.Client, *atomic.Int32) {

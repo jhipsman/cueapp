@@ -42,7 +42,7 @@ func program(t *testing.T, version string) string {
 	if _, err := os.Stat(out); err == nil {
 		return out
 	}
-	cmd := exec.Command("go", "build", "-o", out, "-ldflags", "-X main.version="+version, "github.com/rdborg/mediarium/cmd/app")
+	cmd := exec.Command("go", "build", "-o", out, "-ldflags", "-X main.version="+version, "github.com/jhipsman/cueapp/cmd/app")
 	cmd.Env = append(os.Environ(), "CGO_ENABLED=0")
 	if b, err := cmd.CombinedOutput(); err != nil {
 		t.Fatalf("build version %s: %v\n%s", version, err, b)

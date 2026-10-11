@@ -22,7 +22,7 @@ import (
 	"strings"
 	"sync"
 
-	migrations "github.com/rdborg/mediarium/db"
+	migrations "github.com/jhipsman/cueapp/db"
 	_ "modernc.org/sqlite"
 )
 

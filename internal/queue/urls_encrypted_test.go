@@ -6,9 +6,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/rdborg/mediarium/internal/crypto"
-	"github.com/rdborg/mediarium/internal/library"
-	"github.com/rdborg/mediarium/internal/queue"
+	"github.com/jhipsman/cueapp/internal/crypto"
+	"github.com/jhipsman/cueapp/internal/library"
+	"github.com/jhipsman/cueapp/internal/queue"
 )
 
 const keyedURL = "https://indexer.example/api?t=get&id=abc&apikey=SUPERSECRETKEY123"

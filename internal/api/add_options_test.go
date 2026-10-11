@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/library"
+	"github.com/jhipsman/cueapp/internal/library"
 )
 
 // newTitleTMDB serves a combined search (a movie, a show, and a person that

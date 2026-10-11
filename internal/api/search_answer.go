@@ -3,7 +3,7 @@ package api
 import (
 	"net/http"
 
-	"github.com/rdborg/mediarium/internal/indexers"
+	"github.com/jhipsman/cueapp/internal/indexers"
 )
 
 // The interactive release lists (movie, season or episode, album) answer with

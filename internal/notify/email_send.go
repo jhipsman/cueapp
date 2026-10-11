@@ -13,8 +13,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/netguard"
-	"github.com/rdborg/mediarium/internal/plainerror"
+	"github.com/jhipsman/cueapp/internal/netguard"
+	"github.com/jhipsman/cueapp/internal/plainerror"
 )
 
 // Send delivers the event by SMTP. When ctx carries a Steps log (see

@@ -9,7 +9,7 @@ import (
 
 	"github.com/anacrolix/torrent"
 
-	"github.com/rdborg/mediarium/internal/torrentclient"
+	"github.com/jhipsman/cueapp/internal/torrentclient"
 )
 
 // seedCheckInterval is how often a seeding torrent is checked against its

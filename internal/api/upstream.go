@@ -5,9 +5,9 @@ import (
 	"log/slog"
 	"net/http"
 
-	"github.com/rdborg/mediarium/internal/metadata"
-	"github.com/rdborg/mediarium/internal/problems"
-	"github.com/rdborg/mediarium/internal/trakt"
+	"github.com/jhipsman/cueapp/internal/metadata"
+	"github.com/jhipsman/cueapp/internal/problems"
+	"github.com/jhipsman/cueapp/internal/trakt"
 )
 
 // writeUpstreamError answers 502 when a call to an outside data service

@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/library"
+	"github.com/jhipsman/cueapp/internal/library"
 )
 
 // An imported movie that is below the profile's cutoff is left alone when it

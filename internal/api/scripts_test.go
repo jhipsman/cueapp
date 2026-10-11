@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/notify"
+	"github.com/jhipsman/cueapp/internal/notify"
 )
 
 // putScript writes an executable shell script into the scripts folder.

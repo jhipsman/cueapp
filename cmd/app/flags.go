@@ -5,8 +5,8 @@ import (
 	"io"
 	"runtime"
 
-	"github.com/rdborg/mediarium/internal/selfupdate"
-	semverpkg "github.com/rdborg/mediarium/internal/semver"
+	"github.com/jhipsman/cueapp/internal/selfupdate"
+	semverpkg "github.com/jhipsman/cueapp/internal/semver"
 )
 
 // handleProbeFlags answers the two flags the container's entrypoint (and the

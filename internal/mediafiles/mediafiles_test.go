@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/rdborg/mediarium/internal/mediafiles"
+	"github.com/jhipsman/cueapp/internal/mediafiles"
 )
 
 func write(t *testing.T, path, body string) {

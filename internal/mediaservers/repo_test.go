@@ -7,9 +7,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/rdborg/mediarium/internal/crypto"
-	"github.com/rdborg/mediarium/internal/mediaservers"
-	"github.com/rdborg/mediarium/internal/store"
+	"github.com/jhipsman/cueapp/internal/crypto"
+	"github.com/jhipsman/cueapp/internal/mediaservers"
+	"github.com/jhipsman/cueapp/internal/store"
 )
 
 func TestRepoStoresTokenEncrypted(t *testing.T) {

@@ -15,7 +15,7 @@ import (
 	"github.com/anacrolix/torrent/bencode"
 	"github.com/anacrolix/torrent/metainfo"
 
-	mediarium "github.com/rdborg/mediarium/internal/torrentclient"
+	mediarium "github.com/jhipsman/cueapp/internal/torrentclient"
 )
 
 // TestDownloadBetweenTwoLocalPeers builds a torrent from a local fixture

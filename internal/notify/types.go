@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/rdborg/mediarium/internal/inputcheck"
+	"github.com/jhipsman/cueapp/internal/inputcheck"
 )
 
 // Event kinds a target can subscribe to. The activity feed's own event names

@@ -4,8 +4,8 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/rdborg/mediarium/internal/indexers"
-	"github.com/rdborg/mediarium/internal/settings"
+	"github.com/jhipsman/cueapp/internal/indexers"
+	"github.com/jhipsman/cueapp/internal/settings"
 )
 
 // errTorrentsDisabled is what a torrent grab is refused with while the

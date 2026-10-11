@@ -9,8 +9,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/selfupdate"
-	"github.com/rdborg/mediarium/internal/settings"
+	"github.com/jhipsman/cueapp/internal/selfupdate"
+	"github.com/jhipsman/cueapp/internal/settings"
 )
 
 // updateStatePayload is the answer of GET /api/system/update: what is running,

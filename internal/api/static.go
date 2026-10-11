@@ -7,7 +7,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/rdborg/mediarium/web"
+	"github.com/jhipsman/cueapp/web"
 )
 
 // frontendHandler serves the embedded React build, falling back to

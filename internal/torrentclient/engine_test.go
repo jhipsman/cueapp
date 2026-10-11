@@ -11,7 +11,7 @@ import (
 
 	"github.com/anacrolix/torrent"
 
-	mediarium "github.com/rdborg/mediarium/internal/torrentclient"
+	mediarium "github.com/jhipsman/cueapp/internal/torrentclient"
 )
 
 func TestSeedGoalMet(t *testing.T) {

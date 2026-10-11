@@ -4,7 +4,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/rdborg/mediarium/internal/fsinfo"
+	"github.com/jhipsman/cueapp/internal/fsinfo"
 )
 
 // fakeVolume is what the system says about the filesystem holding a folder.

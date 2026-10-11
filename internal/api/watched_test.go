@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/library"
-	"github.com/rdborg/mediarium/internal/mediaservers"
+	"github.com/jhipsman/cueapp/internal/library"
+	"github.com/jhipsman/cueapp/internal/mediaservers"
 )
 
 // fakeWatchPlex is a Plex with one movie library: The Matrix (603) watched

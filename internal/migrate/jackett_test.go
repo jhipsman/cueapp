@@ -8,7 +8,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/rdborg/mediarium/internal/indexers"
+	"github.com/jhipsman/cueapp/internal/indexers"
 )
 
 const jackettKey = "jackett-fixture-key-0007"

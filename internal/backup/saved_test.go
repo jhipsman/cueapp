@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/backup"
+	"github.com/jhipsman/cueapp/internal/backup"
 )
 
 func TestSavedBackupsAreKeptToTheLimitAndValid(t *testing.T) {

@@ -11,7 +11,7 @@ import (
 
 	"github.com/anacrolix/torrent"
 
-	"github.com/rdborg/mediarium/internal/netguard"
+	"github.com/jhipsman/cueapp/internal/netguard"
 )
 
 type recordingTunnel struct {

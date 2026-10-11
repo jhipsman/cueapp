@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/store"
+	"github.com/jhipsman/cueapp/internal/store"
 )
 
 func TestRollingWindow(t *testing.T) {

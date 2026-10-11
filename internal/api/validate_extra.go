@@ -10,7 +10,7 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/rdborg/mediarium/internal/inputcheck"
+	"github.com/jhipsman/cueapp/internal/inputcheck"
 )
 
 // More shared checks, in the same style as validate.go: each returns "" when

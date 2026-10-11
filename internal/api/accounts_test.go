@@ -12,8 +12,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/api"
-	"github.com/rdborg/mediarium/internal/library"
+	"github.com/jhipsman/cueapp/internal/api"
+	"github.com/jhipsman/cueapp/internal/library"
 )
 
 // newFamilyTMDB serves the TMDB endpoints the family-account tests touch:

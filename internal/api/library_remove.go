@@ -10,9 +10,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/cleanup"
-	"github.com/rdborg/mediarium/internal/library"
-	"github.com/rdborg/mediarium/internal/organizer"
+	"github.com/jhipsman/cueapp/internal/cleanup"
+	"github.com/jhipsman/cueapp/internal/library"
+	"github.com/jhipsman/cueapp/internal/organizer"
 )
 
 // Removing a title from the library leaves nothing behind: its downloads

@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/rdborg/mediarium/internal/library"
+	"github.com/jhipsman/cueapp/internal/library"
 )
 
 func moduleEnabled(t *testing.T, mods map[string]any, name string) (enabled, available bool) {

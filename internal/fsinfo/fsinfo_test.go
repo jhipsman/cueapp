@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/rdborg/mediarium/internal/fsinfo"
+	"github.com/jhipsman/cueapp/internal/fsinfo"
 )
 
 func TestInspectHealthyFolder(t *testing.T) {

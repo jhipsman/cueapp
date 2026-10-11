@@ -1,6 +1,6 @@
 package api
 
-import "github.com/rdborg/mediarium/internal/plainerror"
+import "github.com/jhipsman/cueapp/internal/plainerror"
 
 // plainFailure makes the text of a "failed" activity line readable. Lines
 // written before the raw text was kept out of them still carry network errors;

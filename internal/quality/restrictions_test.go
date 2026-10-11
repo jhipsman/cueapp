@@ -3,7 +3,7 @@ package quality_test
 import (
 	"testing"
 
-	"github.com/rdborg/mediarium/internal/quality"
+	"github.com/jhipsman/cueapp/internal/quality"
 )
 
 func TestTitleAllowed(t *testing.T) {

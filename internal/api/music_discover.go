@@ -11,8 +11,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/listenbrainz"
-	"github.com/rdborg/mediarium/internal/music"
+	"github.com/jhipsman/cueapp/internal/listenbrainz"
+	"github.com/jhipsman/cueapp/internal/music"
 )
 
 // Music discovery: what people are listening to, what came out lately and

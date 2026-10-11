@@ -20,7 +20,7 @@ import (
 
 	"github.com/nwaples/rardecode/v2"
 
-	"github.com/rdborg/mediarium/internal/fsinfo"
+	"github.com/jhipsman/cueapp/internal/fsinfo"
 )
 
 // Sentinel errors returned (wrapped) by Extract so callers can tell a bad

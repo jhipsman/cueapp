@@ -12,8 +12,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/indexers"
-	"github.com/rdborg/mediarium/internal/settings"
+	"github.com/jhipsman/cueapp/internal/indexers"
+	"github.com/jhipsman/cueapp/internal/settings"
 )
 
 // fakePremiumize answers the few Premiumize calls a download makes: the

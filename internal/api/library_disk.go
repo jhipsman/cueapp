@@ -10,7 +10,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/rdborg/mediarium/internal/cleanup"
+	"github.com/jhipsman/cueapp/internal/cleanup"
 )
 
 // diskUsagePayload says how much a title has on disk in the library: what

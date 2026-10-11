@@ -20,7 +20,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/notify"
+	"github.com/jhipsman/cueapp/internal/notify"
 )
 
 // fakeSMTP is a tiny in-process SMTP server: enough of the protocol (EHLO,

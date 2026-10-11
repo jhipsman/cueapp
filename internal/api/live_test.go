@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/auth"
+	"github.com/jhipsman/cueapp/internal/auth"
 )
 
 // fakeIPTV is an Xtream provider with two channels, a guide, and an HLS

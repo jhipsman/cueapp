@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/netguard"
+	"github.com/jhipsman/cueapp/internal/netguard"
 )
 
 // NNTPConn is a single connection to a Usenet server. The engine opens one

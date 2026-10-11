@@ -23,14 +23,14 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"github.com/rdborg/mediarium/internal/netguard"
-	"github.com/rdborg/mediarium/internal/semver"
+	"github.com/jhipsman/cueapp/internal/netguard"
+	"github.com/jhipsman/cueapp/internal/semver"
 )
 
 // DefaultRepo is the official repository, as owner/name. A build for another
 // fork can change it with
 //
-//	-ldflags "-X github.com/rdborg/mediarium/internal/updatecheck.DefaultRepo=owner/name"
+//	-ldflags "-X github.com/jhipsman/cueapp/internal/updatecheck.DefaultRepo=owner/name"
 var DefaultRepo = "jhipsman/cueapp"
 
 // DefaultBaseURL is the GitHub API.

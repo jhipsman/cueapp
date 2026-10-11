@@ -11,8 +11,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/download"
-	"github.com/rdborg/mediarium/internal/indexers"
+	"github.com/jhipsman/cueapp/internal/download"
+	"github.com/jhipsman/cueapp/internal/indexers"
 )
 
 // connTestResult is the outcome of a "Test" button. A failed test is a

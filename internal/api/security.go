@@ -7,8 +7,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/auth"
-	"github.com/rdborg/mediarium/internal/httpsec"
+	"github.com/jhipsman/cueapp/internal/auth"
+	"github.com/jhipsman/cueapp/internal/httpsec"
 )
 
 // securityState is what the server derives from TRUSTED_PROXIES and

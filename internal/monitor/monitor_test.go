@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/monitor"
+	"github.com/jhipsman/cueapp/internal/monitor"
 )
 
 // fakeThing is a check whose health the test flips.

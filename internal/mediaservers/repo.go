@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/crypto"
+	"github.com/jhipsman/cueapp/internal/crypto"
 )
 
 // Repo stores media servers. The token is kept encrypted with the app's

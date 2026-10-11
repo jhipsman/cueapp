@@ -3,7 +3,7 @@ package quality
 import (
 	"strings"
 
-	"github.com/rdborg/mediarium/internal/parser"
+	"github.com/jhipsman/cueapp/internal/parser"
 )
 
 // DefaultLanguage is the audio language wanted when none has been chosen.

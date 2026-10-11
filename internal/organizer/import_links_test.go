@@ -7,7 +7,7 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/rdborg/mediarium/internal/organizer"
+	"github.com/jhipsman/cueapp/internal/organizer"
 )
 
 // A download that holds a link (a hostile archive can carry one) must never

@@ -8,7 +8,7 @@ import (
 	"net/url"
 	"testing"
 
-	"github.com/rdborg/mediarium/internal/library"
+	"github.com/jhipsman/cueapp/internal/library"
 )
 
 // doJSONStatus sends body as JSON and returns the status, whatever it is.

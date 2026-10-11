@@ -3,7 +3,7 @@ package api
 import (
 	"context"
 
-	"github.com/rdborg/mediarium/internal/books"
+	"github.com/jhipsman/cueapp/internal/books"
 )
 
 // TestSetOpenLibrary points the Open Library client at a fake server.

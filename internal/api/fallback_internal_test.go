@@ -4,9 +4,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/rdborg/mediarium/internal/indexers"
-	"github.com/rdborg/mediarium/internal/library"
-	"github.com/rdborg/mediarium/internal/quality"
+	"github.com/jhipsman/cueapp/internal/indexers"
+	"github.com/jhipsman/cueapp/internal/library"
+	"github.com/jhipsman/cueapp/internal/quality"
 )
 
 // profileChain builds a profileSet with the 1080p preset (id 1) as the

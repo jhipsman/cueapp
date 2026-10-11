@@ -11,8 +11,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/mediaservers"
-	"github.com/rdborg/mediarium/internal/plainerror"
+	"github.com/jhipsman/cueapp/internal/mediaservers"
+	"github.com/jhipsman/cueapp/internal/plainerror"
 )
 
 // mediaServersImported tells the media servers about newly imported files;

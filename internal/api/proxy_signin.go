@@ -6,9 +6,9 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/rdborg/mediarium/internal/auth"
-	"github.com/rdborg/mediarium/internal/httpsec"
-	"github.com/rdborg/mediarium/internal/settings"
+	"github.com/jhipsman/cueapp/internal/auth"
+	"github.com/jhipsman/cueapp/internal/httpsec"
+	"github.com/jhipsman/cueapp/internal/settings"
 )
 
 // Sign-in through a reverse proxy. A proxy that does the login itself

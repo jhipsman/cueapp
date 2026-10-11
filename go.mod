@@ -1,4 +1,4 @@
-module github.com/rdborg/mediarium
+module github.com/jhipsman/cueapp
 
 go 1.26.9
 

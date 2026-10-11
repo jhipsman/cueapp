@@ -3,7 +3,7 @@ package subtitles_test
 import (
 	"testing"
 
-	"github.com/rdborg/mediarium/internal/subtitles"
+	"github.com/jhipsman/cueapp/internal/subtitles"
 )
 
 func TestDetectLanguage(t *testing.T) {

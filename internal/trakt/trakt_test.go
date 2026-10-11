@@ -8,7 +8,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/rdborg/mediarium/internal/trakt"
+	"github.com/jhipsman/cueapp/internal/trakt"
 )
 
 func TestParseListURL(t *testing.T) {

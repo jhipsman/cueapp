@@ -18,7 +18,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/updatecheck"
+	"github.com/jhipsman/cueapp/internal/updatecheck"
 )
 
 // releaseKit is one published release: the signed files GitHub would serve.

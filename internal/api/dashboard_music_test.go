@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/rdborg/mediarium/internal/music"
+	"github.com/jhipsman/cueapp/internal/music"
 )
 
 // musicCounts reads library.music out of a GET /api/dashboard answer.

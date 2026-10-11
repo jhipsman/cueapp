@@ -6,7 +6,7 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/rdborg/mediarium/internal/plainerror"
+	"github.com/jhipsman/cueapp/internal/plainerror"
 )
 
 // Bulk changes to artists, for the Music tab of the Library page. Like the

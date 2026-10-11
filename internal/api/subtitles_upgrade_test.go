@@ -13,7 +13,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/library"
+	"github.com/jhipsman/cueapp/internal/library"
 )
 
 // newMatchingOpenSubtitles serves one English subtitle picked by name (file

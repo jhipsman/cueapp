@@ -15,8 +15,8 @@ import (
 	"sync"
 	"unicode"
 
-	"github.com/rdborg/mediarium/internal/books"
-	"github.com/rdborg/mediarium/internal/mediafiles"
+	"github.com/jhipsman/cueapp/internal/books"
+	"github.com/jhipsman/cueapp/internal/mediafiles"
 )
 
 // Reading and listening in Cue itself (the Books app at /bookshelf):

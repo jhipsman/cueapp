@@ -4,7 +4,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/rdborg/mediarium/internal/libimport"
+	"github.com/jhipsman/cueapp/internal/libimport"
 )
 
 // An episode file name that says nothing about quality takes it from the

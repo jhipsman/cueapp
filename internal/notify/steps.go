@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/logbuf"
+	"github.com/jhipsman/cueapp/internal/logbuf"
 )
 
 // Step is one line of the log a test message leaves: what Cue did, when,
