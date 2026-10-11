@@ -72,6 +72,10 @@ type probeInfo struct {
 	VideoIndex int     `json:"-"`
 	AudioIndex int     `json:"-"` // -1 = no sound
 	AudioAAC   bool    `json:"-"`
+	// For the Apple TV, which takes more as it is (HEVC, Dolby).
+	VideoCodec    string `json:"-"`
+	AudioCodec    string `json:"-"`
+	AudioChannels int    `json:"-"`
 }
 
 var probeCache = struct {
@@ -139,6 +143,7 @@ func probeFile(ctx context.Context, link string) (probeInfo, error) {
 			}
 			info.VideoIndex = st.Index
 			info.Height = st.Height
+			info.VideoCodec = st.Codec
 			// H.264 in 8-bit 4:2:0 plays in every browser as it is.
 			info.CopyVideo = st.Codec == "h264" && (st.PixFmt == "" || st.PixFmt == "yuv420p" || st.PixFmt == "yuvj420p")
 		case "audio":
@@ -157,6 +162,8 @@ func probeFile(ctx context.Context, link string) (probeInfo, error) {
 				audioScore = score
 				info.AudioIndex = st.Index
 				info.AudioAAC = st.Codec == "aac" && st.Channels <= 2
+				info.AudioCodec = st.Codec
+				info.AudioChannels = st.Channels
 			}
 		}
 	}
@@ -237,7 +244,7 @@ func (s *Server) handleConvertStream(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	start, _ := strconv.ParseFloat(r.URL.Query().Get("t"), 64)
-	args := convertArgs(link, info, start)
+	args := convertArgs(link, info, start, false)
 	args = append(args, "-f", "mp4",
 		"-movflags", "frag_keyframe+empty_moov+default_base_moof", "-frag_duration", "2000000", "pipe:1")
 
@@ -255,7 +262,11 @@ func (s *Server) handleConvertStream(w http.ResponseWriter, r *http.Request) {
 
 // convertArgs is ffmpeg's input and its picture and sound settings for a
 // conversion from start (seconds); the output format is the caller's.
-func convertArgs(link string, info probeInfo, start float64) []string {
+// apple is for the Apple TV app: it plays HEVC (4K, HDR, Dolby Vision) and
+// Dolby sound itself, so those are copied as they are and only what it
+// can't play is remade (DTS and TrueHD sound become Dolby Digital Plus,
+// keeping the surround).
+func convertArgs(link string, info probeInfo, start float64, apple bool) []string {
 	args := []string{"-hide_banner", "-loglevel", "error", "-nostdin"}
 	if isWebLink(link) { // options only for web addresses (a recording is a file)
 		args = append(args, "-reconnect", "1", "-reconnect_streamed", "1", "-reconnect_delay_max", "5", "-user_agent", convertUA)
@@ -267,9 +278,12 @@ func convertArgs(link string, info probeInfo, start float64) []string {
 	if info.AudioIndex >= 0 {
 		args = append(args, "-map", fmt.Sprintf("0:%d", info.AudioIndex))
 	}
-	if info.CopyVideo {
+	switch {
+	case apple && info.VideoCodec == "hevc":
+		args = append(args, "-c:v", "copy", "-tag:v", "hvc1")
+	case info.CopyVideo:
 		args = append(args, "-c:v", "copy")
-	} else {
+	default:
 		// Remade small enough to keep up on a modest server.
 		preset, height := "veryfast", 720
 		if info.Height > 720 {
@@ -279,9 +293,15 @@ func convertArgs(link string, info probeInfo, start float64) []string {
 			"-vf", fmt.Sprintf("scale=-2:'min(%d,ih)'", height))
 	}
 	if info.AudioIndex >= 0 {
-		if info.AudioAAC {
+		appleTakes := info.AudioCodec == "aac" || info.AudioCodec == "ac3" || info.AudioCodec == "eac3"
+		switch {
+		case apple && appleTakes:
 			args = append(args, "-c:a", "copy")
-		} else {
+		case apple && info.AudioChannels > 2:
+			args = append(args, "-c:a", "eac3", "-ac", strconv.Itoa(min(info.AudioChannels, 6)), "-b:a", "640k")
+		case info.AudioAAC:
+			args = append(args, "-c:a", "copy")
+		default:
 			args = append(args, "-c:a", "aac", "-ac", "2", "-b:a", "160k")
 		}
 	}

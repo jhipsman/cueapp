@@ -177,3 +177,62 @@ func TestConvertHLSForSafari(t *testing.T) {
 		t.Errorf("unknown session: %d", r.StatusCode)
 	}
 }
+
+// TestConvertHLSForAppleTV checks the Apple TV's conversion: HEVC copied as
+// it is (tagged hvc1), sound Apple can't play remade as Dolby Digital Plus
+// keeping its channels, in fragmented-MP4 pieces with an init file.
+func TestConvertHLSForAppleTV(t *testing.T) {
+	if !canConvert() {
+		t.Skip("no ffmpeg here")
+	}
+	dir := t.TempDir()
+	clip := filepath.Join(dir, "clip.mkv")
+	if out, err := exec.Command("ffmpeg", "-hide_banner", "-loglevel", "error", "-f", "lavfi", "-i", "testsrc=size=640x360:rate=24:duration=20",
+		"-f", "lavfi", "-i", "sine=duration=20", "-filter_complex", "[1:a]pan=5.1|c0=c0|c1=c0|c2=c0|c3=c0|c4=c0|c5=c0[a]",
+		"-map", "0:v", "-map", "[a]", "-c:v", "libx265", "-x265-params", "log-level=error", "-pix_fmt", "yuv420p", "-c:a", "flac", clip).CombinedOutput(); err != nil {
+		t.Skipf("can't make an HEVC clip here: %v %s", err, out)
+	}
+	files := httptest.NewServer(http.FileServer(http.Dir(dir)))
+	defer files.Close()
+	box, err := crypto.LoadOrCreateKey(filepath.Join(dir, "key"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	s := &Server{profileBox: box}
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /api/play/convert/hls", s.handleConvertHLS)
+	mux.HandleFunc("GET /api/play/convert/hls/{id}/{file}", s.handleConvertHLSFile)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+
+	resp, err := http.Get(srv.URL + "/api/play/convert/hls?apple=1&u=" + url.QueryEscape(s.convertToken(files.URL+"/clip.mkv")))
+	if err != nil {
+		t.Fatal(err)
+	}
+	body, _ := io.ReadAll(resp.Body)
+	resp.Body.Close()
+	if resp.StatusCode != 200 || !strings.Contains(string(body), "init.mp4") || !strings.Contains(string(body), "seg_00000.m4s") {
+		t.Fatalf("playlist: %d %q", resp.StatusCode, body)
+	}
+	base := strings.TrimSuffix(resp.Request.URL.String(), "index.m3u8")
+	var joined []byte
+	for _, name := range []string{"init.mp4", "seg_00000.m4s"} {
+		r, err := http.Get(base + name)
+		if err != nil || r.StatusCode != 200 {
+			t.Fatalf("%s: %v %v", name, err, r)
+		}
+		data, _ := io.ReadAll(r.Body)
+		r.Body.Close()
+		joined = append(joined, data...)
+	}
+	out := filepath.Join(dir, "piece.mp4")
+	_ = os.WriteFile(out, joined, 0o644)
+	var info bytes.Buffer
+	cmd := exec.Command("ffprobe", "-v", "error", "-show_entries", "stream=codec_name,codec_tag_string,channels", "-of", "csv=p=0", out)
+	cmd.Stdout = &info
+	err = cmd.Run()
+	got := info.String()
+	if err != nil || !strings.Contains(got, "hevc,hvc1") || !strings.Contains(got, "eac3") || !strings.Contains(got, ",6") {
+		t.Fatalf("piece: %d bytes, streams %q %v", len(joined), got, err)
+	}
+}

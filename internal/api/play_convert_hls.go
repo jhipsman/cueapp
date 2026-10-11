@@ -25,10 +25,22 @@ import (
 // session; Safari reads them as they come. A session no one has asked for
 // in a while is stopped and its folder removed. Moving further than what's
 // made starts a session from there (the page's timeline does that).
+//
+// The Apple TV app asks with &apple=1: its player takes HEVC (4K, HDR) and
+// Dolby sound, so the picture and sound are copied rather than remade
+// (convertArgs), into fragmented-MP4 pieces, which is what Apple's player
+// wants for HEVC. Copying runs far faster than playing, so it's held about
+// ten minutes ahead of the viewer, and pieces well behind them are
+// deleted, which keeps a 4K film from filling the server's disk.
 
 const (
 	hlsIdle      = 90 * time.Second // a session unused this long is stopped
+	hlsIdleApple = 20 * time.Minute // the Apple TV's (it may be paused a while)
 	hlsFirstWait = 30 * time.Second // how long the first piece may take
+
+	hlsAheadMax   = 150 // Apple TV: pieces (4 s each) made past the viewer before pausing
+	hlsAheadMin   = 75  // and when to carry on
+	hlsBehindKeep = 450 // pieces kept behind the viewer (30 minutes)
 )
 
 type hlsSession struct {
@@ -37,6 +49,10 @@ type hlsSession struct {
 	cancel   context.CancelFunc
 	lastUsed time.Time
 	done     chan struct{}
+	apple    bool
+	cmd      *exec.Cmd
+	lastSeg  int  // the furthest piece the player has asked for
+	paused   bool // ffmpeg stopped while the viewer catches up
 }
 
 type hlsState struct {
@@ -48,7 +64,7 @@ type hlsState struct {
 
 var hls = hlsState{sessions: map[string]*hlsSession{}, byKey: map[string]string{}}
 
-var hlsName = regexp.MustCompile(`^(index\.m3u8|seg_\d{5}\.ts)$`)
+var hlsName = regexp.MustCompile(`^(index\.m3u8|init\.mp4|seg_(\d{5})\.(ts|m4s))$`)
 
 // GET /api/play/convert/hls?u=<token>[&t=<seconds>]: starts (or finds) a
 // session and sends the player on to its playlist once the first piece is
@@ -64,7 +80,8 @@ func (s *Server) handleConvertHLS(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	start, _ := strconv.ParseFloat(r.URL.Query().Get("t"), 64)
-	key := fmt.Sprintf("%s@%d", link, int(start))
+	apple := r.URL.Query().Get("apple") == "1"
+	key := fmt.Sprintf("%s@%d@%t", link, int(start), apple)
 
 	hls.mu.Lock()
 	s.startHLSJanitorLocked()
@@ -81,7 +98,7 @@ func (s *Server) handleConvertHLS(w http.ResponseWriter, r *http.Request) {
 			writeError(w, http.StatusBadGateway, "Couldn't open that version to convert it.")
 			return
 		}
-		sess, err = startHLS(key, link, info, start)
+		sess, err = startHLS(key, link, info, start, apple)
 		if err != nil {
 			writeError(w, http.StatusServiceUnavailable, err.Error())
 			return
@@ -114,7 +131,7 @@ func (s *Server) handleConvertHLS(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/api/play/convert/hls/"+sess.id+"/index.m3u8", http.StatusFound)
 }
 
-func startHLS(key, link string, info probeInfo, start float64) (*hlsSession, error) {
+func startHLS(key, link string, info probeInfo, start float64, apple bool) (*hlsSession, error) {
 	hls.mu.Lock()
 	defer hls.mu.Unlock()
 	if id, ok := hls.byKey[key]; ok && hls.sessions[id] != nil {
@@ -141,11 +158,16 @@ func startHLS(key, link string, info probeInfo, start float64) (*hlsSession, err
 		return nil, fmt.Errorf("Couldn't get the conversion ready.")
 	}
 	ctx, cancel := context.WithCancel(context.Background())
-	sess := &hlsSession{id: id, dir: dir, cancel: cancel, lastUsed: time.Now(), done: make(chan struct{})}
-	args := append(convertArgs(link, info, start),
+	sess := &hlsSession{id: id, dir: dir, cancel: cancel, lastUsed: time.Now(), done: make(chan struct{}), apple: apple}
+	args := append(convertArgs(link, info, start, apple),
 		"-f", "hls", "-hls_time", "4", "-hls_list_size", "0", "-hls_playlist_type", "event",
-		"-hls_flags", "independent_segments+temp_file",
-		"-hls_segment_filename", filepath.Join(dir, "seg_%05d.ts"), filepath.Join(dir, "index.m3u8"))
+		"-hls_flags", "independent_segments+temp_file")
+	if apple {
+		args = append(args, "-hls_segment_type", "fmp4", "-hls_fmp4_init_filename", "init.mp4",
+			"-hls_segment_filename", filepath.Join(dir, "seg_%05d.m4s"), filepath.Join(dir, "index.m3u8"))
+	} else {
+		args = append(args, "-hls_segment_filename", filepath.Join(dir, "seg_%05d.ts"), filepath.Join(dir, "index.m3u8"))
+	}
 	ffmpeg, _ := ffmpegOnce()
 	cmd := exec.CommandContext(ctx, ffmpeg, args...)
 	var errOut bytes.Buffer
@@ -154,6 +176,10 @@ func startHLS(key, link string, info probeInfo, start float64) (*hlsSession, err
 		cancel()
 		_ = os.RemoveAll(dir)
 		return nil, fmt.Errorf("Couldn't start converting.")
+	}
+	sess.cmd = cmd
+	if apple {
+		go paceHLS(sess)
 	}
 	go func() {
 		err := cmd.Wait()
@@ -168,6 +194,9 @@ func startHLS(key, link string, info probeInfo, start float64) (*hlsSession, err
 }
 
 func stopHLSLocked(sess *hlsSession) {
+	if sess.paused && sess.cmd != nil {
+		pauseProcess(sess.cmd.Process, false) // so it can end
+	}
 	sess.cancel()
 	delete(hls.sessions, sess.id)
 	for k, id := range hls.byKey {
@@ -191,7 +220,11 @@ func (s *Server) startHLSJanitorLocked() {
 		for range time.Tick(20 * time.Second) {
 			hls.mu.Lock()
 			for _, ss := range hls.sessions {
-				if time.Since(ss.lastUsed) > hlsIdle {
+				idle := hlsIdle
+				if ss.apple {
+					idle = hlsIdleApple
+				}
+				if time.Since(ss.lastUsed) > idle {
 					stopHLSLocked(ss)
 				}
 			}
@@ -204,7 +237,8 @@ func (s *Server) startHLSJanitorLocked() {
 // The id is long and random: it's the key, like a signed address.
 func (s *Server) handleConvertHLSFile(w http.ResponseWriter, r *http.Request) {
 	id, name := r.PathValue("id"), r.PathValue("file")
-	if !hlsName.MatchString(name) {
+	m := hlsName.FindStringSubmatch(name)
+	if m == nil {
 		http.Error(w, "not found", http.StatusNotFound)
 		return
 	}
@@ -212,6 +246,9 @@ func (s *Server) handleConvertHLSFile(w http.ResponseWriter, r *http.Request) {
 	sess := hls.sessions[id]
 	if sess != nil {
 		sess.lastUsed = time.Now()
+		if n, err := strconv.Atoi(m[2]); err == nil && n > sess.lastSeg {
+			sess.lastSeg = n
+		}
 	}
 	hls.mu.Unlock()
 	if sess == nil {
@@ -232,7 +269,58 @@ func (s *Server) handleConvertHLSFile(w http.ResponseWriter, r *http.Request) {
 		_, _ = w.Write([]byte(text))
 		return
 	}
-	w.Header().Set("Content-Type", "video/mp2t")
+	switch {
+	case name == "init.mp4":
+		w.Header().Set("Content-Type", "video/mp4")
+	case strings.HasSuffix(name, ".m4s"):
+		w.Header().Set("Content-Type", "video/iso.segment")
+	default:
+		w.Header().Set("Content-Type", "video/mp2t")
+	}
 	w.Header().Set("Cache-Control", "private, max-age=600")
 	http.ServeFile(w, r, path)
+}
+
+// paceHLS keeps an Apple TV conversion about ten minutes ahead of the
+// viewer (pausing ffmpeg while they catch up) and deletes pieces well
+// behind them, until the conversion ends.
+func paceHLS(sess *hlsSession) {
+	tick := time.NewTicker(2 * time.Second)
+	defer tick.Stop()
+	for {
+		select {
+		case <-sess.done:
+			return
+		case <-tick.C:
+		}
+		made := -1
+		entries, _ := os.ReadDir(sess.dir)
+		var pieces []int
+		for _, e := range entries {
+			m := hlsName.FindStringSubmatch(e.Name())
+			if m == nil || m[2] == "" {
+				continue
+			}
+			n, _ := strconv.Atoi(m[2])
+			pieces = append(pieces, n)
+			made = max(made, n)
+		}
+		hls.mu.Lock()
+		viewer := sess.lastSeg
+		ahead := made - viewer
+		switch {
+		case !sess.paused && ahead > hlsAheadMax && sess.cmd != nil:
+			pauseProcess(sess.cmd.Process, true)
+			sess.paused = true
+		case sess.paused && ahead < hlsAheadMin && sess.cmd != nil:
+			pauseProcess(sess.cmd.Process, false)
+			sess.paused = false
+		}
+		hls.mu.Unlock()
+		for _, n := range pieces {
+			if n < viewer-hlsBehindKeep {
+				_ = os.Remove(filepath.Join(sess.dir, fmt.Sprintf("seg_%05d.m4s", n)))
+			}
+		}
+	}
 }
