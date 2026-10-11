@@ -8,6 +8,12 @@ import SwiftUI
 struct CueApp: App {
     @StateObject private var cue = Cue()
 
+    init() {
+        // Posters and artwork kept on the Apple TV, so rows draw at once
+        // when coming back to them.
+        URLCache.shared = URLCache(memoryCapacity: 80 << 20, diskCapacity: 600 << 20)
+    }
+
     var body: some Scene {
         WindowGroup {
             Root()
@@ -32,8 +38,8 @@ struct Root: View {
                 SignInView()
             case .profiles:
                 ProfilesView()
-            case .live:
-                LiveView()
+            case .ready:
+                MainTabs()
             }
         }
     }

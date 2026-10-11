@@ -11,12 +11,14 @@ struct CueError: LocalizedError {
 
 @MainActor
 final class Cue: ObservableObject {
-    enum Stage { case starting, signIn, profiles, live }
+    enum Stage { case starting, signIn, profiles, ready }
 
     @Published var stage: Stage = .starting
     @Published var server: String
     @Published var profileName: String
     @Published var accent: String
+    // What's playing full screen (a film or an episode); Root shows it.
+    @Published var playing: PlayRequest?
     private(set) var profileToken: String
 
     static let userAgent = "CueAppleTV/1"
@@ -35,7 +37,7 @@ final class Cue: ObservableObject {
         guard !server.isEmpty else { stage = .signIn; return }
         do {
             let _: Me = try await get("/api/auth/me")
-            stage = profileToken.isEmpty ? .profiles : .live
+            stage = profileToken.isEmpty ? .profiles : .ready
         } catch {
             stage = .signIn
         }
@@ -68,7 +70,7 @@ final class Cue: ObservableObject {
         defaults.set(profileToken, forKey: "profileToken")
         defaults.set(profileName, forKey: "profileName")
         defaults.set(accent, forKey: "accent")
-        stage = .live
+        stage = .ready
     }
 
     func switchProfile() {
@@ -82,6 +84,52 @@ final class Cue: ObservableObject {
         HTTPCookieStorage.shared.cookies?.forEach { HTTPCookieStorage.shared.deleteCookie($0) }
         switchProfile()
         stage = .signIn
+    }
+
+    // ---- Movies and shows (Watch) ----
+
+    func home() async throws -> WatchHome { try await get("/api/watch/home") }
+
+    func search(_ q: String) async throws -> [WatchCard] { try await get("/api/watch/search?q=\(query(q))") }
+
+    func title(_ kind: String, _ id: Int) async throws -> WatchTitle { try await get("/api/watch/\(kind)/\(id)") }
+
+    func season(_ id: Int, _ n: Int) async throws -> [WatchEpisode] { try await get("/api/watch/tv/\(id)/season/\(n)") }
+
+    func next(_ id: Int, season: Int, episode: Int) async throws -> WatchEpisode {
+        try await get("/api/watch/tv/\(id)/next?season=\(season)&episode=\(episode)")
+    }
+
+    // The version to play. client=web asks for the conversion token too, for
+    // files Apple's player can't open (MKV), which Cue converts as it plays.
+    func playAnswer(_ r: PlayRequest, option: Int) async throws -> PlayAnswer {
+        let path = r.kind == "tv" ? "/api/play/tmdb/tv/\(r.tmdbId)/\(r.season)/\(r.episode)" : "/api/play/tmdb/movie/\(r.tmdbId)"
+        return try await get("\(path)?option=\(option)&client=web")
+    }
+
+    func progress(_ r: PlayRequest) async -> WatchProgress? {
+        try? await get("/api/watch/progress/\(r.kind)/\(r.tmdbId)?season=\(r.season)&episode=\(r.episode)")
+    }
+
+    func convertInfo(_ token: String) async throws -> ConvertInfo { try await get("/api/play/convert?u=\(query(token))") }
+
+    func saveProgress(_ r: PlayRequest, position: Double, duration: Double) async {
+        let body: [String: Any] = ["kind": r.kind, "tmdbId": r.tmdbId, "season": r.season, "episode": r.episode,
+                                   "position": position, "duration": duration]
+        let _: Empty? = try? await send("PUT", "/api/watch/progress", body: body)
+    }
+
+    func setInList(_ kind: String, _ id: Int, _ on: Bool) async throws {
+        let _: Empty? = try await send(on ? "PUT" : "DELETE", "/api/watch/list/\(kind)/\(id)", body: nil)
+    }
+
+    func play(_ card: WatchCard) {
+        playing = PlayRequest(kind: card.kind, tmdbId: card.tmdbId, season: card.season ?? 1, episode: card.episode ?? 1,
+                              title: card.title, subtitle: card.episodeLine, start: -1)
+    }
+
+    private func query(_ s: String) -> String {
+        s.addingPercentEncoding(withAllowedCharacters: .alphanumerics) ?? s
     }
 
     // ---- Live TV ----
@@ -111,7 +159,7 @@ final class Cue: ObservableObject {
 
     func get<T: Decodable>(_ path: String) async throws -> T { try await send("GET", path, body: nil) }
 
-    func send<T: Decodable>(_ method: String, _ path: String, body: [String: String]?) async throws -> T {
+    func send<T: Decodable>(_ method: String, _ path: String, body: [String: Any]?) async throws -> T {
         guard let u = url(path) else { throw CueError(message: "That server address doesn't look right.") }
         var req = URLRequest(url: u, timeoutInterval: 30)
         req.httpMethod = method
