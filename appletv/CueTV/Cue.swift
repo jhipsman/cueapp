@@ -136,6 +136,11 @@ final class Cue: ObservableObject {
 
     func channels() async throws -> LiveChannels { try await get("/api/live/channels") }
 
+    func guide(ids: [String], from: Date, hours: Int) async throws -> LiveGuide {
+        let list = ids.prefix(150).joined(separator: ",")
+        return try await get("/api/live/guide?ids=\(query(list))&from=\(Int(from.timeIntervalSince1970))&hours=\(hours)")
+    }
+
     func play(_ id: String) async throws -> LivePlay { try await get("/api/live/play/\(escape(id))") }
 
     func setFavorite(_ id: String, _ on: Bool) async throws {

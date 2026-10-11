@@ -54,13 +54,21 @@ struct HomeView: View {
                 let rows = rowsOf(home)
                 ScrollView(.vertical) {
                     LazyVStack(alignment: .leading, spacing: 30) {
-                        if let hero = heroOf(home, rows) {
-                            Banner(card: hero)
+                        let featured = featuredOf(home, rows)
+                        if !featured.isEmpty {
+                            Banner(cards: featured)
                         }
-                        ForEach(rows) { r in
+                        ForEach(Array(rows.enumerated()), id: \.element.id) { i, r in
                             CardRow(title: r.title, items: r.items, wide: r.key == "continue" || r.key == "new-episodes") { c in
                                 openCard(c, cue: cue, nav: nav)
                             }
+                            // What's on live, after Continue Watching (or first).
+                            if only == nil && i == (rows.first?.key == "continue" ? 0 : -1) {
+                                OnNowRow()
+                            }
+                        }
+                        if only == nil && rows.first?.key != "continue" {
+                            OnNowRow()
                         }
                     }
                     .padding(.bottom, 80)
@@ -95,21 +103,34 @@ struct HomeView: View {
         }
     }
 
-    private func heroOf(_ h: WatchHome, _ rows: [WatchRow]) -> WatchCard? {
-        if let hero = h.hero, only == nil || hero.kind == only { return hero }
-        return rows.flatMap(\.items).first { $0.backdropUrl != nil && $0.overview != nil && !$0.resumes }
+    // The banner's titles: Home's own pick, then a few more with artwork
+    // and a story from the rows (not ones being watched).
+    private func featuredOf(_ h: WatchHome, _ rows: [WatchRow]) -> [WatchCard] {
+        var out: [WatchCard] = []
+        if let hero = h.hero, only == nil || hero.kind == only { out.append(hero) }
+        for c in rows.flatMap(\.items) where out.count < 8 {
+            if c.backdropUrl != nil, c.overview != nil, !c.resumes, !out.contains(where: { $0.kind == c.kind && $0.tmdbId == c.tmdbId }) {
+                out.append(c)
+            }
+        }
+        return out
     }
 }
 
 // The big banner at the top of Home: artwork edge to edge, the title, its
-// story, Play and More Info.
+// story, Play and More Info. It moves on to the next featured title every
+// few seconds (the dots show which), but not while Play or More Info is
+// highlighted.
 @MainActor
 struct Banner: View {
     @EnvironmentObject var cue: Cue
     @EnvironmentObject var nav: Nav
-    let card: WatchCard
+    let cards: [WatchCard]
+    @State private var index = 0
+    @FocusState private var focused: Int?
 
     var body: some View {
+        let card = cards[min(index, cards.count - 1)]
         ZStack(alignment: .bottomLeading) {
             Artwork(url: card.backdropUrl)
                 .frame(maxWidth: .infinity)
@@ -131,15 +152,102 @@ struct Banner: View {
                     Button { cue.play(card) } label: {
                         Label(card.resumes ? "Resume" : "Play", systemImage: "play.fill")
                     }
+                    .focused($focused, equals: 0)
                     Button { nav.path.append(card) } label: {
                         Label("More Info", systemImage: "info.circle")
                     }
+                    .focused($focused, equals: 1)
                 }
                 .padding(.top, 10)
+                if cards.count > 1 {
+                    HStack(spacing: 10) {
+                        ForEach(cards.indices, id: \.self) { i in
+                            Capsule().fill(Color.white.opacity(i == index ? 0.95 : 0.35))
+                                .frame(width: i == index ? 34 : 12, height: 12)
+                        }
+                    }
+                    .padding(.top, 14)
+                }
             }
             .padding(.leading, 80)
             .padding(.bottom, 50)
+            .id(index)
+            .transition(.opacity)
         }
+        .animation(.easeInOut(duration: 0.6), value: index)
+        .task {
+            while !Task.isCancelled {
+                try? await Task.sleep(nanoseconds: 9_000_000_000)
+                if focused == nil, cards.count > 1 { index = (index + 1) % cards.count }
+            }
+        }
+    }
+}
+
+// What's on live now: a channel's logo and its show (with how far through)
+// for Favorites, or the first channels. Selecting one plays it.
+@MainActor
+struct OnNowRow: View {
+    @EnvironmentObject var cue: Cue
+    @State private var channels: [Channel] = []
+    @State private var playing: Channel?
+
+    var body: some View {
+        Group {
+            if !channels.isEmpty {
+                VStack(alignment: .leading, spacing: 18) {
+                    HStack(spacing: 8) {
+                        Text("On Now").font(.title3.weight(.semibold))
+                        Image(systemName: "chevron.right").font(.caption.weight(.bold)).foregroundStyle(.secondary)
+                    }
+                    .padding(.leading, 80)
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        LazyHStack(spacing: 30) {
+                            ForEach(channels) { ch in
+                                Button { playing = ch } label: { OnNowCard(channel: ch) }
+                                    .buttonStyle(.card)
+                            }
+                        }
+                        .padding(.horizontal, 80)
+                        .padding(.vertical, 30)
+                    }
+                    .scrollClipDisabled()
+                }
+            }
+        }
+        .task {
+            guard channels.isEmpty, let live = try? await cue.channels(), live.configured, let all = live.channels else { return }
+            let favs = all.filter(\.favorite)
+            channels = Array((favs.isEmpty ? all : favs).filter { $0.now != nil }.prefix(20))
+        }
+        .fullScreenCover(item: $playing) { ch in
+            PlayerScreen(channel: ch).environmentObject(cue)
+        }
+    }
+}
+
+@MainActor
+struct OnNowCard: View {
+    @EnvironmentObject var cue: Cue
+    let channel: Channel
+
+    var body: some View {
+        HStack(spacing: 18) {
+            Logo(channel: channel).frame(width: 120, height: 70)
+            VStack(alignment: .leading, spacing: 6) {
+                Text(channel.name).font(.caption2).foregroundStyle(.secondary).lineLimit(1)
+                Text(channel.now?.title ?? "").font(.callout.weight(.semibold)).lineLimit(1)
+                if let now = channel.now {
+                    ProgressView(value: now.progress()).tint(cue.accentColor)
+                }
+                if let next = channel.next, let at = next.startDate {
+                    Text("\(Programme.clock.string(from: at))  \(next.title)").font(.caption2).foregroundStyle(.secondary).lineLimit(1)
+                }
+            }
+        }
+        .padding(18)
+        .frame(width: 520, height: 150, alignment: .leading)
+        .background(channelColor(channel.id).opacity(0.5))
     }
 }
 

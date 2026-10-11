@@ -33,7 +33,8 @@ struct Artwork: View {
 }
 
 // A poster that lifts and catches the light when focused (Apple's card
-// style); wide cards are Continue Watching's, with a caption and progress.
+// style), its name underneath; wide cards are Continue Watching's: the
+// artwork with the name over it, and the progress.
 @MainActor
 struct PosterCard: View {
     @EnvironmentObject var cue: Cue
@@ -42,22 +43,32 @@ struct PosterCard: View {
     var onOpen: (WatchCard) -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
+        let w: CGFloat = wide ? 460 : 250
+        VStack(alignment: .leading, spacing: 12) {
             Button { onOpen(card) } label: {
                 ZStack(alignment: .bottomLeading) {
                     Artwork(url: wide ? (card.backdropUrl ?? card.posterUrl) : card.posterUrl, label: card.title)
-                        .frame(width: wide ? 460 : 250, height: wide ? 259 : 375)
+                        .frame(width: w, height: wide ? 259 : 375)
                         .clipped()
-                    if let p = card.progress, p > 0 {
-                        GeometryReader { g in
-                            VStack {
-                                Spacer()
-                                ZStack(alignment: .leading) {
-                                    Rectangle().fill(Color.white.opacity(0.25))
-                                    Rectangle().fill(cue.accentColor).frame(width: g.size.width * p)
-                                }
-                                .frame(height: 6)
+                    if wide {
+                        LinearGradient(colors: [.black.opacity(0.85), .clear], startPoint: .bottom, endPoint: .center)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(card.title).font(.title3.weight(.bold)).lineLimit(1)
+                            if !card.episodeLine.isEmpty {
+                                Text(card.episodeLine).font(.caption).foregroundStyle(.white.opacity(0.8)).lineLimit(1)
                             }
+                        }
+                        .padding(.horizontal, 18)
+                        .padding(.bottom, 20)
+                    }
+                    if let p = card.progress, p > 0 {
+                        VStack {
+                            Spacer()
+                            ZStack(alignment: .leading) {
+                                Rectangle().fill(Color.white.opacity(0.25))
+                                Rectangle().fill(cue.accentColor).frame(width: w * min(p, 1))
+                            }
+                            .frame(height: 6)
                         }
                     }
                     if card.isNew == true {
@@ -71,14 +82,9 @@ struct PosterCard: View {
                 }
             }
             .buttonStyle(.card)
-            if wide {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(card.title).font(.callout.weight(.semibold)).lineLimit(1)
-                    if !card.episodeLine.isEmpty {
-                        Text(card.episodeLine).font(.caption).foregroundStyle(.secondary).lineLimit(1)
-                    }
-                }
-                .frame(width: 460, alignment: .leading)
+            if !wide {
+                Text(card.title).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                    .frame(width: w, alignment: .leading)
             }
         }
     }
@@ -94,7 +100,11 @@ struct CardRow: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
-            Text(title).font(.title3.weight(.semibold)).padding(.leading, 80)
+            HStack(spacing: 8) {
+                Text(title).font(.title3.weight(.semibold))
+                Image(systemName: "chevron.right").font(.caption.weight(.bold)).foregroundStyle(.secondary)
+            }
+            .padding(.leading, 80)
             ScrollView(.horizontal, showsIndicators: false) {
                 LazyHStack(alignment: .top, spacing: 44) {
                     ForEach(items) { c in

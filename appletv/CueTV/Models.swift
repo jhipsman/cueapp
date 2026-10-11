@@ -79,6 +79,10 @@ struct LiveChannels: Decodable {
     let guideLoading: Bool?
 }
 
+struct LiveGuide: Decodable {
+    let programmes: [String: [Programme]]
+}
+
 struct LivePlay: Decodable {
     let id: String
     let name: String
