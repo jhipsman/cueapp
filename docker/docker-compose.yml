@@ -10,13 +10,13 @@
 # with "Bind mount failed ... does not exist". A Synology example is at the
 # bottom of this file.
 #
-# Full guide: https://github.com/rdborg/Mediarium/blob/main/docs/INSTALL.md
+# Full guide: https://github.com/jhipsman/cueapp/blob/main/docs/INSTALL.md
 
 services:
   mediarium:
-    # For sites behind a Cloudflare check, use ghcr.io/rdborg/mediarium:latest-full
+    # For sites behind a Cloudflare check, use ghcr.io/jhipsman/cue:latest-full
     # instead (bigger, but has the helper built in). See docs/INSTALL.md.
-    image: ghcr.io/rdborg/mediarium:latest
+    image: ghcr.io/jhipsman/cue:latest
     container_name: mediarium
     restart: unless-stopped
     # Nothing running in the container can gain more privileges than it starts with.
@@ -96,4 +96,4 @@ services:
 #       - /volume1/docker/mediarium:/config
 #       - /volume1/Media:/data
 #
-# Step by step: https://github.com/rdborg/Mediarium/blob/main/docs/synology.md
+# Step by step: https://github.com/jhipsman/cueapp/blob/main/docs/synology.md

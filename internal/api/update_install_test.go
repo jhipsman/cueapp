@@ -89,7 +89,7 @@ func newInstallEnv(t *testing.T, kitFor func(priv ed25519.PrivateKey) *releaseKi
 	e.kit = kitFor(priv)
 	e.gh = newFakeGitHub(t, e.kit.listJSON())
 	e.dl = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		prefix := "/rdborg/Mediarium/releases/download/v" + e.kit.version + "/"
+		prefix := "/jhipsman/cueapp/releases/download/v" + e.kit.version + "/"
 		name := strings.TrimPrefix(r.URL.Path, prefix)
 		data, ok := e.kit.files[name]
 		if !strings.HasPrefix(r.URL.Path, prefix) || !ok {

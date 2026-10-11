@@ -13,7 +13,7 @@
 #      sha256sums.txt and its signature sha256sums.txt.sig (when the
 #      UPDATE_SIGNING_KEY secret is set), attached to a GitHub Release.
 #   2. A multi-arch (linux/amd64 + linux/arm64) Docker image pushed to
-#      ghcr.io/<owner>/<repo>, built from the repo's Dockerfile, and a second
+#      ghcr.io/<owner>/cue, built from the repo's Dockerfile, and a second
 #      "full" image (tags ending in -full, for example 2.1.3-full and
 #      latest-full) that has the Cloudflare helper built in. The full image is
 #      smoke-tested (both programs must answer) before it is pushed.
@@ -294,13 +294,13 @@ jobs:
 
       # Image tags, taken from VERSION. For 2.1.3: 2.1.3, 2.1 and latest.
       # A pre-release (2.1.0-beta.1) gets only its own exact tag, so people
-      # following 2.1 or latest are never moved onto a beta. The repository
+      # following 2.1 or latest are never moved onto a beta. The owner
       # name is lower-cased by the action, which ghcr.io requires.
       - name: Docker metadata
         id: meta
         uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6
         with:
-          images: ghcr.io/${{ github.repository }}
+          images: ghcr.io/${{ github.repository_owner }}/cue
           flavor: |
             latest=false
           tags: |
@@ -331,7 +331,7 @@ jobs:
         id: meta_full
         uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6
         with:
-          images: ghcr.io/${{ github.repository }}
+          images: ghcr.io/${{ github.repository_owner }}/cue
           flavor: |
             latest=false
             suffix=-full

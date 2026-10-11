@@ -50,9 +50,10 @@ android {
         compose = true
     }
     lint {
-        // Builds on GitHub must not stop over a lint opinion; real errors still fail compiling.
+        // assembleRelease doesn't run lint; the TV app workflow runs lintRelease
+        // as its own step, which fails on lint errors (warnings only report).
         checkReleaseBuilds = false
-        abortOnError = false
+        abortOnError = true
     }
 }
 

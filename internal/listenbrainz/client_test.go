@@ -18,7 +18,7 @@ func newClient(t *testing.T, h http.HandlerFunc, opts ...listenbrainz.Option) (*
 	var hits atomic.Int32
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		hits.Add(1)
-		if ua := r.Header.Get("User-Agent"); ua != "Mediarium/9.9 ( https://github.com/rdborg/Mediarium )" {
+		if ua := r.Header.Get("User-Agent"); ua != "Mediarium/9.9 ( https://github.com/jhipsman/cueapp )" {
 			t.Errorf("User-Agent = %q", ua)
 		}
 		h(w, r)

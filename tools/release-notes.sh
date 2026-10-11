@@ -20,7 +20,7 @@ if [ -z "${section}" ]; then
 fi
 
 cat <<EOF
-**Install or update:** the Docker image is \`ghcr.io/rdborg/mediarium:${version}\` (also \`:latest\`), for \`linux/amd64\` and \`linux/arm64\`. A running Cue offers this version under Settings > System, where **Update now** installs it. New here? Start with the [install guide](https://github.com/rdborg/Mediarium/blob/main/docs/INSTALL.md) or [mediarium.app](https://mediarium.app).
+**Install or update:** the Docker image is \`ghcr.io/jhipsman/cue:${version}\` (also \`:latest\`), for \`linux/amd64\` and \`linux/arm64\`. A running Cue offers this version under Settings > System, where **Update now** installs it. New here? Start with the [install guide](https://github.com/jhipsman/cueapp/blob/main/docs/INSTALL.md).
 
 ${section}
 EOF

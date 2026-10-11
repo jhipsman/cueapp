@@ -99,8 +99,8 @@ The example releases version `2.1.0`. Replace it with your number.
 8. **Check the result.** Open the GitHub Release page and see the files are there. Pull the image and look at the version:
 
    ```bash
-   docker pull ghcr.io/rdborg/mediarium:2.1.0
-   docker run --rm -p 8264:8264 ghcr.io/rdborg/mediarium:2.1.0
+   docker pull ghcr.io/jhipsman/cue:2.1.0
+   docker run --rm -p 8264:8264 ghcr.io/jhipsman/cue:2.1.0
    # then open http://localhost:8264/api/version
    ```
 
@@ -125,6 +125,28 @@ Nothing updates unless the person switches on an overnight install. Each release
 To update, a user changes the tag in their compose file if needed, then runs `docker compose pull && docker compose up -d`. The database migrates by itself on start; they should back up `/config` first. See [INSTALL.md](./INSTALL.md#updating). (Native binaries are attached to each GitHub Release too, but they are not a supported install yet: see [PLATFORMS.md](./PLATFORMS.md).)
 
 Administrators are also told about a new release by the app itself. Once a day it reads the latest releases of this repository from the GitHub API and shows the first ten lines of the release notes, so write them for users. A signed release also gets an **Update now** button in the Docker images. A release must therefore carry its signature: see [Signing releases](#signing-releases). A pre-release is only offered to installs that already run a pre-release.
+
+## Where updates and images come from
+
+Everything a Cue install fetches comes from this repository, `jhipsman/cueapp`, without signing in:
+
+- **Update check and Update now**: the app reads `api.github.com/repos/jhipsman/cueapp/releases` (`DefaultRepo` in `internal/updatecheck/updatecheck.go`) and downloads the chosen release's files from its GitHub Release.
+- **Docker image**: `ghcr.io/jhipsman/cue`. Releases push the version tags and `latest` (see above). Every push to `main` pushes `edge` and the commit's SHA (`.github/workflows/cloud-image.yml`). Until the first release exists, it moves `latest` too, so cloud servers get `main` builds. The package must be **public** on GitHub (Packages, cue, Package settings), or `docker compose pull` says "unauthorized".
+- **TV app**: `http://<server>:8264/tv.apk` forwards to the `tv-latest` release of this repository (`internal/api/watch_tv.go`).
+- **Install scripts and links**: the README's `curl` of `docker/docker-compose.yml`, `deploy/cloud/install.sh` and the app's Docs and GitHub links (`web/src/docs.ts`) point at files and pages in this repository.
+
+### If the repository goes private
+
+Each item above relies on anonymous access, so each needs a change first:
+
+| What | What breaks when the repo is private | Options |
+|---|---|---|
+| Update check and Update now | The GitHub API and release downloads need a token, so every install sees "couldn't check" | **(a)** A separate **public** repository that holds only releases (for example `jhipsman/cue-releases`). The release workflow publishes there with a fine-grained token stored as a secret, and `DefaultRepo` points at it. Installs need no secret. **(b)** Each install carries a read-only GitHub token that the checker and fetcher send. Don't build one into the app: anyone can pull it out, and it could read the code. Each user would have to enter their own. **(c)** Host the release list and files elsewhere (object storage or a website) and change the checker. |
+| Docker image | Nothing, as long as the `cue` package stays public: package visibility is set separately from the repository | If the package goes private too, every install needs `docker login ghcr.io` with a `read:packages` token. That includes `install.sh` and its nightly pull. NAS app stores mostly can't do this. Keep it public. |
+| TV app (`/tv.apk`) | The forward to the `tv-latest` release returns 404, so Fire TVs can't install the app | Publish the APK to the public releases repository from (a) and change `defaultTVAppURL`, or have the server serve the APK file itself |
+| Install scripts and links | `raw.githubusercontent.com` downloads (the README's compose file, `install.sh`) and the Docs and issue links return 404 | Move the compose file, `install.sh` and the docs to the public releases repository or a website, and update the links |
+
+The cheapest route is **(a) plus a public package**: one new public repository, one secret for the release workflow, and new URLs in `DefaultRepo`, `defaultTVAppURL`, the README, `install.sh` and `web/src/docs.ts`. No install needs a token.
 
 ## Signing releases
 
@@ -192,13 +214,13 @@ Copy this into the release pull request or an issue:
 - [ ] Release commit pushed to `main`, CI green on it
 - [ ] Tag `vX.Y.Z` created on that commit and pushed
 - [ ] Release workflow finished: GitHub Release has all archives and `sha256sums.txt` and `sha256sums.txt.sig` (no warning about a missing signing key)
-- [ ] Image `ghcr.io/rdborg/mediarium:X.Y.Z` pulls and `/api/version` reports `X.Y.Z`
+- [ ] Image `ghcr.io/jhipsman/cue:X.Y.Z` pulls and `/api/version` reports `X.Y.Z`
 - [ ] Stable release only: `X.Y` and `latest` point at the new image, and `X.Y.Z-full`, `X.Y-full` and `latest-full` exist too
 ```
 
 ## The full image (with the Cloudflare helper)
 
-Every release also publishes `ghcr.io/rdborg/mediarium:<version>-full`, `:<major.minor>-full` and `:latest-full` (a pre-release only gets its exact `-full` tag). It comes from the `full` stage of the `Dockerfile` and is built on the official FlareSolverr image.
+Every release also publishes `ghcr.io/jhipsman/cue:<version>-full`, `:<major.minor>-full` and `:latest-full` (a pre-release only gets its exact `-full` tag). It comes from the `full` stage of the `Dockerfile` and is built on the official FlareSolverr image.
 
 - The FlareSolverr version is pinned in the `FLARESOLVERR_IMAGE` line at the top of the `Dockerfile`, by version and digest. To update it, pull the new image, copy its digest into that line, run `docker/smoke-full.sh` on a local build (`docker build --target full -t mediarium-full-test .`), and put the change in the changelog. Cloudflare changes its checks all the time, so check the FlareSolverr release notes first.
 - The release job builds the image for amd64 first, runs `docker/smoke-full.sh` (both Cue and the helper must answer) and only then pushes amd64 and arm64.

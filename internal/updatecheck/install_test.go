@@ -66,7 +66,7 @@ func makeRelease(t *testing.T, version string, priv ed25519.PrivateKey, program 
 	return fakeRelease{sums: sums, sig: []byte(sig), archive: archive}
 }
 
-// fakeDownloads serves /rdborg/Mediarium/releases/download/<tag>/<file>.
+// fakeDownloads serves /jhipsman/cueapp/releases/download/<tag>/<file>.
 type fakeDownloads struct {
 	srv   *httptest.Server
 	mu    sync.Mutex
@@ -84,7 +84,7 @@ func newFakeDownloads(t *testing.T, tag string, r fakeRelease, version string) *
 		d.mu.Lock()
 		defer d.mu.Unlock()
 		d.paths = append(d.paths, req.URL.Path)
-		prefix := "/rdborg/Mediarium/releases/download/" + tag + "/"
+		prefix := "/jhipsman/cueapp/releases/download/" + tag + "/"
 		if !strings.HasPrefix(req.URL.Path, prefix) {
 			http.NotFound(w, req)
 			return
@@ -101,7 +101,7 @@ func newFakeDownloads(t *testing.T, tag string, r fakeRelease, version string) *
 }
 
 func testFetcher(d *fakeDownloads) *Fetcher {
-	f := &Fetcher{Repo: "rdborg/Mediarium", Base: d.srv.URL, Version: "1.1.0"}
+	f := &Fetcher{Repo: "jhipsman/cueapp", Base: d.srv.URL, Version: "1.1.0"}
 	f.setHosts([]string{"127.0.0.1"}, true)
 	return f
 }
@@ -239,7 +239,7 @@ func TestDownloadsOnlyFromOfficialRepo(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, p := range d.paths {
-		if !strings.HasPrefix(p, "/rdborg/Mediarium/releases/download/v1.2.0/") {
+		if !strings.HasPrefix(p, "/jhipsman/cueapp/releases/download/v1.2.0/") {
 			t.Errorf("asked for %s", p)
 		}
 	}
@@ -252,7 +252,7 @@ func TestRedirectToOtherHostIsRefused(t *testing.T) {
 		http.Redirect(w, r, strings.Replace(evil.URL, "127.0.0.1", "localhost", 1)+"/x", http.StatusFound)
 	}))
 	defer origin.Close()
-	f := &Fetcher{Repo: "rdborg/Mediarium", Base: origin.URL, Version: "1.1.0"}
+	f := &Fetcher{Repo: "jhipsman/cueapp", Base: origin.URL, Version: "1.1.0"}
 	f.setHosts([]string{"127.0.0.1"}, true)
 	pub, _ := keys(t)
 	_, err := f.Fetch(context.Background(), fullRelease("1.2.0"), "linux", "amd64", pub, t.TempDir())
@@ -268,7 +268,7 @@ func TestRedirectWithinAllowedHostsWorks(t *testing.T) {
 		http.Redirect(w, r, real.srv.URL+r.URL.Path, http.StatusFound)
 	}))
 	defer origin.Close()
-	f := &Fetcher{Repo: "rdborg/Mediarium", Base: origin.URL, Version: "1.1.0"}
+	f := &Fetcher{Repo: "jhipsman/cueapp", Base: origin.URL, Version: "1.1.0"}
 	f.setHosts([]string{"127.0.0.1"}, true)
 	if _, err := f.Fetch(context.Background(), fullRelease("1.2.0"), "linux", "amd64", pub, t.TempDir()); err != nil {
 		t.Fatalf("Fetch: %v", err)
@@ -298,7 +298,7 @@ func TestOversizeDownloadsAreCut(t *testing.T) {
 		w.Write(bytes.Repeat([]byte("x"), 2<<20))
 	}))
 	defer srv.Close()
-	f := &Fetcher{Repo: "rdborg/Mediarium", Base: srv.URL, Version: "1.1.0"}
+	f := &Fetcher{Repo: "jhipsman/cueapp", Base: srv.URL, Version: "1.1.0"}
 	f.setHosts([]string{"127.0.0.1"}, true)
 	_, err := f.getBytes(context.Background(), "v1.2.0", SumsName, maxSums)
 	if err == nil || !strings.Contains(err.Error(), "larger than") {
@@ -411,7 +411,7 @@ func TestParsePublicKey(t *testing.T) {
 		}
 	}
 	// The key the project ships is a valid ed25519 key.
-	if _, err := ParsePublicKey("HM7xZn1frF+sxwYVWD/tyt+53pKr3vMtQ813g0Ccn6M="); err != nil {
+	if _, err := ParsePublicKey("ZmKrzWG6+bZEHwLiKj8bLYSL3iwUem6yUA3EVGVlrJk="); err != nil {
 		t.Errorf("the shipped key does not parse: %v", err)
 	}
 }

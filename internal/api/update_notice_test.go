@@ -31,7 +31,7 @@ func newFakeGitHub(t *testing.T, body string) *fakeGitHub {
 		f.hits++
 		f.agents = append(f.agents, r.Header.Get("User-Agent"))
 		f.headers = append(f.headers, r.Header.Clone())
-		if r.URL.Path != "/repos/rdborg/Mediarium/releases" {
+		if r.URL.Path != "/repos/jhipsman/cueapp/releases" {
 			http.NotFound(w, r)
 			return
 		}
@@ -103,7 +103,7 @@ func TestUpdateNoticeVersions(t *testing.T) {
 			if latest == nil || latest["version"] != tc.latest {
 				t.Fatalf("latest = %v, want %s", latest, tc.latest)
 			}
-			if !strings.HasPrefix(fmt.Sprint(latest["url"]), "https://github.com/rdborg/Mediarium/releases/tag/v") {
+			if !strings.HasPrefix(fmt.Sprint(latest["url"]), "https://github.com/jhipsman/cueapp/releases/tag/v") {
 				t.Fatalf("release page = %v", latest["url"])
 			}
 			if n["running"] != tc.running || n["error"] != nil || n["checkedAt"] == nil {

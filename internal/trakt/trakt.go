@@ -91,7 +91,7 @@ func (c *Client) Ping(ctx context.Context) error {
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("trakt-api-version", "2")
 	req.Header.Set("trakt-api-key", c.clientID)
-	req.Header.Set("User-Agent", "Cue (+https://github.com/rdborg/Mediarium)")
+	req.Header.Set("User-Agent", "Cue (+https://github.com/jhipsman/cueapp)")
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return fmt.Errorf("trakt request: %w", err)
@@ -182,7 +182,7 @@ func (c *Client) ListMovies(ctx context.Context, user, listID string) ([]ListIte
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("trakt-api-version", "2")
 	req.Header.Set("trakt-api-key", c.clientID)
-	req.Header.Set("User-Agent", "Cue (+https://github.com/rdborg/Mediarium)")
+	req.Header.Set("User-Agent", "Cue (+https://github.com/jhipsman/cueapp)")
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {

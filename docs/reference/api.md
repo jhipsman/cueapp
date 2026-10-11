@@ -190,6 +190,30 @@ Every route the server exposes. Routes marked **public** need no sign-in; all ot
 | POST | `/api/library/scan` | admin | starts a scan of an existing folder. |
 | GET | `/api/library/scan/{id}` | admin |  |
 
+## live
+
+| Method | Path | Access | What it does |
+|---|---|---|---|
+| GET | `/api/live/catchup/{id}` | signed in | GET /api/live/catchup/{id}?start=<unix>&stop=<unix>: where a show that has aired (or started) on a channel with catch-up plays from its beginning. |
+| GET | `/api/live/channels` | signed in | GET /api/live/channels: every channel with what's on now and next. |
+| DELETE | `/api/live/favorites/{id}` | signed in | PUT and DELETE /api/live/favorites/{id}: star a channel for this profile. |
+| PUT | `/api/live/favorites/{id}` | signed in | PUT and DELETE /api/live/favorites/{id}: star a channel for this profile. |
+| DELETE | `/api/live/follows` | signed in | PUT or DELETE /api/live/follows {"phrase"}: follow, or stop following. |
+| GET | `/api/live/follows` | signed in | GET /api/live/follows: the words this profile follows. |
+| PUT | `/api/live/follows` | signed in | PUT or DELETE /api/live/follows {"phrase"}: follow, or stop following. |
+| GET | `/api/live/guide` | signed in | GET /api/live/guide?ids=1,2,3&from=<unix>&hours=6: the guide for those channels (at most liveGuideMax), from..from+hours. |
+| GET | `/api/live/hls` | signed in | GET /api/live/hls?u=<sealed address>: a provider's playlist, with every address in it pointed back here, or a piece of video passed through. |
+| GET | `/api/live/logo/{id}` | signed in | GET /api/live/logo/{id}: the channel's logo, through Cue (the page may only show pictures from a few places) and kept on disk for a week. |
+| GET | `/api/live/play/{id}` | signed in | GET /api/live/play/{id}: where the channel plays. |
+| GET | `/api/live/recordings` | signed in | GET /api/live/recordings: every recording, newest show first. |
+| PUT | `/api/live/recordings` | signed in | PUT /api/live/recordings {channelId, start, stop, title}: record a show (one on now starts at once). |
+| DELETE | `/api/live/recordings/{id}` | signed in | DELETE /api/live/recordings/{id}: cancel or delete a recording. |
+| GET | `/api/live/recordings/{id}/play` | signed in | GET /api/live/recordings/{id}/play: where a finished recording plays (a signed address, so the TV app's player can open it). |
+| DELETE | `/api/live/reminders` | signed in | DELETE /api/live/reminders?channel=&start=<RFC 3339>: take a reminder off. |
+| GET | `/api/live/reminders` | signed in | GET /api/live/reminders: this profile's reminders, soonest first, each with its channel. |
+| PUT | `/api/live/reminders` | signed in | PUT /api/live/reminders {channelId, start, stop, title}: remind this profile when a show starts. |
+| GET | `/api/live/search` | signed in | GET /api/live/search?q=: what's on now and coming up whose title (or description) has every word searched for, and channels named that way. |
+
 ## manual-import
 
 | Method | Path | Access | What it does |
@@ -203,7 +227,7 @@ Every route the server exposes. Routes marked **public** need no sign-in; all ot
 |---|---|---|---|
 | GET | `/api/media-servers` | admin | lists the Plex, Jellyfin and Emby servers (tokens are never included). |
 | POST | `/api/media-servers` | admin | adds a media server; refreshAfterImport and enabled default to on. |
-| POST | `/api/media-servers/discover` | admin | looks for Plex, Jellyfin and Emby servers on the local network: broadcasts, plus a scan of private networks (subnets, or Cue's own networks and common ... |
+| POST | `/api/media-servers/discover` | admin | looks for Plex, Jellyfin and Emby servers on the local network: broadcasts, plus a scan of private networks (subnets, or Cue's own networks and common home o... |
 | POST | `/api/media-servers/jellyfin/quickconnect` | admin | starts Jellyfin Quick Connect at baseUrl and answers the code to enter in a Jellyfin app, and an id to poll with. |
 | GET | `/api/media-servers/jellyfin/quickconnect/{id}` | admin | reports whether the Quick Connect code was approved; once it is, the Jellyfin server is saved with the access token it gave and returned as server. |
 | GET | `/api/media-servers/links` | any account | lists where a title can be watched: with tmdbId and kind (movie or tv), the enabled servers that have it; without tmdbId, each enabled server's own home page... |
@@ -321,6 +345,35 @@ Every route the server exposes. Routes marked **public** need no sign-in; all ot
 | POST | `/api/onboarding/admin` | **public** | is onboarding wizard step 1. |
 | GET | `/api/onboarding/status` | **public** | tells the frontend whether to show the first-run wizard or the normal app shell. |
 
+## play
+
+| Method | Path | Access | What it does |
+|---|---|---|---|
+| GET | `/api/play/convert` | signed in | GET /api/play/convert?u=<token>: whether the file can be converted, how long it is, and the address that plays it (add &t=<seconds> to start further in). |
+| GET | `/api/play/convert/hls` | **public** | GET /api/play/convert/hls?u=<token>[&t=<seconds>]: starts (or finds) a session and sends the player on to its playlist once the first piece is ready. |
+| GET | `/api/play/convert/hls/{id}/{file}` | **public** | GET /api/play/convert/hls/{id}/{file}: a session's playlist or a piece. |
+| GET | `/api/play/convert/stream` | signed in | GET /api/play/convert/stream?u=<token>[&t=<seconds>]: the file as an MP4 a browser plays, made as it's sent. |
+| GET | `/api/play/movies/{id}` | signed in | GET /api/play/movies/{id}[?option=N][&fresh=1] |
+| GET | `/api/play/series/{id}/{season}/{episode}` | signed in | GET /api/play/series/{id}/{season}/{episode}[?option=N][&fresh=1] |
+| GET | `/api/play/tmdb/movie/{tmdbId}` | signed in | GET /api/play/tmdb/movie/{tmdbId}: any movie, in the library or not. |
+| GET | `/api/play/tmdb/tv/{tmdbId}/{season}/{episode}` | signed in | GET /api/play/tmdb/tv/{tmdbId}/{season}/{episode}: any episode of any show. |
+
+## profile
+
+| Method | Path | Access | What it does |
+|---|---|---|---|
+| PUT | `/api/profile/theme` | signed in | PUT /api/profile/theme {"accent","glow","background"}: the colors of the profile this device is on. |
+
+## profiles
+
+| Method | Path | Access | What it does |
+|---|---|---|---|
+| GET | `/api/profiles` | signed in | GET /api/profiles: who can be picked, and which one this device is on. |
+| POST | `/api/profiles` | admin | POST /api/profiles {"name","avatar"} (main profile only) |
+| DELETE | `/api/profiles/{id}` | admin | DELETE /api/profiles/{id} (main profile only; not the main profile) |
+| PUT | `/api/profiles/{id}` | admin | PUT /api/profiles/{id} {"name"?, "avatar"?, "pin"?} (main profile only; "pin": "" removes it) |
+| POST | `/api/profiles/{id}/select` | signed in | POST /api/profiles/{id}/select {"pin": "1234"}: picks a profile on this device and answers with its token. |
+
 ## quality-profiles
 
 | Method | Path | Access | What it does |
@@ -344,6 +397,12 @@ Every route the server exposes. Routes marked **public** need no sign-in; all ot
 | POST | `/api/queue/{id}/resolve-conflict` | admin | settles a download that is waiting because a file already exists (the "ask me" setting): a person decides, per item, whether the new file replaces the one al... |
 | POST | `/api/queue/{id}/resume` | admin | starts a paused download again. |
 | POST | `/api/queue/{id}/stop` | admin | cancels a running or paused download, and with deleteFiles deletes its partly downloaded files from the downloads folder. |
+
+## recording
+
+| Method | Path | Access | What it does |
+|---|---|---|---|
+| GET | `/api/recording` | **public** | GET /api/recording?t=<signed>: a finished recording's file, with seeking. |
 
 ## rename
 
@@ -405,19 +464,39 @@ Every route the server exposes. Routes marked **public** need no sign-in; all ot
 | GET | `/api/settings` | admin | never echoes the TMDB key back (credentials never logged/exposed in plaintext beyond what's needed); HasTMDBAPIKey tells the UI whether one is already config... |
 | PUT | `/api/settings` | admin | applies a partial update — only non-empty fields are written, so the frontend can PUT just the field(s) a given wizard step/settings form changed. |
 | GET | `/api/settings/filesystem-check` | admin |  |
-| GET | `/api/settings/folder-check` | admin | inspects one folder for the setup screens: does it exist, can Cue write to it, how much room is left and — in Docker — was it actually mapped in fr... |
+| GET | `/api/settings/folder-check` | admin | inspects one folder for the setup screens: does it exist, can Cue write to it, how much room is left and — in Docker — was it actually mapped in from the... |
 | POST | `/api/settings/folder-create` | admin | makes a missing library folder (administrators), only where creatableParent allows. |
 | GET | `/api/settings/hardcover` | admin | GET /api/settings/hardcover |
 | PUT | `/api/settings/hardcover` | admin | PUT /api/settings/hardcover {"token": "..."}: checks the token with Hardcover and saves it (encrypted). |
+| GET | `/api/settings/iptv` | admin | GET /api/settings/iptv: the saved login, without its password. |
+| PUT | `/api/settings/iptv` | admin | PUT /api/settings/iptv {server, username, password}: checks the login with the provider and saves it, encrypted. |
 | GET | `/api/settings/naming-preview` | admin | shows a naming preset or custom format applied to a fixed sample release (kind=movie, the default, or kind=tv), so the page can display the exact file name w... |
 | GET | `/api/settings/naming-tokens` | admin | lists the tokens a custom format can use and the ready-made formats to start from, for the builder in Settings. |
+| GET | `/api/settings/omdb` | admin | GET /api/settings/omdb: whether an OMDb key is saved. |
+| PUT | `/api/settings/omdb` | admin | PUT /api/settings/omdb {"apiKey": "..."}: checks the key with OMDb (on a well-known title) and saves it, encrypted. |
+| GET | `/api/settings/premiumize` | admin | GET /api/settings/premiumize: whether a key is saved, what it is used for and, when Premiumize answers, the account it belongs to. |
+| PUT | `/api/settings/premiumize` | admin | PUT /api/settings/premiumize {"apiKey": "...", "useFor": "torrents"}: an API key is checked with Premiumize and saved (encrypted); an empty one removes it. |
+| GET | `/api/settings/stream-addons` | admin | GET /api/settings/stream-addons: the saved add-ons, without their full addresses (those hold the debrid key). |
+| POST | `/api/settings/stream-addons` | admin | POST /api/settings/stream-addons {"url": ".../manifest.json"}: checks the add-on answers and serves streams, then adds it at the end. |
+| DELETE | `/api/settings/stream-addons/{index}` | admin | DELETE /api/settings/stream-addons/{index} |
+| GET | `/api/settings/streaming` | admin | GET /api/settings/streaming |
+| PUT | `/api/settings/streaming` | admin | PUT /api/settings/streaming {"streamingOnly"?, "maxResolution"?} |
+| GET | `/api/settings/streaming/setup` | admin | GET /api/settings/streaming/setup |
 | POST | `/api/settings/test-service` | admin | checks a key for an outside service without saving it, so the setup wizard and Settings can say whether it works before the person moves on. |
+| GET | `/api/settings/youtube` | admin | GET /api/settings/youtube: whether a YouTube key is saved. |
+| PUT | `/api/settings/youtube` | admin | PUT /api/settings/youtube {"apiKey": "..."}: checks the key with Google and saves it, encrypted. |
 
 ## stats
 
 | Method | Path | Access | What it does |
 |---|---|---|---|
 | GET | `/api/stats/library` | any account |  |
+
+## subs
+
+| Method | Path | Access | What it does |
+|---|---|---|---|
+| GET | `/api/subs` | **public** | GET /api/subs?t=<signed>[&shift=<seconds>]: a subtitle the player was given, as WebVTT. |
 
 ## subtitles
 
@@ -452,7 +531,7 @@ Every route the server exposes. Routes marked **public** need no sign-in; all ot
 | POST | `/api/system/restart` | admin | restarts Cue. |
 | POST | `/api/system/restore` | admin | takes a backup zip (form field "file", at most 1 GB), checks it strictly, stages it in <config>/restore-pending/ and restarts the app so main applies it befo... |
 | POST | `/api/system/shutdown` | admin | stops Cue for good. |
-| GET | `/api/system/stats` | admin | reports how busy the server is (CPU, memory, load, uptime, and Cue's own CPU as app.cpuPercent), the free space for each folder Cue uses, and the... |
+| GET | `/api/system/stats` | admin | reports how busy the server is (CPU, memory, load, uptime, and Cue's own CPU as app.cpuPercent), the free space for each folder Cue uses, and the space on al... |
 | DELETE | `/api/system/update` | admin | removes the installed update, so the next start uses the program inside the container image. |
 | GET | `/api/system/update` | admin | reports the update state (administrators only). |
 | POST | `/api/system/update` | admin | takes the raw program file as the request body, and its SHA-256 in the X-Update-SHA256 header, checks both, and restarts into it. |
@@ -466,6 +545,12 @@ Every route the server exposes. Routes marked **public** need no sign-in; all ot
 | Method | Path | Access | What it does |
 |---|---|---|---|
 | GET | `/api/tags` | any account |  |
+
+## thumb
+
+| Method | Path | Access | What it does |
+|---|---|---|---|
+| GET | `/api/thumb` | **public** | GET /api/thumb?u=<token>&t=<seconds>: a JPEG of the picture there. |
 
 ## tmdb
 
@@ -541,6 +626,26 @@ Every route the server exposes. Routes marked **public** need no sign-in; all ot
 |---|---|---|---|
 | GET | `/api/wanted` | any account | lists what automation is still looking for: "missing" (monitored, nothing downloaded; episodes only once aired) or "cutoff" (downloaded but below the profile... |
 
+## watch
+
+| Method | Path | Access | What it does |
+|---|---|---|---|
+| GET | `/api/watch/home` | signed in | GET /api/watch/home: Continue Watching, My List and the shelves. |
+| DELETE | `/api/watch/list/{kind}/{tmdbId}` | signed in | DELETE /api/watch/list/{kind}/{tmdbId} |
+| PUT | `/api/watch/list/{kind}/{tmdbId}` | signed in | PUT /api/watch/list/{kind}/{tmdbId} |
+| GET | `/api/watch/movie/{tmdbId}` | signed in | GET /api/watch/movie/{tmdbId} |
+| PUT | `/api/watch/progress` | signed in | PUT /api/watch/progress {"kind","tmdbId","season","episode","position","duration"}: the player saves where it is every few seconds. |
+| DELETE | `/api/watch/progress/{kind}/{tmdbId}` | signed in | DELETE /api/watch/progress/{kind}/{tmdbId}: take it off Continue Watching. |
+| GET | `/api/watch/progress/{kind}/{tmdbId}` | signed in | GET /api/watch/progress/{kind}/{tmdbId}?season=&episode=: where to resume. |
+| GET | `/api/watch/providers/{kind}/{tmdbId}` | signed in | GET /api/watch/providers/{kind}/{tmdbId}?region=US |
+| GET | `/api/watch/search` | signed in | GET /api/watch/search?q=...: movies and shows, best match first. |
+| POST | `/api/watch/skips/learn` | signed in | POST /api/watch/skips/learn {"kind","tmdbId","season","segment","start","end","duration"}: the household skipped an intro (start to end) or the credits (pres... |
+| GET | `/api/watch/skips/{kind}/{tmdbId}` | signed in | GET /api/watch/skips/{kind}/{tmdbId}?season=&episode=&duration= |
+| GET | `/api/watch/subtitles/{kind}/{tmdbId}` | signed in | GET /api/watch/subtitles/{kind}/{tmdbId}?season=&episode=&release=&choice= is where the player gets the subtitle: {"url", "label", "choices"}. |
+| GET | `/api/watch/tv/{tmdbId}` | signed in | GET /api/watch/tv/{tmdbId} |
+| GET | `/api/watch/tv/{tmdbId}/next` | signed in | GET /api/watch/tv/{tmdbId}/next?season=1&episode=2: the episode to play after that one, for autoplay. |
+| GET | `/api/watch/tv/{tmdbId}/season/{season}` | signed in | GET /api/watch/tv/{tmdbId}/season/{season}: the season's episodes, with thumbnails and how far this account got in each. |
+
 ## watched
 
 | Method | Path | Access | What it does |
@@ -552,4 +657,4 @@ Every route the server exposes. Routes marked **public** need no sign-in; all ot
 | PUT | `/api/watched/settings` | admin | PUT /api/watched/settings {"sync": true, "cleanup": {...}} |
 | POST | `/api/watched/sync` | admin | POST /api/watched/sync: read what's been watched now. |
 
-292 routes.
+357 routes.

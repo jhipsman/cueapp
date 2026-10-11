@@ -41,7 +41,7 @@ Shared folder "Container" (/share/Container)
 ```yaml
 services:
   mediarium:
-    image: ghcr.io/rdborg/mediarium:latest
+    image: ghcr.io/jhipsman/cue:latest
     container_name: mediarium
     restart: unless-stopped
     ports:
@@ -80,7 +80,7 @@ To add one later, edit the application's YAML, then save it with **Update** so t
 
 ## Updating
 
-1. Over SSH, download the newest image: `docker pull ghcr.io/rdborg/mediarium:latest`.
+1. Over SSH, download the newest image: `docker pull ghcr.io/jhipsman/cue:latest`.
 2. In **Container Station → Applications**, open **mediarium**'s actions menu, choose **Edit**, and save it with **Update** so the container is recreated with the new image.
 
 If your Container Station version has no such option, delete the application (your mapped folders are kept) and create it again with the same YAML: the newest image is used. Your settings and library stay, because they live in the folders you mapped. The menu names above can differ slightly between Container Station versions.

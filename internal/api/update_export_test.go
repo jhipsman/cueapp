@@ -20,7 +20,7 @@ func (s *Server) TestSetUpdateEnv(version, imageVersion string) {
 // TestSetGitHub points the new-version check at a fake release server.
 func (s *Server) TestSetGitHub(baseURL string) {
 	s.initUpdates()
-	s.upd.checker = &updatecheck.Checker{Repo: "rdborg/Mediarium", Version: s.version, BaseURL: baseURL}
+	s.upd.checker = &updatecheck.Checker{Repo: "jhipsman/cueapp", Version: s.version, BaseURL: baseURL}
 }
 
 // TestSetFetcher replaces the release downloader.

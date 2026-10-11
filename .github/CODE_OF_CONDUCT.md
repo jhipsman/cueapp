@@ -20,7 +20,7 @@ Examples of unacceptable behavior:
 
 This Code of Conduct applies in all project spaces: issues, pull requests, discussions and any other place the project is represented.
 
-Instances of unacceptable behavior may be reported privately to the project maintainer, [@rdborg](https://github.com/rdborg), using the contact details on that GitHub profile. All complaints will be reviewed and investigated promptly and fairly, and the privacy of the person reporting will be respected.
+Instances of unacceptable behavior may be reported privately to the project maintainer, [@jhipsman](https://github.com/jhipsman), using the contact details on that GitHub profile. All complaints will be reviewed and investigated promptly and fairly, and the privacy of the person reporting will be respected.
 
 Maintainers may remove, edit or reject comments, commits, code, issues and other contributions that do not follow this Code of Conduct, and may temporarily or permanently ban anyone whose behavior is inappropriate, threatening, offensive or harmful.
 

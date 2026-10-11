@@ -68,13 +68,13 @@ This is the same file as [`docker/docker-compose.yml`](../docker/docker-compose.
 # with "Bind mount failed ... does not exist". A Synology example is at the
 # bottom of this file.
 #
-# Full guide: https://github.com/rdborg/Mediarium/blob/main/docs/INSTALL.md
+# Full guide: https://github.com/jhipsman/cueapp/blob/main/docs/INSTALL.md
 
 services:
   mediarium:
-    # For sites behind a Cloudflare check, use ghcr.io/rdborg/mediarium:latest-full
+    # For sites behind a Cloudflare check, use ghcr.io/jhipsman/cue:latest-full
     # instead (bigger, but has the helper built in). See docs/INSTALL.md.
-    image: ghcr.io/rdborg/mediarium:latest
+    image: ghcr.io/jhipsman/cue:latest
     container_name: mediarium
     restart: unless-stopped
     # Nothing running in the container can gain more privileges than it starts with.
@@ -154,7 +154,7 @@ services:
 #       - /volume1/docker/mediarium:/config
 #       - /volume1/Media:/data
 #
-# Step by step: https://github.com/rdborg/Mediarium/blob/main/docs/synology.md
+# Step by step: https://github.com/jhipsman/cueapp/blob/main/docs/synology.md
 ```
 
 In a `volumes` line, the part **before** the colon is the folder on your server and the part **after** it is where Cue sees it. Only ever change the part before the colon.
@@ -328,7 +328,7 @@ Some torrent sites show a Cloudflare "checking your browser" page that only a re
 **Easiest: use the `-full` version of Cue.** It has the helper (FlareSolverr) built in and started for you, in the same container. In your compose file, change the image line to:
 
 ```yaml
-image: ghcr.io/rdborg/mediarium:latest-full
+image: ghcr.io/jhipsman/cue:latest-full
 ```
 
 Then run `docker compose pull && docker compose up -d`. Nothing else to set up: **Settings > Indexers & Search** shows "Built in and running". You can switch between `latest` and `latest-full` at any time. Your settings and library stay.
@@ -369,9 +369,9 @@ That downloads the newest image and restarts Cue with it. Your settings and libr
 
   | Tag | Moves when |
   |---|---|
-  | `ghcr.io/rdborg/mediarium:2.1.0` (`:2.1.0-full`) | never |
-  | `ghcr.io/rdborg/mediarium:2.1` (`:2.1-full`) | a bug-fix release of 2.1 comes out (2.1.1, 2.1.2...) |
-  | `ghcr.io/rdborg/mediarium:latest` (`:latest-full`) | any new release |
+  | `ghcr.io/jhipsman/cue:2.1.0` (`:2.1.0-full`) | never |
+  | `ghcr.io/jhipsman/cue:2.1` (`:2.1-full`) | a bug-fix release of 2.1 comes out (2.1.1, 2.1.2...) |
+  | `ghcr.io/jhipsman/cue:latest` (`:latest-full`) | any new release |
 
   A pre-release (for example `2.1.0-beta.1`) only gets its exact tag. What the numbers mean: [RELEASING.md](./RELEASING.md#what-the-version-numbers-mean).
 
@@ -450,7 +450,7 @@ To restore by hand: stop Cue, put the backup folder back in place of `config`, s
 
 ```bash
 docker compose down
-docker image rm ghcr.io/rdborg/mediarium:latest
+docker image rm ghcr.io/jhipsman/cue:latest
 ```
 
 This removes the container and the image. Your folders stay on disk:
@@ -469,12 +469,12 @@ docker run -d --name mediarium --restart unless-stopped \
   -e DOWNLOADS_DIR=/data/downloads -e MOVIES_DIR=/data/movies -e TV_DIR=/data/tv \
   -v /path/to/mediarium/config:/config \
   -v /path/to/data:/data \
-  ghcr.io/rdborg/mediarium:latest
+  ghcr.io/jhipsman/cue:latest
 ```
 
 For the optional folders, add for example `-e MUSIC_DIR=/data/music` (and `EBOOKS_DIR`, `AUDIOBOOKS_DIR`) for a folder inside `/data`, or `-v /path/to/music:/music` for one somewhere else.
 
-To update: `docker pull ghcr.io/rdborg/mediarium:latest`, then `docker rm -f mediarium` and run the same command again (your folders are kept).
+To update: `docker pull ghcr.io/jhipsman/cue:latest`, then `docker rm -f mediarium` and run the same command again (your folders are kept).
 
 ## Using a Docker app
 
@@ -526,14 +526,14 @@ Update to the newest version first. Then check that the settings folder (`/confi
 **The time in the log is wrong.**
 Set `TZ` and run `docker compose up -d`.
 
-**Still stuck?** First look at **Settings > System > Logs and errors**: it lists what went wrong, in plain words, with what to try ([Logs and errors](./logs-and-errors.md)). If the pages open, go to **Settings > System > Server and backup**, find the **Help and support** box and press **Copy for support**. It copies your version, how the database is doing, the setup warnings, the latest problems from Logs and errors and the last 500 lines of the log, with passwords, keys and tokens left out. Paste it into an [issue](https://github.com/rdborg/Mediarium/issues/new/choose) together with how you installed Cue. If the pages do not open, use the log instead (`docker compose logs mediarium`) and remove API keys, passwords and VPN keys before pasting anything.
+**Still stuck?** First look at **Settings > System > Logs and errors**: it lists what went wrong, in plain words, with what to try ([Logs and errors](./logs-and-errors.md)). If the pages open, go to **Settings > System > Server and backup**, find the **Help and support** box and press **Copy for support**. It copies your version, how the database is doing, the setup warnings, the latest problems from Logs and errors and the last 500 lines of the log, with passwords, keys and tokens left out. Paste it into an [issue](https://github.com/jhipsman/cueapp/issues/new/choose) together with how you installed Cue. If the pages do not open, use the log instead (`docker compose logs mediarium`) and remove API keys, passwords and VPN keys before pasting anything.
 
 ## Building from source
 
 For people working on Cue itself. You need Docker and a copy of the source:
 
 ```bash
-git clone https://github.com/rdborg/Mediarium.git
+git clone https://github.com/jhipsman/cueapp.git
 cd Cue
 cp docker/.env.example .env
 docker compose up -d --build

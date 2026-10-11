@@ -46,7 +46,7 @@ func TestPickAndNewer(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			got, ok := pick("rdborg/Mediarium", tc.running, tc.list)
+			got, ok := pick("jhipsman/cueapp", tc.running, tc.list)
 			if tc.want == "" {
 				if ok {
 					t.Fatalf("picked %q, want nothing", got.Version)
@@ -65,8 +65,8 @@ func TestPickAndNewer(t *testing.T) {
 
 func TestPickBuildsOwnURL(t *testing.T) {
 	g := rel("v1.2.0", false)
-	got, _ := pick("rdborg/Mediarium", "1.0.0", []githubRelease{g})
-	if got.URL != "https://github.com/rdborg/Mediarium/releases/tag/v1.2.0" {
+	got, _ := pick("jhipsman/cueapp", "1.0.0", []githubRelease{g})
+	if got.URL != "https://github.com/jhipsman/cueapp/releases/tag/v1.2.0" {
 		t.Fatalf("URL = %q", got.URL)
 	}
 	if got.Tag != "v1.2.0" {
@@ -77,7 +77,7 @@ func TestPickBuildsOwnURL(t *testing.T) {
 func TestPickKeepsOnlySafeAssetNames(t *testing.T) {
 	g := rel("v1.2.0", false)
 	json.Unmarshal([]byte(`{"assets":[{"name":"sha256sums.txt","size":1},{"name":"../evil","size":1},{"name":"a b","size":1},{"name":"mediarium_1.2.0_linux_amd64.tar.gz","size":9}]}`), &g)
-	got, _ := pick("rdborg/Mediarium", "1.0.0", []githubRelease{g})
+	got, _ := pick("jhipsman/cueapp", "1.0.0", []githubRelease{g})
 	if len(got.Assets) != 2 || got.Assets[0].Name != "sha256sums.txt" || got.Assets[1].Size != 9 {
 		t.Fatalf("assets = %+v", got.Assets)
 	}
@@ -141,7 +141,7 @@ func newFakeGitHub(t *testing.T, body string) *fakeGitHub {
 		defer f.mu.Unlock()
 		f.hits++
 		f.headers = append(f.headers, r.Header.Clone())
-		if r.URL.Path != "/repos/rdborg/Mediarium/releases" {
+		if r.URL.Path != "/repos/jhipsman/cueapp/releases" {
 			http.NotFound(w, r)
 			return
 		}
@@ -169,7 +169,7 @@ const releaseList = `[
 ]`
 
 func checkerFor(f *fakeGitHub, version string) *Checker {
-	return &Checker{Repo: "rdborg/Mediarium", Version: version, BaseURL: f.srv.URL}
+	return &Checker{Repo: "jhipsman/cueapp", Version: version, BaseURL: f.srv.URL}
 }
 
 func TestLatestFromFakeServer(t *testing.T) {
@@ -272,7 +272,7 @@ func TestSlowServerTimesOut(t *testing.T) {
 	defer close(block)
 	ctx, cancel := context.WithTimeout(context.Background(), 200*time.Millisecond)
 	defer cancel()
-	c := &Checker{Repo: "rdborg/Mediarium", BaseURL: srv.URL}
+	c := &Checker{Repo: "jhipsman/cueapp", BaseURL: srv.URL}
 	if _, _, err := c.Latest(ctx, "1.0.0"); !errors.Is(err, ErrUnavailable) {
 		t.Fatalf("error = %v", err)
 	}
@@ -288,7 +288,7 @@ func TestHugeAnswerIsRefused(t *testing.T) {
 		w.Write([]byte("]"))
 	}))
 	defer srv.Close()
-	c := &Checker{Repo: "rdborg/Mediarium", BaseURL: srv.URL}
+	c := &Checker{Repo: "jhipsman/cueapp", BaseURL: srv.URL}
 	if _, _, err := c.Latest(context.Background(), "1.0.0"); !errors.Is(err, ErrUnavailable) {
 		t.Fatalf("error = %v", err)
 	}
@@ -301,7 +301,7 @@ func TestBadRepoNameIsRefused(t *testing.T) {
 			t.Errorf("repo %q: error = %v", repo, err)
 		}
 	}
-	if !ValidRepo("rdborg/Mediarium") || !ValidRepo("a.b-c_d/e.f") {
+	if !ValidRepo("jhipsman/cueapp") || !ValidRepo("a.b-c_d/e.f") {
 		t.Error("a good repo name was refused")
 	}
 }
