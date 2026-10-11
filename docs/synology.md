@@ -103,7 +103,7 @@ Not sure of a folder's path? Right-click it in File Station and choose **Propert
 ```yaml
 services:
   mediarium:
-    image: ghcr.io/rdborg/mediarium:latest
+    image: ghcr.io/jhipsman/cue:latest
     container_name: mediarium
     restart: unless-stopped
     ports:
@@ -133,7 +133,7 @@ services:
 ```yaml
 services:
   mediarium:
-    image: ghcr.io/rdborg/mediarium:latest
+    image: ghcr.io/jhipsman/cue:latest
     container_name: mediarium
     restart: unless-stopped
     ports:
@@ -193,7 +193,7 @@ Check the project is **Running**, then open the container's **Log** tab. It shou
 **"Project creation failed" or the image doesn't download**
 Check that the NAS can reach the internet. Also check that the text was pasted with its spaces intact. Compose text is sensitive to indentation.
 
-More answers: [install guide troubleshooting](./INSTALL.md#troubleshooting). Still stuck? [Open an issue](https://github.com/rdborg/Mediarium/issues/new/choose) and say you are on a Synology, with your DSM version and NAS model.
+More answers: [install guide troubleshooting](./INSTALL.md#troubleshooting). Still stuck? [Open an issue](https://github.com/jhipsman/cueapp/issues/new/choose) and say you are on a Synology, with your DSM version and NAS model.
 
 ## Adding music, ebooks or audiobooks later
 
@@ -252,7 +252,7 @@ sudo docker compose up -d
 **From Container Manager only:**
 
 1. **Project, mediarium, Action, Stop**, then **Action, Clean**. This removes the container, not your folders.
-2. **Image:** select `ghcr.io/rdborg/mediarium` and **Delete** it. Newer versions of Container Manager may show **Update available** here with an **Update** button. If so, use that and skip the Build in the next step.
+2. **Image:** select `ghcr.io/jhipsman/cue` and **Delete** it. Newer versions of Container Manager may show **Update available** here with an **Update** button. If so, use that and skip the Build in the next step.
 3. **Project, mediarium, Action, Build**, then **Start** if it doesn't start by itself. Container Manager downloads the newest image because the old one is gone.
 
 Your settings and library are kept, and Cue updates its database when it starts. Read the [changelog](../CHANGELOG.md) first and back up before a big update.

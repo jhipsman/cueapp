@@ -10,7 +10,7 @@ reporting, in case it is already fixed.
 **Do not open a public issue** for a security problem.
 
 Report it privately instead, using GitHub's
-[private vulnerability reporting](https://github.com/rdborg/Mediarium/security/advisories/new)
+[private vulnerability reporting](https://github.com/jhipsman/cueapp/security/advisories/new)
 ("Report a vulnerability" on the Security tab).
 
 Include as much of this as you can:
@@ -27,7 +27,7 @@ published and you're credited, unless you'd rather not be.
 ## Scope
 
 In scope: the Cue server, its web interface, its API, the Docker image
-(`ghcr.io/rdborg/mediarium`) and the release binaries.
+(`ghcr.io/jhipsman/cue`) and the release binaries.
 
 Cue serves plain HTTP and is meant for your home network. Exposing
 port 8264 directly to the internet is not supported: use a VPN or a reverse

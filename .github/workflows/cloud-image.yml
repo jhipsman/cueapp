@@ -1,12 +1,14 @@
-# The image a cloud server runs (deploy/cloud): built from every push to the
-# default branch, for Intel/AMD and ARM servers, and published as
-# ghcr.io/<owner>/cue:latest. Servers set up with deploy/cloud/install.sh
-# pick it up in their nightly update.
+# The image a cloud server runs (deploy/cloud): built from every push to main,
+# for Intel/AMD and ARM servers, and published as ghcr.io/<owner>/cue:edge.
+# Releases (release.yml) publish to the same image name with version tags and
+# :latest. Until the first release exists this workflow also moves :latest, so
+# servers set up with deploy/cloud/install.sh (which follow :latest) pick up
+# main builds in their nightly update; after that :latest is left to releases.
 name: Cloud image
 
 on:
   push:
-    branches: [claude/nice-bohr-0m2h54, main]
+    branches: [main]
     paths-ignore:
       - "android/**"
       - "docs/**"
@@ -42,7 +44,17 @@ jobs:
 
       - name: Image name
         id: name
-        run: echo "image=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/cue" >> "$GITHUB_OUTPUT"
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          image="ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/cue"
+          echo "image=${image}" >> "$GITHUB_OUTPUT"
+          # :latest belongs to releases once there is one (a v* tag). If the
+          # lookup fails, fail the job rather than risk moving :latest.
+          releases="$(gh api --paginate "repos/${GITHUB_REPOSITORY}/tags" --jq '.[].name | select(startswith("v"))')"
+          if [ -z "${releases}" ]; then
+            echo "latest=${image}:latest" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Build and push
         uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7
@@ -51,8 +63,9 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: true
           tags: |
-            ${{ steps.name.outputs.image }}:latest
+            ${{ steps.name.outputs.image }}:edge
             ${{ steps.name.outputs.image }}:${{ github.sha }}
+            ${{ steps.name.outputs.latest }}
           labels: |
             org.opencontainers.image.source=https://github.com/${{ github.repository }}
             org.opencontainers.image.description=Cue, for a cloud server

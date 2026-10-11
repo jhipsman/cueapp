@@ -29,7 +29,7 @@ export function installSteps(install: { kind: 'docker' | 'native'; full: boolean
   const tag = install.full ? 'latest-full' : 'latest'
   const notes = ['Your settings and library are kept. Cue updates its database when it starts. Download a backup first (Settings, System).']
   if (install.full) {
-    notes.push(`You use the image with the Cloudflare helper built in. Keep its tag ending in -full, for example ghcr.io/rdborg/mediarium:${tag}.`)
+    notes.push(`You use the image with the Cloudflare helper built in. Keep its tag ending in -full, for example ghcr.io/jhipsman/cue:${tag}.`)
   }
   return {
     groups: [
@@ -38,7 +38,7 @@ export function installSteps(install: { kind: 'docker' | 'native'; full: boolean
         steps: [
           'Open Container Manager and go to Project.',
           'Select mediarium, then choose Action, Stop, and then Action, Clean. This removes the container, not your folders.',
-          'Go to Image, select ghcr.io/rdborg/mediarium and delete it. If it says Update available, use that instead and skip the Build below.',
+          'Go to Image, select ghcr.io/jhipsman/cue and delete it. If it says Update available, use that instead and skip the Build below.',
           'Go back to Project, select mediarium and choose Action, Build. Container Manager downloads the new version and starts it.',
         ],
       },

@@ -45,7 +45,7 @@ jobs:
           echo "version=${version}" >> "$GITHUB_OUTPUT"
           echo "major_minor=${core%.*}" >> "$GITHUB_OUTPUT"
           # ghcr.io only accepts lower-case names.
-          echo "image=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_OUTPUT"
+          echo "image=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/cue" >> "$GITHUB_OUTPUT"
 
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         if: steps.latest.outputs.found == 'true'

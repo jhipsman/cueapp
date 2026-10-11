@@ -74,7 +74,7 @@ RUN set -e; \
 FROM ${FLARESOLVERR_IMAGE} AS full
 USER root
 ARG VERSION=
-LABEL org.opencontainers.image.version="${VERSION}"       org.opencontainers.image.source="https://github.com/rdborg/mediarium"       org.opencontainers.image.licenses="AGPL-3.0"       org.opencontainers.image.description="Cue with a built-in Cloudflare helper (FlareSolverr)"
+LABEL org.opencontainers.image.version="${VERSION}"       org.opencontainers.image.source="https://github.com/jhipsman/cueapp"       org.opencontainers.image.licenses="AGPL-3.0"       org.opencontainers.image.description="Cue with a built-in Cloudflare helper (FlareSolverr)"
 RUN apt-get update  && apt-get install -y --no-install-recommends ca-certificates tzdata par2 p7zip-full ffmpeg  && rm -rf /var/lib/apt/lists/*
 ENV PUID=1000     PGID=1000     TZ=Etc/UTC     APP_PORT=8264     BUNDLED_FLARESOLVERR=1
 # The program inside this image. The entrypoint may start a newer installed one
@@ -102,7 +102,7 @@ FROM alpine:3.24
 # build stage. Release builds pass it explicitly, so the label is exact there.
 ARG VERSION=
 LABEL org.opencontainers.image.version="${VERSION}" \
-      org.opencontainers.image.source="https://github.com/rdborg/mediarium" \
+      org.opencontainers.image.source="https://github.com/jhipsman/cueapp" \
       org.opencontainers.image.licenses="AGPL-3.0"
 # par2cmdline (PAR2 verify/repair) and p7zip are the tools internal/organizer
 # shells out to. p7zip is only used for .7z archives: RAR and

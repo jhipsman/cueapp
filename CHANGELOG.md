@@ -31,6 +31,7 @@ under [Unreleased]. How releases are cut: [docs/RELEASING.md](docs/RELEASING.md)
 - **Stream add-ons**: paste a Stremio add-on link (Comet on ElfHosted, Torrentio, MediaFusion) in Settings > Downloading, and Play asks it for streams first, with its own scrapers and sorting. Links set up with your Premiumize key play straight away; Cue's own search is the fallback. See [docs/watch.md](docs/watch.md#stream-add-ons-comet-torrentio-mediafusion).
 
 ### Changed
+- **Updates and installs come from Cue**: the update check and **Update now** look only at Cue's own releases (`jhipsman/cueapp`), signed with Cue's own key, and the install guides and compose files use Cue's image, `ghcr.io/jhipsman/cue`. Builds of `main` are also published as `ghcr.io/jhipsman/cue:edge`.
 - **Mediarium is now Cue**, with a new icon (a C around a play button). Settings, the library, your downloads and everything else carry over as they are.
 
 ### Added

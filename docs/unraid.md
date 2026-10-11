@@ -27,10 +27,10 @@ If you are starting fresh, create the `data` share (Shares → Add Share) and le
 1. Open the **Docker** tab and click **Add Container** at the bottom.
 2. Fill in the top of the form:
    - **Name:** `mediarium`
-   - **Repository:** `ghcr.io/rdborg/mediarium:latest`
+   - **Repository:** `ghcr.io/jhipsman/cue:latest`
    - **Network Type:** `Bridge`
    - **WebUI** (switch on **Advanced View** at the top right to see it): `http://[IP]:[PORT:8264]/`
-   - **Icon URL** (Advanced View, optional): `https://raw.githubusercontent.com/rdborg/Mediarium/main/branding/mediarium-icon-512.png`
+   - **Icon URL** (Advanced View, optional): `https://raw.githubusercontent.com/jhipsman/cueapp/main/branding/mediarium-icon-512.png`
 3. Click **Add another Path, Port, Variable, Label or Device** once for each line below, choose the **Config Type**, and fill in the fields:
 
 | Config Type | Name | Container value | Host value / Value |

@@ -66,7 +66,7 @@ Then, as on your computer: create your account, then **Settings > Streaming** fo
 
 ## Keeping it up to date
 
-The server fetches the latest Cue every night at 4:17 (server time) and restarts it only when there is a new version. To update now:
+The server fetches the latest Cue every night at 4:17 (server time) and restarts it only when there is a new version. Until Cue's first release, "latest" is the newest build of `main`; after that it is the newest release. To keep following every `main` build, put `CUE_IMAGE=ghcr.io/jhipsman/cue:edge` in `/opt/cue/.env`. To update now:
 
 ```sh
 cd /opt/cue && docker compose pull && docker compose up -d

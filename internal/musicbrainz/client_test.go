@@ -94,7 +94,7 @@ func TestSearchArtistsIdentifiesItselfAndEscapesTheQuery(t *testing.T) {
 		t.Fatalf("unexpected artists: %+v", artists)
 	}
 	r := f.last()
-	if got := r.Header.Get("User-Agent"); got != "Mediarium/1.2.3 ( https://github.com/rdborg/Mediarium )" {
+	if got := r.Header.Get("User-Agent"); got != "Mediarium/1.2.3 ( https://github.com/jhipsman/cueapp )" {
 		t.Fatalf("User-Agent = %q", got)
 	}
 	q := r.URL.Query()
@@ -308,7 +308,7 @@ func TestCoverArtURLAndEscaping(t *testing.T) {
 			t.Errorf("luceneEscape(%q) = %q, want %q", in, got, want)
 		}
 	}
-	if UserAgent("") != "Mediarium/dev ( https://github.com/rdborg/Mediarium )" {
+	if UserAgent("") != "Mediarium/dev ( https://github.com/jhipsman/cueapp )" {
 		t.Fatalf("empty version: %s", UserAgent(""))
 	}
 }

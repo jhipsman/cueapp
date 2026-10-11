@@ -92,7 +92,7 @@ func UserAgent(version string) string {
 	if version == "" {
 		version = "dev"
 	}
-	return fmt.Sprintf("Mediarium/%s ( https://github.com/rdborg/Mediarium )", version)
+	return fmt.Sprintf("Mediarium/%s ( https://github.com/jhipsman/cueapp )", version)
 }
 
 // New returns a client for the public server that identifies itself as this

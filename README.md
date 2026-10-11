@@ -12,8 +12,8 @@
   <a href="docs/README.md">Documentation</a> ·
   <a href="docs/FEATURES.md">Features</a> ·
   <a href="CHANGELOG.md">Changelog</a> ·
-  <a href="https://github.com/rdborg/Mediarium/issues">Report a bug</a> ·
-  <a href="https://github.com/rdborg/Mediarium/discussions">Ideas and questions</a>
+  <a href="https://github.com/jhipsman/cueapp/issues">Report a bug</a> ·
+  <a href="https://github.com/jhipsman/cueapp/discussions">Ideas and questions</a>
 </p>
 
 # Cue
@@ -89,7 +89,7 @@ Cue runs in Docker on any 64-bit Linux server or NAS (`amd64` or `arm64`).
 
 ```bash
 mkdir mediarium && cd mediarium
-curl -fsSLO https://raw.githubusercontent.com/rdborg/Mediarium/main/docker/docker-compose.yml
+curl -fsSLO https://raw.githubusercontent.com/jhipsman/cueapp/main/docker/docker-compose.yml
 # open docker-compose.yml and set PUID, PGID, TZ and your folders
 docker compose up -d
 ```
@@ -119,9 +119,9 @@ Everything is in [`docs/`](docs/README.md): installing, indexers, downloads and 
 
 ## Getting help
 
-- **Something not working?** Check [troubleshooting](docs/INSTALL.md#troubleshooting), then [open an issue](https://github.com/rdborg/Mediarium/issues/new/choose). Include your version (Settings > System > About and credits), or better, the text that **Copy for support** puts on your clipboard (Settings > System > Server and backup > Help and support). It has no passwords or keys in it.
+- **Something not working?** Check [troubleshooting](docs/INSTALL.md#troubleshooting), then [open an issue](https://github.com/jhipsman/cueapp/issues/new/choose). Include your version (Settings > System > About and credits), or better, the text that **Copy for support** puts on your clipboard (Settings > System > Server and backup > Help and support). It has no passwords or keys in it.
 - **Security problem?** Report it privately, as described in [SECURITY.md](.github/SECURITY.md).
-- **Ideas and feature requests** are welcome as [issues](https://github.com/rdborg/Mediarium/issues/new/choose).
+- **Ideas and feature requests** are welcome as [issues](https://github.com/jhipsman/cueapp/issues/new/choose).
 
 ## Support the project
 
