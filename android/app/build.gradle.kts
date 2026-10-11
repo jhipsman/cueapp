@@ -1,6 +1,7 @@
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
+    id("org.jetbrains.kotlin.plugin.compose")
 }
 
 // Each build on GitHub gets the next version number, so a new APK installs
@@ -45,6 +46,9 @@ android {
     kotlinOptions {
         jvmTarget = "17"
     }
+    buildFeatures {
+        compose = true
+    }
     lint {
         // Builds on GitHub must not stop over a lint opinion; real errors still fail compiling.
         checkReleaseBuilds = false
@@ -61,4 +65,16 @@ dependencies {
     // (AC3, E-AC3, TrueHD) and DTS play as ordinary sound on any TV, instead
     // of silence where the TV or box can't take them.
     implementation("org.jellyfin.media3:media3-ffmpeg-decoder:$media3+2")
+
+    // The app's own screens (Home, titles, search, Live TV): Jetpack Compose
+    // with Compose for TV, the toolkit Google TV's own apps use.
+    implementation(platform("androidx.compose:compose-bom:2024.10.01"))
+    implementation("androidx.compose.ui:ui")
+    implementation("androidx.compose.foundation:foundation")
+    implementation("androidx.compose.material3:material3")
+    implementation("androidx.activity:activity-compose:1.9.3")
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.7")
+    implementation("androidx.tv:tv-material:1.0.0")
+    implementation("io.coil-kt:coil-compose:2.7.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
 }

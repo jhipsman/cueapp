@@ -55,7 +55,17 @@ class MainActivity : Activity() {
         CookieManager.getInstance().setAcceptCookie(true)
         CookieManager.getInstance().setAcceptThirdPartyCookies(w, true)
         w.addJavascriptInterface(Bridge(), "CueTV")
+        // Opened from the app's own screens: on the same profile, at a page.
+        val profile = intent.getStringExtra(EXTRA_PROFILE).orEmpty()
+        var profileSet = profile.isEmpty()
         w.webViewClient = object : WebViewClient() {
+            override fun onPageFinished(view: WebView, url: String?) {
+                if (profileSet) return
+                profileSet = true
+                val tok = JSONObject.quote(profile)
+                view.evaluateJavascript("try{if(localStorage.getItem('cue-profile')!==$tok){localStorage.setItem('cue-profile',$tok);location.reload()}}catch(e){}", null)
+            }
+
             override fun onReceivedError(view: WebView, request: WebResourceRequest, error: WebResourceError) {
                 if (request.isForMainFrame) cantReach(error.description?.toString() ?: "no answer")
             }
@@ -65,7 +75,8 @@ class MainActivity : Activity() {
         setContentView(w)
         w.requestFocus(View.FOCUS_DOWN)
 
-        if (savedInstanceState != null) w.restoreState(savedInstanceState) else w.loadUrl("$server/watch")
+        val path = intent.getStringExtra(EXTRA_PATH)?.takeIf { it.startsWith("/") } ?: "/watch"
+        if (savedInstanceState != null) w.restoreState(savedInstanceState) else w.loadUrl(server + path)
     }
 
     // The server didn't answer: back to the address screen, saying why.
@@ -140,6 +151,8 @@ class MainActivity : Activity() {
     }
 
     companion object {
+        const val EXTRA_PATH = "path"
+        const val EXTRA_PROFILE = "profile"
         private const val PLAY = 1
     }
 }

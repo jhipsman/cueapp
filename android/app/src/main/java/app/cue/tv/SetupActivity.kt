@@ -110,7 +110,7 @@ class SetupActivity : Activity() {
                 connect.isEnabled = true
                 if (problem == null) {
                     Server.save(this, address)
-                    startActivity(Intent(this, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK))
+                    startActivity(Intent(this, app.cue.tv.home.HomeActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK))
                     finish()
                 } else {
                     status.setTextColor(0xFFFF8A80.toInt())
