@@ -477,6 +477,9 @@ func TestPushRollbackWithForce(t *testing.T) {
 }
 
 func TestPushSizeLimit(t *testing.T) {
+	if runtime.GOOS != "linux" {
+		t.Skip("pushed updates are for Linux containers")
+	}
 	e := newUpdateEnv(t)
 	e.allowPush(t, true)
 

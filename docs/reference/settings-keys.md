@@ -6,6 +6,7 @@ The keys the app stores in its settings table. You normally change these from th
 
 | Key | Notes |
 |---|---|
+| `app.streaming_only` | "1" streaming only (Watch is the app, the download jobs rest), "0" the full library manager; unset = CUE_STREAMING_ONLY (on unless "0") |
 | `audiobooks.path` | audiobooks library folder; falls back to the AUDIOBOOKS_DIR env default (/audiobooks) when unset |
 | `auth.proxy_addresses` | where that proxy connects from: IP addresses or CIDR ranges, comma-separated ("private" is refused). The header is only believed from these |
 | `auth.proxy_header` | the header a trusted reverse proxy puts the signed-in user name in (for example Remote-User); unset or empty leaves it off. Only a signed-in browser session can set it, not an API key |
@@ -26,6 +27,7 @@ The keys the app stores in its settings table. You normally change these from th
 | `downloads.speed_limit_mb` | download speed limit in MB/s for Usenet and torrents together; unset or "0" = no limit |
 | `ebooks.path` | ebooks library folder; falls back to the EBOOKS_DIR env default (/ebooks) when unset |
 | `flaresolverr.url` | e.g. http://flaresolverr:8191; unset = none |
+| `iptv.account` | encrypted JSON {server, username, password}: an Xtream Codes login for Live TV; unset = no Live TV |
 | `legal.acknowledged_at` |  |
 | `library.default_profile_id` | id of the stored quality profile used by items with no profile of their own |
 | `library.default_sources` | usenet \| torrent \| both (default both) |
@@ -44,6 +46,7 @@ The keys the app stores in its settings table. You normally change these from th
 | `library.trash_days` | days removed titles' files stay in the recycle bin (.mediarium-trash in the library folder); unset = 7, "0" = delete straight away |
 | `library.tv_path` | falls back to the TV_DIR env default when unset |
 | `mediaservers.client_id` | set by the app, not user-editable |
+| `metadata.omdb_api_key` | encrypted; an OMDb key for IMDb and Rotten Tomatoes ratings in Watch. Unset = TMDB's score only |
 | `metadata.tmdb_api_key` | encrypted |
 | `metadata.trakt_client_id` | encrypted |
 | `modules.audiobooks` | "1" switches it on; unset or "0" leaves it off |
@@ -58,10 +61,15 @@ The keys the app stores in its settings table. You normally change these from th
 | `notify.on_problems` | "1" sends a notification (to the targets that listen for Health) when a new error is added to the problem log; unset or "0" sends none |
 | `notify.quiet_hours` | hours when everyday messages wait, "23-7" (server time); unset = none. Problems are always sent at once |
 | `onboarding.done` | "1" once the first-run wizard completes |
+| `playback.english_only` | "0" plays versions in any language; unset or "1" = English versions only |
+| `playback.max_resolution` | "" = the best there is; "1080" or "720" put bigger versions last (data saver) |
+| `premiumize.api_key` | encrypted; unset = Premiumize is not used |
+| `premiumize.use_for` | "torrents" (the default when unset) \| "usenet" \| "both" |
 | `quality.language` | the audio language wanted, as a name like "English" (the default when unset); a release clearly in another language only is not picked automatically |
 | `scripts.after_import` | JSON: script (a file name in /config/scripts; empty = off) and timeoutSec (default 300). Only a signed-in browser session can set it, not an API key |
 | `scripts.last_run` | what the last run did (JSON; set by the app, not user-editable) |
 | `server.public_url` | the address you open Cue at from your own devices (like https://mediarium.example.com); links in notification messages use it; unset = no links |
+| `streams.addons` | encrypted JSON list of {url, name}: Stremio add-ons (Comet, Torrentio...) Play asks for streams first; unset = Cue's own search only |
 | `subtitles.auto_download` | "1" fetches subtitles automatically; unset or "0" only offers them ("ask me") |
 | `subtitles.enabled` | the master switch: "1" turns downloading subtitles on; unset or "0" leaves it off (upgrades from a version that had subtitles in use are switched on once, by a migration) |
 | `subtitles.languages` | comma-separated OpenSubtitles codes; default "en" |
@@ -83,3 +91,4 @@ The keys the app stores in its settings table. You normally change these from th
 | `vpn.require_for_torrents` |  |
 | `watched.status` | the last read and cleanup (JSON; set by the app, not user-editable) |
 | `watched.sync` | "1" reads what's been watched from Plex, Jellyfin and Emby every six hours; unset or "0" leaves it off |
+| `youtube.api_key` | encrypted; a YouTube Data API key: Play searches YouTube for a full episode or film when nothing else is found. Unset = no YouTube |

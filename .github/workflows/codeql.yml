@@ -36,6 +36,10 @@ jobs:
         if: matrix.language == 'go'
         with:
           go-version-file: go.mod
+      # The Go build embeds the web app (web/embed.go); a stub lets it compile.
+      - name: Stub web build
+        if: matrix.language == 'go'
+        run: mkdir -p web/dist && echo '<!doctype html><title>Cue</title>' > web/dist/index.html
       - uses: github/codeql-action/init@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2 # v4
         with:
           languages: ${{ matrix.language }}

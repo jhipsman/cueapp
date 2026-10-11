@@ -2,6 +2,7 @@ package api
 
 import (
 	"fmt"
+	"os"
 	"testing"
 
 	"github.com/rdborg/mediarium/internal/library"
@@ -124,13 +125,18 @@ func TestProgressDoesNotChangeTheOrder(t *testing.T) {
 }
 
 func TestRestoredMovieStatus(t *testing.T) {
+	// Any file that exists will do; the test binary is one on every OS.
+	exe, err := os.Executable()
+	if err != nil {
+		t.Fatal(err)
+	}
 	tests := []struct {
 		name string
 		m    library.Movie
 		want library.Status
 	}{
 		{"downloaded stays downloaded", library.Movie{Status: library.StatusDownloaded}, library.StatusDownloaded},
-		{"stuck while upgrading, the file is there", library.Movie{Status: library.StatusDownloading, FilePath: "/proc/self/exe"}, library.StatusDownloaded},
+		{"stuck while upgrading, the file is there", library.Movie{Status: library.StatusDownloading, FilePath: exe}, library.StatusDownloaded},
 		{"stuck, the recorded file is gone", library.Movie{Status: library.StatusDownloading, FilePath: "/no/such/file.mkv"}, library.StatusMissing},
 		{"first download", library.Movie{Status: library.StatusDownloading}, library.StatusMissing},
 	}

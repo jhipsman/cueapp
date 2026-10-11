@@ -9,13 +9,17 @@ on:
     paths:
       - "android/**"
       - ".github/workflows/android.yml"
+  pull_request:
+    paths:
+      - "android/**"
+      - ".github/workflows/android.yml"
   workflow_dispatch:
 
 permissions:
   contents: write # to publish the APK as a release
 
 concurrency:
-  group: tv-app
+  group: tv-app-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -42,7 +46,7 @@ jobs:
           path: cue-tv.apk
 
       - name: Publish as the tv-latest release
-        if: github.ref == 'refs/heads/claude/nice-bohr-0m2h54' || github.ref == 'refs/heads/main'
+        if: github.ref == 'refs/heads/main'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: tv-latest
@@ -53,3 +57,16 @@ jobs:
           prerelease: true
           make_latest: false
           files: cue-tv.apk
+
+      # After publishing, so a lint error shows red without holding back the
+      # APK on main; on a pull request it is the check.
+      - name: Lint
+        working-directory: android
+        run: ./gradlew --no-daemon lintRelease
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: lint-report
+          path: android/app/build/reports/lint-results-release.html
+          if-no-files-found: ignore

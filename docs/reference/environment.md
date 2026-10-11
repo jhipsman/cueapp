@@ -11,8 +11,10 @@ Container-level settings only. Everything else (indexers, Usenet servers, naming
 | `AUDIOBOOKS_DIR` | `/audiobooks` |
 | `BUNDLED_FLARESOLVERR` | `` |
 | `CONFIG_DIR` | `/config` |
+| `CUE_STREAMING_ONLY` | `1` |
 | `DOWNLOADS_DIR` | `/downloads` |
 | `EBOOKS_DIR` | `/ebooks` |
+| `FLARESOLVERR_URL` | `` |
 | `MEDIARIUM_IMAGE_VERSION` | `` |
 | `MEDIARIUM_PAUSE_AUTOMATION` | `` |
 | `MEDIARIUM_SUPERVISED` | `` |
