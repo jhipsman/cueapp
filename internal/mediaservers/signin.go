@@ -73,7 +73,7 @@ func (c *Client) mbCall(ctx context.Context, s Server, deviceID, method, path st
 	if err != nil {
 		return err
 	}
-	req.Header.Set("User-Agent", "Mediarium/"+c.Version)
+	req.Header.Set("User-Agent", "Cue/"+c.Version)
 	h := mediaBrowserAuth(deviceID, c.Version, s.Token)
 	req.Header.Set("Authorization", h)
 	req.Header.Set("X-Emby-Authorization", h) // Emby reads this one

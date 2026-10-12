@@ -200,7 +200,7 @@ func (f *fakeSMTP) finishAuth(say func(string), ok bool) {
 func (f *fakeSMTP) sender(security string) *notify.EmailSender {
 	return &notify.EmailSender{
 		Host: f.host, Port: f.port, Security: security, Username: f.user, Password: f.pass,
-		From: "Cue <mediarium@example.com>", To: []string{"a@example.com", "b@example.com"},
+		From: "Cue <cue@example.com>", To: []string{"a@example.com", "b@example.com"},
 		TLSConfig: &tls.Config{InsecureSkipVerify: true}, Timeout: 5 * time.Second,
 	}
 }
@@ -214,7 +214,7 @@ func checkDelivered(t *testing.T, f *fakeSMTP, wantTLS bool) {
 	t.Helper()
 	f.mu.Lock()
 	defer f.mu.Unlock()
-	if f.from != "mediarium@example.com" || strings.Join(f.rcpts, ",") != "a@example.com,b@example.com" {
+	if f.from != "cue@example.com" || strings.Join(f.rcpts, ",") != "a@example.com,b@example.com" {
 		t.Fatalf("envelope: from=%q rcpts=%v", f.from, f.rcpts)
 	}
 	if f.usedTLS != wantTLS {
@@ -305,7 +305,7 @@ func TestEmailSenderBuiltFromTarget(t *testing.T) {
 	f := startFakeSMTP(t, &fakeSMTP{})
 	sender, err := notify.NewSender(notify.Target{Type: notify.TargetEmail, Config: map[string]string{
 		"host": f.host, "port": strconv.Itoa(f.port), "security": "none",
-		"from": "mediarium@example.com", "to": "a@example.com; b@example.com",
+		"from": "cue@example.com", "to": "a@example.com; b@example.com",
 	}})
 	if err != nil {
 		t.Fatal(err)

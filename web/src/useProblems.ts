@@ -4,7 +4,7 @@ import { useLive } from './useLive'
 
 // The page and the sidebar both show how many errors are unread. When the
 // page marks some as read it says so here, and every counter looks again.
-const CHANGED = 'mediarium-problems-changed'
+const CHANGED = 'cue-problems-changed'
 
 export function problemsChanged() {
   window.dispatchEvent(new Event(CHANGED))

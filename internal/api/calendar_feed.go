@@ -101,7 +101,7 @@ func renderICS(entries []calendarEntryPayload, now time.Time) string {
 	line := func(s string) { b.WriteString(foldICS(s)) }
 	line("BEGIN:VCALENDAR")
 	line("VERSION:2.0")
-	line("PRODID:-//Mediarium//Calendar//EN")
+	line("PRODID:-//Cue//Calendar//EN")
 	line("CALSCALE:GREGORIAN")
 	line("METHOD:PUBLISH")
 	line("X-WR-CALNAME:Cue")
@@ -112,6 +112,8 @@ func renderICS(entries []calendarEntryPayload, now time.Time) string {
 			continue
 		}
 		line("BEGIN:VEVENT")
+		// The same ids as before the rename, so a subscribed calendar
+		// doesn't show every event twice.
 		line(fmt.Sprintf("UID:%s-%d@mediarium", e.Kind, e.ID))
 		line("DTSTAMP:" + stamp)
 		line("DTSTART;VALUE=DATE:" + day.Format("20060102"))

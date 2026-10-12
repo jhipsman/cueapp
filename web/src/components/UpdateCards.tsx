@@ -164,7 +164,7 @@ function UpdateBody({ notice, onNotice }: { notice: UpdateNotice; onNotice: (n: 
 
 // ---- The dashboard card: only there when there is something new ----
 
-const HIDDEN_KEY = 'mediarium-update-hidden'
+const HIDDEN_KEY = 'cue-update-hidden'
 
 function readHidden(): string {
   try {

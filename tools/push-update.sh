@@ -5,7 +5,7 @@
 # install must have "Allow updates pushed through the API" switched on under
 # Settings > System (see docs/RELEASING.md and docs/INSTALL.md).
 #
-#   MEDIARIUM_API_KEY=<admin API key> tools/push-update.sh https://mediarium.example.com
+#   CUE_API_KEY=<admin API key> tools/push-update.sh https://cue.example.com
 #
 # What it does:
 #   1. Builds the linux program from the committed HEAD with the repository's own
@@ -19,8 +19,8 @@
 #      is a Cue program for its system and newer than what it runs, then
 #      restarts into it.
 #
-# The API key is read from the MEDIARIUM_API_KEY environment variable (or typed
-# at a prompt). It is never written to a file, and it is given to curl on its
+# The API key is read from the CUE_API_KEY environment variable (the old name,
+# MEDIARIUM_API_KEY, also works) or typed at a prompt. It is never written to a file, and it is given to curl on its
 # standard input, not on the command line, so it does not show in a process list.
 # Only committed work is built: commit first.
 set -euo pipefail
@@ -33,11 +33,11 @@ Usage: tools/push-update.sh [options] <url>
   -a, --arch ARCH       amd64 (default) or arm64: the system of the install
   -v, --version X.Y.Z   version to stamp (default: the VERSION file at HEAD)
   -f, --force           let the install accept the same or an older version
-  -n, --no-upload       only build; write the program to ./mediarium-<version>-<arch>
+  -n, --no-upload       only build; write the program to ./cue-<version>-<arch>
       --wait            after the upload, wait until the install reports the new version
   -h, --help            this text
 
-The API key comes from MEDIARIUM_API_KEY (or is asked for). Build keys come from .env.
+The API key comes from CUE_API_KEY (or is asked for). Build keys come from .env.
 EOF
 }
 
@@ -108,7 +108,7 @@ else
 fi
 
 # --- Build with the repository's Dockerfile, then take the program out. ------
-tag="mediarium-push-build:$$"
+tag="cue-push-build:$$"
 container=""
 tmp="$(mktemp -d)"
 cleanup() {
@@ -135,14 +135,14 @@ size="$(wc -c < "$tmp/app" | tr -d ' ')"
 echo "Built: $size bytes, SHA-256 $sum"
 
 if [ "$upload" = 0 ]; then
-  out="mediarium-$version-$arch"
+  out="cue-$version-$arch"
   cp "$tmp/app" "$out"
   echo "Wrote ./$out (not uploaded)."
   exit 0
 fi
 
 # --- The API key: from the environment, or typed (not echoed). -----------------
-key="${MEDIARIUM_API_KEY:-}"
+key="${CUE_API_KEY:-${MEDIARIUM_API_KEY:-}}"
 if [ -z "$key" ]; then
   if [ -t 0 ]; then
     read -r -s -p "Admin API key for $url: " key
@@ -150,7 +150,7 @@ if [ -z "$key" ]; then
   fi
 fi
 if [ -z "$key" ]; then
-  echo "No API key. Set MEDIARIUM_API_KEY (create one on the Profile page of an administrator account)." >&2
+  echo "No API key. Set CUE_API_KEY (create one on the Profile page of an administrator account)." >&2
   exit 2
 fi
 

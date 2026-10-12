@@ -120,7 +120,7 @@ type settingsPayload struct {
 	// used for indexer sites behind a Cloudflare check. A pointer so ""
 	// (remove it) differs from leaving the field out. None by default.
 	FlareSolverrURL *string `json:"flareSolverrUrl,omitempty"`
-	// The address you open Cue at (like https://mediarium.example.com).
+	// The address you open Cue at (like https://cue.example.com).
 	// Buttons and links in notification messages use it; without one they
 	// carry none. A pointer so "" (remove it) differs from leaving it out.
 	PublicURL *string `json:"publicUrl,omitempty"`

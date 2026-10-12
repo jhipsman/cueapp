@@ -174,7 +174,7 @@ func TestBackupDownload(t *testing.T) {
 		t.Errorf("Content-Type = %q", ct)
 	}
 	disp := resp.Header.Get("Content-Disposition")
-	if !regexp.MustCompile(`^attachment; filename="mediarium-backup-\d{8}-\d{6}\.zip"$`).MatchString(disp) {
+	if !regexp.MustCompile(`^attachment; filename="cue-backup-\d{8}-\d{6}\.zip"$`).MatchString(disp) {
 		t.Errorf("Content-Disposition = %q", disp)
 	}
 
@@ -188,7 +188,7 @@ func TestBackupDownload(t *testing.T) {
 	if err := json.Unmarshal(files["manifest.json"], &manifest); err != nil {
 		t.Fatalf("manifest: %v", err)
 	}
-	if manifest.App != "mediarium" || manifest.Version != "test" || manifest.Migrations == "" || manifest.CreatedAt == "" {
+	if manifest.App != "cue" || manifest.Version != "test" || manifest.Migrations == "" || manifest.CreatedAt == "" {
 		t.Errorf("unexpected manifest: %+v", manifest)
 	}
 	if len(files["secret.key"]) == 0 {

@@ -51,7 +51,7 @@ func (it Item) withYear() string {
 // Links holds the addresses the person set for Cue. Empty means no
 // links are added to messages.
 type Links struct {
-	Base string // like https://mediarium.example.com, no trailing slash
+	Base string // like https://cue.example.com, no trailing slash
 }
 
 func (l Links) to(path string) string {

@@ -70,7 +70,7 @@ func writeSubtitle(folder mediafiles.Folder, rel string, data []byte) error {
 			return fmt.Errorf("keep the original: %w", err)
 		}
 	}
-	tmp := name + ".mediarium-tmp"
+	tmp := name + ".cue-tmp"
 	if err := root.WriteFile(tmp, data, 0o644); err != nil {
 		return fmt.Errorf("write the subtitle: %w", err)
 	}

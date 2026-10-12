@@ -36,19 +36,19 @@ func (s *Server) handleMetrics(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "text/plain; version=0.0.4")
-	fmt.Fprintln(w, "# HELP mediarium_up Whether the Cue API is up.")
-	fmt.Fprintln(w, "# TYPE mediarium_up gauge")
-	fmt.Fprintln(w, "mediarium_up 1")
+	fmt.Fprintln(w, "# HELP cue_up Whether the Cue API is up.")
+	fmt.Fprintln(w, "# TYPE cue_up gauge")
+	fmt.Fprintln(w, "cue_up 1")
 
-	fmt.Fprintln(w, "# HELP mediarium_library_movies_total Movies in the library by status.")
-	fmt.Fprintln(w, "# TYPE mediarium_library_movies_total gauge")
+	fmt.Fprintln(w, "# HELP cue_library_movies_total Movies in the library by status.")
+	fmt.Fprintln(w, "# TYPE cue_library_movies_total gauge")
 	for _, status := range []library.Status{library.StatusMissing, library.StatusDownloading, library.StatusDownloaded} {
-		fmt.Fprintf(w, "mediarium_library_movies_total{status=%q} %d\n", status, moviesByStatus[status])
+		fmt.Fprintf(w, "cue_library_movies_total{status=%q} %d\n", status, moviesByStatus[status])
 	}
 
-	fmt.Fprintln(w, "# HELP mediarium_queue_items_total Download queue items by status.")
-	fmt.Fprintln(w, "# TYPE mediarium_queue_items_total gauge")
+	fmt.Fprintln(w, "# HELP cue_queue_items_total Download queue items by status.")
+	fmt.Fprintln(w, "# TYPE cue_queue_items_total gauge")
 	for _, status := range []queue.Status{queue.StatusQueued, queue.StatusDownloading, queue.StatusImporting, queue.StatusPaused, queue.StatusStopped, queue.StatusCompleted, queue.StatusFailed} {
-		fmt.Fprintf(w, "mediarium_queue_items_total{status=%q} %d\n", status, queueByStatus[status])
+		fmt.Fprintf(w, "cue_queue_items_total{status=%q} %d\n", status, queueByStatus[status])
 	}
 }

@@ -203,7 +203,7 @@ func TestForwardedProtoIgnoredFromUntrustedPeer(t *testing.T) {
 func sessionCookie(t *testing.T, resp *http.Response) *http.Cookie {
 	t.Helper()
 	for _, c := range resp.Cookies() {
-		if c.Name == "mediarium_session" {
+		if c.Name == "cue_session" {
 			return c
 		}
 	}

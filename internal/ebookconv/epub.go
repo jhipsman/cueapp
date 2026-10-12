@@ -85,7 +85,7 @@ func (b *epubBook) write(w io.Writer) error {
 	}
 	id := fnv.New64a()
 	io.WriteString(id, title+"|"+b.meta.Author)
-	fmt.Fprintf(&opf, "<dc:language>%s</dc:language>\n<dc:identifier id=\"bookid\">mediarium-converted-%x</dc:identifier>\n", esc(lang), id.Sum64())
+	fmt.Fprintf(&opf, "<dc:language>%s</dc:language>\n<dc:identifier id=\"bookid\">cue-converted-%x</dc:identifier>\n", esc(lang), id.Sum64())
 	if b.cover != "" {
 		opf.WriteString("<meta name=\"cover\" content=\"cover-image\"/>\n")
 	}
@@ -118,7 +118,7 @@ func (b *epubBook) write(w io.Writer) error {
 	var ncx bytes.Buffer
 	fmt.Fprintf(&ncx, `<?xml version="1.0" encoding="utf-8"?>
 <ncx xmlns="http://www.daisy.org/z3986/2005/ncx/" version="2005-1">
-<head><meta name="dtb:uid" content="mediarium-converted"/><meta name="dtb:depth" content="1"/></head>
+<head><meta name="dtb:uid" content="cue-converted"/><meta name="dtb:depth" content="1"/></head>
 <docTitle><text>%s</text></docTitle>
 <navMap>
 `, esc(title))

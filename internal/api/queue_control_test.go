@@ -191,7 +191,7 @@ type controlEnv struct {
 const releaseName = "The.Fixture.Movie.1999.1080p.WEB-DL.x264-FIXTURE"
 
 // newControlServer builds a server with its own folders. safeMode turns on
-// MEDIARIUM_PAUSE_AUTOMATION.
+// CUE_PAUSE_AUTOMATION.
 func newControlServer(t *testing.T, safeMode bool) (*api.Server, string, *http.Client) {
 	t.Helper()
 	dir := t.TempDir()

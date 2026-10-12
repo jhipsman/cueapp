@@ -3,7 +3,7 @@ import { useSyncExternalStore } from 'react'
 // "Hide what I have" on Discover: leaves out titles that are already in the
 // library, so the lists only show things worth adding. The choice is
 // remembered in this browser, and every switch on the page follows it.
-const KEY = 'mediarium.discover.hideOwned'
+const KEY = 'cue.discover.hideOwned'
 
 function read(): boolean {
   try {

@@ -180,7 +180,7 @@ func TestProblemLogDownloadAsTextFile(t *testing.T) {
 	defer resp.Body.Close()
 	body, _ := io.ReadAll(resp.Body)
 	if resp.StatusCode != http.StatusOK || !strings.HasPrefix(resp.Header.Get("Content-Type"), "text/plain") ||
-		!strings.Contains(resp.Header.Get("Content-Disposition"), "attachment; filename=\"mediarium-problems-") {
+		!strings.Contains(resp.Header.Get("Content-Disposition"), "attachment; filename=\"cue-problems-") {
 		t.Fatalf("headers: %d %v", resp.StatusCode, resp.Header)
 	}
 	text := string(body)

@@ -6,7 +6,12 @@ import (
 	"time"
 )
 
-const CookieName = "mediarium_session"
+const CookieName = "cue_session"
+
+// legacyCookieName is the session cookie's name before the rename to Cue. It
+// is still read, so nobody is signed out by the update; a new sign-in replaces
+// it, and it runs out with its session (7 days) otherwise.
+const legacyCookieName = "mediarium_session"
 
 type contextKey string
 
@@ -18,6 +23,7 @@ const userContextKey contextKey = "auth_user"
 // site). secure marks it Secure (HTTPS only); the caller sets it whenever the
 // visitor reached Cue over HTTPS, directly or through a trusted proxy.
 func SetSessionCookie(w http.ResponseWriter, token string, expiresAt time.Time, secure bool) {
+	clearCookie(w, legacyCookieName, secure)
 	http.SetCookie(w, &http.Cookie{
 		Name:     CookieName,
 		Value:    token,
@@ -32,8 +38,13 @@ func SetSessionCookie(w http.ResponseWriter, token string, expiresAt time.Time, 
 // ClearSessionCookie expires the session cookie; secure must match the way
 // it was set.
 func ClearSessionCookie(w http.ResponseWriter, secure bool) {
+	clearCookie(w, CookieName, secure)
+	clearCookie(w, legacyCookieName, secure)
+}
+
+func clearCookie(w http.ResponseWriter, name string, secure bool) {
 	http.SetCookie(w, &http.Cookie{
-		Name:     CookieName,
+		Name:     name,
 		Value:    "",
 		Path:     "/",
 		HttpOnly: true,
@@ -71,11 +82,22 @@ func (s *Service) userFromRequest(r *http.Request) (*User, error) {
 	if key := r.Header.Get("X-API-Key"); key != "" {
 		return s.UserForAPIKey(key)
 	}
-	cookie, err := r.Cookie(CookieName)
-	if err != nil {
+	token, ok := SessionToken(r)
+	if !ok {
 		return nil, ErrSessionNotFound
 	}
-	return s.UserForSession(cookie.Value)
+	return s.UserForSession(token)
+}
+
+// SessionToken is the session token in the request's session cookie, under
+// its current name or the one from before the rename.
+func SessionToken(r *http.Request) (string, bool) {
+	for _, name := range []string{CookieName, legacyCookieName} {
+		if c, err := r.Cookie(name); err == nil && c.Value != "" {
+			return c.Value, true
+		}
+	}
+	return "", false
 }
 
 // UserFromContext retrieves the authenticated user set by Middleware.

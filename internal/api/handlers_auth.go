@@ -198,8 +198,8 @@ func (s *Server) startSession(w http.ResponseWriter, r *http.Request, userID int
 }
 
 func (s *Server) handleLogout(w http.ResponseWriter, r *http.Request) {
-	if cookie, err := r.Cookie(auth.CookieName); err == nil {
-		_ = s.Auth.DeleteSession(cookie.Value)
+	if token, ok := auth.SessionToken(r); ok {
+		_ = s.Auth.DeleteSession(token)
 	}
 	auth.ClearSessionCookie(w, s.isHTTPS(r))
 	writeJSON(w, http.StatusOK, nil)
@@ -235,7 +235,7 @@ func (s *Server) handleChangePassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// Changing the password signed every session out; this browser gets a new one.
-	if _, err := r.Cookie(auth.CookieName); err == nil {
+	if _, ok := auth.SessionToken(r); ok {
 		s.startSession(w, r, user.ID)
 	}
 	writeJSON(w, http.StatusOK, nil)

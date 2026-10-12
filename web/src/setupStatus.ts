@@ -90,7 +90,7 @@ export function joinWords(items: string[]): string {
 
 // The browser remembers a dismissed card per account. Storage can be blocked,
 // so every access is guarded and the card simply shows again.
-const key = (userId: number | string) => `mediarium-started-dismissed-${userId}`
+const key = (userId: number | string) => `cue-started-dismissed-${userId}`
 
 export function isDismissed(userId: number | string): boolean {
   try {

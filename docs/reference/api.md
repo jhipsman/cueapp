@@ -426,7 +426,7 @@ Every route the server exposes. Routes marked **public** need no sign-in; all ot
 |---|---|---|---|
 | GET | `/api/scripts` | admin | GET /api/scripts: the scripts folder, what is in it and the choice. |
 | PUT | `/api/scripts` | admin | PUT /api/scripts {"script": "notify.sh", "timeoutSec": 300}; an empty script switches it off. |
-| POST | `/api/scripts/test` | admin | POST /api/scripts/test runs the chosen script once, with MEDIARIUM_EVENT set to "test" and a made-up movie, and says how it went. |
+| POST | `/api/scripts/test` | admin | POST /api/scripts/test runs the chosen script once, with CUE_EVENT set to "test" and a made-up movie, and says how it went. |
 
 ## search
 

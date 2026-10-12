@@ -278,7 +278,7 @@ func (s *Server) validateSettings(req *settingsPayload) string {
 		v := strings.TrimRight(strings.TrimSpace(*req.PublicURL), "/")
 		if v != "" {
 			if m := firstProblem(
-				checkHTTPURL(v, "https://mediarium.example.com", true),
+				checkHTTPURL(v, "https://cue.example.com", true),
 				checkMaxLen(v, "The Cue address", 500),
 			); m != "" {
 				return m

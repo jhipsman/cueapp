@@ -20,7 +20,7 @@ import type {
 
 import { demoAuthorWorks, demoBookCounts, demoBookList, demoBooks, demoBookSearch, demoProgress, demoTracks, demoWork } from './demoBooks'
 
-const KEY = 'mediarium-demo'
+const KEY = 'cue-demo'
 
 export function demoEnabled(): boolean {
   try {

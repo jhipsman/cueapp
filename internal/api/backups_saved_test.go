@@ -33,7 +33,7 @@ func TestSavedBackupsCanBeMadeListedAndDownloaded(t *testing.T) {
 	if resp.StatusCode != http.StatusOK || len(body) < 4 || string(body[:2]) != "PK" {
 		t.Fatalf("download: status %d, %d bytes", resp.StatusCode, len(body))
 	}
-	for _, bad := range []string{"..%2Fapp.db", "secret.key", "mediarium-backup-1.zip"} {
+	for _, bad := range []string{"..%2Fapp.db", "secret.key", "cue-backup-1.zip"} {
 		resp, err := client.Get(base + "/api/system/backups/" + bad)
 		if err != nil {
 			t.Fatal(err)

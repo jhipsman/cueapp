@@ -17,7 +17,7 @@ import (
 // internet it could be a stranger, so the sign-up is only open without a
 // code to someone on the home network (see httpsec.Proxies.FromHome). Anyone
 // else needs the one-time setup code Cue writes to its log every time
-// it starts with no administrator (docker logs mediarium). The code lives only
+// it starts with no administrator (docker logs cue). The code lives only
 // in memory, is new on every start and is worthless once the account exists.
 
 // setupState holds the code for this run.
@@ -98,4 +98,4 @@ func (s *Server) setupCodeMatches(given string) bool {
 
 // setupCodeMessage is the answer to a missing or wrong code.
 const setupCodeMessage = "This Cue has no account yet, and you are not on the home network, so it needs its one-time setup code. " +
-	"You'll find it in the Cue log (for example, run: docker logs mediarium). Look for \"setup code\"."
+	"You'll find it in the Cue log (for example, run: docker logs cue, or docker logs mediarium on an install from before Cue 2.2). Look for \"setup code\"."

@@ -26,7 +26,7 @@ var titanic = notify.Item{
 }
 
 func TestComposeSubjects(t *testing.T) {
-	links := notify.Links{Base: "https://mediarium.example.com/"}
+	links := notify.Links{Base: "https://cue.example.com/"}
 	failed := titanic
 	failed.Reason = "The disk is full."
 	episode := notify.Item{Media: "episode", Title: "Severance", Year: 2022, Episode: "S02E03", Quality: "WEBDL-1080p", LinkPath: "/series/4"}
@@ -79,7 +79,7 @@ func TestComposeSubjects(t *testing.T) {
 			if !strings.HasPrefix(ev.Message, ev.Lead) {
 				t.Errorf("plain message %q does not start with the lead", ev.Message)
 			}
-			if ev.LinkURL != "https://mediarium.example.com"+tc.item.LinkPath && tc.item.LinkPath != "" {
+			if ev.LinkURL != "https://cue.example.com"+tc.item.LinkPath && tc.item.LinkPath != "" {
 				t.Errorf("link %q", ev.LinkURL)
 			}
 		})
@@ -148,7 +148,7 @@ func TestEmailHTMLEscapesAndLoadsNothingElse(t *testing.T) {
 	srcs := regexp.MustCompile(`(?i)\b(?:src|background|href)="([^"]*)"`).FindAllStringSubmatch(out, -1)
 	for _, m := range srcs {
 		u := m[1]
-		if u != "cid:mediarium-logo@mediarium" && u != titanic.PosterURL && u != "https://m.example.com/title/597" && u != "https://m.example.com/settings/notifications" {
+		if u != "cid:cue-logo@cue" && u != titanic.PosterURL && u != "https://m.example.com/title/597" && u != "https://m.example.com/settings/notifications" {
 			t.Errorf("unexpected address in the page: %s", u)
 		}
 	}
@@ -255,7 +255,7 @@ func TestEmailIsMultipartWithBothParts(t *testing.T) {
 		}
 	}
 	readParts(mr)
-	if got["cid"] != "<mediarium-logo@mediarium>" || !strings.Contains(got["image/png"], "iVBOR") {
+	if got["cid"] != "<cue-logo@cue>" || !strings.Contains(got["image/png"], "iVBOR") {
 		t.Errorf("the logo is not attached: cid %q", got["cid"])
 	}
 	if !strings.Contains(got["text/plain"], "Saved to:") || strings.Contains(got["text/plain"], "<table") {

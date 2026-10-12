@@ -3,7 +3,7 @@
 //
 // It only reads. The request goes to the public GitHub Releases API of the
 // official repository and carries no identifying data: no account, no install
-// id, no settings, only a User-Agent of the form "Mediarium/<version>". Nothing
+// id, no settings, only a User-Agent of the form "Cue/<version>". Nothing
 // is downloaded or installed by this package; installing is up to the person.
 package updatecheck
 
@@ -131,7 +131,7 @@ func (c *Checker) userAgent() string {
 		}
 		return r
 	}, v)
-	return "Mediarium/" + v
+	return "Cue/" + v
 }
 
 // Latest returns the newest release that applies to a running version:

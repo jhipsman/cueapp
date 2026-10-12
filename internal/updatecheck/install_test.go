@@ -57,8 +57,8 @@ func makeRelease(t *testing.T, version string, priv ed25519.PrivateKey, program 
 	t.Helper()
 	name := ArchiveName(version, "linux", "amd64")
 	archive := targz(t, map[string][]byte{
-		"mediarium_" + version + "_linux_amd64/LICENSE":   []byte("licence"),
-		"mediarium_" + version + "_linux_amd64/mediarium": program,
+		"cue_" + version + "_linux_amd64/LICENSE": []byte("licence"),
+		"cue_" + version + "_linux_amd64/cue":     program,
 	}, nil)
 	sum := sha256.Sum256(archive)
 	sums := []byte(hex.EncodeToString(sum[:]) + "  " + name + "\n" + strings.Repeat("0", 64) + "  other.zip\n")
@@ -314,15 +314,15 @@ func TestExtractProgramIsCareful(t *testing.T) {
 		types map[string]byte
 		want  bool
 	}{
-		{"in a folder", map[string][]byte{"mediarium_1.2.0_linux_amd64/mediarium": prog}, nil, true},
-		{"at the top", map[string][]byte{"mediarium": prog}, nil, true},
-		{"with dot slash", map[string][]byte{"./mediarium": prog}, nil, true},
-		{"a symlink is not a program", map[string][]byte{"x/mediarium": nil}, map[string]byte{"x/mediarium": tar.TypeSymlink}, false},
-		{"too deep", map[string][]byte{"a/b/c/mediarium": prog}, nil, false},
-		{"escaping path", map[string][]byte{"../mediarium": prog}, nil, false},
-		{"absolute path", map[string][]byte{"/tmp/mediarium": prog}, nil, false},
-		{"other names", map[string][]byte{"x/mediarium.exe": prog, "x/README": prog}, nil, false},
-		{"empty file", map[string][]byte{"x/mediarium": {}}, nil, false},
+		{"in a folder", map[string][]byte{"cue_1.2.0_linux_amd64/cue": prog}, nil, true},
+		{"at the top", map[string][]byte{"cue": prog}, nil, true},
+		{"with dot slash", map[string][]byte{"./cue": prog}, nil, true},
+		{"a symlink is not a program", map[string][]byte{"x/cue": nil}, map[string]byte{"x/cue": tar.TypeSymlink}, false},
+		{"too deep", map[string][]byte{"a/b/c/cue": prog}, nil, false},
+		{"escaping path", map[string][]byte{"../cue": prog}, nil, false},
+		{"absolute path", map[string][]byte{"/tmp/cue": prog}, nil, false},
+		{"other names", map[string][]byte{"x/cue.exe": prog, "x/README": prog}, nil, false},
+		{"empty file", map[string][]byte{"x/cue": {}}, nil, false},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -418,9 +418,9 @@ func TestParsePublicKey(t *testing.T) {
 
 func TestArchiveName(t *testing.T) {
 	for _, c := range [][4]string{
-		{"1.2.0", "linux", "amd64", "mediarium_1.2.0_linux_amd64.tar.gz"},
-		{"1.2.0-rc.1", "linux", "arm64", "mediarium_1.2.0-rc.1_linux_arm64.tar.gz"},
-		{"1.2.0", "windows", "amd64", "mediarium_1.2.0_windows_amd64.zip"},
+		{"1.2.0", "linux", "amd64", "cue_1.2.0_linux_amd64.tar.gz"},
+		{"1.2.0-rc.1", "linux", "arm64", "cue_1.2.0-rc.1_linux_arm64.tar.gz"},
+		{"1.2.0", "windows", "amd64", "cue_1.2.0_windows_amd64.zip"},
 	} {
 		if got := ArchiveName(c[0], c[1], c[2]); got != c[3] {
 			t.Errorf("ArchiveName = %q, want %q", got, c[3])

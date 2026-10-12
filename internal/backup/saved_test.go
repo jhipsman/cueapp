@@ -51,9 +51,42 @@ func TestSavedBackupsAreKeptToTheLimitAndValid(t *testing.T) {
 
 func TestPathOfRefusesOtherNames(t *testing.T) {
 	dir := t.TempDir()
-	for _, name := range []string{"../app.db", "secret.key", "mediarium-backup-x.zip", "", "mediarium-backup-20261003-030000.zip/../../a"} {
+	for _, name := range []string{"../app.db", "secret.key", "cue-backup-x.zip", "", "mediarium-backup-20261003-030000.zip/../../a"} {
 		if _, err := backup.PathOf(dir, name); err == nil {
 			t.Errorf("%q should be refused", name)
 		}
+	}
+}
+
+func TestBackupsSavedBeforeTheRenameAreListedByDate(t *testing.T) {
+	db, dir := newInstall(t, "legacy")
+	day := time.Date(2026, 10, 3, 3, 0, 0, 0, time.Local)
+	p, err := backup.Save(context.Background(), db, dir, "2.2.0", day.AddDate(0, 0, 1))
+	if err != nil {
+		t.Fatal(err)
+	}
+	newer := filepath.Base(p)
+	// The same backup under the name used before Cue 2.2, a day older.
+	data, err := os.ReadFile(p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	old := "mediarium-backup-" + day.Format("20060102-150405") + ".zip"
+	if err := os.WriteFile(filepath.Join(dir, backup.SavedDir, old), data, 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	list, err := backup.ListSaved(dir)
+	if err != nil || len(list) != 2 || list[0].Name != newer || list[1].Name != old || !list[1].CreatedAt.Equal(day) {
+		t.Fatalf("list: %+v (err %v)", list, err)
+	}
+	if _, err := backup.PathOf(dir, old); err != nil {
+		t.Errorf("an old backup should still be found: %v", err)
+	}
+	if n, err := backup.Prune(dir, 1); err != nil || n != 1 {
+		t.Fatalf("pruned %d (err %v)", n, err)
+	}
+	if list, _ := backup.ListSaved(dir); len(list) != 1 || list[0].Name != newer {
+		t.Errorf("the older backup should be the one pruned: %+v", list)
 	}
 }

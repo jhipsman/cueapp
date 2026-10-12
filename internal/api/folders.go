@@ -245,7 +245,7 @@ func destWritable(destDir string) error {
 		}
 		dir = parent
 	}
-	f, err := os.CreateTemp(dir, ".mediarium-write-check-*")
+	f, err := os.CreateTemp(dir, ".cue-write-check-*")
 	if err != nil {
 		if errors.Is(err, os.ErrPermission) {
 			return fmt.Errorf("Cue may not write to %s, so nothing was downloaded. The folder belongs to another user: give the user Cue runs as (PUID and PGID) write access to it: %w", dir, os.ErrPermission)

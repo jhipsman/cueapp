@@ -47,7 +47,7 @@ func (s *Server) collectHealth() []healthItem {
 
 	if s.cfg.PauseAutomation {
 		add("safe-mode", "warn", "Safe mode is on",
-			"Automatic searching, downloading and refreshing are paused because MEDIARIUM_PAUSE_AUTOMATION is set. Remove it and restart to resume.",
+			"Automatic searching, downloading and refreshing are paused because CUE_PAUSE_AUTOMATION is set. Remove it and restart to resume.",
 			"", "")
 	}
 

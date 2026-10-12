@@ -69,7 +69,7 @@ func TestScrubTakesSecretsOut(t *testing.T) {
 		},
 		{
 			name: "cookie",
-			in:   "cookie: mediarium_session=deadbeefdeadbeef",
+			in:   "cookie: cue_session=deadbeefdeadbeef",
 			gone: []string{"deadbeefdeadbeef"},
 		},
 		{

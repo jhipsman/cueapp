@@ -1,4 +1,4 @@
-/* Mediarium brand + UI tokens — v1
+/* Cue brand + UI tokens — v1
  * Dark is the default theme; add data-theme="light" to <html> for light.
  * All text/fill pairs below meet WCAG AA (4.5:1) on their theme's background.
  */
@@ -77,4 +77,4 @@
 .btn-secondary { background: transparent; color: var(--accent); border: 1px solid var(--accent); }
 .btn-danger { background: var(--danger); color: var(--on-status); }
 .nav-item[aria-current="page"] { background: var(--accent-subtle); color: var(--accent); }
-.logo-mark { color: var(--accent); } /* with mediarium-mark.svg inlined (fill="currentColor") */
+.logo-mark { color: var(--accent); } /* with cue-mark.svg inlined (fill="currentColor") */

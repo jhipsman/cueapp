@@ -16,11 +16,15 @@ import (
 // details page to find the real file, so they are handed out as references
 // the grab pipeline resolves through the manager at download time:
 //
-//	mediarium-indexer://<indexer id>?link=<escaped site link>
+//	cue-indexer://<indexer id>?link=<escaped site link>
 //
 // Magnet links are handed out as they are.
 
-const linkRefScheme = "mediarium-indexer"
+const linkRefScheme = "cue-indexer"
+
+// legacyLinkRefScheme is the scheme from before the rename. References saved
+// then (in the download queue or the history) still resolve.
+const legacyLinkRefScheme = "mediarium-indexer"
 
 // EncodeLinkRef wraps a site link as a reference to indexer id.
 func EncodeLinkRef(id int64, link string) string {
@@ -28,7 +32,9 @@ func EncodeLinkRef(id int64, link string) string {
 }
 
 // IsLinkRef reports whether s came from EncodeLinkRef.
-func IsLinkRef(s string) bool { return strings.HasPrefix(s, linkRefScheme+"://") }
+func IsLinkRef(s string) bool {
+	return strings.HasPrefix(s, linkRefScheme+"://") || strings.HasPrefix(s, legacyLinkRefScheme+"://")
+}
 
 // DecodeLinkRef splits a reference into the indexer id and the site link.
 func DecodeLinkRef(s string) (int64, string, bool) {

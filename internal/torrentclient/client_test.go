@@ -15,7 +15,7 @@ import (
 	"github.com/anacrolix/torrent/bencode"
 	"github.com/anacrolix/torrent/metainfo"
 
-	mediarium "github.com/jhipsman/cueapp/internal/torrentclient"
+	"github.com/jhipsman/cueapp/internal/torrentclient"
 )
 
 // TestDownloadBetweenTwoLocalPeers builds a torrent from a local fixture
@@ -87,7 +87,7 @@ func TestDownloadBetweenTwoLocalPeers(t *testing.T) {
 	defer cancel()
 
 	var lastDone, lastTotal int64
-	if err := mediarium.Download(ctx, leecherTorrent, func(done, total int64) {
+	if err := torrentclient.Download(ctx, leecherTorrent, func(done, total int64) {
 		lastDone, lastTotal = done, total
 	}); err != nil {
 		t.Fatalf("download: %v", err)
@@ -189,7 +189,7 @@ func TestTunnelModeRoutesThroughGivenDialer(t *testing.T) {
 
 	dialer := &countingDialer{}
 	leecherDir := t.TempDir()
-	leecher, err := mediarium.New(mediarium.Config{DataDir: leecherDir, Tunnel: dialer})
+	leecher, err := torrentclient.New(torrentclient.Config{DataDir: leecherDir, Tunnel: dialer})
 	if err != nil {
 		t.Fatalf("new tunnel-mode client: %v", err)
 	}
@@ -214,7 +214,7 @@ func TestTunnelModeRoutesThroughGivenDialer(t *testing.T) {
 		t.Fatal("expected at least 1 peer to be added")
 	}
 
-	if err := mediarium.Download(ctx, leecherTorrent, nil); err != nil {
+	if err := torrentclient.Download(ctx, leecherTorrent, nil); err != nil {
 		t.Fatalf("download: %v", err)
 	}
 	if dialer.dials.Load() == 0 {
@@ -289,7 +289,7 @@ func TestTunnelModeHasNoFallbackWhenDialerFails(t *testing.T) {
 	f.Close()
 
 	leecherDir := t.TempDir()
-	leecher, err := mediarium.New(mediarium.Config{DataDir: leecherDir, Tunnel: deadDialer{}})
+	leecher, err := torrentclient.New(torrentclient.Config{DataDir: leecherDir, Tunnel: deadDialer{}})
 	if err != nil {
 		t.Fatalf("new tunnel-mode client: %v", err)
 	}
@@ -311,7 +311,7 @@ func TestTunnelModeHasNoFallbackWhenDialerFails(t *testing.T) {
 
 	shortCtx, shortCancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer shortCancel()
-	err = mediarium.Download(shortCtx, leecherTorrent, nil)
+	err = torrentclient.Download(shortCtx, leecherTorrent, nil)
 	if !errors.Is(err, context.DeadlineExceeded) {
 		t.Fatalf("expected the download to hang (no fallback path) until the context deadline, got %v", err)
 	}

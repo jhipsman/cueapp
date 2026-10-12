@@ -26,7 +26,7 @@ func TestIsHomeHost(t *testing.T) {
 		want bool
 	}{
 		{"localhost", true}, {"localhost:8264", true}, {"127.0.0.1:8264", true}, {"192.168.1.10", true},
-		{"[::1]:8264", true}, {"[fd00::5]", true}, {"nas", true}, {"nas:8264", true}, {"mediarium.local", true},
+		{"[::1]:8264", true}, {"[fd00::5]", true}, {"nas", true}, {"nas:8264", true}, {"cue.local", true},
 		{"nas.lan:8264", true}, {"box.home.arpa", true}, {"thing.internal", true}, {"Server.LOCAL.", true},
 		{"media.example.com", false}, {"media.example.com:443", false}, {"evil.com", false},
 		{"192.168.1.10.evil.com", false}, {"local.evil.com", false}, {"", false},

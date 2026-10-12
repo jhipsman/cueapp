@@ -37,7 +37,7 @@ export default function AppShell() {
   // A small, hideable link to support the project (administrators only). Hidden per browser.
   const [showSupport] = useState(() => {
     try {
-      return localStorage.getItem('mediarium-hide-support') !== '1'
+      return localStorage.getItem('cue-hide-support') !== '1'
     } catch {
       return true
     }
@@ -45,7 +45,7 @@ export default function AppShell() {
   const [active, setActive] = useState(0)
   const [collapsed, setCollapsed] = useState(() => {
     try {
-      return localStorage.getItem('mediarium-sidebar') === 'collapsed'
+      return localStorage.getItem('cue-sidebar') === 'collapsed'
     } catch {
       return false
     }
@@ -82,7 +82,7 @@ export default function AppShell() {
   function toggleCollapsed() {
     setCollapsed((c) => {
       try {
-        localStorage.setItem('mediarium-sidebar', c ? 'open' : 'collapsed')
+        localStorage.setItem('cue-sidebar', c ? 'open' : 'collapsed')
       } catch {
         // best effort only
       }

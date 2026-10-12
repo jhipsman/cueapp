@@ -11,26 +11,26 @@ import (
 
 	"github.com/anacrolix/torrent"
 
-	mediarium "github.com/jhipsman/cueapp/internal/torrentclient"
+	"github.com/jhipsman/cueapp/internal/torrentclient"
 )
 
 func TestSeedGoalMet(t *testing.T) {
 	const gib = int64(1 << 30)
 	tests := []struct {
 		name     string
-		goal     mediarium.SeedGoal
+		goal     torrentclient.SeedGoal
 		uploaded int64
 		size     int64
 		seeding  time.Duration
 		want     bool
 	}{
-		{"no limits never met", mediarium.SeedGoal{}, 10 * gib, gib, 1000 * time.Hour, false},
-		{"ratio reached", mediarium.SeedGoal{Ratio: 2}, 2 * gib, gib, time.Minute, true},
-		{"ratio not reached", mediarium.SeedGoal{Ratio: 2}, gib, gib, time.Minute, false},
-		{"time reached", mediarium.SeedGoal{Time: time.Hour}, 0, gib, time.Hour, true},
-		{"time not reached", mediarium.SeedGoal{Time: time.Hour}, 0, gib, 59 * time.Minute, false},
-		{"either one is enough", mediarium.SeedGoal{Ratio: 5, Time: time.Hour}, gib, gib, 2 * time.Hour, true},
-		{"unknown size never meets a ratio", mediarium.SeedGoal{Ratio: 1}, gib, 0, time.Minute, false},
+		{"no limits never met", torrentclient.SeedGoal{}, 10 * gib, gib, 1000 * time.Hour, false},
+		{"ratio reached", torrentclient.SeedGoal{Ratio: 2}, 2 * gib, gib, time.Minute, true},
+		{"ratio not reached", torrentclient.SeedGoal{Ratio: 2}, gib, gib, time.Minute, false},
+		{"time reached", torrentclient.SeedGoal{Time: time.Hour}, 0, gib, time.Hour, true},
+		{"time not reached", torrentclient.SeedGoal{Time: time.Hour}, 0, gib, 59 * time.Minute, false},
+		{"either one is enough", torrentclient.SeedGoal{Ratio: 5, Time: time.Hour}, gib, gib, 2 * time.Hour, true},
+		{"unknown size never meets a ratio", torrentclient.SeedGoal{Ratio: 1}, gib, 0, time.Minute, false},
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
@@ -39,7 +39,7 @@ func TestSeedGoalMet(t *testing.T) {
 			}
 		})
 	}
-	if !(mediarium.SeedGoal{}).Unlimited() || (mediarium.SeedGoal{Ratio: 1}).Unlimited() {
+	if !(torrentclient.SeedGoal{}).Unlimited() || (torrentclient.SeedGoal{Ratio: 1}).Unlimited() {
 		t.Fatal("Unlimited is wrong")
 	}
 }
@@ -89,7 +89,7 @@ func TestEngineListensOnConfiguredPortAndSeesIncoming(t *testing.T) {
 	f.Close()
 
 	port := freePort(t)
-	engine, err := mediarium.New(mediarium.Config{DataDir: t.TempDir(), ListenPort: port})
+	engine, err := torrentclient.New(torrentclient.Config{DataDir: t.TempDir(), ListenPort: port})
 	if err != nil {
 		t.Fatalf("new engine: %v", err)
 	}
@@ -132,7 +132,7 @@ func TestEngineListensOnConfiguredPortAndSeesIncoming(t *testing.T) {
 		t.Fatal(err)
 	}
 	lt.AddPeers([]torrent.PeerInfo{{Addr: stringAddr(net.JoinHostPort("127.0.0.1", strconv.Itoa(port)))}})
-	if err := mediarium.Download(ctx, lt, nil); err != nil {
+	if err := torrentclient.Download(ctx, lt, nil); err != nil {
 		t.Fatalf("download from the engine: %v", err)
 	}
 	deadline := time.Now().Add(10 * time.Second)
@@ -166,7 +166,7 @@ func TestSeedUntilGoalStopsWhenCancelled(t *testing.T) {
 	_ = mi.Write(f)
 	f.Close()
 
-	engine, err := mediarium.New(mediarium.Config{DataDir: t.TempDir()})
+	engine, err := torrentclient.New(torrentclient.Config{DataDir: t.TempDir()})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -179,7 +179,7 @@ func TestSeedUntilGoalStopsWhenCancelled(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	done := make(chan bool, 1)
 	go func() {
-		done <- mediarium.SeedUntilGoal(ctx, tr, time.Now(), mediarium.SeedGoal{}, 10*time.Millisecond)
+		done <- torrentclient.SeedUntilGoal(ctx, tr, time.Now(), torrentclient.SeedGoal{}, 10*time.Millisecond)
 	}()
 	select {
 	case <-done:
@@ -192,7 +192,7 @@ func TestSeedUntilGoalStopsWhenCancelled(t *testing.T) {
 	}
 
 	// A time goal that has already passed is met straight away.
-	if !mediarium.SeedUntilGoal(context.Background(), tr, time.Now().Add(-time.Hour), mediarium.SeedGoal{Time: time.Minute}, time.Hour) {
+	if !torrentclient.SeedUntilGoal(context.Background(), tr, time.Now().Add(-time.Hour), torrentclient.SeedGoal{Time: time.Minute}, time.Hour) {
 		t.Fatal("a passed time goal should be met")
 	}
 }

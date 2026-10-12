@@ -1,7 +1,7 @@
 # Cue: movies, TV shows and music, from search to your library, in one app.
 #
 # How to use this file
-#   1. Put it in an empty folder, for example "mediarium".
+#   1. Put it in an empty folder, for example "cue".
 #   2. Change the lines marked CHANGE. The defaults work for a quick try.
 #   3. In that folder run:   docker compose up -d
 #   4. Open http://<your-server-ip>:8264 and follow the setup steps.
@@ -13,11 +13,11 @@
 # Full guide: https://github.com/jhipsman/cueapp/blob/main/docs/INSTALL.md
 
 services:
-  mediarium:
+  cue:
     # For sites behind a Cloudflare check, use ghcr.io/jhipsman/cue:latest-full
     # instead (bigger, but has the helper built in). See docs/INSTALL.md.
     image: ghcr.io/jhipsman/cue:latest
-    container_name: mediarium
+    container_name: cue
     restart: unless-stopped
     # Nothing running in the container can gain more privileges than it starts with.
     security_opt:
@@ -80,7 +80,7 @@ services:
 # NAS EXAMPLE (Synology)
 #
 # The shared folder "Media" holds four folders: Movies, tv, Music and
-# downloads. Create them first in File Station, and a "docker/mediarium" folder
+# downloads. Create them first in File Station, and a "docker/cue" folder
 # for Cue's settings. Then use these lines in place of the environment
 # and volumes above:
 #
@@ -93,7 +93,7 @@ services:
 #       - TV_DIR=/data/tv
 #       - MUSIC_DIR=/data/Music
 #     volumes:
-#       - /volume1/docker/mediarium:/config
+#       - /volume1/docker/cue:/config
 #       - /volume1/Media:/data
 #
 # Step by step: https://github.com/jhipsman/cueapp/blob/main/docs/synology.md

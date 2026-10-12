@@ -23,7 +23,11 @@ import (
 // bin shows up anywhere.
 
 // TrashDir is the recycle bin folder inside each library folder.
-const TrashDir = ".mediarium-trash"
+const TrashDir = ".cue-trash"
+
+// legacyTrashDir is the recycle bin's name from before the rename. binDir
+// moves what is in it into TrashDir the first time the bin is used.
+const legacyTrashDir = ".mediarium-trash"
 
 // ErrTrashEntry is returned for an entry that does not exist or whose name
 // is not one the bin makes.
@@ -105,7 +109,7 @@ func checkedPath(root, path string) (string, string, error) {
 	if err := within(absRoot, abs); err != nil {
 		return "", "", fmt.Errorf("%s is not inside the library folder %s: %w", path, root, ErrOutside)
 	}
-	if strings.HasPrefix(filepath.ToSlash(mustRel(absRoot, abs)), TrashDir+"/") {
+	if rel := filepath.ToSlash(mustRel(absRoot, abs)); strings.HasPrefix(rel, TrashDir+"/") || strings.HasPrefix(rel, legacyTrashDir+"/") {
 		return "", "", fmt.Errorf("%s is already in the recycle bin: %w", path, ErrOutside)
 	}
 	if _, err := resolveParent(absRoot, abs); err != nil {
@@ -131,7 +135,7 @@ func moveToTrash(absRoot, label string, paths []string, now time.Time) (TrashEnt
 		return TrashEntry{}, err
 	}
 	id := now.UTC().Format("20060102-150405") + "-" + hex.EncodeToString(rnd[:])
-	dir := filepath.Join(absRoot, TrashDir, id)
+	dir := filepath.Join(binDir(absRoot), id)
 	if err := os.MkdirAll(filepath.Join(dir, "files"), 0o755); err != nil {
 		return TrashEntry{}, fmt.Errorf("make the recycle bin folder: %w", err)
 	}
@@ -192,11 +196,44 @@ func entryDir(root, id string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	dir := filepath.Join(absRoot, TrashDir, id)
+	dir := filepath.Join(binDir(absRoot), id)
 	if info, err := os.Lstat(dir); err != nil || !info.IsDir() {
 		return "", ErrTrashEntry
 	}
 	return dir, nil
+}
+
+// binDir returns root's recycle bin folder. A bin from before the rename
+// (.mediarium-trash) is moved into it first: renamed when there is no new bin
+// yet, or entry by entry when both exist. Anything that can't be moved stays
+// where it was, and is tried again next time.
+func binDir(absRoot string) string {
+	bin := filepath.Join(absRoot, TrashDir)
+	old := filepath.Join(absRoot, legacyTrashDir)
+	info, err := os.Lstat(old)
+	if err != nil || !info.IsDir() {
+		return bin
+	}
+	if _, err := os.Lstat(bin); errors.Is(err, fs.ErrNotExist) {
+		if os.Rename(old, bin) == nil {
+			return bin
+		}
+	}
+	entries, err := os.ReadDir(old)
+	if err != nil {
+		return bin
+	}
+	for _, e := range entries {
+		if !e.IsDir() || !trashID.MatchString(e.Name()) {
+			continue
+		}
+		to := filepath.Join(bin, e.Name())
+		if _, err := os.Lstat(to); errors.Is(err, fs.ErrNotExist) {
+			os.Rename(filepath.Join(old, e.Name()), to)
+		}
+	}
+	os.Remove(old) // only when it is empty now
+	return bin
 }
 
 func readEntry(dir string) (TrashEntry, error) {
@@ -222,7 +259,8 @@ func ListTrash(root string) ([]TrashEntry, error) {
 	if err != nil {
 		return nil, err
 	}
-	dirs, err := os.ReadDir(filepath.Join(absRoot, TrashDir))
+	bin := binDir(absRoot)
+	dirs, err := os.ReadDir(bin)
 	if errors.Is(err, fs.ErrNotExist) {
 		return nil, nil
 	}
@@ -234,7 +272,7 @@ func ListTrash(root string) ([]TrashEntry, error) {
 		if !d.IsDir() || !trashID.MatchString(d.Name()) {
 			continue
 		}
-		e, err := readEntry(filepath.Join(absRoot, TrashDir, d.Name()))
+		e, err := readEntry(filepath.Join(bin, d.Name()))
 		if err != nil {
 			continue
 		}

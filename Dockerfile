@@ -79,11 +79,11 @@ RUN apt-get update  && apt-get install -y --no-install-recommends ca-certificate
 ENV PUID=1000     PGID=1000     TZ=Etc/UTC     APP_PORT=8264     BUNDLED_FLARESOLVERR=1
 # The program inside this image. The entrypoint may start a newer installed one
 # from /config/update instead (docs/INSTALL.md, "Updating without rebuilding").
-ENV MEDIARIUM_IMAGE_BIN=/opt/mediarium/app
-COPY --from=build /out/app /opt/mediarium/app
-COPY docker/entrypoint.sh /opt/mediarium/docker-entrypoint.sh
-COPY docker/run-full.sh /opt/mediarium/run-full.sh
-RUN chmod +x /opt/mediarium/app /opt/mediarium/docker-entrypoint.sh /opt/mediarium/run-full.sh
+ENV CUE_IMAGE_BIN=/opt/cue/app
+COPY --from=build /out/app /opt/cue/app
+COPY docker/entrypoint.sh /opt/cue/docker-entrypoint.sh
+COPY docker/run-full.sh /opt/cue/run-full.sh
+RUN chmod +x /opt/cue/app /opt/cue/docker-entrypoint.sh /opt/cue/run-full.sh
 # FlareSolverr patches its chromedriver in place, and here it runs as whatever
 # PUID/PGID you choose, not as its own user, so its folder must be writable.
 RUN chmod -R a+rwX /app
@@ -93,8 +93,8 @@ EXPOSE 8264 58264/tcp 58264/udp
 # own address.
 HEALTHCHECK --interval=30s --timeout=8s --start-period=90s --retries=3 \
   CMD curl -fsS -o /dev/null --max-time 5 "http://127.0.0.1:${APP_PORT:-8264}/api/version" || exit 1
-ENTRYPOINT ["/opt/mediarium/docker-entrypoint.sh"]
-CMD ["dumb-init", "--", "/opt/mediarium/run-full.sh", "/opt/mediarium/app"]
+ENTRYPOINT ["/opt/cue/docker-entrypoint.sh"]
+CMD ["dumb-init", "--", "/opt/cue/run-full.sh", "/opt/cue/app"]
 
 # ---- Runtime stage ----
 FROM alpine:3.24
@@ -119,7 +119,7 @@ ENV PUID=1000 \
     PGID=1000 \
     TZ=Etc/UTC \
     APP_PORT=8264 \
-    MEDIARIUM_IMAGE_BIN=/app/app
+    CUE_IMAGE_BIN=/app/app
 
 COPY --from=build /out/app /app/app
 COPY docker/entrypoint.sh /app/docker-entrypoint.sh

@@ -1,3 +1,4 @@
+import './legacyStorage'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
@@ -13,7 +14,7 @@ if (demoEnabled()) installDemo()
 // Applied before first paint so a stored theme override (ThemeToggle.tsx)
 // takes effect immediately instead of flashing the OS default first.
 try {
-  const stored = localStorage.getItem('mediarium-theme')
+  const stored = localStorage.getItem('cue-theme')
   if (stored === 'light' || stored === 'dark') {
     document.documentElement.dataset.theme = stored
   }

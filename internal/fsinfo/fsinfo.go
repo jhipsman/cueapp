@@ -51,7 +51,7 @@ func InDocker() bool {
 // CheckWritable proves the current user can create files in dir by making
 // and removing one uniquely named file. Existing files are never touched.
 func CheckWritable(dir string) error {
-	f, err := os.CreateTemp(dir, ".mediarium-write-test-*")
+	f, err := os.CreateTemp(dir, ".cue-write-test-*")
 	if err != nil {
 		return err
 	}

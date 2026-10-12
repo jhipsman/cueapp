@@ -13,7 +13,7 @@
 # them, which is fine for development. The public docker-compose.yml maps one
 # /data folder instead, so downloads move into the library instantly.
 
-name: mediarium
+name: cue
 
 services:
   app:
@@ -26,8 +26,8 @@ services:
         TMDB_API_KEY: ${TMDB_API_KEY:-}
         OPENSUBTITLES_API_KEY: ${OPENSUBTITLES_API_KEY:-}
         TRAKT_CLIENT_ID: ${TRAKT_CLIENT_ID:-}
-    image: mediarium:dev
-    container_name: mediarium
+    image: cue:dev
+    container_name: cue
     restart: unless-stopped
     ports:
       # Host port on the left (HOST_PORT in .env); the app listens on 8264 inside.

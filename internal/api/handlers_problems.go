@@ -229,7 +229,7 @@ func (s *Server) handleProblemsExport(w http.ResponseWriter, r *http.Request) {
 	}
 	now := time.Now()
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-	w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="mediarium-problems-%s.txt"`, now.Format("2006-01-02")))
+	w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="cue-problems-%s.txt"`, now.Format("2006-01-02")))
 	_, _ = w.Write([]byte(problems.Text(all, now)))
 }
 

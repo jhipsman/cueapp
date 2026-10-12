@@ -25,7 +25,7 @@ export default function PublicAddress() {
     return () => window.clearTimeout(timer.current)
   }, [])
 
-  const error = text.trim() === '' ? null : urlCheck(text.trim(), { example: 'https://mediarium.example.com' })
+  const error = text.trim() === '' ? null : urlCheck(text.trim(), { example: 'https://cue.example.com' })
 
   async function save(value: string) {
     window.clearTimeout(timer.current)
@@ -55,7 +55,7 @@ export default function PublicAddress() {
         <input
           id="public-address"
           value={text}
-          placeholder="https://mediarium.example.com"
+          placeholder="https://cue.example.com"
           disabled={stored === null || busy}
           onChange={(e) => {
             setText(e.target.value)

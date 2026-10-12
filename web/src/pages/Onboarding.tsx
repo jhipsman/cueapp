@@ -457,7 +457,7 @@ export default function Onboarding({ startStep = 0 }: { startStep?: number }) {
                 Setup code
                 <input value={setupCode} onChange={(e) => setSetupCode(e.target.value)} autoComplete="off" spellCheck={false} />
                 <small className="field-hint">
-                  You're not on your home network, so enter the one-time code from the log. With Docker, run: docker logs mediarium
+                  You're not on your home network, so enter the one-time code from the log. With Docker, run: docker logs cue (docker logs mediarium if you installed before Cue 2.2)
                 </small>
               </label>
             )}

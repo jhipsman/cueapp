@@ -66,7 +66,7 @@ func RenderEmailHTML(ev Event) string {
 
 	// Header: the full Cue logo (sent inside the email, so nothing is
 	// fetched from anywhere) over a stripe in the colour of the message.
-	b.WriteString(`<tr><td style="padding:22px 32px 18px 32px;background:#ffffff;"><img src="cid:` + logoCID + `" width="200" alt="Cue" style="display:block;width:200px;height:auto;border:0;"></td></tr>`)
+	b.WriteString(`<tr><td style="padding:22px 32px 18px 32px;background:#ffffff;"><img src="cid:` + logoCID + `" width="140" alt="Cue" style="display:block;width:140px;height:auto;border:0;"></td></tr>`)
 	b.WriteString(`<tr><td style="height:4px;line-height:4px;font-size:0;background:` + accent + `;">&nbsp;</td></tr>`)
 
 	// Body: the poster on one half, the words and the facts stacked on the other.
@@ -140,8 +140,8 @@ func RenderEmailText(ev Event) string {
 func buildRichMessage(from string, to []string, ev Event) []byte {
 	// Boundaries: a quoted-printable body can never hold "=_" at a line start.
 	const (
-		altBoundary = "=_mediarium_alt_5b1f"
-		relBoundary = "=_mediarium_rel_5b1f"
+		altBoundary = "=_cue_alt_5b1f"
+		relBoundary = "=_cue_rel_5b1f"
 	)
 	var b bytes.Buffer
 	h := func(k, v string) { b.WriteString(k + ": " + v + "\r\n") }
@@ -173,10 +173,10 @@ func buildRichMessage(from string, to []string, ev Event) []byte {
 	b.WriteString("--" + relBoundary + "\r\n")
 	text("text/html", RenderEmailHTML(ev))
 	b.WriteString("--" + relBoundary + "\r\n")
-	b.WriteString("Content-Type: image/png; name=\"mediarium-logo.png\"\r\n")
+	b.WriteString("Content-Type: image/png; name=\"cue-logo.png\"\r\n")
 	b.WriteString("Content-Transfer-Encoding: base64\r\n")
 	b.WriteString("Content-ID: <" + logoCID + ">\r\n")
-	b.WriteString("Content-Disposition: inline; filename=\"mediarium-logo.png\"\r\n\r\n")
+	b.WriteString("Content-Disposition: inline; filename=\"cue-logo.png\"\r\n\r\n")
 	enc := base64.StdEncoding.EncodeToString(logoPNG)
 	for len(enc) > 76 {
 		b.WriteString(enc[:76] + "\r\n")

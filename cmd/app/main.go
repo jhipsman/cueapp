@@ -84,12 +84,12 @@ func main() {
 	}
 	if len(os.Args) > 1 && os.Args[1] == "reset-password" {
 		if err := resetPassword(os.Args[2:]); err != nil {
-			log.Fatalf("mediarium: %v", err)
+			log.Fatalf("cue: %v", err)
 		}
 		return
 	}
 	if err := run(); err != nil {
-		log.Fatalf("mediarium: %v", err)
+		log.Fatalf("cue: %v", err)
 	}
 }
 
@@ -109,7 +109,7 @@ func run() error {
 		return fmt.Errorf("create directory %s: %w", cfg.ConfigDir, err)
 	}
 	// "Restart with automation paused" leaves a note that applies to this start
-	// only, like MEDIARIUM_PAUSE_AUTOMATION=1 for one run.
+	// only, like CUE_PAUSE_AUTOMATION=1 for one run.
 	updateDir := selfupdate.Dir(cfg.ConfigDir)
 	if selfupdate.TakeSafeOnce(updateDir) {
 		cfg.PauseAutomation = true

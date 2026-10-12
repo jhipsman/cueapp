@@ -42,8 +42,8 @@ export default function BookSeries({ workKey, title, author }: { workKey: string
       const d = (e as CustomEvent<{ key: string; id: number }>).detail
       setSeries((cur) => (cur ? { ...cur, entries: cur.entries.map((b) => (b.key === d.key ? { ...b, libraryId: d.id } : b)) } : cur))
     }
-    window.addEventListener('mediarium:book-added', onAdded)
-    return () => window.removeEventListener('mediarium:book-added', onAdded)
+    window.addEventListener('cue:book-added', onAdded)
+    return () => window.removeEventListener('cue:book-added', onAdded)
   }, [])
 
   async function follow(next: boolean) {

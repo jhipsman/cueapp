@@ -544,7 +544,7 @@ func TestLinkRefRoundTrip(t *testing.T) {
 	if !ok || id != 12 || link != "https://site.test/download.php?id=5&passkey=abc" {
 		t.Fatalf("round trip failed: %v %d %q", ok, id, link)
 	}
-	for _, bad := range []string{"https://x.test/a.torrent", "magnet:?xt=urn:btih:1", "mediarium-indexer://x?link=http://a", "mediarium-indexer://1?link=file:///etc/passwd", "mediarium-indexer://1"} {
+	for _, bad := range []string{"https://x.test/a.torrent", "magnet:?xt=urn:btih:1", "cue-indexer://x?link=http://a", "cue-indexer://1?link=file:///etc/passwd", "cue-indexer://1", "mediarium-indexer://1?link=file:///etc/passwd"} {
 		if _, _, ok := DecodeLinkRef(bad); ok {
 			t.Errorf("%q should not decode", bad)
 		}

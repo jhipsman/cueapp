@@ -98,7 +98,7 @@ func UserAgent(version string) string {
 	if version == "" {
 		version = "dev"
 	}
-	return fmt.Sprintf("Mediarium/%s ( https://github.com/jhipsman/cueapp )", version)
+	return fmt.Sprintf("Cue/%s ( https://github.com/jhipsman/cueapp )", version)
 }
 
 // New returns a client for the public MusicBrainz server that identifies

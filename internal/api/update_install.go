@@ -60,7 +60,7 @@ func (s *Server) commitProgram(ctx context.Context, tmp, sum, wantVersion string
 	switch {
 	case errors.Is(err, selfupdate.ErrWrongPlatform):
 		return "", &updateError{status: http.StatusUnprocessableEntity, msg: fmt.Sprintf("That file is for a different kind of system. This Cue runs on %s/%s.", runtime.GOOS, runtime.GOARCH), err: err}
-	case errors.Is(err, selfupdate.ErrNotMediarium):
+	case errors.Is(err, selfupdate.ErrNotCue):
 		return "", &updateError{status: http.StatusUnprocessableEntity, msg: "That file is not a Cue program for this system.", err: err}
 	case err != nil:
 		return "", failed("Couldn't run the new program to check it. Make sure the config folder allows programs to run.", err)

@@ -62,7 +62,7 @@ func TestDetectSupervisor(t *testing.T) {
 		{"a container without our entrypoint", false, "", env(), dockerenv, "docker"},
 		{"podman", false, "", env("container", "podman"), none, "docker"},
 		{"systemd service", false, "", env("INVOCATION_ID", "abc123"), none, "systemd"},
-		{"launchd job", false, "", env("XPC_SERVICE_NAME", "io.github.rdborg.mediarium"), none, "launchd"},
+		{"launchd job", false, "", env("XPC_SERVICE_NAME", "io.github.jhipsman.cue"), none, "launchd"},
 		{"a terminal on a Mac (launchd sets 0)", false, "", env("XPC_SERVICE_NAME", "0"), none, "none"},
 		{"told by hand", true, "", env(), none, "custom"},
 		{"a plain terminal", false, "", env(), none, "none"},

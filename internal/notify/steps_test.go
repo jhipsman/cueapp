@@ -172,7 +172,7 @@ func TestStepsForEmail(t *testing.T) {
 			t.Fatal(err)
 		}
 		lines := texts(st)
-		want := []string{"Connecting to 127.0.0.1:", "Connected", "Starting a secure connection", "Secure connection started (TLS", "Signing in as ryan", "Signed in", "Sending the message from mediarium@example.com to a@example.com, b@example.com", "Done: accepted by the server"}
+		want := []string{"Connecting to 127.0.0.1:", "Connected", "Starting a secure connection", "Secure connection started (TLS", "Signing in as ryan", "Signed in", "Sending the message from cue@example.com to a@example.com, b@example.com", "Done: accepted by the server"}
 		next := 0
 		for _, l := range lines {
 			if next < len(want) && strings.Contains(l, want[next]) {

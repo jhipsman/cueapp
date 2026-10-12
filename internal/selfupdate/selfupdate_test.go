@@ -30,7 +30,7 @@ func TestMain(m *testing.M) {
 		case strings.Contains(name, "-silent"):
 			os.Exit(0)
 		case strings.Contains(name, "-riscv"):
-			fmt.Printf("mediarium 1.0.0 %s/riscv64\n", runtime.GOOS)
+			fmt.Printf("cue 1.0.0 %s/riscv64\n", runtime.GOOS)
 			os.Exit(0)
 		}
 		version := "0.0.0"
@@ -198,19 +198,21 @@ func TestParseVersionLine(t *testing.T) {
 		want Probe
 		ok   bool
 	}{
-		{"mediarium 1.2.0 linux/amd64\n", Probe{"1.2.0", "linux", "amd64"}, true},
-		{"mediarium 1.2.0-rc.1 linux/arm64", Probe{"1.2.0-rc.1", "linux", "arm64"}, true},
-		{"mediarium dev linux/amd64", Probe{"dev", "linux", "amd64"}, true},
+		{"cue 1.2.0 linux/amd64\n", Probe{"1.2.0", "linux", "amd64"}, true},
+		{"cue 1.2.0-rc.1 linux/arm64", Probe{"1.2.0-rc.1", "linux", "arm64"}, true},
+		{"cue dev linux/amd64", Probe{"dev", "linux", "amd64"}, true},
+		{"mediarium 2.1.9 linux/amd64", Probe{"2.1.9", "linux", "amd64"}, true}, // from before the rename
+		{"Cue 1.2.0 linux/amd64", Probe{}, false},
 		{"", Probe{}, false},
 		{"hello world", Probe{}, false},
-		{"mediarium 1.2.0", Probe{}, false},
-		{"mediarium 1.2.0 linux", Probe{}, false},
-		{"mediarium 1.2.0 linux/", Probe{}, false},
+		{"cue 1.2.0", Probe{}, false},
+		{"cue 1.2.0 linux", Probe{}, false},
+		{"cue 1.2.0 linux/", Probe{}, false},
 		{"radarr 1.2.0 linux/amd64", Probe{}, false},
-		{"mediarium 1.2.0 linux/amd64 extra", Probe{}, false},
-		{"mediarium 1.2.0;rm linux/amd64", Probe{}, false},
-		{"mediarium " + strings.Repeat("1", 80) + " linux/amd64", Probe{}, false},
-		{"mediarium $(id) linux/amd64", Probe{}, false},
+		{"cue 1.2.0 linux/amd64 extra", Probe{}, false},
+		{"cue 1.2.0;rm linux/amd64", Probe{}, false},
+		{"cue " + strings.Repeat("1", 80) + " linux/amd64", Probe{}, false},
+		{"cue $(id) linux/amd64", Probe{}, false},
 	}
 	for _, tc := range cases {
 		got, err := ParseVersionLine(tc.in)
@@ -239,7 +241,7 @@ func TestInspect(t *testing.T) {
 	})
 	t.Run("a program that does not answer properly", func(t *testing.T) {
 		for _, name := range []string{"prog-silent", "prog-fail"} {
-			if _, err := Inspect(context.Background(), fakeProgram(t, dir, name)); !errors.Is(err, ErrNotMediarium) {
+			if _, err := Inspect(context.Background(), fakeProgram(t, dir, name)); !errors.Is(err, ErrNotCue) {
 				t.Errorf("%s: error = %v", name, err)
 			}
 		}
@@ -250,7 +252,7 @@ func TestInspect(t *testing.T) {
 		defer func() { probeTimeout = old }()
 		start := time.Now()
 		_, err := Inspect(context.Background(), fakeProgram(t, dir, "prog-hang"))
-		if !errors.Is(err, ErrNotMediarium) {
+		if !errors.Is(err, ErrNotCue) {
 			t.Fatalf("error = %v", err)
 		}
 		if time.Since(start) > 5*time.Second {
@@ -262,8 +264,8 @@ func TestInspect(t *testing.T) {
 			t.Skip("needs Linux")
 		}
 		path := filepath.Join(dir, "script.sh")
-		os.WriteFile(path, []byte("#!/bin/sh\necho mediarium 9.9.9 linux/"+runtime.GOARCH+"\n"), 0o755)
-		if _, err := Inspect(context.Background(), path); !errors.Is(err, ErrNotMediarium) {
+		os.WriteFile(path, []byte("#!/bin/sh\necho cue 9.9.9 linux/"+runtime.GOARCH+"\n"), 0o755)
+		if _, err := Inspect(context.Background(), path); !errors.Is(err, ErrNotCue) {
 			t.Fatalf("error = %v", err)
 		}
 	})
@@ -273,12 +275,12 @@ func TestInspect(t *testing.T) {
 		}
 		path := filepath.Join(dir, "junk")
 		os.WriteFile(path, bytes.Repeat([]byte{1, 2, 3}, 100), 0o755)
-		if _, err := Inspect(context.Background(), path); !errors.Is(err, ErrNotMediarium) {
+		if _, err := Inspect(context.Background(), path); !errors.Is(err, ErrNotCue) {
 			t.Fatalf("error = %v", err)
 		}
 	})
 	t.Run("runs with an empty environment", func(t *testing.T) {
-		t.Setenv("MEDIARIUM_SECRET_FOR_TEST", "leak")
+		t.Setenv("CUE_SECRET_FOR_TEST", "leak")
 		// The fake program cannot print its environment, so just make sure it still answers.
 		if _, err := Inspect(context.Background(), fakeProgram(t, dir, "prog-1.0.0")); err != nil {
 			t.Fatal(err)

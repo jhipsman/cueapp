@@ -88,7 +88,7 @@ func (s *Server) mediaClientID() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	id = "mediarium-" + rnd
+	id = "cue-" + rnd
 	if err := s.Settings.Set(settings.KeyMediaServersClientID, id, false); err != nil {
 		return "", err
 	}

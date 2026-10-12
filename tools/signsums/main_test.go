@@ -23,7 +23,7 @@ func testKeys(t *testing.T) (seedB64, pubB64 string, pub ed25519.PublicKey) {
 	return base64.StdEncoding.EncodeToString(priv.Seed()), base64.StdEncoding.EncodeToString(p), p
 }
 
-const sums = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa  mediarium_1.2.0_linux_amd64.tar.gz\n"
+const sums = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa  cue_1.2.0_linux_amd64.tar.gz\n"
 
 // What signsums writes is exactly what the app's verifier accepts.
 func TestSignatureVerifiesInTheApp(t *testing.T) {

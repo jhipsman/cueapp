@@ -36,7 +36,7 @@ func tree(t *testing.T, dir string) string {
 	_ = filepath.Walk(dir, func(p string, _ os.FileInfo, err error) error {
 		if err == nil && p != dir {
 			r, _ := filepath.Rel(dir, p)
-			if strings.HasPrefix(filepath.ToSlash(r), ".mediarium-trash") {
+			if strings.HasPrefix(filepath.ToSlash(r), ".cue-trash") {
 				return nil // the recycle bin is not part of the library
 			}
 			out = append(out, filepath.ToSlash(r))

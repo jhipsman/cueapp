@@ -44,7 +44,7 @@ func realProgram(t *testing.T, version string) []byte {
 		return b
 	}
 	if programDir == "" {
-		dir, err := os.MkdirTemp("", "mediarium-api-programs-*")
+		dir, err := os.MkdirTemp("", "cue-api-programs-*")
 		if err != nil {
 			t.Fatal(err)
 		}

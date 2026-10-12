@@ -76,13 +76,13 @@ jobs:
           load: true
           pull: true
           no-cache: true
-          tags: mediarium-full-smoke:test
+          tags: cue-full-smoke:test
           build-args: |
             VERSION=${{ steps.latest.outputs.version }}
 
       - name: Smoke test
         if: steps.latest.outputs.found == 'true'
-        run: bash docker/smoke-full.sh mediarium-full-smoke:test
+        run: bash docker/smoke-full.sh cue-full-smoke:test
 
       # Only a stable release is refreshed under latest-full and the short
       # version; a pre-release only refreshes its own exact tag.

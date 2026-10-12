@@ -66,7 +66,7 @@ export default function ScriptCard() {
       </legend>
       <p style={{ color: 'var(--text-dim)', marginTop: 0 }}>
         For your own extra steps, such as telling another app or copying a file somewhere. Put the script in{' '}
-        <code>{state?.folder ?? '/config/scripts'}</code>, make it executable, and pick it here. It is told what was imported in <code>MEDIARIUM_*</code>{' '}
+        <code>{state?.folder ?? '/config/scripts'}</code>, make it executable, and pick it here. It is told what was imported in <code>CUE_*</code>{' '}
         variables. Only scripts in that folder can be picked, and only from this page.{' '}
         <a href={`${DOCS_URL}/scripts.md`} target="_blank" rel="noreferrer">
           What a script gets
@@ -92,7 +92,7 @@ export default function ScriptCard() {
         <button className="primary" onClick={() => void save()} disabled={busy || !changed}>
           Save
         </button>
-        <button onClick={() => void tryIt()} disabled={busy || !saved || changed} title="Runs it once with a made-up movie and MEDIARIUM_EVENT=test">
+        <button onClick={() => void tryIt()} disabled={busy || !saved || changed} title="Runs it once with a made-up movie and CUE_EVENT=test">
           Try it
         </button>
         <button className="ghost btn-with-icon" onClick={load} disabled={busy} title="Look in the folder again">

@@ -172,7 +172,7 @@ func TestCreateWritesConsistentSnapshotManifestAndKey(t *testing.T) {
 		t.Fatalf("manifest is not JSON: %v", err)
 	}
 	latest, _ := backup.LatestMigration()
-	if m.App != "mediarium" || m.Version != "v1.2.3" || m.CreatedAt != "2026-09-28T14:30:05Z" || m.Migrations != latest || latest == "" {
+	if m.App != "cue" || m.Version != "v1.2.3" || m.CreatedAt != "2026-09-28T14:30:05Z" || m.Migrations != latest || latest == "" {
 		t.Errorf("unexpected manifest: %+v (latest migration %q)", m, latest)
 	}
 	if !bytes.HasPrefix(got[backup.DBFile], []byte("SQLite format 3\x00")) {
@@ -342,7 +342,7 @@ func TestStageRejectsBadBackups(t *testing.T) {
 		}, "newer version of Cue"},
 		{"manifest from a newer version", func(t *testing.T) string {
 			return buildZip(t, zipEntry{name: "app.db", data: goodDB}, zipEntry{name: "secret.key", data: key},
-				zipEntry{name: "manifest.json", data: []byte(`{"app":"mediarium","migrations":"9999_x"}`)})
+				zipEntry{name: "manifest.json", data: []byte(`{"app":"cue","migrations":"9999_x"}`)})
 		}, "newer version of Cue"},
 		{"manifest from another app", func(t *testing.T) string {
 			return buildZip(t, zipEntry{name: "app.db", data: goodDB}, zipEntry{name: "secret.key", data: key},
@@ -584,5 +584,13 @@ func TestBackupHoldsWritesThatOnlyExistInTheWAL(t *testing.T) {
 	var check string
 	if err := restored.QueryRow(`PRAGMA integrity_check`).Scan(&check); err != nil || check != "ok" {
 		t.Fatalf("integrity check = %q, %v", check, err)
+	}
+}
+
+func TestBackupFromBeforeTheRenameIsAccepted(t *testing.T) {
+	zipPath := buildZip(t, zipEntry{name: "app.db", data: dbBytes(t, nil)}, zipEntry{name: "secret.key", data: validKey(t)},
+		zipEntry{name: "manifest.json", data: []byte(`{"app":"mediarium"}`)})
+	if _, err := backup.Validate(t.TempDir(), zipPath); err != nil {
+		t.Fatalf("a Mediarium backup should restore into Cue: %v", err)
 	}
 }

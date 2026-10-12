@@ -14,7 +14,7 @@ import (
 // it did. They run before anything else and have no side effects: no config
 // is read, no folder is created, nothing is opened.
 //
-//	--version-check          prints "mediarium <version> <os>/<arch>" and exits 0
+//	--version-check          prints "cue <version> <os>/<arch>" and exits 0
 //	--accepts-update <v>     exits 0 when version v is not older than this program
 //	                         (used by the entrypoint to decide whether an installed
 //	                         update may replace the one in the image), 1 when it is

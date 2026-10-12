@@ -127,8 +127,8 @@ function BookRail({
       const d = (e as CustomEvent<{ key: string; id: number }>).detail
       setOwned((o) => ({ ...o, [d.key]: d.id }))
     }
-    window.addEventListener('mediarium:book-added', onAdded)
-    return () => window.removeEventListener('mediarium:book-added', onAdded)
+    window.addEventListener('cue:book-added', onAdded)
+    return () => window.removeEventListener('cue:book-added', onAdded)
   }, [])
 
   const visible = shown.length >= want || done ? shown.slice(0, want) : shown.slice(0, Math.max(0, Math.floor(shown.length / cols) * cols))
@@ -272,7 +272,7 @@ function AddDialog({ target, onClose, prefer }: { target: BookFound; onClose: ()
         onClose()
         return
       }
-      window.dispatchEvent(new CustomEvent('mediarium:book-added', { detail: { key: target.key, id: b.id } }))
+      window.dispatchEvent(new CustomEvent('cue:book-added', { detail: { key: target.key, id: b.id } }))
       toast.success(`${b.title} added. Cue is looking for it now.`)
       onClose()
     } catch (e) {

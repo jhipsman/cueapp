@@ -214,7 +214,7 @@ func New(db *sql.DB, cfg config.Config, box *crypto.Box, defaultTMDBAPIKey, vers
 	}
 	s.MusicRepo = music.NewRepo(db)
 	s.BookRepo = books.NewRepo(db)
-	s.OpenLibrary = books.NewClient("Mediarium/" + version + " (https://mediarium.app)")
+	s.OpenLibrary = books.NewClient("Cue/" + version + " (https://github.com/jhipsman/cueapp)")
 	s.Audnexus = books.NewAudnexus(s.OpenLibrary.UserAgent)
 	s.Requests = requests.NewRepo(db)
 	s.mb = musicbrainz.New(version)

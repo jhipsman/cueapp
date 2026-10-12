@@ -11,13 +11,13 @@ import (
 // TestDefinitionCorpus validates a local folder of real Cardigann
 // definitions (e.g. a checkout of Prowlarr/Indexers definitions/v11) and
 // reports which ones the engine can't run. It reads local files only and is
-// skipped unless MEDIARIUM_CARDIGANN_DEFS points at such a folder:
+// skipped unless CUE_CARDIGANN_DEFS points at such a folder:
 //
-//	MEDIARIUM_CARDIGANN_DEFS=/path/to/definitions/v11 go test ./internal/indexers -run Corpus -v
+//	CUE_CARDIGANN_DEFS=/path/to/definitions/v11 go test ./internal/indexers -run Corpus -v
 func TestDefinitionCorpus(t *testing.T) {
-	dir := os.Getenv("MEDIARIUM_CARDIGANN_DEFS")
+	dir := os.Getenv("CUE_CARDIGANN_DEFS")
 	if dir == "" {
-		t.Skip("set MEDIARIUM_CARDIGANN_DEFS to a folder of definitions to run this check")
+		t.Skip("set CUE_CARDIGANN_DEFS to a folder of definitions to run this check")
 	}
 	files, err := filepath.Glob(filepath.Join(dir, "*.yml"))
 	if err != nil || len(files) == 0 {

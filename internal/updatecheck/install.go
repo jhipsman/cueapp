@@ -66,9 +66,9 @@ func ParsePublicKey(b64 string) (ed25519.PublicKey, error) {
 }
 
 // ArchiveName is the file the release pipeline makes for a system:
-// mediarium_1.2.0_linux_amd64.tar.gz (a .zip on Windows).
+// cue_1.2.0_linux_amd64.tar.gz (a .zip on Windows).
 func ArchiveName(version, goos, goarch string) string {
-	name := fmt.Sprintf("mediarium_%s_%s_%s", version, goos, goarch)
+	name := fmt.Sprintf("cue_%s_%s_%s", version, goos, goarch)
 	if goos == "windows" {
 		return name + ".zip"
 	}
@@ -305,8 +305,8 @@ func SumFor(sums []byte, name string) (string, error) {
 	return "", fmt.Errorf("%w: %s is not in the signed list", ErrNoArchive, name)
 }
 
-// ExtractProgram unpacks the "mediarium" program file from a release .tar.gz
-// into dir and returns where it is. Only a regular file named mediarium, at
+// ExtractProgram unpacks the "cue" program file from a release .tar.gz
+// into dir and returns where it is. Only a regular file named cue, at
 // most one folder deep, is taken; every other entry is ignored, so an archive
 // cannot write anywhere else.
 func ExtractProgram(archive, dir string) (*Download, error) {
@@ -330,7 +330,7 @@ func ExtractProgram(archive, dir string) (*Download, error) {
 			return nil, fmt.Errorf("%w: %v", ErrNoProgram, err)
 		}
 		clean := path.Clean(strings.TrimPrefix(hdr.Name, "./"))
-		if hdr.Typeflag != tar.TypeReg || path.Base(clean) != "mediarium" || strings.Count(clean, "/") > 1 || strings.HasPrefix(clean, "..") || path.IsAbs(clean) {
+		if hdr.Typeflag != tar.TypeReg || path.Base(clean) != "cue" || strings.Count(clean, "/") > 1 || strings.HasPrefix(clean, "..") || path.IsAbs(clean) {
 			continue
 		}
 		if hdr.Size <= 0 || hdr.Size > MaxBinary {

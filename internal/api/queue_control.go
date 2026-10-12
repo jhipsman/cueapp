@@ -746,6 +746,7 @@ func (s *Server) recoverAtStartup() {
 
 // keptResume reports whether dir holds part of a Usenet download.
 func keptResume(dir string) bool {
+	adoptLegacyMarkers(dir)
 	return fileExists(filepath.Join(dir, download.ResumeFile))
 }
 

@@ -92,7 +92,7 @@ func (p *PlexTV) call(ctx context.Context, method, path string, query url.Values
 		return fmt.Errorf("build plex.tv request: %w", err)
 	}
 	req.Header.Set("Accept", "application/json")
-	req.Header.Set("User-Agent", "Mediarium/"+p.Version)
+	req.Header.Set("User-Agent", "Cue/"+p.Version)
 	req.Header.Set("X-Plex-Product", "Cue")
 	req.Header.Set("X-Plex-Version", p.Version)
 	req.Header.Set("X-Plex-Client-Identifier", p.ClientID)

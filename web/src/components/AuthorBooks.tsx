@@ -40,8 +40,8 @@ export default function AuthorBooks({ authorKey, author, exclude }: { authorKey:
       const d = (e as CustomEvent<{ key: string; id: number }>).detail
       setWorks((cur) => cur?.map((b) => (b.key === d.key ? { ...b, libraryId: d.id } : b)) ?? cur)
     }
-    window.addEventListener('mediarium:book-added', onAdded)
-    return () => window.removeEventListener('mediarium:book-added', onAdded)
+    window.addEventListener('cue:book-added', onAdded)
+    return () => window.removeEventListener('cue:book-added', onAdded)
   }, [])
 
   async function follow(next: boolean) {

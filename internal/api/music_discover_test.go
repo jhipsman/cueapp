@@ -50,7 +50,7 @@ func newFakeListenBrainz(t *testing.T) *fakeListenBrainz {
 	mux := http.NewServeMux()
 	handle := func(path string, h func(w http.ResponseWriter, r *http.Request)) {
 		mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
-			if ua := r.Header.Get("User-Agent"); !strings.HasPrefix(ua, "Mediarium/") {
+			if ua := r.Header.Get("User-Agent"); !strings.HasPrefix(ua, "Cue/") {
 				t.Errorf("request without the identifying User-Agent: %q", ua)
 			}
 			f.mu.Lock()

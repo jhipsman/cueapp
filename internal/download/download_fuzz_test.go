@@ -44,7 +44,7 @@ func checkOutputName(t *testing.T, name string) {
 			t.Fatalf("output name %q holds a control character", name)
 		}
 	}
-	if strings.HasPrefix(strings.ToLower(name), ".mediarium-") {
+	if isMarkerName(name) {
 		t.Fatalf("output name %q collides with the download's own files", name)
 	}
 }
@@ -54,7 +54,7 @@ func checkOutputName(t *testing.T, name string) {
 func FuzzOutputFileNames(f *testing.F) {
 	for _, s := range []string{
 		`[1/50] "Movie.2024.mkv" yEnc (1/500)`, `"../../etc/passwd"`, `".."`, `"."`, `"..."`, `""`, ``, `"a/b\c.mkv"`,
-		`"CON"`, `".mediarium-progress"`, `".MEDIARIUM-progress.tmp"`, `"` + strings.Repeat("a", 400) + `.mkv"`,
+		`"CON"`, `".cue-progress"`, `".CUE-progress.tmp"`, `".mediarium-progress"`, `"` + strings.Repeat("a", 400) + `.mkv"`,
 		`"` + strings.Repeat("é", 300) + `.mkv"`, `"` + strings.Repeat("a", 250) + "." + strings.Repeat("b", 60) + `"`,
 		"\"a\x00b\"", "\"a\nb\"", `"C:\Windows\x.exe"`, `"  "`, `"a"` + `"b"`, `"` + strings.Repeat(".", 300) + `x` + strings.Repeat(".", 10) + `"`,
 		"\"\xff\xfe.mkv\"", `"a<b>c:d|e?f*g.mkv"`,

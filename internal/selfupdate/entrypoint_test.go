@@ -30,7 +30,7 @@ var (
 func program(t *testing.T, version string) string {
 	t.Helper()
 	buildOnce.Do(func() {
-		buildDir, buildErr = os.MkdirTemp("", "mediarium-entrypoint-*")
+		buildDir, buildErr = os.MkdirTemp("", "cue-entrypoint-*")
 		if buildErr == nil {
 			buildErr = os.Chmod(buildDir, 0o755)
 		}
@@ -70,7 +70,7 @@ func newEntry(t *testing.T, imageVersion string) *entry {
 	if _, err := exec.LookPath("sh"); err != nil {
 		t.Skip("needs sh")
 	}
-	root, err := os.MkdirTemp("", "mediarium-container-*")
+	root, err := os.MkdirTemp("", "cue-container-*")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -159,7 +159,7 @@ func (e *entry) run(env []string, args ...string) (stdout, stderr string, code i
 		"DOWNLOADS_DIR=" + filepath.Join(e.root, "downloads"),
 		"MOVIES_DIR=" + filepath.Join(e.root, "movies"),
 		"TV_DIR=" + filepath.Join(e.root, "tv"),
-		"MEDIARIUM_IMAGE_BIN=" + e.image,
+		"CUE_IMAGE_BIN=" + e.image,
 		"PUID=1000", "PGID=1000",
 	}, env...)
 	var so, se bytes.Buffer
@@ -233,8 +233,11 @@ func TestEntrypointChoosesTheProgram(t *testing.T) {
 func TestEntrypointTellsTheAppItsImageVersion(t *testing.T) {
 	e := newEntry(t, "1.1.0")
 	out, _, code := e.run(nil, "env")
-	if code != 0 || !strings.Contains(out, "MEDIARIUM_IMAGE_VERSION=1.1.0\n") {
-		t.Fatalf("environment did not carry the image version: %q", out)
+	// Under the old name too, for an installed update from before the rename.
+	for _, name := range []string{"CUE_IMAGE_VERSION", "MEDIARIUM_IMAGE_VERSION"} {
+		if code != 0 || !strings.Contains(out, name+"=1.1.0\n") {
+			t.Fatalf("environment did not carry the image version as %s: %q", name, out)
+		}
 	}
 }
 
@@ -266,13 +269,13 @@ func TestEntrypointIgnoresBadUpdates(t *testing.T) {
 		{"says nothing", func(e *entry) { e.script("exit 0\n", false) }, "does not answer as a Cue program"},
 		{"fails", func(e *entry) { e.script("exit 5\n", false) }, "does not answer as a Cue program"},
 		{"another system", func(e *entry) {
-			e.script("echo mediarium 9.9.9 linux/riscv64\n", false)
+			e.script("echo cue 9.9.9 linux/riscv64\n", false)
 		}, "does not answer as a Cue program"},
 		{"another program with a version line", func(e *entry) {
 			e.script("echo radarr 9.9.9 linux/"+arch+"\n", false)
 		}, "does not answer as a Cue program"},
 		{"not a version number", func(e *entry) {
-			e.script("echo mediarium banana linux/"+arch+"\n", false)
+			e.script("echo cue banana linux/"+arch+"\n", false)
 		}, "not a version number"},
 		{"hangs", func(e *entry) { e.script("sleep 60\n", false) }, "does not answer as a Cue program"},
 	}
@@ -305,13 +308,31 @@ func TestEntrypointIgnoresBadUpdates(t *testing.T) {
 func TestEntrypointSkipSwitch(t *testing.T) {
 	e := newEntry(t, "1.1.0")
 	e.install(program(t, "1.2.0"))
-	got, log := e.version("MEDIARIUM_SKIP_INSTALLED_UPDATE=1")
-	if got != "1.1.0" || !strings.Contains(log, "MEDIARIUM_SKIP_INSTALLED_UPDATE") {
-		t.Fatalf("version %s, log %q", got, log)
+	// The name from before the rename works too.
+	for _, name := range []string{"CUE_SKIP_INSTALLED_UPDATE", "MEDIARIUM_SKIP_INSTALLED_UPDATE"} {
+		got, log := e.version(name + "=1")
+		if got != "1.1.0" || !strings.Contains(log, "CUE_SKIP_INSTALLED_UPDATE") {
+			t.Fatalf("%s: version %s, log %q", name, got, log)
+		}
 	}
 }
 
-// The -full image starts "dumb-init -- run-full.sh /opt/mediarium/app": the
+// A program from before the rename answers "mediarium" instead of "cue",
+// and the image's program is found under the old variable name.
+func TestEntrypointKnowsTheOldName(t *testing.T) {
+	e := newEntry(t, "1.1.0")
+	e.script("echo mediarium 1.2.0 linux/"+runtime.GOARCH+"\n", false)
+	if got, log := e.version(); got != "1.2.0" {
+		t.Fatalf("started version %s, want the installed 1.2.0 (log: %s)", got, log)
+	}
+	e = newEntry(t, "1.1.0")
+	out, _, code := e.run([]string{"CUE_IMAGE_BIN=", "MEDIARIUM_IMAGE_BIN=" + e.image}, "env")
+	if code != 0 || !strings.Contains(out, "CUE_IMAGE_VERSION=1.1.0\n") {
+		t.Fatalf("MEDIARIUM_IMAGE_BIN was not used: %q", out)
+	}
+}
+
+// The -full image starts "dumb-init -- run-full.sh /opt/cue/app": the
 // program is an argument in the middle of a longer command, and it is
 // replaced there.
 func TestEntrypointReplacesTheProgramInsideALongerCommand(t *testing.T) {
@@ -333,7 +354,7 @@ func TestEntrypointBootLoopProtection(t *testing.T) {
 	arch := runtime.GOARCH
 	// A "program" that identifies as version 9.9.9 but stops with an error
 	// whenever it is really started.
-	bad := `case "$1" in --version-check) echo "mediarium 9.9.9 linux/` + arch + `";; *) exit 1;; esac` + "\n"
+	bad := `case "$1" in --version-check) echo "cue 9.9.9 linux/` + arch + `";; *) exit 1;; esac` + "\n"
 
 	t.Run("three quick failures put the update aside", func(t *testing.T) {
 		e := newEntry(t, "1.1.0")
