@@ -181,9 +181,9 @@ Check a release by hand: `sha256sum -c sha256sums.txt` verifies the archives aga
 `tools/push-update.sh` builds the committed `HEAD` in Docker (the repository's own `Dockerfile`, so the interface is included), stamps the version and the app-wide keys from the git-ignored `.env` (`TMDB_API_KEY`, `OPENSUBTITLES_API_KEY`, `TRAKT_CLIENT_ID`; they are passed to Docker through the environment and never printed), computes the SHA-256 and uploads it to an install that has **Allow updates pushed through the API** switched on. It is for the maintainer, for testing a build on a real install before a release, and for installs that cannot rebuild their container.
 
 ```bash
-MEDIARIUM_API_KEY=<administrator API key> tools/push-update.sh http://192.168.1.10:8264
-tools/push-update.sh --arch arm64 --version 2.1.1 --wait https://mediarium.example.com
-tools/push-update.sh --no-upload          # only build; writes ./mediarium-<version>-<arch>
+CUE_API_KEY=<administrator API key> tools/push-update.sh http://192.168.1.10:8264
+tools/push-update.sh --arch arm64 --version 2.1.1 --wait https://cue.example.com
+tools/push-update.sh --no-upload          # only build; writes ./cue-<version>-<arch>
 ```
 
 The API key comes from the environment (or a prompt), is never stored in a file, and is given to `curl` on its standard input so it does not show in a process list. `--force` lets the install accept the same or an older version. Only committed work is built.
@@ -222,7 +222,7 @@ Copy this into the release pull request or an issue:
 
 Every release also publishes `ghcr.io/jhipsman/cue:<version>-full`, `:<major.minor>-full` and `:latest-full` (a pre-release only gets its exact `-full` tag). It comes from the `full` stage of the `Dockerfile` and is built on the official FlareSolverr image.
 
-- The FlareSolverr version is pinned in the `FLARESOLVERR_IMAGE` line at the top of the `Dockerfile`, by version and digest. To update it, pull the new image, copy its digest into that line, run `docker/smoke-full.sh` on a local build (`docker build --target full -t mediarium-full-test .`), and put the change in the changelog. Cloudflare changes its checks all the time, so check the FlareSolverr release notes first.
+- The FlareSolverr version is pinned in the `FLARESOLVERR_IMAGE` line at the top of the `Dockerfile`, by version and digest. To update it, pull the new image, copy its digest into that line, run `docker/smoke-full.sh` on a local build (`docker build --target full -t cue-full-test .`), and put the change in the changelog. Cloudflare changes its checks all the time, so check the FlareSolverr release notes first.
 - The release job builds the image for amd64 first, runs `docker/smoke-full.sh` (both Cue and the helper must answer) and only then pushes amd64 and arm64.
 - `.github/workflows/rebuild-full.yml` rebuilds the latest release's `-full` image every Monday with no cache, so browser and system security fixes get picked up without a new Cue version.
 - The plain image (no `-full`) is unchanged and stays the default in the compose files.

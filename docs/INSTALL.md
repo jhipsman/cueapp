@@ -38,8 +38,8 @@ Cue does not host or provide any content. See [LEGAL.md](./LEGAL.md).
 1. **Install Docker** with the Compose plugin: follow [docs.docker.com/engine/install](https://docs.docker.com/engine/install/) for your system. Check it works with `docker compose version`. (On a NAS, use its own Docker app instead: see the NAS guides above.)
 2. **Make a folder for Cue** and go into it:
    ```bash
-   mkdir mediarium
-   cd mediarium
+   mkdir cue
+   cd cue
    ```
 3. **Create a file called `docker-compose.yml`** in that folder and paste in [the compose file](#the-compose-file) below. Change the lines marked `CHANGE`. The defaults are fine for a first try.
 4. **Start it:**
@@ -49,7 +49,7 @@ Cue does not host or provide any content. See [LEGAL.md](./LEGAL.md).
    The first start downloads the image, which takes a minute.
 5. **Open `http://<your-server-ip>:8264`** in your browser (for example `http://192.168.1.20:8264`, or `http://localhost:8264` on the same machine) and follow the [setup wizard](#the-setup-wizard).
 
-That's it. With the file exactly as below, Cue keeps its settings in `mediarium/config` and your downloads, movies and TV in `mediarium/data`. To use folders you already have, read [Choosing your folders](#choosing-your-folders).
+That's it. With the file exactly as below, Cue keeps its settings in `cue/config` and your downloads, movies and TV in `cue/data`. To use folders you already have, read [Choosing your folders](#choosing-your-folders).
 
 ## The compose file
 
@@ -59,7 +59,7 @@ This is the same file as [`docker/docker-compose.yml`](../docker/docker-compose.
 # Cue: movies, TV shows and music, from search to your library, in one app.
 #
 # How to use this file
-#   1. Put it in an empty folder, for example "mediarium".
+#   1. Put it in an empty folder, for example "cue".
 #   2. Change the lines marked CHANGE. The defaults work for a quick try.
 #   3. In that folder run:   docker compose up -d
 #   4. Open http://<your-server-ip>:8264 and follow the setup steps.
@@ -71,11 +71,11 @@ This is the same file as [`docker/docker-compose.yml`](../docker/docker-compose.
 # Full guide: https://github.com/jhipsman/cueapp/blob/main/docs/INSTALL.md
 
 services:
-  mediarium:
+  cue:
     # For sites behind a Cloudflare check, use ghcr.io/jhipsman/cue:latest-full
     # instead (bigger, but has the helper built in). See docs/INSTALL.md.
     image: ghcr.io/jhipsman/cue:latest
-    container_name: mediarium
+    container_name: cue
     restart: unless-stopped
     # Nothing running in the container can gain more privileges than it starts with.
     security_opt:
@@ -138,7 +138,7 @@ services:
 # NAS EXAMPLE (Synology)
 #
 # The shared folder "Media" holds four folders: Movies, tv, Music and
-# downloads. Create them first in File Station, and a "docker/mediarium" folder
+# downloads. Create them first in File Station, and a "docker/cue" folder
 # for Cue's settings. Then use these lines in place of the environment
 # and volumes above:
 #
@@ -151,7 +151,7 @@ services:
 #       - TV_DIR=/data/tv
 #       - MUSIC_DIR=/data/Music
 #     volumes:
-#       - /volume1/docker/mediarium:/config
+#       - /volume1/docker/cue:/config
 #       - /volume1/Media:/data
 #
 # Step by step: https://github.com/jhipsman/cueapp/blob/main/docs/synology.md
@@ -181,22 +181,22 @@ A good layout looks like this:
 ├── tv/                            TV_DIR=/data/tv
 └── music/                         MUSIC_DIR=/data/music     (optional)
 
-/your/storage/mediarium-config/ ->  mapped as /config
+/your/storage/cue-config/ ->  mapped as /config
 ```
 
 - **Brand-new setup:** if the `data` folder and the three folders in it don't exist yet, Cue creates them on first start, owned by your `PUID`/`PGID` user.
 - **You already have a library:** map the folder *above* your movies and TV as `/data`, and set `MOVIES_DIR`, `TV_DIR` and `DOWNLOADS_DIR` to match what is inside it. For example, a layout of `/volume1/data/media/movies`, `/volume1/data/media/tv` and `/volume1/data/downloads` becomes:
   ```yaml
       environment:
-        - DOWNLOADS_DIR=/data/downloads/mediarium
+        - DOWNLOADS_DIR=/data/downloads/cue
         - MOVIES_DIR=/data/media/movies
         - TV_DIR=/data/media/tv
       volumes:
-        - /volume1/docker/mediarium:/config
+        - /volume1/docker/cue:/config
         - /volume1/data:/data
   ```
   Folder names are case sensitive (`Movies` is not `movies`). You can add what is already in your library, and Cue never deletes or overwrites existing files on its own.
-- **Other download apps use the same downloads folder?** (SABnzbd, NZBGet, qBittorrent, Transmission...) Give Cue a folder of its own inside it, like `DOWNLOADS_DIR=/data/downloads/mediarium` above. Cue tidies up leftover files in its own `incomplete` folder, so it must not share that folder with another app. Hardlinks still work, because it is all inside `/data`.
+- **Other download apps use the same downloads folder?** (SABnzbd, NZBGet, qBittorrent, Transmission...) Give Cue a folder of its own inside it, like `DOWNLOADS_DIR=/data/downloads/cue` above. Cue tidies up leftover files in its own `incomplete` folder, so it must not share that folder with another app. Hardlinks still work, because it is all inside `/data`.
 - **Use full paths** on a real server (`/srv/data`, `/volume1/data`, `/mnt/user/data`). The `./config` and `./data` in the example mean "next to the compose file", which is handy for a first try.
 - **Disk format:** the disk must support hardlinks. ext4, XFS, Btrfs, ZFS and NTFS all do; exFAT and FAT (common on USB sticks) do not.
 - Moving over from Radarr, Sonarr, Prowlarr or SABnzbd? Use the same folders they use: see [Move from Radarr, Sonarr, Prowlarr, SABnzbd and other apps](./migrate.md).
@@ -240,8 +240,8 @@ To check after your first download: on the server run `stat -c '%h %n' /your/sto
 
 - **Folders inside your library made by another app** may belong to a different user (an older Sonarr or Radarr with another PUID, for example). Cue checks the folders inside Movies and TV, each title and its season folders, and warns in setup, in Settings > Library > Folders and file names and on the dashboard when some can't be written to, with an example path. Give the user Cue runs as write access to them, or run Cue with the same `PUID`/`PGID` as that app.
 - It never changes the owner or permissions of your existing media folders (only of its own `/config`). The one exception is a brand-new, empty folder that Docker made for you because the folder you mapped did not exist: that one folder is handed to your `PUID`/`PGID` user so Cue can write to it.
-- It never replaces a file that is already in your library unless you say so. **If a file already exists** (Settings > Library > Folders and file names) can skip the new file (the default), ask you each time, always overwrite, or overwrite only if the new file is better. A replacement is written next to the original first and then swapped in, so a failure can't destroy the original. If the new file has a different name (another quality tag or file type), the old one is removed too, but only when you chose to overwrite (or overwrite if better) and only inside your library folder. A file copied to another drive is written under a temporary name (`.mediarium-tmp`) until the copy is complete, so Plex, Jellyfin or Emby never see half a movie.
-- It only deletes library files when you remove a title with its delete-files box ticked, or when a new version replaces a file and **If a file already exists** is set to overwrite. **Also delete everything on disk** starts unticked and shows how many files and how much space would go. The same goes for **Also delete the files of all ... from the disk** when you remove several titles at once. Through the API, files are only deleted when the request says `deleteFiles=true`. Even then they wait in the recycle bin (`.mediarium-trash` in the library folder) for 7 days before they are deleted for good.
+- It never replaces a file that is already in your library unless you say so. **If a file already exists** (Settings > Library > Folders and file names) can skip the new file (the default), ask you each time, always overwrite, or overwrite only if the new file is better. A replacement is written next to the original first and then swapped in, so a failure can't destroy the original. If the new file has a different name (another quality tag or file type), the old one is removed too, but only when you chose to overwrite (or overwrite if better) and only inside your library folder. A file copied to another drive is written under a temporary name (`.cue-tmp`) until the copy is complete, so Plex, Jellyfin or Emby never see half a movie.
+- It only deletes library files when you remove a title with its delete-files box ticked, or when a new version replaces a file and **If a file already exists** is set to overwrite. **Also delete everything on disk** starts unticked and shows how many files and how much space would go. The same goes for **Also delete the files of all ... from the disk** when you remove several titles at once. Through the API, files are only deleted when the request says `deleteFiles=true`. Even then they wait in the recycle bin (`.cue-trash` in the library folder) for 7 days before they are deleted for good.
 - It only tidies up its own working folder (`incomplete` inside its downloads folder). Torrent data is kept while it seeds.
 
 ## PUID, PGID and TZ
@@ -275,17 +275,19 @@ Most settings live under **Settings**. Besides the folders, `PUID`, `PGID` and `
 | `APP_PORT` | The port the web page listens on inside the container (default `8264`). To use another port on your server, change the left number of the `ports` line instead. |
 | `CONFIG_DIR` | Where `app.db` and `secret.key` live (default `/config`). Leave it alone in Docker. |
 | `TRUSTED_PROXIES`, `ALLOWED_ORIGINS` | For a reverse proxy: see [security.md](./security.md#trusted_proxies). |
-| `MEDIARIUM_PAUSE_AUTOMATION` | Set to `1` to start in **safe mode**: nothing searches, downloads, refreshes, checks connections or looks for new versions by itself. Downloads waiting in line come back paused. You can still search and download by hand, and the dashboard says "Safe mode is on". Remove it to go back to normal. See [Troubleshooting](#troubleshooting). |
-| `MEDIARIUM_SUPERVISED` | Set to `1` only for a program you run yourself when a service manager other than Docker, systemd or launchd starts it again after it exits. It lets the Restart buttons work. |
-| `MEDIARIUM_SKIP_INSTALLED_UPDATE` | Set to any value to make the Docker entrypoint ignore an [installed update](#update-now-docker-image) and start the program inside the image. |
+| `CUE_PAUSE_AUTOMATION` | Set to `1` to start in **safe mode**: nothing searches, downloads, refreshes, checks connections or looks for new versions by itself. Downloads waiting in line come back paused. You can still search and download by hand, and the dashboard says "Safe mode is on". Remove it to go back to normal. See [Troubleshooting](#troubleshooting). |
+| `CUE_SUPERVISED` | Set to `1` only for a program you run yourself when a service manager other than Docker, systemd or launchd starts it again after it exits. It lets the Restart buttons work. |
+| `CUE_SKIP_INSTALLED_UPDATE` | Set to any value to make the Docker entrypoint ignore an [installed update](#update-now-docker-image) and start the program inside the image. |
 
-The Docker images set `BUNDLED_FLARESOLVERR` (the `-full` image only) and `MEDIARIUM_IMAGE_VERSION` themselves. Don't set those two.
+The old `MEDIARIUM_` names of these variables still work.
+
+The Docker images set `BUNDLED_FLARESOLVERR` (the `-full` image only) and `CUE_IMAGE_VERSION` themselves. Don't set those two.
 
 ## The setup wizard
 
 Open `http://<your-server-ip>:8264`. The first time, a short wizard walks you through:
 
-1. **Admin account.** The first account you make is the administrator. From outside your home network (through a reverse proxy, or on a server) the page also asks for a one-time setup code. Find it in the log: `docker logs mediarium`, look for `setup_code`. You also tick that you have read the responsible-use notice ([LEGAL.md](./LEGAL.md)).
+1. **Admin account.** The first account you make is the administrator. From outside your home network (through a reverse proxy, or on a server) the page also asks for a one-time setup code. Find it in the log: `docker logs cue`, look for `setup_code`. You also tick that you have read the responsible-use notice ([LEGAL.md](./LEGAL.md)).
 2. **Media types.** Pick movies, TV shows, music, ebooks and audiobooks. At least one has to stay on. Later steps only ask about what you picked.
 3. **Library paths.** One box for each kind you picked, plus downloads. They show the folders your compose file maps (from `MOVIES_DIR`, `TV_DIR`, `DOWNLOADS_DIR`, `MUSIC_DIR` and so on) and check each one live: whether it exists, whether Cue can write to it, whether it is **Mapped to your device**, and the free space. A folder that isn't mapped shows the exact line to add to your compose file. When your folders share one mapped folder such as `/data`, the wizard suggests a folder inside it (for example `/data/Ebooks`) and can create it for you.
 4. **Connect services.** Movie and show details, subtitles and lists come from TMDB, OpenSubtitles and Trakt. The official image has these built in, so there is usually nothing to do. If a key is needed, the wizard explains how to get a free one. Subtitles are switched on later, under Settings > Info, lists and subtitles > Subtitles.
@@ -349,11 +351,11 @@ Run these in the folder with your `docker-compose.yml`:
 
 | To... | Run |
 |---|---|
-| See the log | `docker compose logs -f mediarium` (Ctrl+C to stop watching) |
+| See the log | `docker compose logs -f cue` (Ctrl+C to stop watching; `mediarium` if you installed before Cue 2.2) |
 | Stop Cue | `docker compose stop` |
 | Start it again | `docker compose start` |
 | Apply changes to the compose file | `docker compose up -d` |
-| Reset a forgotten password | `docker exec -it -u 1000:1000 mediarium /app/app reset-password yourusername` (use your own `PUID:PGID` instead of `1000:1000`; on the `-full` image the program is `/opt/mediarium/app`) |
+| Reset a forgotten password | `docker exec -it -u 1000:1000 cue /app/app reset-password yourusername` (use your own `PUID:PGID` instead of `1000:1000`; on the `-full` image the program is `/opt/cue/app`) |
 
 ## Updating
 
@@ -379,7 +381,7 @@ That downloads the newest image and restarts Cue with it. Your settings and libr
 
 Once a day Cue asks GitHub for the newest release (the first time about two minutes after it starts, and again in an hour after a failed try). If yours is older, administrators see a card on the dashboard and in the **Updates** box under **Settings > System > Server and backup**. It shows what is new and the steps for your kind of install (Synology Container Manager, Unraid or Docker Compose, plus a note for the `-full` image; a program you run yourself gets its own steps). The card has **Hide until the next version**. If a [notification](./notifications.md) target has **New version** ticked, you also get one message per new version. A pre-release is only offered to someone already running one.
 
-- **What it sends:** one plain web request to `api.github.com` with the program name and version (`Mediarium/2.1.0`) and nothing else: no account, no library, no settings. GitHub sees your address, as any website does.
+- **What it sends:** one plain web request to `api.github.com` with the program name and version (`Cue/2.1.0`) and nothing else: no account, no library, no settings. GitHub sees your address, as any website does.
 - **Turning it off:** untick **Look for new versions once a day** in the Updates box (stored as `updates.check`). Then Cue never contacts GitHub by itself. **Check now** still works when you press it.
 - If GitHub cannot be reached or is limiting requests, the card says "Couldn't check just now." with the reason (for example that GitHub is limiting requests, or that the address could not be found), and Cue tries again later. A failed check (other than one held back by GitHub's limit) is also listed under Settings > System > Logs and errors. Nothing else is affected.
 
@@ -400,7 +402,7 @@ If the release is signed by the Cue project, the card and the Updates box also h
 
 ### Restarting Cue
 
-The **Restart** box under **Settings > System > Server and backup** has **Restart Cue** and **Restart with automation paused**. The second one starts Cue once in [safe mode](#other-environment-variables) (no automatic searching, downloading or refreshing) so the pages load and you can fix a setting. The next restart is normal. Both ask you to confirm and pause running downloads (press **Resume** in Activity afterwards). Both need something that starts Cue again after it exits. Docker, systemd and launchd are found automatically (in Docker that means a restart policy such as the `restart: unless-stopped` line in the supplied compose file), and `MEDIARIUM_SUPERVISED=1` covers any other service manager. Where nothing would start it again, the box says "Restart is not available here. Start Cue again yourself." and, on a program you run yourself, offers **Shut down** instead. To stop a container, use your container manager.
+The **Restart** box under **Settings > System > Server and backup** has **Restart Cue** and **Restart with automation paused**. The second one starts Cue once in [safe mode](#other-environment-variables) (no automatic searching, downloading or refreshing) so the pages load and you can fix a setting. The next restart is normal. Both ask you to confirm and pause running downloads (press **Resume** in Activity afterwards). Both need something that starts Cue again after it exits. Docker, systemd and launchd are found automatically (in Docker that means a restart policy such as the `restart: unless-stopped` line in the supplied compose file), and `CUE_SUPERVISED=1` covers any other service manager. Where nothing would start it again, the box says "Restart is not available here. Start Cue again yourself." and, on a program you run yourself, offers **Shut down** instead. To stop a container, use your container manager.
 
 Cue also watches itself. Every 30 seconds it checks that its database and web server answer. If either fails for three minutes in a row it restarts itself (never during a restore, an update or a move from another app). The next start says so in the Updates box, under Logs and errors and in the support report. Switch this off with **Restart by itself if it stops answering**. The Docker images also have a health check on `/api/version`, so Docker, Synology and other tools show healthy or unhealthy.
 
@@ -413,10 +415,10 @@ This is for testing, and for people who can't rebuild their container. An admini
 3. Send the file:
 
    ```bash
-   sha=$(sha256sum mediarium | cut -d ' ' -f 1)
+   sha=$(sha256sum cue | cut -d ' ' -f 1)
    curl -X POST "http://your-server:8264/api/system/update" \
-        -H "X-API-Key: $MEDIARIUM_API_KEY" -H "X-Update-SHA256: $sha" \
-        -H "Content-Type: application/octet-stream" --data-binary @mediarium
+        -H "X-API-Key: $CUE_API_KEY" -H "X-Update-SHA256: $sha" \
+        -H "Content-Type: application/octet-stream" --data-binary @cue
    ```
 
    The body is the raw Linux program (at most 200 MB) and `X-Update-SHA256` is required. Cue refuses the file unless its SHA-256 matches, it is a Cue program for the same system (it is started once with `--version-check`, which only prints its version and exits), and its version is newer than the running one. Add `?force=true` to allow the same or an older version, for example to go back; the checksum is still required. A version older than the one inside the image is never accepted, because the image's entrypoint would ignore it. The answer is `202` with `{"version": "...", "restartingIn": 2}`, then Cue exits and Docker's restart policy starts it again.
@@ -424,7 +426,7 @@ This is for testing, and for people who can't rebuild their container. An admini
 
 Maintainers can use `tools/push-update.sh`, which builds the program from the committed source in Docker, works out the checksum and uploads it: see [RELEASING.md](./RELEASING.md#pushing-a-test-build). The user interface is part of the program, so a pushed program brings its new pages; the browser is told to re-check the page every time, so it never keeps showing the old ones.
 
-**If something goes wrong,** the installed program lives in `/config/update/`. Deleting the `update` folder (with Cue stopped) goes back to the image. Starting the container with `MEDIARIUM_SKIP_INSTALLED_UPDATE=1` ignores an installed program without deleting it.
+**If something goes wrong,** the installed program lives in `/config/update/`. Deleting the `update` folder (with Cue stopped) goes back to the image. Starting the container with `CUE_SKIP_INSTALLED_UPDATE=1` ignores an installed program without deleting it.
 
 ## Backup and restore
 
@@ -463,18 +465,18 @@ This removes the container and the image. Your folders stay on disk:
 If you prefer not to use a compose file, this does the same in one command. Replace the two `/path/to/...` folders and the `PUID`, `PGID` and `TZ` values:
 
 ```bash
-docker run -d --name mediarium --restart unless-stopped \
+docker run -d --name cue --restart unless-stopped \
   -p 8264:8264 -p 58264:58264/tcp -p 58264:58264/udp \
   -e PUID=1000 -e PGID=1000 -e TZ=Etc/UTC \
   -e DOWNLOADS_DIR=/data/downloads -e MOVIES_DIR=/data/movies -e TV_DIR=/data/tv \
-  -v /path/to/mediarium/config:/config \
+  -v /path/to/cue/config:/config \
   -v /path/to/data:/data \
   ghcr.io/jhipsman/cue:latest
 ```
 
 For the optional folders, add for example `-e MUSIC_DIR=/data/music` (and `EBOOKS_DIR`, `AUDIOBOOKS_DIR`) for a folder inside `/data`, or `-v /path/to/music:/music` for one somewhere else.
 
-To update: `docker pull ghcr.io/jhipsman/cue:latest`, then `docker rm -f mediarium` and run the same command again (your folders are kept).
+To update: `docker pull ghcr.io/jhipsman/cue:latest`, then `docker rm -f cue` and run the same command again (your folders are kept).
 
 ## Using a Docker app
 
@@ -497,7 +499,7 @@ One-click entries in these app stores are on the way: see [What runs where](./PL
 ## Troubleshooting
 
 **The page does not open.**
-Check that it is running: `docker compose ps` should show `mediarium` as running, and `docker compose logs mediarium` should show a line that starts with `Cue listening on :8264`. Then check that your server's or NAS's firewall allows port 8264, and that no other app is already using it (if one is, change the left number of `8264:8264`).
+Check that it is running: `docker compose ps` should show `cue` as running, and `docker compose logs cue` should show a line that starts with `Cue listening on :8264`. Then check that your server's or NAS's firewall allows port 8264, and that no other app is already using it (if one is, change the left number of `8264:8264`).
 
 **"not writable" in the log, or a folder warning on the dashboard.**
 `PUID`/`PGID` do not match the owner of that folder. Find the owner's numbers with `ls -ln /your/storage/data`, then either set `PUID`/`PGID` to them and run `docker compose up -d`, or give that user write access on the server (on a NAS: the shared folder's permissions page).
@@ -521,12 +523,12 @@ Add at least one indexer under Settings > Indexers & Search and press its **Test
 Open the title and look at its activity log: it says what happened in plain words ([activity.md](./activity.md)). Password-protected or damaged releases are blocklisted and the next one is tried.
 
 **Pages do not load, or say "Reconnecting to Cue".**
-Update to the newest version first. Then check that the settings folder (`/config`) is on a disk inside your server, not on a network share: the dashboard says so when it isn't. Cue logs any database call that takes more than three seconds, and a page that waits more than ten seconds shows "Cue is taking longer than usual to answer" with a **Try again** button. If the pages still won't open, start in safe mode: add `MEDIARIUM_PAUSE_AUTOMATION=1` under `environment` and run `docker compose up -d`. Nothing searches, downloads, refreshes or checks connections by itself, so the pages load and you can pause things or read the log. Remove the line and run `docker compose up -d` again to go back to normal. If the pages do open, **Restart with automation paused** (see [Restarting Cue](#restarting-mediarium)) does the same for one start.
+Update to the newest version first. Then check that the settings folder (`/config`) is on a disk inside your server, not on a network share: the dashboard says so when it isn't. Cue logs any database call that takes more than three seconds, and a page that waits more than ten seconds shows "Cue is taking longer than usual to answer" with a **Try again** button. If the pages still won't open, start in safe mode: add `CUE_PAUSE_AUTOMATION=1` under `environment` and run `docker compose up -d`. Nothing searches, downloads, refreshes or checks connections by itself, so the pages load and you can pause things or read the log. Remove the line and run `docker compose up -d` again to go back to normal. If the pages do open, **Restart with automation paused** (see [Restarting Cue](#restarting-cue)) does the same for one start.
 
 **The time in the log is wrong.**
 Set `TZ` and run `docker compose up -d`.
 
-**Still stuck?** First look at **Settings > System > Logs and errors**: it lists what went wrong, in plain words, with what to try ([Logs and errors](./logs-and-errors.md)). If the pages open, go to **Settings > System > Server and backup**, find the **Help and support** box and press **Copy for support**. It copies your version, how the database is doing, the setup warnings, the latest problems from Logs and errors and the last 500 lines of the log, with passwords, keys and tokens left out. Paste it into an [issue](https://github.com/jhipsman/cueapp/issues/new/choose) together with how you installed Cue. If the pages do not open, use the log instead (`docker compose logs mediarium`) and remove API keys, passwords and VPN keys before pasting anything.
+**Still stuck?** First look at **Settings > System > Logs and errors**: it lists what went wrong, in plain words, with what to try ([Logs and errors](./logs-and-errors.md)). If the pages open, go to **Settings > System > Server and backup**, find the **Help and support** box and press **Copy for support**. It copies your version, how the database is doing, the setup warnings, the latest problems from Logs and errors and the last 500 lines of the log, with passwords, keys and tokens left out. Paste it into an [issue](https://github.com/jhipsman/cueapp/issues/new/choose) together with how you installed Cue. If the pages do not open, use the log instead (`docker compose logs cue`) and remove API keys, passwords and VPN keys before pasting anything.
 
 ## Building from source
 
@@ -539,7 +541,7 @@ cp docker/.env.example .env
 docker compose up -d --build
 ```
 
-[`docker/docker-compose.dev.yml`](../docker/docker-compose.dev.yml) builds the image from the source (the frontend and the Go program are built inside Docker, so you need nothing else installed) and uses `config`, `downloads`, `movies`, `tv` and `music` folders in the top folder of the repository (with commented lines for ebooks and audiobooks folders). The `.env` file (copied from `docker/.env.example`) points Docker at that file and sets the port and other values. Or build the image alone with `docker build -t mediarium:local .` and use `image: mediarium:local` in your compose file.
+[`docker/docker-compose.dev.yml`](../docker/docker-compose.dev.yml) builds the image from the source (the frontend and the Go program are built inside Docker, so you need nothing else installed) and uses `config`, `downloads`, `movies`, `tv` and `music` folders in the top folder of the repository (with commented lines for ebooks and audiobooks folders). The `.env` file (copied from `docker/.env.example`) points Docker at that file and sets the port and other values. Or build the image alone with `docker build -t cue:local .` and use `image: cue:local` in your compose file.
 
 Optional build arguments `TMDB_API_KEY`, `OPENSUBTITLES_API_KEY` and `TRAKT_CLIENT_ID` build in app-wide keys; without them the wizard asks for your own. Coding conventions and running the tests: [CONTRIBUTING.md](../.github/CONTRIBUTING.md).
 

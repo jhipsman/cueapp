@@ -106,7 +106,7 @@ A download that's unpacking or importing pauses or stops when the current step e
 
 ### After a restart
 
-A paused download is still paused after Cue restarts, whatever the mode. That includes safe mode (`MEDIARIUM_PAUSE_AUTOMATION`).
+A paused download is still paused after Cue restarts, whatever the mode. That includes safe mode (`CUE_PAUSE_AUTOMATION`).
 
 A download that was only **waiting in line** is still waiting after a restart, in the same order, and starts about a minute after Cue starts when a place is free. In safe mode it comes back paused instead, because safe mode starts nothing by itself.
 
@@ -136,7 +136,7 @@ A movie, or an episode, never has two downloads running at once:
 
 **Retry** on a failed or stopped Usenet download whose files were all downloaded and are still in its working folder (the failure came later: PAR2 repair, unpacking or the import) doesn't download them again. It checks them with PAR2 again and repeats post-processing (repair, unpack, import). Only when the files are gone, or fail the PAR2 check, is the release downloaded again.
 
-If only part of a Usenet download was saved (it was paused, stopped or cut off), the working folder holds a small file, `.mediarium-progress`, listing the articles already saved. **Resume** and **Retry** fetch only the rest. A torrent that's retried starts again. A torrent that's resumed checks the pieces it already has.
+If only part of a Usenet download was saved (it was paused, stopped or cut off), the working folder holds a small file, `.cue-progress`, listing the articles already saved. **Resume** and **Retry** fetch only the rest. A torrent that's retried starts again. A torrent that's resumed checks the pieces it already has.
 
 ## When a release turns out to be bad
 

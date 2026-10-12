@@ -19,8 +19,8 @@ To run `docker` without `sudo`, add yourself to the `docker` group (`sudo usermo
 Use one parent folder for downloads, movies and TV so finished downloads are hardlinked (instant, no extra space), and a small folder for Cue's settings. For example:
 
 ```bash
-sudo mkdir -p /srv/data/downloads /srv/data/movies /srv/data/tv /opt/mediarium/config
-sudo chown -R $(id -u):$(id -g) /srv/data /opt/mediarium
+sudo mkdir -p /srv/data/downloads /srv/data/movies /srv/data/tv /opt/cue/config
+sudo chown -R $(id -u):$(id -g) /srv/data /opt/cue
 id
 ```
 
@@ -31,20 +31,20 @@ Want music too? Make the folder inside `/srv/data`, for example `sudo mkdir -p /
 ## 3. Create the compose file and start
 
 ```bash
-cd /opt/mediarium
+cd /opt/cue
 nano docker-compose.yml
 ```
 
 Paste [the compose file from the install guide](./INSTALL.md#the-compose-file), then change:
 
 - `PUID` and `PGID` to the numbers from `id`, and `TZ` to your timezone;
-- the two `volumes` lines to `/opt/mediarium/config:/config` and `/srv/data:/data`. Folders in the compose file that don't exist are created by Docker as `root`, so make yours first, as above.
+- the two `volumes` lines to `/opt/cue/config:/config` and `/srv/data:/data`. Folders in the compose file that don't exist are created by Docker as `root`, so make yours first, as above.
 
 Save (Ctrl+O, Enter, Ctrl+X in nano) and start it:
 
 ```bash
 docker compose up -d
-docker compose logs -f mediarium
+docker compose logs -f cue
 ```
 
 When the log says `Cue listening on :8264`, open `http://<server-ip>:8264` and follow the setup wizard.
@@ -52,7 +52,7 @@ When the log says `Cue listening on :8264`, open `http://<server-ip>:8264` and f
 ## Updating
 
 ```bash
-cd /opt/mediarium
+cd /opt/cue
 docker compose pull
 docker compose up -d
 ```

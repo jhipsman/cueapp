@@ -88,7 +88,7 @@ Step by step, with which server to rent: **[Cue on a cloud server](docs/cloud.md
 Cue runs in Docker on any 64-bit Linux server or NAS (`amd64` or `arm64`).
 
 ```bash
-mkdir mediarium && cd mediarium
+mkdir cue && cd cue
 curl -fsSLO https://raw.githubusercontent.com/jhipsman/cueapp/main/docker/docker-compose.yml
 # open docker-compose.yml and set PUID, PGID, TZ and your folders
 docker compose up -d

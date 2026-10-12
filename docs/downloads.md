@@ -126,7 +126,7 @@ Downloads run in a line. **Downloads at the same time** (Settings > Downloading 
 - **Paused and stopped downloads don't hold a place.** **Resume** puts a paused download back at the front of its group, and it starts when a place is free.
 - **Changing the number.** Raising it starts waiting downloads at once. Lowering it never stops a running download. The running ones finish, and nothing new starts until fewer than the new number are running.
 - **After a restart** the downloads that were waiting are still waiting and start about a minute after Cue starts. A download that was running comes back paused (see [Activity](activity.md#after-a-restart)).
-- **Safe mode** (`MEDIARIUM_PAUSE_AUTOMATION`) starts nothing by itself. Waiting downloads come back paused, and a download you start yourself still runs.
+- **Safe mode** (`CUE_PAUSE_AUTOMATION`) starts nothing by itself. Waiting downloads come back paused, and a download you start yourself still runs.
 
 ### Limits on the automatic searches
 
@@ -202,7 +202,7 @@ Removing a title from the library leaves nothing behind in the downloads folder.
 
 ### The recycle bin
 
-Files removed this way are not deleted straight away. They move into a hidden folder, `.mediarium-trash`, inside the same library folder (the movie, TV or music folder they came from). Moving them is instant because they stay on the same disk. Media servers and Cue's own scans skip hidden folders, so nothing in the bin shows up anywhere.
+Files removed this way are not deleted straight away. They move into a hidden folder, `.cue-trash`, inside the same library folder (the movie, TV or music folder they came from). Moving them is instant because they stay on the same disk. Media servers and Cue's own scans skip hidden folders, so nothing in the bin shows up anywhere.
 
 - **Activity > Recycle bin** lists what is there, with its size and when it will be deleted for good. **Put back** returns the files to where they were; it refuses, and changes nothing, if something new is already in that place. Putting files back does not add the title to the library again: use **Import** in the Library, or add the title again. **Delete now** and **Empty the recycle bin** delete for good, after a confirmation.
 - Files stay **7 days** by default. Change it under **Settings > System > Clean up** ("Keep removed titles' files in the recycle bin for"); 0 deletes removed files straight away, as before. The daily clean-up empties what is older. Stored as `library.trash_days`; scripts use `trashDays` in `PUT /api/settings`.

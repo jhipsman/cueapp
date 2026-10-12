@@ -12,12 +12,12 @@ General background (folders, hardlinks, updating) is in the main [install guide]
 ```
 /mnt/user/data                 ->  mapped as /data
 ├── downloads/
-│   └── mediarium/             Cue's own downloads (created for you)
+│   └── cue/             Cue's own downloads (created for you)
 └── media/
     ├── movies/
     ├── tv/
     └── music/                 only if you use music
-/mnt/user/appdata/mediarium    ->  mapped as /config
+/mnt/user/appdata/cue    ->  mapped as /config
 ```
 
 If you are starting fresh, create the `data` share (Shares → Add Share) and leave the rest to Cue: it creates the folders you name below. If you already have this layout for Radarr, Sonarr or SABnzbd, use it as is.
@@ -26,11 +26,11 @@ If you are starting fresh, create the `data` share (Shares → Add Share) and le
 
 1. Open the **Docker** tab and click **Add Container** at the bottom.
 2. Fill in the top of the form:
-   - **Name:** `mediarium`
+   - **Name:** `cue`
    - **Repository:** `ghcr.io/jhipsman/cue:latest`
    - **Network Type:** `Bridge`
    - **WebUI** (switch on **Advanced View** at the top right to see it): `http://[IP]:[PORT:8264]/`
-   - **Icon URL** (Advanced View, optional): `https://raw.githubusercontent.com/jhipsman/cueapp/main/branding/mediarium-icon-512.png`
+   - **Icon URL** (Advanced View, optional): `https://raw.githubusercontent.com/jhipsman/cueapp/main/branding/cue-icon-512.png`
 3. Click **Add another Path, Port, Variable, Label or Device** once for each line below, choose the **Config Type**, and fill in the fields:
 
 | Config Type | Name | Container value | Host value / Value |
@@ -38,12 +38,12 @@ If you are starting fresh, create the `data` share (Shares → Add Share) and le
 | Port | Web UI | Container Port `8264` | Host Port `8264` (TCP) |
 | Port | Torrent TCP (optional) | Container Port `58264` | Host Port `58264`, Connection Type TCP |
 | Port | Torrent UDP (optional) | Container Port `58264` | Host Port `58264`, Connection Type UDP |
-| Path | Config | Container Path `/config` | Host Path `/mnt/user/appdata/mediarium` |
+| Path | Config | Container Path `/config` | Host Path `/mnt/user/appdata/cue` |
 | Path | Data | Container Path `/data` | Host Path `/mnt/user/data` |
 | Variable | PUID | Key `PUID` | `99` |
 | Variable | PGID | Key `PGID` | `100` |
 | Variable | Timezone | Key `TZ` | your timezone, for example `Europe/London` |
-| Variable | Downloads folder | Key `DOWNLOADS_DIR` | `/data/downloads/mediarium` |
+| Variable | Downloads folder | Key `DOWNLOADS_DIR` | `/data/downloads/cue` |
 | Variable | Movies folder | Key `MOVIES_DIR` | `/data/media/movies` |
 | Variable | TV folder | Key `TV_DIR` | `/data/media/tv` |
 
@@ -54,7 +54,7 @@ Notes on the values:
 
 - **PUID 99 / PGID 100** are Unraid's usual `nobody` / `users`, the same most Unraid apps use. If your Radarr or Sonarr containers use other numbers, use theirs.
 - **The folder variables** are where your folders are *inside* `/data`. If your movies are at `/mnt/user/data/media/movies`, that is `/data/media/movies`. For a brand-new setup you can use `/data/downloads`, `/data/movies` and `/data/tv`. Names are case sensitive.
-- **Downloads folder of its own:** if SABnzbd, NZBGet or qBittorrent also use `/mnt/user/data/downloads`, keep Cue in its own sub-folder (`/data/downloads/mediarium`), because Cue tidies up leftovers in its own working folder.
+- **Downloads folder of its own:** if SABnzbd, NZBGet or qBittorrent also use `/mnt/user/data/downloads`, keep Cue in its own sub-folder (`/data/downloads/cue`), because Cue tidies up leftovers in its own working folder.
 - **Config on the cache:** keep `appdata` on your cache pool (SSD) so the app stays quick. Don't put it on a network share.
 - **Torrent ports** are optional. Delete both torrent ports if you only use Usenet.
 
@@ -86,7 +86,7 @@ When a new version is out, administrators see a card on the dashboard and on **S
 
 ## Backing up
 
-Everything that is not a media file is in `/mnt/user/appdata/mediarium` (`app.db` and `secret.key`; keep them together). The **Appdata Backup** plugin can back it up on a schedule, or use **Settings → System → Server and backup** in Cue to download a backup zip.
+Everything that is not a media file is in `/mnt/user/appdata/cue` (`app.db` and `secret.key`; keep them together). The **Appdata Backup** plugin can back it up on a schedule, or use **Settings → System → Server and backup** in Cue to download a backup zip.
 
 ## Troubleshooting
 

@@ -7,7 +7,7 @@ This page has a checklist, examples for the common proxies, and a list of what C
 ## The checklist
 
 1. **Put HTTPS in front.** Use Nginx Proxy Manager, Traefik, Caddy, Cloudflare Tunnel or the reverse proxy of your NAS. Only the proxy is reachable from the internet.
-2. **Create your administrator account before you publish the address.** Until it exists, whoever opens the address first gets to create it. From your home network that just works. From anywhere else (a stranger through your proxy, or you on a server in a data centre) Cue asks for a one-time **setup code**, which it writes to its log every time it starts without an account: run `docker logs mediarium` and look for `setup_code`. The code is new on every start and useless once the account exists. See [first run](#first-run).
+2. **Create your administrator account before you publish the address.** Until it exists, whoever opens the address first gets to create it. From your home network that just works. From anywhere else (a stranger through your proxy, or you on a server in a data centre) Cue asks for a one-time **setup code**, which it writes to its log every time it starts without an account: run `docker logs cue` and look for `setup_code`. The code is new on every start and useless once the account exists. See [first run](#first-run).
 3. **Do not publish port 8264 next to the proxy.** In `docker-compose.yml` bind it to the machine itself, for example `"127.0.0.1:8264:8264"`, or put the proxy and Cue in the same Docker network and remove the `ports:` line. Otherwise the app can be reached without the proxy.
 4. **Make the proxy forward the caller's address and scheme** (the examples below do). Cue uses them to count failed sign-ins per person and to mark the session cookie as HTTPS-only. Also make it **redirect plain `http://` to `https://`** (in Nginx Proxy Manager tick *Force SSL*): otherwise a password typed on an `http://` address travels in the clear.
 5. **Leave `TRUSTED_PROXIES` alone if your proxy is on the same machine, in the same Docker network or on your LAN.** Set it if the proxy is somewhere else, see [below](#trusted_proxies).
@@ -23,17 +23,17 @@ Every example forwards the original `Host`, the caller's address and the scheme.
 
 ### Nginx Proxy Manager
 
-Add a Proxy Host: scheme `http`, forward host `mediarium` (or the machine's address), port `8264`, switch on *Block Common Exploits*, and on the SSL tab request a certificate with *Force SSL* and *HTTP/2*. NPM forwards `Host`, `X-Forwarded-For`, `X-Forwarded-Proto` and `X-Real-IP` by default. Do not add access-list rules that also try to sign in for Cue unless you want a second login.
+Add a Proxy Host: scheme `http`, forward host `cue` (or the machine's address), port `8264`, switch on *Block Common Exploits*, and on the SSL tab request a certificate with *Force SSL* and *HTTP/2*. NPM forwards `Host`, `X-Forwarded-For`, `X-Forwarded-Proto` and `X-Real-IP` by default. Do not add access-list rules that also try to sign in for Cue unless you want a second login.
 
 ### Traefik (labels)
 
 ```yaml
 labels:
   - traefik.enable=true
-  - traefik.http.routers.mediarium.rule=Host(`media.example.com`)
-  - traefik.http.routers.mediarium.entrypoints=websecure
-  - traefik.http.routers.mediarium.tls.certresolver=letsencrypt
-  - traefik.http.services.mediarium.loadbalancer.server.port=8264
+  - traefik.http.routers.cue.rule=Host(`media.example.com`)
+  - traefik.http.routers.cue.entrypoints=websecure
+  - traefik.http.routers.cue.tls.certresolver=letsencrypt
+  - traefik.http.services.cue.loadbalancer.server.port=8264
 ```
 
 Traefik passes the original `Host` and adds `X-Forwarded-For` and `X-Forwarded-Proto`.
@@ -42,7 +42,7 @@ Traefik passes the original `Host` and adds `X-Forwarded-For` and `X-Forwarded-P
 
 ```
 media.example.com {
-    reverse_proxy mediarium:8264
+    reverse_proxy cue:8264
 }
 ```
 
@@ -65,7 +65,7 @@ Without `proxy_set_header Host $host;` nginx sends its own address as `Host`, wh
 
 ### Cloudflare Tunnel
 
-Point the public hostname at `http://mediarium:8264`. `cloudflared` runs as a container in the same Docker network, so its address is private and trusted by default, and it passes the visitor's address on. If you also put Cloudflare Access in front, that is a second login on top of Cue's: fine, but API-key clients (scripts, other apps) then need a Cloudflare service token.
+Point the public hostname at `http://cue:8264`. `cloudflared` runs as a container in the same Docker network, so its address is private and trusted by default, and it passes the visitor's address on. If you also put Cloudflare Access in front, that is a second login on top of Cue's: fine, but API-key clients (scripts, other apps) then need a Cloudflare service token.
 
 ### Synology (Control Panel, Login Portal, Reverse Proxy)
 

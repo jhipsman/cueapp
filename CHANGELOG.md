@@ -1,6 +1,6 @@
 # Changelog
 
-All notable user-facing changes to Mediarium are recorded here. The format
+All notable user-facing changes to Cue are recorded here. The format
 follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 version numbers follow [Semantic Versioning](https://semver.org/). Each
 release has its own dated section. Changes that aren't released yet collect
@@ -31,14 +31,21 @@ under [Unreleased]. How releases are cut: [docs/RELEASING.md](docs/RELEASING.md)
 - **Stream add-ons**: paste a Stremio add-on link (Comet on ElfHosted, Torrentio, MediaFusion) in Settings > Downloading, and Play asks it for streams first, with its own scrapers and sorting. Links set up with your Premiumize key play straight away; Cue's own search is the fallback. See [docs/watch.md](docs/watch.md#stream-add-ons-comet-torrentio-mediafusion).
 
 ### Changed
+- **The last Mediarium names are now Cue**, and nothing you set up stops working:
+  - Settings in the container's environment are `CUE_...` (for example `CUE_PAUSE_AUTOMATION`); the old `MEDIARIUM_...` names still work. Scripts after imports get both `CUE_...` and `MEDIARIUM_...` variables.
+  - The compose files, guides and app store packages use `cue` for the service and container, `/opt/cue` and `cue.service` (with `/etc/cue/cue.env`) for a Linux install, and `cue_<version>_<os>_<arch>.tar.gz` for the release files. An existing container called `mediarium` keeps running as it is.
+  - The recycle bin in each library folder is `.cue-trash`; an old `.mediarium-trash` is moved into it the first time it is opened, with everything in it. Saved backups are `cue-backup-*.zip`; old `mediarium-backup-*.zip` files are still listed, kept and restored. Downloads paused before the update carry on.
+  - You stay signed in: the sign-in cookie is now `cue_session`, and the old one works until you next sign in. This browser's own settings (theme, sidebar, library view, reader and player) carry over.
+  - Plex, Jellyfin and Emby still see the same device, and calendar apps the same events, so nothing has to be signed in or added again there.
+  - **Prometheus metrics** are renamed from `mediarium_*` to `cue_*` (`cue_up` and so on). Update any dashboards or alerts that use the old names.
 - **Updates and installs come from Cue**: the update check and **Update now** look only at Cue's own releases (`jhipsman/cueapp`), signed with Cue's own key, and the install guides and compose files use Cue's image, `ghcr.io/jhipsman/cue`. Builds of `main` are also published as `ghcr.io/jhipsman/cue:edge`.
 - **Mediarium is now Cue**, with a new icon (a C around a play button). Settings, the library, your downloads and everything else carry over as they are.
 
 ### Added
 - **Watch**, a streaming-service view of everything: a banner and rows of artwork (Continue Watching, My List, trending, popular, genres), search across every movie and show, title pages with backdrops, IMDb and Rotten Tomatoes ratings, cast and More like this, and for shows a season picker with episode thumbnails and descriptions. Play works on any title, in your library or not, resumes where you stopped (saved per account), and offers the next episode at the end. Open it with **Watch** at the top of the page. See [docs/watch.md](docs/watch.md).
 - **IMDb ratings** in Watch, with a free OMDb key in Settings > Info, lists and subtitles.
-- **Play.** With Premiumize set up, a **Play** button on every movie and episode starts it straight away, streamed from Premiumize, with nothing downloaded to your server. Mediarium searches your indexers, ranks the releases with the title's quality profile, checks which ones Premiumize already has in one go, and plays the best of those. If a version won't play, the next one starts by itself. For apps, the same answer comes from `GET /api/play/movies/{id}` and `GET /api/play/series/{id}/{season}/{episode}`. See [docs/downloads.md](docs/downloads.md#play-streaming-from-premiumize).
-- **Premiumize.me as a downloader.** Add your Premiumize API key in Settings > Downloading > Usenet and torrents, under Cloud downloader, and torrents (or Usenet, or both, your choice) are downloaded by Premiumize on its own servers instead of by the built-in client. Releases Premiumize already has are ready at once. Mediarium then fetches the finished files over HTTPS, picks up where it stopped after a pause, and removes the transfer and its files from your Premiumize cloud once they are home. Torrents fetched this way need no VPN and don't seed. See [docs/downloads.md](docs/downloads.md#premiumize).
+- **Play.** With Premiumize set up, a **Play** button on every movie and episode starts it straight away, streamed from Premiumize, with nothing downloaded to your server. Cue searches your indexers, ranks the releases with the title's quality profile, checks which ones Premiumize already has in one go, and plays the best of those. If a version won't play, the next one starts by itself. For apps, the same answer comes from `GET /api/play/movies/{id}` and `GET /api/play/series/{id}/{season}/{episode}`. See [docs/downloads.md](docs/downloads.md#play-streaming-from-premiumize).
+- **Premiumize.me as a downloader.** Add your Premiumize API key in Settings > Downloading > Usenet and torrents, under Cloud downloader, and torrents (or Usenet, or both, your choice) are downloaded by Premiumize on its own servers instead of by the built-in client. Releases Premiumize already has are ready at once. Cue then fetches the finished files over HTTPS, picks up where it stopped after a pause, and removes the transfer and its files from your Premiumize cloud once they are home. Torrents fetched this way need no VPN and don't seed. See [docs/downloads.md](docs/downloads.md#premiumize).
 
 ## [2.1.9] - 2026-10-07
 
@@ -57,7 +64,7 @@ under [Unreleased]. How releases are cut: [docs/RELEASING.md](docs/RELEASING.md)
 
 ### Fixed
 - Scanning a folder again after importing it showed titles you had matched by hand as unmatched, and never recognised shows as already imported. A scan now recognises files already in the library by their location and lists them as **Already in library** under the title they belong to (reported by PauloJf on GitHub, #24).
-- The check for folders Mediarium can't write to inside a library folder no longer looks inside the filesystem root or system folders, and remembers fewer results at once.
+- The check for folders Cue can't write to inside a library folder no longer looks inside the filesystem root or system folders, and remembers fewer results at once.
 - In the setup wizard, a site setting with a checkbox (1337x's "Disable sorting", for example) stretched the checkbox across the form and squeezed its label into a column one letter wide (reported by PauloJf on GitHub, #23).
 
 ## [2.1.6] - 2026-10-07
@@ -76,21 +83,21 @@ under [Unreleased]. How releases are cut: [docs/RELEASING.md](docs/RELEASING.md)
 - The preview says what's wrong with a format (an unknown token, a missing brace, no season or episode) while you type.
 
 ### Fixed
-- Usenet releases posted with only PAR2 recovery volumes (`.vol01.par2` and so on) and no main `.par2` failed with "no PAR2 files to repair it" and were blocklisted, though they could be repaired. Mediarium now repairs from one of the volumes (reported by TryToTilt on GitHub, #20).
+- Usenet releases posted with only PAR2 recovery volumes (`.vol01.par2` and so on) and no main `.par2` failed with "no PAR2 files to repair it" and were blocklisted, though they could be repaired. Cue now repairs from one of the volumes (reported by TryToTilt on GitHub, #20).
 
 ## [2.1.4] - 2026-10-07
 
 ### Fixed
-- Obfuscated Usenet releases (random file names) failed PAR2 repair and were blocklisted, even when nothing was wrong with them. Mediarium now gives the files their real names back from the PAR2 data before repairing, and hands par2 every file in the download (reported by u/Wiwer on Reddit).
+- Obfuscated Usenet releases (random file names) failed PAR2 repair and were blocklisted, even when nothing was wrong with them. Cue now gives the files their real names back from the PAR2 data before repairing, and hands par2 every file in the download (reported by u/Wiwer on Reddit).
 - A failed repair now says in one line why ("it needs 12 more recovery blocks than the release has") instead of pages of par2 progress output.
-- A download is no longer started when Mediarium can't write to the folder the file will go in; the reason names the folder. Before, the file was downloaded in full and then failed to import (reported by u/Wiwer on Reddit).
-- Setup, Settings and the dashboard warn about folders inside Movies and TV that Mediarium can't write to, such as ones another app created under a different user, with an example path.
+- A download is no longer started when Cue can't write to the folder the file will go in; the reason names the folder. Before, the file was downloaded in full and then failed to import (reported by u/Wiwer on Reddit).
+- Setup, Settings and the dashboard warn about folders inside Movies and TV that Cue can't write to, such as ones another app created under a different user, with an example path.
 - Obfuscated releases with many PAR2 files are verified once, not once per file.
 
 ## [2.1.3] - 2026-10-06
 
 ### Fixed
-- A Torznab or Newznab address pasted with `/api` on the end, as Prowlarr and Jackett show it (for example `http://192.168.1.10:9696/1/api`), didn't work: Mediarium added its own `/api` and got Prowlarr's web page back. Both forms work now, and so does an address pasted with `?t=...&apikey=...` after it.
+- A Torznab or Newznab address pasted with `/api` on the end, as Prowlarr and Jackett show it (for example `http://192.168.1.10:9696/1/api`), didn't work: Cue added its own `/api` and got Prowlarr's web page back. Both forms work now, and so does an address pasted with `?t=...&apikey=...` after it.
 
 ## [2.1.2] - 2026-10-06
 
@@ -108,11 +115,11 @@ under [Unreleased]. How releases are cut: [docs/RELEASING.md](docs/RELEASING.md)
 - Dates such as "out on" and "unaired" use your own time zone, not UTC, so they no longer flip a day early or late in the evening.
 - Audiobooks: chapters of very long books (over about 60 hours) are read again, and a damaged M4B can no longer keep the server busy.
 - A Kindle book is no longer converted twice when the library folder is reached through a link.
-- Kindle books: a damaged or hostile MOBI/AZW3 file could make the converter use up all memory and stop Mediarium; sizes are now capped. Books with many internal links (footnotes, big omnibus editions) convert many times faster.
+- Kindle books: a damaged or hostile MOBI/AZW3 file could make the converter use up all memory and stop Cue; sizes are now capped. Books with many internal links (footnotes, big omnibus editions) convert many times faster.
 - Daily shows were almost never found: the year in an air date ("Show.2024.03.15") was taken for the show's year and the release was turned down.
 - Anime and daily shows: an automatic grab of one episode was queued as a whole season, which blocked the rest of the season. "Show S2 - 05" names are now read as one episode, a "12.5" recap is no longer taken for episode 12, and a site tag in front of a release name no longer replaces the real release group.
 - Shows moved over from Sonarr keep Sonarr's series type, and shows from Overseerr or Jellyseerr requests get theirs guessed like any other.
-- Specials: 2.1.0 let you switch a special on, but Mediarium couldn't download it, so it stayed missing and used up searches. Specials are now listed for reference only, with no Search button or Monitored box, until they can be looked for properly.
+- Specials: 2.1.0 let you switch a special on, but Cue couldn't download it, so it stayed missing and used up searches. Specials are now listed for reference only, with no Search button or Monitored box, until they can be looked for properly.
 - Family accounts that have to ask could still add titles without a request: by picking a release in Search for something not in the library, or by following a book series or an author. Both now need "Add titles themselves" (the Follow switches are hidden without it).
 - Requests: Approve, Decline and taking a request back no longer step on each other when clicked at the same time; two titles with the same name (Dune 1984 and 2021) are no longer treated as one request; a book request needs ebook or audiobook; a request for a media type that has since been switched off waits instead of being marked approved; and a music request for "Only this album" now adds and looks for that album when approved.
 - Cleanup rules (off unless you switched them on) could remove things you still wanted. Now: "nobody watched" counts from when a movie arrived, not from when you first asked for it; a title downloaded again after it was watched is kept; nothing runs unless every media server answered; a media server that doesn't know when something was played no longer makes it look watched in 1970; cleaning an episode removes only that file, never the show's folder; a file with several episodes goes only when all of them match; a problem reading tags stops the run; the oldest go first; and "Remove these now" removes exactly what the preview showed.
@@ -126,8 +133,8 @@ under [Unreleased]. How releases are cut: [docs/RELEASING.md](docs/RELEASING.md)
 ## [2.1.0] - 2026-10-06
 
 ### Added
-- Run a script after each import: put your own script in the config folder's `scripts` folder and pick it under Settings > System. It is told what was imported in `MEDIARIUM_*` variables, runs one at a time with a time limit, and can be tried from the page. Off until you pick one, and it can't be chosen or run with an API key.
-- Subtitles made for your exact file: searches send the video's fingerprint, so a subtitle timed against that very file is marked and picked first. With automatic downloading on, Mediarium also looks again for a month and swaps an earlier pick for one made for the file when it turns up. Hand-picked or edited subtitles are never touched.
+- Run a script after each import: put your own script in the config folder's `scripts` folder and pick it under Settings > System. It is told what was imported in `CUE_*` variables, runs one at a time with a time limit, and can be tried from the page. Off until you pick one, and it can't be chosen or run with an API key.
+- Subtitles made for your exact file: searches send the video's fingerprint, so a subtitle timed against that very file is marked and picked first. With automatic downloading on, Cue also looks again for a month and swaps an earlier pick for one made for the file when it turns up. Hand-picked or edited subtitles are never touched.
 - Watch statistics: with What's been watched on, the Statistics page shows how much of your movies and episodes get played, the space held by what nobody has watched, and the most watched and latest watched titles.
 - Specials: a show's season 0 is listed as Specials, unmonitored to start with, so you can ask for the ones you want. Existing shows get theirs at the next refresh.
 - Anime and daily shows: a show's page has Episode numbering (seasons, anime episode numbers counted from the start, or air dates), set by itself when the show is added. Releases like "[Group] Show - 105" and "Show.2024.03.15" are searched for, picked and imported to the right episode.
@@ -135,21 +142,21 @@ under [Unreleased]. How releases are cut: [docs/RELEASING.md](docs/RELEASING.md)
 - Download hours: let new downloads start only between two hours (for example at night). Outside them they wait in line and start by themselves; a running download finishes. Settings > Downloading > Usenet and torrents.
 - Permissions for basic users: choose, when adding or editing the account, which types of media they can add, and whether they can add titles themselves, pick releases, start searches and change monitoring, retry downloads, get subtitles and play, read and listen. Everything is on by default.
 - Requests: a basic user who can't add titles themselves sends a request instead. Admins approve (the title is added for them, as they chose) or decline it with a note under Activity > Requests, and can be told about new ones by notification.
-- What's been watched: Mediarium can read play counts from Plex, Jellyfin and Emby every six hours and show them on movie and show pages. Off until you switch it on under Settings > Connections > Media servers.
+- What's been watched: Cue can read play counts from Plex, Jellyfin and Emby every six hours and show them on movie and show pages. Off until you switch it on under Settings > Connections > Media servers.
 - Cleanup rules: remove movies or episodes watched a while ago, or movies nobody watched long after they were added, with a preview first, tags that keep a title safe, the recycle bin, and every removal in Activity. Off by default.
-- Book series. A book's page shows the series it belongs to, every book in it in reading order, and a **Follow this series** switch that adds the missing books now and new ones as they appear. Books that aren't out yet show their release date, and Mediarium waits for that day before looking for them.
+- Book series. A book's page shows the series it belongs to, every book in it in reading order, and a **Follow this series** switch that adds the missing books now and new ones as they appear. Books that aren't out yet show their release date, and Cue waits for that day before looking for them.
 - Books on the calendar: books with a release date show up on Upcoming > Calendar and in the calendar feed, with a Books filter. On Wanted, a book that isn't out yet shows the day it comes out instead of Search now.
 - Audiobook details: who reads it and how long it runs, from Audnexus (Audible's catalogue), on the book page and in the player. The full unabridged reading is preferred over translations and dramatisations.
 - Chapters inside one-file audiobooks: an M4B's own chapter marks show in the player's list, with previous and next chapter, a slider per chapter and End of chapter on the sleep timer.
-- Kindle books (MOBI, AZW, AZW3) open in the built-in reader: Mediarium's own converter turns them into EPUB the first time, in well under a second, and keeps the copy in its cache folder without touching your library.
+- Kindle books (MOBI, AZW, AZW3) open in the built-in reader: Cue's own converter turns them into EPUB the first time, in well under a second, and keeps the copy in its cache folder without touching your library.
 - An optional Hardcover token (Settings > Info, lists and subtitles) for more book series and release dates. Without one, Open Library is used, as before.
-- Sign in through your reverse proxy: a proxy that does the login itself (Authelia, Authentik, Cloudflare Access) can pass the user name on in a header, and Mediarium signs that account in. Off by default, only believed from a trusted proxy, and only for accounts that exist. Set it under Settings > Accounts.
-- Email notifications have a **From name** box: the name your emails show as coming from. It starts as Mediarium, so emails no longer show the part before the @ (such as "nas").
+- Sign in through your reverse proxy: a proxy that does the login itself (Authelia, Authentik, Cloudflare Access) can pass the user name on in a header, and Cue signs that account in. Off by default, only believed from a trusted proxy, and only for accounts that exist. Set it under Settings > Accounts.
+- Email notifications have a **From name** box: the name your emails show as coming from. It starts as Cue, so emails no longer show the part before the @ (such as "nas").
 
 ### Changed
 - The repository is tidier: the compose files, the container start script and `.env.example` are in `docker/`, and the contributing, security and conduct guides are in `.github/`. The install command now downloads `docker/docker-compose.yml`; the file itself is unchanged.
-- Updated the libraries Mediarium is built with (SQLite driver, Go time package, Vite, oxlint).
-- The Synology guide has a step-by-step section for reaching Mediarium from outside your home with DSM's reverse proxy, and the Synology, Unraid and QNAP guides no longer call ebooks and audiobooks unfinished.
+- Updated the libraries Cue is built with (SQLite driver, Go time package, Vite, oxlint).
+- The Synology guide has a step-by-step section for reaching Cue from outside your home with DSM's reverse proxy, and the Synology, Unraid and QNAP guides no longer call ebooks and audiobooks unfinished.
 
 ### Fixed
 - Tick boxes in settings forms (such as the subtitle languages) sit beside their names again instead of above them.
@@ -160,21 +167,21 @@ Version 2 adds ebooks and audiobooks, with a reader and player built in, and tag
 
 ### Upgrading
 
-- **More movie and TV folders are gone.** If you added extra folders under Settings > Library, the titles in them stay in your library, but Mediarium no longer renames, replaces or deletes their files there. Move them into your main movies or TV folder and use Import to pick them up. Tags (for example Kids or 4K) are the way to keep them apart now.
+- **More movie and TV folders are gone.** If you added extra folders under Settings > Library, the titles in them stay in your library, but Cue no longer renames, replaces or deletes their files there. Move them into your main movies or TV folder and use Import to pick them up. Tags (for example Kids or 4K) are the way to keep them apart now.
 - For scripts using the API: adding a movie or show no longer takes a `rootPath`, and the settings `library.movies_extra_paths` and `library.tv_extra_paths` are removed.
-- Nothing else needs doing. The database updates itself on the first start, and your compose file keeps working. To use books, switch them on under Settings > Media types; Mediarium suggests a folder inside the one you already map and can create it.
+- Nothing else needs doing. The database updates itself on the first start, and your compose file keeps working. To use books, switch them on under Settings > Media types; Cue suggests a folder inside the one you already map and can create it.
 
 ### Added
-- Ebooks and audiobooks. Switch them on under Settings > Media types, find a book by title or author (book details come from Open Library), pick ebook, audiobook or both, and Mediarium searches your indexers, downloads the best release (EPUB first for ebooks, M4B first for audiobooks) and files it as Author/Title (Year).
+- Ebooks and audiobooks. Switch them on under Settings > Media types, find a book by title or author (book details come from Open Library), pick ebook, audiobook or both, and Cue searches your indexers, downloads the best release (EPUB first for ebooks, M4B first for audiobooks) and files it as Author/Title (Year).
 - Discover's eBooks & Audiobooks tab: trending and popular books from Open Library, the most read classics, fantasy, science fiction and mysteries, and a browse by genre, year and order. A banner on each cover says whether an eBook, an audiobook or both have been published, and Add lights up when you point at a book.
 - Every book has an info page (description, subjects, editions, Add, more by the author), also from the search box.
-- Import the ebooks and audiobooks you already have: Mediarium reads the folder, recognises Author/Title folders (and Calibre's and Audiobookshelf's layouts), and adds them where they are.
-- Mediarium Books: a built-in reader and audiobook player that opens in its own window and installs as an app of its own. Read EPUBs a page at a time (contents, text size, light, sepia and dark pages, swipe and keys), open PDFs, and listen with chapters, 30-second skips, speed, a sleep timer and lock-screen controls. Your place is saved and carries on across devices.
+- Import the ebooks and audiobooks you already have: Cue reads the folder, recognises Author/Title folders (and Calibre's and Audiobookshelf's layouts), and adds them where they are.
+- Cue Books: a built-in reader and audiobook player that opens in its own window and installs as an app of its own. Read EPUBs a page at a time (contents, text size, light, sepia and dark pages, swipe and keys), open PDFs, and listen with chapters, 30-second skips, speed, a sleep timer and lock-screen controls. Your place is saved and carries on across devices.
 - A book's page shows more by its author, and you can follow an author so their new books are added by themselves.
 - Connect Audiobookshelf and Kavita under Media servers: new books show up there straight away, and a book's page links to it ("Listen in Audiobookshelf", "Read in Kavita").
 - The search box at the top finds books, and Upcoming > Wanted lists the books still missing, with Search now.
 - Tags on movies and shows (Kids, 4K, anything): set them on a title's page, when adding, or on a whole selection; filter the Library by tag; and every tag shows up as a collection on Plex, Jellyfin and Emby. A tidy way to keep kids' films or 4K apart in one folder.
-- A library folder that doesn't exist yet can be created from Settings and from the setup wizard, and when your other folders share one mapped folder (like /data) Mediarium offers to use and create /data/Ebooks, /data/Audiobooks or /data/Music for you, so no compose change is needed.
+- A library folder that doesn't exist yet can be created from Settings and from the setup wizard, and when your other folders share one mapped folder (like /data) Cue offers to use and create /data/Ebooks, /data/Audiobooks or /data/Music for you, so no compose change is needed.
 
 ### Changed
 - The header holds the small links that were at the bottom of the sidebar: the eBooks/Audiobooks Player, your media servers (named Plex, Jellyfin and so on) and, for administrators, the support heart. The search box sits next to the page title. On narrower screens the links show as icons.
@@ -183,10 +190,10 @@ Version 2 adds ebooks and audiobooks, with a reader and player built in, and tag
 
 ### Removed
 - More movie and TV folders. Each kind of media has one folder again, and tags sort it instead (see Upgrading above).
-- The Windows and macOS programs. Releases now carry the Linux program only, next to the Docker image. On a Windows PC or a Mac, run Mediarium in Docker Desktop.
+- The Windows and macOS programs. Releases now carry the Linux program only, next to the Docker image. On a Windows PC or a Mac, run Cue in Docker Desktop.
 
 ### Fixed
-- The "Mediarium is slow to answer" notice no longer appears when the wait is for an outside service (TMDB, Open Library, MusicBrainz, your indexers). Those lists show their own loading placeholders, and a service that doesn't answer is named in the message.
+- The "Cue is slow to answer" notice no longer appears when the wait is for an outside service (TMDB, Open Library, MusicBrainz, your indexers). Those lists show their own loading placeholders, and a service that doesn't answer is named in the message.
 - A book with a short title is no longer matched to a longer one that contains it ("It" picked up "If It Bleeds"): the title has to stand on its own in the release name.
 - Once a book has downloaded, its earlier failed tries leave the queue, as they already did for movies.
 - Ebook and Audiobook in the add-book window show a tick when chosen.
@@ -195,7 +202,7 @@ Version 2 adds ebooks and audiobooks, with a reader and player built in, and tag
 ## [1.4.1] - 2026-10-04
 
 ### Fixed
-- The "Mediarium is slow to answer" notice no longer appears after the phone or the tab was asleep: a request that waited while the page was out of sight does not count as slow.
+- The "Cue is slow to answer" notice no longer appears after the phone or the tab was asleep: a request that waited while the page was out of sight does not count as slow.
 - A failed download in Activity has **Why did this happen, and what can I do?**: a plain explanation of the failure (for example a release that is no longer complete on your Usenet provider) and what to try, such as another release, a quality profile that accepts more qualities, or a second Usenet provider.
 - Failed tries of a movie or episode clear themselves from Activity once it has been downloaded another way.
 - On the dashboard, each recently added title says where it stands: In library, Downloading, Some episodes, Waiting for a release or Not monitored.
@@ -224,16 +231,16 @@ A big release about control and safety, with everything kept simple: a recycle b
 - Releases far too small for the quality they claim (fakes and samples) are skipped by automatic searches, and a quality profile can set the **Largest download** in GB. Profiles can be duplicated.
 - A torrent that gets no data for 2 hours is treated as stalled: it is stopped, blocklisted, and another release is tried.
 - A download speed limit for Usenet and torrents together, optionally only between two hours (for example full speed at night), and a free-space floor: with less than 5 GB free in the downloads folder no new download starts until there is room. Both are in the new **Speed and space** box under Settings > Downloading.
-- Automatic backups. Every night, and before every update, Mediarium saves a backup in `/config/backups` and keeps the newest 7. Settings > System > Backup lists them with a Download button, has **Back up now**, and lets you switch the nightly backup off or keep more.
+- Automatic backups. Every night, and before every update, Cue saves a backup in `/config/backups` and keeps the newest 7. Settings > System > Backup lists them with a Download button, has **Back up now**, and lets you switch the nightly backup off or keep more.
 - A recycle bin. Removing a title with its files now moves them to a hidden folder in the same library folder for 7 days. **Activity > Recycle bin** shows them, with **Put back** and **Delete now**. The number of days is under Settings > System > Clean up (0 deletes straight away, as before).
 
 ### Changed
-- Notification emails have a new look: wider, with the full Mediarium logo on top, a big poster on one side, and the facts stacked on the other with bold titles. The logo travels inside the email, so nothing is loaded from the web except the poster, which is now sharper.
+- Notification emails have a new look: wider, with the full Cue logo on top, a big poster on one side, and the facts stacked on the other with bold titles. The logo travels inside the email, so nothing is loaded from the web except the poster, which is now sharper.
 - You can delete an API key after you have revoked it. Revoked keys no longer pile up in the list.
 - The test button on an email notification sends a real-looking email, using a title from your library, so you see the design you will get.
 - When the update check fails, the Updates box now says why (for example that GitHub is limiting requests).
 - An address that does not exist in the app shows a "That page doesn't exist" page with links, instead of jumping to the dashboard.
-- Mediarium can be added to a phone's home screen and opens like an app.
+- Cue can be added to a phone's home screen and opens like an app.
 - Finished library imports have a "Dismiss all" button when there is more than one.
 - The Audiobooks and Ebooks tiles are gone from the dashboard until they are ready.
 - The dashboard numbers no longer count up when your system asks for reduced motion.
@@ -241,7 +248,7 @@ A big release about control and safety, with everything kept simple: a recycle b
 ## [1.3.1] - 2026-10-01
 
 ### Fixed
-- A release that can never be completed no longer wastes a whole download. If articles are missing on every Usenet server and the release has too few PAR2 repair files to rebuild them (or none at all), Mediarium stops straight away, blocklists that release and moves on to the next one. Before, it downloaded everything and only then found out it could not be repaired.
+- A release that can never be completed no longer wastes a whole download. If articles are missing on every Usenet server and the release has too few PAR2 repair files to rebuild them (or none at all), Cue stops straight away, blocklists that release and moves on to the next one. Before, it downloaded everything and only then found out it could not be repaired.
 - Logs and errors groups the same problem for the same movie, show or album on one line for 24 hours, even when different downloads caused it. A title that keeps failing is one line with a count, not a page of lines. The log keeps at most 2000 problems now (it was 5000).
 - Emails no longer end with "This message is about...". They end with one plain line that says where to choose which emails you get.
 - On Discover and on a title's page, the rows of posters no longer leave a big empty gap before "Load more".
@@ -251,7 +258,7 @@ A big release about control and safety, with everything kept simple: a recycle b
 First public release.
 
 ### Movies and TV
-- Add a movie or a show from search or Discover. Mediarium finds the best release on your indexers, downloads it, unpacks it, names it and files it in your library.
+- Add a movie or a show from search or Discover. Cue finds the best release on your indexers, downloads it, unpacks it, names it and files it in your library.
 - Shows come with their full episode list. You can monitor a whole show, a season or a single episode, and season packs and multi-episode releases are understood.
 - Every title has its own activity log that says what was searched, what was skipped and why, and what happened to the download.
 - The Upcoming page has a calendar of releases and episodes, and a Wanted list of what is still missing.
@@ -264,7 +271,7 @@ First public release.
 - Import an existing music folder without moving or renaming anything.
 
 ### Downloading and the download line
-- Mediarium has its own Usenet downloader (several providers, backup providers, PAR2 repair, unpacking) and its own torrent client. There is no download program to connect.
+- Cue has its own Usenet downloader (several providers, backup providers, PAR2 repair, unpacking) and its own torrent client. There is no download program to connect.
 - Downloads wait in a line. **Downloads at the same time** sets how many run together (1 to 5, one by default), and what you start yourself goes before what the automatic searches add.
 - Downloads can be paused, resumed and stopped, one at a time or all at once. A paused download stays paused after a restart.
 - Torrents can go through a built-in WireGuard VPN with a kill switch. It needs no special container permissions. The VPN comes back by itself after a restart, says plainly whether it is really connected, and torrents wait for it instead of going out without it.
@@ -286,7 +293,7 @@ First public release.
 - File names follow a preset for Plex, Jellyfin or Emby, Kodi, a short style, or your own pattern.
 
 ### Media servers
-- Connect Plex, Jellyfin or Emby. Mediarium can find servers on your network, help you sign in, and ask the server to scan just the new folder after each import (or the whole library, when the server does not know that folder).
+- Connect Plex, Jellyfin or Emby. Cue can find servers on your network, help you sign in, and ask the server to scan just the new folder after each import (or the whole library, when the server does not know that folder).
 - Title pages get a "Watch in" link to your server.
 
 ### Notifications
@@ -297,26 +304,26 @@ First public release.
 - Downloaded archives are checked before anything is unpacked, and update files are checked against a signature before they are installed.
 - The first account is the administrator. Family members can get basic accounts that can find and add titles but cannot change settings.
 - Every account can make API keys. Saved passwords and keys are stored encrypted, and sign-in attempts are rate limited.
-- [docs/security.md](docs/security.md) has a checklist and examples for putting Mediarium behind a reverse proxy.
+- [docs/security.md](docs/security.md) has a checklist and examples for putting Cue behind a reverse proxy.
 - A backup and restore of your settings and database is built in (Settings > System > Server and backup).
 
 ### Updates and restart
-- Mediarium checks GitHub once a day for a new version and shows a notice with what is new. You can turn the check off.
+- Cue checks GitHub once a day for a new version and shows a notice with what is new. You can turn the check off.
 - **Update now** installs a new release in the Docker image after checking its signature. Installing overnight and pushing an update through the API are both off unless you switch them on.
-- **Restart Mediarium** and **Restart with automation paused** are on the Server and backup page. Mediarium also restarts itself if it stops answering.
-- Setting `MEDIARIUM_PAUSE_AUTOMATION` starts it in safe mode, with no automatic searching, downloading or refreshing.
+- **Restart Cue** and **Restart with automation paused** are on the Server and backup page. Cue also restarts itself if it stops answering.
+- Setting `CUE_PAUSE_AUTOMATION` starts it in safe mode, with no automatic searching, downloading or refreshing.
 
 ### Logs and errors
 - Settings > System > Logs and errors lists what went wrong in plain words, with what to try. Repeats are counted on one line and problems are kept for 30 days.
 - **Copy for support** puts a report on your clipboard, with passwords and keys left out.
 
 ### Install and platforms
-- Runs in Docker on 64-bit Linux, Synology, Unraid, QNAP and Raspberry Pi (`amd64` and `arm64`). Images are published as `ghcr.io/rdborg/mediarium` with the tags `latest`, `1.3.0` and `1.3`, and the same with `-full`.
+- Runs in Docker on 64-bit Linux, Synology, Unraid, QNAP and Raspberry Pi (`amd64` and `arm64`). Images are published as `ghcr.io/jhipsman/cue` with the tags `latest`, `1.3.0` and `1.3`, and the same with `-full`.
 - A first-run wizard asks what you want to manage (movies, TV, music), checks your folders live, and helps you connect your indexers, Usenet provider, media player and media server.
 - Audiobooks and ebooks are not ready yet. Windows and macOS installers and one-click app store entries are still to come.
 
 ### Support the project
-- A small "Support Mediarium" link sits at the bottom of the sidebar for administrators. One click hides it.
+- A small "Support Cue" link sits at the bottom of the sidebar for administrators. One click hides it.
 
 ### Documentation
 - Step-by-step guides for Synology, Unraid, QNAP and Linux, and pages for each part of the app, are in [docs/](docs/README.md).
