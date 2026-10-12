@@ -1,0 +1,49 @@
+# Cue as a native systemd service (no Docker).
+# STATUS: UNTESTED. Written from the systemd documentation and the app's
+# environment variables (internal/config/config.go); not yet run on a real host.
+#
+# Install (as root), assuming the release archive is unpacked in the current dir:
+#   useradd --system --home-dir /var/lib/cue --create-home --shell /usr/sbin/nologin cue
+#   install -m 0755 cue /usr/local/bin/cue
+#   install -d -o cue -g cue /var/lib/cue/config
+#   install -d /etc/cue
+#   install -m 0640 -g cue cue.env.example /etc/cue/cue.env
+#   install -m 0644 cue.service /etc/systemd/system/cue.service
+#   # edit /etc/cue/cue.env (media paths!), then:
+#   systemctl daemon-reload
+#   systemctl enable --now cue
+#   journalctl -u cue -f
+#
+# The media folders (MOVIES_DIR / TV_DIR / DOWNLOADS_DIR) must be writable by
+# the "cue" user. Either chown them, or add the user to the group that
+# owns them and set User=/Group= below accordingly. If you want existing files
+# owned by another account (for example your own login), set User= to that
+# account instead of "cue".
+
+[Unit]
+Description=Cue media manager
+Documentation=https://github.com/jhipsman/cueapp
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=cue
+Group=cue
+EnvironmentFile=/etc/cue/cue.env
+ExecStart=/usr/local/bin/cue
+# "always" (not "on-failure") so that the Restart buttons under
+# Settings > System > Server and backup, which exit cleanly, bring Cue back. systemctl stop still stops it for good.
+Restart=always
+RestartSec=5
+# The app shuts down gracefully on SIGTERM (cmd/app/main.go allows 10 s).
+TimeoutStopSec=20
+
+# Light hardening. Deliberately NOT using ProtectSystem=strict or
+# ProtectHome, because they would need a ReadWritePaths= entry for every
+# media folder and the right list differs per install.
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

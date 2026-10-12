@@ -6,7 +6,7 @@ Runtipi's official app store no longer accepts new apps; its README asks develop
 
 ## Files here
 
-`apps/mediarium/` in Runtipi's current format:
+`apps/cue/` in Runtipi's current format:
 
 | File | What it is |
 |---|---|
@@ -17,15 +17,15 @@ Runtipi's official app store no longer accepts new apps; its README asks develop
 
 ## Steps
 
-1. Create a store repo from Runtipi's template [runtipi/example-appstore](https://github.com/runtipi/example-appstore) (for example `rdborg/runtipi-appstore`) and copy `apps/mediarium/` into its `apps/` folder. The template contains the `app-info-schema.json` that `config.json` refers to; run the template's checks if it has any.
+1. Create a store repo from Runtipi's template [runtipi/example-appstore](https://github.com/runtipi/example-appstore) (for example `jhipsman/runtipi-appstore`) and copy `apps/cue/` into its `apps/` folder. The template contains the `app-info-schema.json` that `config.json` refers to; run the template's checks if it has any.
 2. Set `created_at` and `updated_at` in `config.json` to the real publish time (milliseconds since 1970).
-3. On a Runtipi server: Settings → App Stores → add `https://github.com/rdborg/runtipi-appstore`, install Mediarium, check the wizard shows `/data/downloads/mediarium`, `/data/movies` and `/data/tv` as writable.
+3. On a Runtipi server: Settings → App Stores → add `https://github.com/jhipsman/runtipi-appstore`, install Cue, check the wizard shows `/data/downloads/cue`, `/data/movies` and `/data/tv` as writable.
 4. Check where Runtipi's other media apps (Jellyfin, Sonarr) keep movies and TV in the media folder, and change `MOVIES_DIR`/`TV_DIR` to match so they share the library.
 5. For each release: bump `version`, `tipi_version` (+1), `updated_at` and the image tag.
 
 ## Requirements
 
-- [ ] Image `ghcr.io/rdborg/mediarium:2.1.0` published and public (Runtipi discourages `latest`).
+- [ ] Image `ghcr.io/jhipsman/cue:2.1.0` published and public (Runtipi discourages `latest`).
 - [ ] A Runtipi install to test on.
 
 ## What only the maintainer can do

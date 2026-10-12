@@ -1,9 +1,9 @@
-# Mediarium stack for Portainer. Used by templates.json in this folder; the
+# Cue stack for Portainer. Used by templates.json in this folder; the
 # ${...} values are filled in from the template's form (defaults after ":-").
 services:
-  mediarium:
-    image: ghcr.io/rdborg/mediarium:latest
-    container_name: mediarium
+  cue:
+    image: ghcr.io/jhipsman/cue:latest
+    container_name: cue
     restart: unless-stopped
     ports:
       - "${WEBUI_PORT:-8264}:8264"
@@ -23,7 +23,7 @@ services:
       - EBOOKS_DIR=${EBOOKS_DIR:-}
       - AUDIOBOOKS_DIR=${AUDIOBOOKS_DIR:-}
     volumes:
-      # Mediarium's own settings and database.
-      - ${CONFIG_PATH:-/srv/mediarium/config}:/config
+      # Cue's own settings and database.
+      - ${CONFIG_PATH:-/srv/cue/config}:/config
       # ONE folder holding downloads, movies and TV, so imports are hardlinked.
       - ${DATA_PATH:-/srv/data}:/data
