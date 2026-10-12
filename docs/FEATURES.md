@@ -2,7 +2,7 @@
 
 A plain comparison of what Cue does **today** against the apps it can replace or sit beside, written from the source code.
 
-- **Snapshot:** 2026-10-05, version 2.0.0 (database migrations up to `0038`; see the [changelog](../CHANGELOG.md)). Read every "No" as "not found when this was written". If it matters to you, look in `internal/` and `web/src/pages`.
+- **Snapshot:** 2026-10-11, version 2.1.9 plus the unreleased 2.2 changes (database migrations up to `0051`; see the [changelog](../CHANGELOG.md)). Read every "No" as "not found when this was written". If it matters to you, look in `internal/` and `web/src/pages`.
 - **How each row was judged:** Yes = implemented and reachable in the UI or API. Partial = something real exists but it is narrower than the reference app. No = not found. The evidence is a package, file or endpoint you can open.
 - **Reference apps** are described from general knowledge of those projects and may be out of date for their newest versions. Uncertain claims are worded loosely or left out.
 - Abbreviations: **Rad** Radarr, **Son** Sonarr, **Lid** Lidarr, **Pro** Prowlarr, **Sab** SABnzbd, **qB** qBittorrent, **Baz** Bazarr.
@@ -12,7 +12,7 @@ A plain comparison of what Cue does **today** against the apps it can replace or
 
 Movies and TV both work end to end. That covers TMDB metadata; one search across Newznab/Torznab indexers and definition-based torrent sites (the community Cardigann definitions, downloaded on demand); grabbing; a built-in Usenet client (multiple servers, PAR2, native RAR and ZIP unpacking, `7z` only for `.7z`); and a built-in BitTorrent engine (with an embedded WireGuard VPN and kill switch). It also has hardlink import with naming presets, quality profiles with upgrade hunting, a blocklist with automatic retry, monitoring, a calendar, a wanted list, subtitles from OpenSubtitles (optional), notifications, media server refresh, family accounts, backups, a clean-up of the downloads folder, health checks and a first-run wizard. Music, ebooks and audiobooks work too once you switch them on (see 2.4b and [books.md](./books.md)).
 
-What is thin or missing: the things that make the *arr apps manageable at scale (custom formats, delay profiles, tags, multiple root folders, list exclusions, a recycle bin, scheduled backups); more queue control for downloads (speed limits, scheduling, dragging to reorder; pause, resume and stop exist); depth in indexer management (no priorities or tags); a request portal; and a screen for matching releases by hand. Family accounts exist. An administrator can add basic-user accounts that browse, add and follow downloads without seeing the server settings (see [accounts.md](./accounts.md)). RAR (RAR4 and RAR5, including multi-part sets) and ZIP are unpacked natively in Go, so they work the same everywhere. Only the rare `.7z` format uses the `7z` tool, which the Docker image includes.
+What is thin or missing: the things that make the *arr apps manageable at scale (custom formats, delay profiles, tags, multiple root folders, list exclusions); more queue control for downloads (speed limits, scheduling, dragging to reorder; pause, resume and stop exist); depth in indexer management (no priorities or tags); and a screen for matching releases by hand. Family accounts exist. An administrator can add basic-user accounts that browse, add and follow downloads without seeing the server settings (see [accounts.md](./accounts.md)). RAR (RAR4 and RAR5, including multi-part sets) and ZIP are unpacked natively in Go, so they work the same everywhere. Only the rare `.7z` format uses the `7z` tool, which the Docker image includes.
 
 ## 2. Matrix
 
@@ -50,7 +50,7 @@ What is thin or missing: the things that make the *arr apps manageable at scale 
 | Anime / absolute numbering / daily shows / series types | **Yes** | a show's episode numbering is standard, anime (absolute numbers) or daily (air dates), guessed when it is added (`internal/api/series_type.go`, parser `Absolute`/`AirDate`); specials are listed but not looked for yet | Son |
 | Minimum availability / release-date gating for movies | **Partial** | unreleased movies are skipped using the TMDB release date (`unreleased()` in `automation.go`); not configurable | Rad |
 | Editions, movie collections | **No** | not found | Rad |
-| Media management: recycle bin | **Yes** | removed files wait in `.mediarium-trash` inside the library folder for 7 days, with Put back (`/api/trash`) | Rad, Son |
+| Media management: recycle bin | **Yes** | removed files wait in `.cue-trash` inside the library folder for 7 days (`.mediarium-trash` from before Cue 2.2 is moved into it), with Put back (`/api/trash`) | Rad, Son |
 | Media management: file permissions / chmod / chown | **No** | files are created 0644 / dirs 0755 (`pipeline.go`, `organizer/import.go`); ownership comes from `PUID`/`PGID` only | Rad, Son |
 | Media management: existing-file conflict policy | **Yes** | `library.import_conflict_policy` skip / overwrite / overwrite-if-better / ask, atomic replace (`organizer/import.go`) | Rad, Son (differently) |
 | Media management: hardlink then copy fallback | **Yes** | `organizer/import.go` tries `os.Link` and copies when the link fails for any reason (another drive or mount, or a filesystem without hardlinks). The "same drive" check on the dashboard compares device numbers (`organizer/samefs_unix.go`) and is not available on Windows; two Docker mounts of one disk can pass it and still copy, which is why the compose file uses one `/data` mount ([INSTALL.md](./INSTALL.md#why-one-data-folder-hardlinks)) | Rad, Son |
@@ -62,10 +62,10 @@ What is thin or missing: the things that make the *arr apps manageable at scale 
 | History | **Yes** | `GET /api/activity`, Activity page; per title `GET /api/movies/{id}/events` and `GET /api/series/{id}/events`: each search with how many releases were acceptable and why not, the grab and the profile used, download and post-processing steps, failures, blocklisting and retries (see [activity.md](./activity.md)) | Rad, Son, Pro |
 | Blocklist (auto on bad release, manual, retry next best) | **Yes** | `internal/blocklist`, `/api/blocklist`, `POST /api/queue/{id}/blocklist`. **Retry** on a failed Usenet download repeats post-processing on the files it already has instead of downloading again; one download at a time per movie or episode (a grab by hand while one runs gets 409) | Rad, Son |
 | Updates and restarts | **Yes** | new-version notice (daily GitHub check, notes, steps for Docker and native), signed **Update now** and overnight install, pushed updates (opt-in, `POST /api/system/update`), restart and safe restart, self-restart when stuck, Docker health check (`internal/updatecheck`, `internal/selfupdate`, `docker/entrypoint.sh`); see [INSTALL.md](./INSTALL.md#updating) and [security.md](./security.md#updating-the-program) | Rad, Son (built-in updater) |
-| Backup / restore | **Partial** | admin-only `GET /api/system/backup` (consistent `VACUUM INTO` snapshot + `secret.key` + manifest, as a zip) and `POST /api/system/restore` (strict validation, staged, applied on the next start; old files kept in `before-restore-*`), `internal/backup`. No scheduled backup | Rad, Son, Pro, Sab, Baz |
+| Backup / restore | **Yes** | admin-only `GET /api/system/backup` (consistent `VACUUM INTO` snapshot + `secret.key` + manifest, as a zip) and `POST /api/system/restore` (strict validation, staged, applied on the next start; old files kept in `before-restore-*`), `internal/backup`; a nightly backup into `/config/backups`, keeping the last 7 (`backup.auto`, `backup.keep`, `internal/api/backups_saved.go`) | Rad, Son, Pro, Sab, Baz |
 | API keys and authentication | **Yes** | local accounts, cookie sessions, rate-limited login, `X-API-Key` (`internal/auth`, `/api/auth/api-keys`) | all |
-| External auth (OIDC, proxy header, basic) | **No** | not built | Rad, Son, Pro (forms/basic/external) |
-| Prometheus metrics | **Partial** | `GET /api/metrics` (behind auth, three gauge families: `mediarium_up`, movies by status, queue items by status). The usual path would be `/metrics` | Rad, Son via exporters |
+| External auth (OIDC, proxy header, basic) | **Partial** | sign-in through a reverse proxy that passes the user name in a header, believed only from the proxy's own addresses (`auth.proxy_header`, `auth.proxy_addresses`, see [security.md](./security.md)); no OIDC | Rad, Son, Pro (forms/basic/external) |
+| Prometheus metrics | **Partial** | `GET /api/metrics` (behind auth, three gauge families: `cue_up`, movies by status, queue items by status). The usual path would be `/metrics` | Rad, Son via exporters |
 | Statistics / disk-space overview | **Yes** | Statistics page: library size, titles per quality, downloads per month and, with watched status on, what gets watched (`GET /api/stats/library`), plus the dashboard's folder health | Rad, Son |
 | A title's files on disk, playing a video in the browser | **Partial** | `GET /api/movies/{id}/files` and `GET /api/series/{id}/files` list the title's folder (relative path, size, date, kind: video, subtitle, image, nfo, other). `GET /api/files/stream?movie={id}&path=...` (or `series=`) sends a video file as it is, with seeking, for a `<video>` player. It also previews pictures (jpg, png, webp, gif, with their image type) and text files (nfo, srt, ass, ssa, vtt, txt, up to 2 MB, always as `text/plain`). Anything else, html, svg and scripts included, is refused with 415, and every file is sent with `X-Content-Type-Options: nosniff`, `Content-Security-Policy: sandbox` and `Content-Disposition: inline`. Only files inside the movies and TV folders can be reached (no `../`, no symlinks leading out). No transcoding: MP4 and WebM play in every browser, MKV only where the browser supports it (`internal/mediafiles`) | Plex, Jellyfin, Emby (with transcoding) |
 | Discover, recommendations | **Yes** | `/api/discover/*`, "More like your library" (recent, popular titles that several of your titles point to; a paged "Browse more" list with a switch for older titles, `list=similar` on `/api/discover/list`), browse by genre, year and sort order (`/api/discover/browse`, `/api/discover/genres`), pageable trending, popular and coming-soon rails for movies and shows (`/api/discover/list`) (`pages/Discover.tsx`) | Overseerr / Jellyseerr-style, partly Rad, Son |
@@ -85,7 +85,7 @@ What is thin or missing: the things that make the *arr apps manageable at scale 
 | Speed limit, scheduling | **Yes** | one limit for Usenet and torrents, optionally only between two hours (`downloads.speed_limit_mb`, `downloads.speed_limit_hours`), and a free-space floor | Sab, qB |
 | Queue ordering / priority per item | **Partly** | downloads wait in one line: what a person started goes before what the automatic searches added, then first come, first served; a resumed download goes to the front of its group (`priority` and `line_seq` on `download_queue`, `internal/queue/dispatch.go`). There is no drag to reorder | Sab, qB |
 | Categories | **No** | movies vs TV is tracked in the queue row, but there is no user-visible category concept and no per-category folder or script | Sab, qB |
-| Post-processing scripts | **Yes, after import** | `internal/api/scripts.go`: one script from `/config/scripts`, picked in Settings > System (not with an API key), run after each import with `MEDIARIUM_*` variables, one at a time with a time limit ([scripts.md](./scripts.md)) | Sab, Rad, Son |
+| Post-processing scripts | **Yes, after import** | `internal/api/scripts.go`: one script from `/config/scripts`, picked in Settings > System (not with an API key), run after each import with `CUE_*` variables (the old `MEDIARIUM_*` names are set too), one at a time with a time limit ([scripts.md](./scripts.md)) | Sab, Rad, Son |
 | Retention / article-age handling, duplicate detection, direct unpack | **No** | none | Sab |
 | Failed download handling (blocklist and pick next release) | **Yes** | `internal/api/pipeline.go`, `blocklist.go` | Rad, Son (Sab reports failure) |
 | Add an NZB by upload or URL directly | **No** | grabs only come from indexer results (`POST /api/search/grab`, `/api/movies/{id}/grab`) | Sab |
@@ -155,16 +155,28 @@ Switch it on in Settings > Media types ([modules.md](./modules.md), [music.md](.
 | Feature | In Cue today | Evidence | Where it exists |
 |---|---|---|---|
 | Multiple users and roles | **Partly** | admin and basic-user roles (`member` in the API), accounts managed by an administrator (`/api/users`); one route table decides who may call what (`internal/api/server.go`, `access.go`); no read-only role, no per-user libraries or quotas | Overseerr, Jellyseerr (users, roles); *arr apps are single-login |
-| Request portal (family asks, admin approves) | **No** | not found | Overseerr, Jellyseerr |
+| Request portal (family asks, admin approves) | **Yes** | a basic user who can't add titles sends a request; admins approve or decline it under Activity > Requests (`internal/requests`, `/api/requests`) | Overseerr, Jellyseerr |
 | Books (Readarr) | **Partly** | ebooks and audiobooks by book (Open Library), format preference, search, grab and filing by author ([books.md](./books.md)); following authors and series (their missing and new books are added by themselves); release dates on the calendar; narrators and running times from Audnexus; MOBI/AZW3 open in the reader through a built-in converter | Readarr |
 | Adult (Whisparr) | **No** | not planned | Whisparr |
-| Play-state stats | **No** | | Tautulli |
+| Play-state stats | **Partial** | play counts read from Plex, Jellyfin and Emby, shown on title pages and the Statistics page (`/api/watched`) | Tautulli |
 | Archive extraction helper for other apps | **n/a** (built in) | | Unpackerr |
 | Sync TRaSH profiles and custom formats | **No** | no custom-format import | Recyclarr |
 | Notification hub | **Partial** | built-in senders, no Notifiarr integration | Notifiarr |
 | Auto hunt for missing / upgrades | **Yes** (built into automation) | `hunt` job | Huntarr |
 | Clean stalled / failed queue items | **Partial** | failed downloads are blocklisted and retried; stalled ones are not detected. Working folders are removed after import, torrent data once its seeding goal is met, and a daily clean-up (`GET/POST /api/system/cleanup`) removes orphaned, leftover and empty folders in the downloads working folder (never the library) and prunes history older than `cleanup.history_retention_days` (see [downloads.md](./downloads.md#clean-up)) | Cleanuparr |
-| Library cleanup rules (unwatched, old) | **No** | | Maintainerr |
+| Library cleanup rules (unwatched, old) | **Yes** | off by default; preview first, keep tags, removals go to the recycle bin (`/api/watched/cleanup/preview`, `/run`) | Maintainerr |
+
+### 2.6 Watching (streaming-service territory)
+
+| Feature | In Cue today | Evidence | Where it exists |
+|---|---|---|---|
+| A streaming-style home, search and title pages | **Yes** | Watch: banner, rows (Continue Watching, My List, trending, "Because you watched…", new episodes), title pages with ratings, cast and seasons (`internal/watch`, `/api/watch/*`) | Plex, Jellyfin, Emby |
+| Play without downloading first | **Yes** | **Play** streams the best release through Premiumize or a Stremio add-on (Torrentio, Comet, MediaFusion), with the Internet Archive and YouTube for hard-to-find titles (`internal/premiumize`, `internal/stremio`, `/api/play/*`) | Stremio |
+| Plays in any browser | **Yes** | versions a browser can't open are converted as they play with ffmpeg (`/api/play/convert/hls`) | Plex, Jellyfin (transcoding) |
+| Profiles (Who's watching?) | **Yes** | one sign-in, a profile per person with its own Continue Watching, My List, progress and color theme, optional PIN (`/api/profiles`) | Plex, Netflix |
+| Live TV, guide, catch-up and recording | **Yes** | an Xtream Codes IPTV login gives channels, a guide grid, catch-up, reminders, follows and server-side recordings kept 30 days (`internal/iptv`, `/api/live/*`) | Plex, Jellyfin, Channels DVR |
+| Skip intro, subtitles while watching | **Yes** | Skip intro and recap from TheIntroDB or what your household skips (`internal/introdb`, `/api/watch/skips`); English subtitles from OpenSubtitles in the player | Plex, Netflix |
+| TV app | **Yes** | Android TV and Apple TV apps (`android/`, `appletv/`) that sign in to your Cue server and play from it | Plex, Jellyfin |
 
 ## 3. What to add next
 
@@ -177,7 +189,7 @@ Effort: **S** = days or less, **M** = about 1 to 2 weeks, **L** = weeks. Priorit
 | 1 | ~~Make RAR unpack work in the image~~ **Done:** RAR is unpacked natively in Go; the health check now notes a missing `7z` (info, `.7z` only) and a missing `par2` | S | Most Usenet releases are RAR |
 | 2 | ~~Hardlink defaults~~ **Partly done:** the compose file and guides use one `/data` mount. Still open: make the "same drive" check try a real `os.Link` probe instead of comparing device numbers | S | Separate mounts silently copy; the dashboard can say everything is fine |
 | 3 | ~~Windows: copy when a link fails~~ **Done:** any link failure falls back to a copy | S | |
-| 4 | In-app backup and restore (SQLite `VACUUM INTO` plus `secret.key`, download, restore on start) **done** (Settings > System > Server and backup); still open: scheduled backups | M | `/config` copy while running can corrupt; the selling point is "one folder", so make it one click |
+| 4 | ~~In-app backup and restore~~ **Done** (Settings > System > Server and backup), with a nightly backup kept in `/config/backups` | M | `/config` copy while running can corrupt; the selling point is "one folder", so make it one click |
 | 5 | Download queue control: ~~pause/resume~~ **done** (Pause, Resume, Stop, Pause all, Resume all, and a download line); still open: speed limit, dragging to reorder (Usenet and torrent) | M | Baseline expectation coming from SABnzbd or qBittorrent |
 | 6 | Manual import / manual match UI for releases that fail matching | M to L | Named in the original plan; without it failures are dead ends |
 | 7 | ~~Edit indexers~~ **Done** (`PUT /api/indexers/{id}`); still open: per-indexer priority, per-indexer RSS toggle | S to M | Priorities decide which indexer wins a tie |
@@ -192,18 +204,18 @@ Effort: **S** = days or less, **M** = about 1 to 2 weeks, **L** = weeks. Priorit
 | 11 | Delay profiles (prefer one protocol, wait N minutes) | M |
 | 12 | Multiple root folders per media type | M |
 | 13 | Tags (indexers, notifications, titles) | M |
-| 14 | Recycle bin and file-permission (chmod) options | S |
+| 14 | ~~Recycle bin~~ **Done**; still open: file-permission (chmod) options | S |
 | 15 | Import lists that sync on a schedule (Trakt, TMDB lists, Plex watchlist) plus exclusions | M |
 | 16 | More subtitle providers and per-language profiles | M to L |
 | 17 | ~~Multi-user with roles~~ **Done:** admin and basic-user accounts (see [accounts.md](./accounts.md)); still open: a read-only role | M |
-| 18 | iCal feed for the calendar; expose `/metrics` outside the auth wall optionally | S |
+| 18 | ~~iCal feed for the calendar~~ **Done** (`/api/calendar/feed`); still open: expose `/metrics` outside the auth wall optionally | S |
 
 ### P2: polish
 
 | # | Item | Effort |
 |---|---|---|
 | 19 | ~~Download scheduling~~ **Done**: download hours (see [downloads.md](./downloads.md#speed-and-space)) and post-processing scripts (see [scripts.md](./scripts.md)) | M |
-| 20 | OIDC / reverse-proxy header auth | M |
+| 20 | ~~Reverse-proxy header auth~~ **Done**; still open: OIDC | M |
 | 21 | ~~Anime handling (absolute numbering, series types, daily shows)~~ **Done**, and specials are listed (not looked for yet; see [library.md](./library.md#anime-and-daily-shows)) | M to L |
 | 22 | Subtitle ~~sync~~ **Done** (shift and line up with another subtitle; see [subtitles.md](./subtitles.md#fixing-a-subtitle-that-is-out-of-time)). Still open: upgrades | M |
 | 23 | Quality size limits, editions, movie collections | M |
@@ -213,7 +225,7 @@ Effort: **S** = days or less, **M** = about 1 to 2 weeks, **L** = weeks. Priorit
 
 | # | Item | Effort |
 |---|---|---|
-| 26 | Request portal (needs #17) | L |
+| 26 | ~~Request portal~~ **Done** (Activity > Requests) | L |
 | 27 | ~~Play-state sync from Plex, Jellyfin, Emby~~ **Done** (off by default; see [media-servers.md](./media-servers.md#whats-been-watched)), with watch statistics on the Statistics page | L |
 | 28 | ~~Library cleanup rules~~ **Done**, with a preview and keep tags (off by default) | M |
 
