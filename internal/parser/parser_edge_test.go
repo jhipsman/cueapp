@@ -7,7 +7,7 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"github.com/rdborg/mediarium/internal/parser"
+	"github.com/jhipsman/cueapp/internal/parser"
 )
 
 // TestParseEdgeCases pins the odd release names that have gone wrong. Only

@@ -18,7 +18,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/updatecheck"
+	"github.com/jhipsman/cueapp/internal/updatecheck"
 )
 
 // releaseKit is one published release: the signed files GitHub would serve.
@@ -37,9 +37,9 @@ func tarGz(t *testing.T, program []byte) []byte {
 	var buf bytes.Buffer
 	gz := gzip.NewWriter(&buf)
 	tw := tar.NewWriter(gz)
-	tw.WriteHeader(&tar.Header{Name: "mediarium_x/LICENSE", Mode: 0o644, Size: 3, Typeflag: tar.TypeReg})
+	tw.WriteHeader(&tar.Header{Name: "cue_x/LICENSE", Mode: 0o644, Size: 3, Typeflag: tar.TypeReg})
 	tw.Write([]byte("MIT"))
-	tw.WriteHeader(&tar.Header{Name: "mediarium_x/mediarium", Mode: 0o755, Size: int64(len(program)), Typeflag: tar.TypeReg})
+	tw.WriteHeader(&tar.Header{Name: "cue_x/cue", Mode: 0o755, Size: int64(len(program)), Typeflag: tar.TypeReg})
 	tw.Write(program)
 	tw.Close()
 	gz.Close()

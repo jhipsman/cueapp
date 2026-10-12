@@ -1,8 +1,8 @@
 package api
 
 import (
-	"github.com/rdborg/mediarium/internal/indexers"
-	"github.com/rdborg/mediarium/internal/library"
+	"github.com/jhipsman/cueapp/internal/indexers"
+	"github.com/jhipsman/cueapp/internal/library"
 )
 
 // TestGrabMovie grabs a release for a movie without going through a search,

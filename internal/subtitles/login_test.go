@@ -8,7 +8,7 @@ import (
 	"sync/atomic"
 	"testing"
 
-	"github.com/rdborg/mediarium/internal/subtitles"
+	"github.com/jhipsman/cueapp/internal/subtitles"
 )
 
 type fakeOS struct {

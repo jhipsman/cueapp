@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/rdborg/mediarium/internal/quality"
+	"github.com/jhipsman/cueapp/internal/quality"
 )
 
 func tiers(ts ...quality.Tier) []quality.Tier { return ts }

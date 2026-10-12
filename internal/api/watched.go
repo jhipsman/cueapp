@@ -13,9 +13,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/library"
-	"github.com/rdborg/mediarium/internal/mediaservers"
-	"github.com/rdborg/mediarium/internal/settings"
+	"github.com/jhipsman/cueapp/internal/library"
+	"github.com/jhipsman/cueapp/internal/mediaservers"
+	"github.com/jhipsman/cueapp/internal/settings"
 )
 
 // Watched status and cleanup rules (Settings > Connections > Media servers).

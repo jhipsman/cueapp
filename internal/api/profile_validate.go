@@ -5,8 +5,8 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/rdborg/mediarium/internal/music"
-	"github.com/rdborg/mediarium/internal/quality"
+	"github.com/jhipsman/cueapp/internal/music"
+	"github.com/jhipsman/cueapp/internal/quality"
 )
 
 // Limits for quality profiles (the same ones the quality package enforces).

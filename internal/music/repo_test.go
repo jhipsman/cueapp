@@ -6,8 +6,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/rdborg/mediarium/internal/music"
-	"github.com/rdborg/mediarium/internal/store"
+	"github.com/jhipsman/cueapp/internal/music"
+	"github.com/jhipsman/cueapp/internal/store"
 )
 
 func newRepo(t *testing.T) *music.Repo {

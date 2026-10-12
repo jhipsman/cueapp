@@ -4,7 +4,7 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/rdborg/mediarium/internal/parser"
+	"github.com/jhipsman/cueapp/internal/parser"
 )
 
 func TestParseMovies(t *testing.T) {

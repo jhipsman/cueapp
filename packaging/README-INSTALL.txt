@@ -1,25 +1,25 @@
-Mediarium - native program (preview)
+Cue - native program (preview)
 ====================================
 
-This archive contains the Mediarium program for Linux (mediarium),
+This archive contains the Cue program for Linux (cue),
 the AGPL-3.0 LICENSE, and these notes.
 
-Note: running Mediarium natively on Linux (without Docker) is NOT a
-supported install yet. The supported way to install Mediarium is Docker:
+Note: running Cue natively on Linux (without Docker) is NOT a
+supported install yet. The supported way to install Cue is Docker:
 
-  https://github.com/rdborg/Mediarium/blob/main/docs/INSTALL.md
+  https://github.com/jhipsman/cueapp/blob/main/docs/INSTALL.md
 
 If you still want to try the native program, for testing, here is what you
 need to know. Tell us what you find:
-https://github.com/rdborg/Mediarium/issues
+https://github.com/jhipsman/cueapp/issues
 
 The web interface is built into the program. RAR and ZIP downloads are
-unpacked by Mediarium itself. Two optional helper programs are NOT included:
+unpacked by Cue itself. Two optional helper programs are NOT included:
 
   par2   (par2cmdline)   verifies and repairs damaged Usenet downloads
   7z     (7-Zip)         only needed for the rare .7z archives
 
-Mediarium looks for them by the plain names "par2" and "7z" on your PATH.
+Cue looks for them by the plain names "par2" and "7z" on your PATH.
 
   Debian/Ubuntu : sudo apt install par2 p7zip-full
   Fedora        : sudo dnf install par2cmdline p7zip p7zip-plugins
@@ -47,12 +47,12 @@ Then open http://localhost:8264 and follow the setup wizard.
 Restart and updates
 -------------------
 Settings > System > Server and backup has Restart buttons. They work when
-something starts Mediarium again after it exits: systemd is found by
+something starts Cue again after it exits: systemd is found by
 itself (the supplied unit uses Restart=always).
-For any other service manager set MEDIARIUM_SUPERVISED=1. Where nothing
+For any other service manager set CUE_SUPERVISED=1. Where nothing
 would start it again, the page offers Shut down instead.
 
 There is no Update now button for this native program (it is for the
 Docker image). To update, download the new version from the release page,
-stop Mediarium, replace the program file and start it again. Back up
+stop Cue, replace the program file and start it again. Back up
 CONFIG_DIR first.

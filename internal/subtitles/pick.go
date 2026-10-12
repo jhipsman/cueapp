@@ -3,7 +3,7 @@ package subtitles
 import (
 	"strings"
 
-	"github.com/rdborg/mediarium/internal/parser"
+	"github.com/jhipsman/cueapp/internal/parser"
 )
 
 func normalizeRelease(s string) string {

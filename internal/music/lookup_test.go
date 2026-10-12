@@ -3,7 +3,7 @@ package music_test
 import (
 	"testing"
 
-	"github.com/rdborg/mediarium/internal/music"
+	"github.com/jhipsman/cueapp/internal/music"
 )
 
 func TestLookupsByMBIDAndCounts(t *testing.T) {

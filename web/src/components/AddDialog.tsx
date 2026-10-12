@@ -20,7 +20,7 @@ export interface AddTarget {
 
 // Whether a new title keeps being searched for better versions after it is
 // downloaded. Off unless the person turns it on; remembered in this browser.
-const BETTER_KEY = 'mediarium.add.keepLookingForBetter'
+const BETTER_KEY = 'cue.add.keepLookingForBetter'
 
 function savedBetter(): boolean {
   try {

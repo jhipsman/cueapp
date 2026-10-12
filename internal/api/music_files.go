@@ -7,8 +7,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/mediafiles"
-	"github.com/rdborg/mediarium/internal/music"
+	"github.com/jhipsman/cueapp/internal/mediafiles"
+	"github.com/jhipsman/cueapp/internal/music"
 )
 
 // The files of an album on disk, like the movie and show file listings: the

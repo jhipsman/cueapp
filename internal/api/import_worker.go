@@ -8,8 +8,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/library"
-	"github.com/rdborg/mediarium/internal/metadata"
+	"github.com/jhipsman/cueapp/internal/library"
+	"github.com/jhipsman/cueapp/internal/metadata"
 )
 
 // After an import registers the titles, this worker fills in their details

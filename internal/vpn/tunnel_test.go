@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/vpn"
+	"github.com/jhipsman/cueapp/internal/vpn"
 )
 
 // TestTunnelBetweenTwoLocalPeers brings up two independent userspace

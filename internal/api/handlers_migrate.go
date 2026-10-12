@@ -8,9 +8,9 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/rdborg/mediarium/internal/indexers"
-	"github.com/rdborg/mediarium/internal/migrate"
-	"github.com/rdborg/mediarium/internal/settings"
+	"github.com/jhipsman/cueapp/internal/indexers"
+	"github.com/jhipsman/cueapp/internal/migrate"
+	"github.com/jhipsman/cueapp/internal/settings"
 )
 
 // newMigrator wires the importer for the other apps (Radarr, Sonarr, Prowlarr, SABnzbd, NZBGet and more) to the

@@ -7,7 +7,7 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"github.com/rdborg/mediarium/internal/organizer"
+	"github.com/jhipsman/cueapp/internal/organizer"
 )
 
 // checkComponent reports what is wrong with one path component built by
@@ -24,7 +24,7 @@ func checkComponent(c, ext string) string {
 		return "is not valid UTF-8"
 	case strings.ContainsRune(c, 0):
 		return "holds a NUL byte"
-	case len(c+ext+".mediarium-tmp") > 255:
+	case len(c+ext+".cue-tmp") > 255:
 		return "is too long once the extension and temporary suffix are added"
 	case strings.HasSuffix(c, ".") || strings.HasSuffix(c, " "):
 		return "ends in a dot or a space"

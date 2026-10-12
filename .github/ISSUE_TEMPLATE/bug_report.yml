@@ -76,7 +76,7 @@ body:
     attributes:
       label: Log
       description: |
-        Only needed if you could not copy the support report above. The container log from around the time it happened: `docker compose logs --tail 200 mediarium` (or `docker logs --tail 200 mediarium`, or the Log tab in your NAS's Docker app).
+        Only needed if you could not copy the support report above. The container log from around the time it happened: `docker compose logs --tail 200 cue` (or `docker logs --tail 200 cue`, or the Log tab in your NAS's Docker app).
         **Before pasting, remove API keys, passwords, VPN keys, tokens and anything else private.**
       render: text
 

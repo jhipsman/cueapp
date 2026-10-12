@@ -4,9 +4,9 @@ import (
 	"os"
 	"testing"
 
-	"github.com/rdborg/mediarium/internal/archiveorg"
-	"github.com/rdborg/mediarium/internal/books"
-	"github.com/rdborg/mediarium/internal/introdb"
+	"github.com/jhipsman/cueapp/internal/archiveorg"
+	"github.com/jhipsman/cueapp/internal/books"
+	"github.com/jhipsman/cueapp/internal/introdb"
 )
 
 // TestMain keeps the tests off the internet: lookups that would go to

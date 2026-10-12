@@ -3,7 +3,7 @@
 //
 // It only reads. The request goes to the public GitHub Releases API of the
 // official repository and carries no identifying data: no account, no install
-// id, no settings, only a User-Agent of the form "Mediarium/<version>". Nothing
+// id, no settings, only a User-Agent of the form "Cue/<version>". Nothing
 // is downloaded or installed by this package; installing is up to the person.
 package updatecheck
 
@@ -23,14 +23,14 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"github.com/rdborg/mediarium/internal/netguard"
-	"github.com/rdborg/mediarium/internal/semver"
+	"github.com/jhipsman/cueapp/internal/netguard"
+	"github.com/jhipsman/cueapp/internal/semver"
 )
 
 // DefaultRepo is the official repository, as owner/name. A build for another
 // fork can change it with
 //
-//	-ldflags "-X github.com/rdborg/mediarium/internal/updatecheck.DefaultRepo=owner/name"
+//	-ldflags "-X github.com/jhipsman/cueapp/internal/updatecheck.DefaultRepo=owner/name"
 var DefaultRepo = "jhipsman/cueapp"
 
 // DefaultBaseURL is the GitHub API.
@@ -131,7 +131,7 @@ func (c *Checker) userAgent() string {
 		}
 		return r
 	}, v)
-	return "Mediarium/" + v
+	return "Cue/" + v
 }
 
 // Latest returns the newest release that applies to a running version:

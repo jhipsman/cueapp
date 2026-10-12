@@ -7,7 +7,7 @@ import (
 	"net/url"
 	"testing"
 
-	"github.com/rdborg/mediarium/internal/metadata"
+	"github.com/jhipsman/cueapp/internal/metadata"
 )
 
 func TestDiscoverQueryParams(t *testing.T) {

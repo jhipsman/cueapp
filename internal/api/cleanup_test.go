@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/queue"
+	"github.com/jhipsman/cueapp/internal/queue"
 )
 
 func putFile(t *testing.T, path, content string) {

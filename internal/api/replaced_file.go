@@ -6,8 +6,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/rdborg/mediarium/internal/cleanup"
-	"github.com/rdborg/mediarium/internal/organizer"
+	"github.com/jhipsman/cueapp/internal/cleanup"
+	"github.com/jhipsman/cueapp/internal/organizer"
 )
 
 // replacesOldFiles reports whether the import conflict policy lets a new file

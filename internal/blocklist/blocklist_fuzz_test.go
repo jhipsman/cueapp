@@ -4,8 +4,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/rdborg/mediarium/internal/blocklist"
-	"github.com/rdborg/mediarium/internal/store"
+	"github.com/jhipsman/cueapp/internal/blocklist"
+	"github.com/jhipsman/cueapp/internal/store"
 )
 
 // FuzzAddAndLookup: a release title in any shape can be blocklisted and is

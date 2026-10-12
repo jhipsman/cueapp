@@ -10,7 +10,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/problems"
+	"github.com/jhipsman/cueapp/internal/problems"
 	"modernc.org/sqlite"
 )
 
@@ -18,7 +18,7 @@ import (
 // like the plain "sqlite" driver; it only measures how long each statement
 // takes, so a statement stuck behind a lock is reported with its SQL instead
 // of just making the page hang.
-const driverName = "mediarium-sqlite"
+const driverName = "cue-sqlite"
 
 func init() {
 	sql.Register(driverName, &watchedDriver{inner: &sqlite.Driver{}})

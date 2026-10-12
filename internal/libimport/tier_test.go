@@ -4,7 +4,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/rdborg/mediarium/internal/quality"
+	"github.com/jhipsman/cueapp/internal/quality"
 )
 
 func TestTierFromNames(t *testing.T) {

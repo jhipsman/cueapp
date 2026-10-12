@@ -12,7 +12,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/organizer"
+	"github.com/jhipsman/cueapp/internal/organizer"
 )
 
 // fake7z writes a stand-in for the 7z tool. "7z l" prints listing, "7z x"

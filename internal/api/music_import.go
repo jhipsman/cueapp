@@ -10,8 +10,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/music"
-	"github.com/rdborg/mediarium/internal/queue"
+	"github.com/jhipsman/cueapp/internal/music"
+	"github.com/jhipsman/cueapp/internal/queue"
 )
 
 // Importing an existing music collection: the music folder is read as

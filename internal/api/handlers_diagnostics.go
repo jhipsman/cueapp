@@ -7,11 +7,11 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/backup"
-	"github.com/rdborg/mediarium/internal/download"
-	"github.com/rdborg/mediarium/internal/logbuf"
-	"github.com/rdborg/mediarium/internal/selfupdate"
-	"github.com/rdborg/mediarium/internal/store"
+	"github.com/jhipsman/cueapp/internal/backup"
+	"github.com/jhipsman/cueapp/internal/download"
+	"github.com/jhipsman/cueapp/internal/logbuf"
+	"github.com/jhipsman/cueapp/internal/selfupdate"
+	"github.com/jhipsman/cueapp/internal/store"
 )
 
 // processStart is when this run of the app began.

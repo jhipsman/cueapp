@@ -4,8 +4,8 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/rdborg/mediarium/internal/fsinfo"
-	"github.com/rdborg/mediarium/internal/sysinfo"
+	"github.com/jhipsman/cueapp/internal/fsinfo"
+	"github.com/jhipsman/cueapp/internal/sysinfo"
 )
 
 // sysinfoSampler is created on first use, so the zero Server works.

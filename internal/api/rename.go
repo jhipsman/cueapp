@@ -8,8 +8,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/rdborg/mediarium/internal/cleanup"
-	"github.com/rdborg/mediarium/internal/parser"
+	"github.com/jhipsman/cueapp/internal/cleanup"
+	"github.com/jhipsman/cueapp/internal/parser"
 )
 
 // Bulk rename: files already in the library keep the names they had when

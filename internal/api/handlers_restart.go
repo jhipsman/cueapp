@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/rdborg/mediarium/internal/selfupdate"
+	"github.com/jhipsman/cueapp/internal/selfupdate"
 )
 
 // controlPayload says what the Restart and Shut down buttons can do here.
@@ -18,7 +18,7 @@ type controlPayload struct {
 
 // detectSupervisor works out what starts Cue again after it exits:
 // "docker" (the container's restart policy), "systemd", "launchd", "custom"
-// (MEDIARIUM_SUPERVISED is set for a service manager we do not know), or
+// (CUE_SUPERVISED is set for a service manager we do not know), or
 // "none". getenv and exists are passed in so this can be tested.
 func detectSupervisor(supervisedByHand bool, imageVersion string, getenv func(string) string, exists func(string) bool) string {
 	switch {

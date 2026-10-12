@@ -39,8 +39,8 @@ export default function BookWork() {
       const d = (e as CustomEvent<{ key: string; id: number }>).detail
       if (d.key === key) setLibraryId(d.id)
     }
-    window.addEventListener('mediarium:book-added', onAdded)
-    return () => window.removeEventListener('mediarium:book-added', onAdded)
+    window.addEventListener('cue:book-added', onAdded)
+    return () => window.removeEventListener('cue:book-added', onAdded)
   }, [key])
 
   if (error) return <p className="error-text">{error}</p>

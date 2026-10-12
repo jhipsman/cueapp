@@ -182,7 +182,7 @@ var (
 
 func fakeCompare(password string) {
 	dummyHashOnce.Do(func() {
-		dummyHash, _ = bcrypt.GenerateFromPassword([]byte("mediarium-no-such-user"), hashCost)
+		dummyHash, _ = bcrypt.GenerateFromPassword([]byte("cue-no-such-user"), hashCost)
 	})
 	_ = bcrypt.CompareHashAndPassword(dummyHash, []byte(password))
 }

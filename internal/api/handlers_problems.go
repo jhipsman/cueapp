@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/problems"
-	"github.com/rdborg/mediarium/internal/settings"
+	"github.com/jhipsman/cueapp/internal/problems"
+	"github.com/jhipsman/cueapp/internal/settings"
 )
 
 // The problem log (Settings > System > Logs and errors). Every route here is
@@ -229,7 +229,7 @@ func (s *Server) handleProblemsExport(w http.ResponseWriter, r *http.Request) {
 	}
 	now := time.Now()
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-	w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="mediarium-problems-%s.txt"`, now.Format("2006-01-02")))
+	w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="cue-problems-%s.txt"`, now.Format("2006-01-02")))
 	_, _ = w.Write([]byte(problems.Text(all, now)))
 }
 

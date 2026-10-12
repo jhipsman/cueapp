@@ -9,7 +9,7 @@ import (
 	"sync/atomic"
 	"testing"
 
-	"github.com/rdborg/mediarium/internal/api"
+	"github.com/jhipsman/cueapp/internal/api"
 )
 
 // keyRecorder is a fixture server that remembers which key each request used

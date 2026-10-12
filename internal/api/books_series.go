@@ -11,8 +11,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/books"
-	"github.com/rdborg/mediarium/internal/settings"
+	"github.com/jhipsman/cueapp/internal/books"
+	"github.com/jhipsman/cueapp/internal/settings"
 )
 
 // Book series: the series a book is in, with the other books in it, and

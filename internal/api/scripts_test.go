@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/notify"
+	"github.com/jhipsman/cueapp/internal/notify"
 )
 
 // putScript writes an executable shell script into the scripts folder.
@@ -92,7 +92,7 @@ func TestScriptRunsAfterImport(t *testing.T) {
 	t.Setenv("SOME_SECRET", "not-for-scripts")
 	server, base, admin := loginNewServer(t)
 	dir := server.TestScriptsDir()
-	putScript(t, dir, "log.sh", `env | grep -e '^MEDIARIUM_' -e SOME_SECRET | sort > ran.txt`, 0o755)
+	putScript(t, dir, "log.sh", `env | grep -e '^CUE_' -e '^MEDIARIUM_' -e SOME_SECRET | sort > ran.txt`, 0o755)
 
 	it := notify.Item{Media: "episode", Title: "Severance", Episode: "S02E03", Quality: "WEBDL-1080p", Path: "/data/TV/Severance/Season 02/Severance - S02E03.mkv", SizeBytes: 1234, Release: "Severance.S02E03.1080p.WEB-GRP"}
 	server.TestNotifyImported(it) // no script chosen: nothing runs
@@ -110,12 +110,15 @@ func TestScriptRunsAfterImport(t *testing.T) {
 	}
 	got := string(b)
 	for _, want := range []string{
-		"MEDIARIUM_EVENT=imported", "MEDIARIUM_MEDIA=episode", "MEDIARIUM_TITLE=Severance", "MEDIARIUM_EPISODE=S02E03",
-		"MEDIARIUM_PATH=/data/TV/Severance/Season 02/Severance - S02E03.mkv", "MEDIARIUM_FOLDER=/data/TV/Severance/Season 02",
-		"MEDIARIUM_SIZE=1234", "MEDIARIUM_RELEASE=Severance.S02E03.1080p.WEB-GRP",
+		"EVENT=imported", "MEDIA=episode", "TITLE=Severance", "EPISODE=S02E03",
+		"PATH=/data/TV/Severance/Season 02/Severance - S02E03.mkv", "FOLDER=/data/TV/Severance/Season 02",
+		"SIZE=1234", "RELEASE=Severance.S02E03.1080p.WEB-GRP",
 	} {
-		if !strings.Contains(got, want+"\n") {
-			t.Fatalf("missing %q in:\n%s", want, got)
+		// The old MEDIARIUM_ names too, for scripts written before the rename.
+		for _, prefix := range []string{"CUE_", "MEDIARIUM_"} {
+			if !strings.Contains(got, prefix+want+"\n") {
+				t.Fatalf("missing %q in:\n%s", prefix+want, got)
+			}
 		}
 	}
 	if strings.Contains(got, "SOME_SECRET") {
@@ -126,7 +129,7 @@ func TestScriptRunsAfterImport(t *testing.T) {
 func TestScriptTestRun(t *testing.T) {
 	server, base, admin := loginNewServer(t)
 	dir := server.TestScriptsDir()
-	putScript(t, dir, "ok.sh", `echo "event $MEDIARIUM_EVENT"`, 0o755)
+	putScript(t, dir, "ok.sh", `echo "event $CUE_EVENT"`, 0o755)
 	putScript(t, dir, "fails.sh", `echo boom >&2; exit 3`, 0o755)
 	putScript(t, dir, "slow.sh", `sleep 5`, 0o755)
 

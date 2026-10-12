@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/rdborg/mediarium/internal/inputcheck"
+	"github.com/jhipsman/cueapp/internal/inputcheck"
 )
 
 // Event kinds a target can subscribe to. The activity feed's own event names
@@ -152,7 +152,7 @@ func Types() []TypeInfo {
 		{Type: string(TargetNtfy), Label: "ntfy", Fields: []Field{
 			{Name: "server", Label: "Server", Kind: "text", Placeholder: "https://ntfy.sh", Default: "https://ntfy.sh",
 				Help: "Leave as https://ntfy.sh unless you run your own server."},
-			{Name: "topic", Label: "Topic", Kind: "password", Required: true, Placeholder: "mediarium-a1b2c3",
+			{Name: "topic", Label: "Topic", Kind: "password", Required: true, Placeholder: "cue-a1b2c3",
 				Help: "Pick a name nobody could guess, then subscribe to it in the ntfy app. On a public server anyone with the name can read the messages."},
 			{Name: "token", Label: "Access token", Kind: "password",
 				Help: "Only for servers with a login. Create one in the ntfy web app under Account > Access tokens."},
@@ -277,7 +277,7 @@ func Validate(typeName string, cfg map[string]string) error {
 			return errors.New(msg)
 		}
 		if strings.ContainsAny(get("topic"), "/ ?#") {
-			return errors.New("The topic can't contain spaces or slashes. Use letters, numbers and dashes, for example mediarium-a1b2c3.")
+			return errors.New("The topic can't contain spaces or slashes. Use letters, numbers and dashes, for example cue-a1b2c3.")
 		}
 	case TargetGotify:
 		return checkHTTPURL("https://gotify.example.com", get("url"))

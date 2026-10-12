@@ -3,7 +3,7 @@ package api
 import (
 	"testing"
 
-	"github.com/rdborg/mediarium/internal/indexers"
+	"github.com/jhipsman/cueapp/internal/indexers"
 )
 
 func TestPreferredIndexerWinsATie(t *testing.T) {

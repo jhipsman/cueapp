@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/library"
+	"github.com/jhipsman/cueapp/internal/library"
 )
 
 func wantedTitles(items []map[string]any) map[string]bool {

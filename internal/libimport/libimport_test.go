@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/libimport"
+	"github.com/jhipsman/cueapp/internal/libimport"
 )
 
 func touch(t *testing.T, root, rel string, size int) {

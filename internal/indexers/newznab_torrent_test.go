@@ -6,7 +6,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/rdborg/mediarium/internal/indexers"
+	"github.com/jhipsman/cueapp/internal/indexers"
 )
 
 // A Torznab feed handed out by Prowlarr looks like a Newznab one. Each result

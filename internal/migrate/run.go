@@ -8,10 +8,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/indexers"
-	"github.com/rdborg/mediarium/internal/libimport"
-	"github.com/rdborg/mediarium/internal/library"
-	"github.com/rdborg/mediarium/internal/quality"
+	"github.com/jhipsman/cueapp/internal/indexers"
+	"github.com/jhipsman/cueapp/internal/libimport"
+	"github.com/jhipsman/cueapp/internal/library"
+	"github.com/jhipsman/cueapp/internal/quality"
 )
 
 // Steps of an import, in order.

@@ -4,7 +4,7 @@
 // codec, group, edition, proper/repack) from the raw name; whatever is left
 // before the first stripped token is the title candidate.
 //
-// This does not import github.com/rdborg/mediarium/internal/download (or
+// This does not import github.com/jhipsman/cueapp/internal/download (or
 // any other module) — the project's package-boundary rule keeps the parser
 // usable standalone.
 package parser

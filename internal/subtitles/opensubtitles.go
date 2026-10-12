@@ -18,7 +18,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/netguard"
+	"github.com/jhipsman/cueapp/internal/netguard"
 )
 
 const defaultBaseURL = "https://api.opensubtitles.com/api/v1"

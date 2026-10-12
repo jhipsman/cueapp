@@ -12,10 +12,10 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/rdborg/mediarium/internal/api"
-	"github.com/rdborg/mediarium/internal/config"
-	"github.com/rdborg/mediarium/internal/crypto"
-	"github.com/rdborg/mediarium/internal/store"
+	"github.com/jhipsman/cueapp/internal/api"
+	"github.com/jhipsman/cueapp/internal/config"
+	"github.com/jhipsman/cueapp/internal/crypto"
+	"github.com/jhipsman/cueapp/internal/store"
 )
 
 // newSecurityServer is a server with the given proxy settings and nothing set
@@ -203,7 +203,7 @@ func TestForwardedProtoIgnoredFromUntrustedPeer(t *testing.T) {
 func sessionCookie(t *testing.T, resp *http.Response) *http.Cookie {
 	t.Helper()
 	for _, c := range resp.Cookies() {
-		if c.Name == "mediarium_session" {
+		if c.Name == "cue_session" {
 			return c
 		}
 	}

@@ -12,10 +12,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/metadata"
-	"github.com/rdborg/mediarium/internal/omdb"
-	"github.com/rdborg/mediarium/internal/settings"
-	"github.com/rdborg/mediarium/internal/watch"
+	"github.com/jhipsman/cueapp/internal/metadata"
+	"github.com/jhipsman/cueapp/internal/omdb"
+	"github.com/jhipsman/cueapp/internal/settings"
+	"github.com/jhipsman/cueapp/internal/watch"
 )
 
 // Watch: the streaming side of Cue.

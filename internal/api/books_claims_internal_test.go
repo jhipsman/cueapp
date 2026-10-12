@@ -5,9 +5,9 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/rdborg/mediarium/internal/books"
-	"github.com/rdborg/mediarium/internal/queue"
-	"github.com/rdborg/mediarium/internal/store"
+	"github.com/jhipsman/cueapp/internal/books"
+	"github.com/jhipsman/cueapp/internal/queue"
+	"github.com/jhipsman/cueapp/internal/store"
 )
 
 // A book download that will not finish hands the book back: missing, or

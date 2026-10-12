@@ -18,14 +18,14 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/api"
-	"github.com/rdborg/mediarium/internal/backup"
-	"github.com/rdborg/mediarium/internal/config"
-	"github.com/rdborg/mediarium/internal/crypto"
-	"github.com/rdborg/mediarium/internal/httpsec"
-	"github.com/rdborg/mediarium/internal/logbuf"
-	"github.com/rdborg/mediarium/internal/selfupdate"
-	"github.com/rdborg/mediarium/internal/store"
+	"github.com/jhipsman/cueapp/internal/api"
+	"github.com/jhipsman/cueapp/internal/backup"
+	"github.com/jhipsman/cueapp/internal/config"
+	"github.com/jhipsman/cueapp/internal/crypto"
+	"github.com/jhipsman/cueapp/internal/httpsec"
+	"github.com/jhipsman/cueapp/internal/logbuf"
+	"github.com/jhipsman/cueapp/internal/selfupdate"
+	"github.com/jhipsman/cueapp/internal/store"
 )
 
 // defaultTMDBAPIKey is empty in source control on purpose (no secrets in
@@ -84,12 +84,12 @@ func main() {
 	}
 	if len(os.Args) > 1 && os.Args[1] == "reset-password" {
 		if err := resetPassword(os.Args[2:]); err != nil {
-			log.Fatalf("mediarium: %v", err)
+			log.Fatalf("cue: %v", err)
 		}
 		return
 	}
 	if err := run(); err != nil {
-		log.Fatalf("mediarium: %v", err)
+		log.Fatalf("cue: %v", err)
 	}
 }
 
@@ -109,7 +109,7 @@ func run() error {
 		return fmt.Errorf("create directory %s: %w", cfg.ConfigDir, err)
 	}
 	// "Restart with automation paused" leaves a note that applies to this start
-	// only, like MEDIARIUM_PAUSE_AUTOMATION=1 for one run.
+	// only, like CUE_PAUSE_AUTOMATION=1 for one run.
 	updateDir := selfupdate.Dir(cfg.ConfigDir)
 	if selfupdate.TakeSafeOnce(updateDir) {
 		cfg.PauseAutomation = true

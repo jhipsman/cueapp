@@ -155,11 +155,11 @@ jobs:
           TRAKT_CLIENT_ID: ${{ secrets.TRAKT_CLIENT_ID }}
         run: |
           set -euo pipefail
-          name="mediarium_${VERSION}_${GOOS}_${GOARCH}"
+          name="cue_${VERSION}_${GOOS}_${GOARCH}"
           out="dist/${name}"
           mkdir -p "${out}"
 
-          exe="mediarium"
+          exe="cue"
 
           go build -trimpath \
             -ldflags "-s -w -X main.version=${VERSION} -X main.defaultTMDBAPIKey=${TMDB_API_KEY} -X main.defaultOpenSubtitlesAPIKey=${OPENSUBTITLES_API_KEY} -X main.defaultTraktClientID=${TRAKT_CLIENT_ID}" \
@@ -171,8 +171,8 @@ jobs:
           cp docs/INSTALL.md "${out}/docs/INSTALL.md"
 
           # The systemd files for running it as a service (see packaging/README.md).
-          cp packaging/systemd/mediarium.service "${out}/mediarium.service"
-          cp packaging/systemd/mediarium.env.example "${out}/mediarium.env.example"
+          cp packaging/systemd/cue.service "${out}/cue.service"
+          cp packaging/systemd/cue.env.example "${out}/cue.env.example"
 
           cd dist
           tar -czf "${name}.tar.gz" "${name}"
@@ -348,14 +348,14 @@ jobs:
           target: full
           platforms: linux/amd64
           load: true
-          tags: mediarium-full-smoke:test
+          tags: cue-full-smoke:test
           build-args: |
             VERSION=${{ needs.version.outputs.version }}
           cache-from: type=gha,scope=full
           cache-to: type=gha,scope=full,mode=max
 
       - name: Smoke test the full image
-        run: bash docker/smoke-full.sh mediarium-full-smoke:test
+        run: bash docker/smoke-full.sh cue-full-smoke:test
 
       - name: Build and push full image
         uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7

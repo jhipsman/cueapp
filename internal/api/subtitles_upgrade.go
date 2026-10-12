@@ -8,8 +8,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/settings"
-	"github.com/rdborg/mediarium/internal/subtitles"
+	"github.com/jhipsman/cueapp/internal/settings"
+	"github.com/jhipsman/cueapp/internal/subtitles"
 )
 
 // Subtitle upgrades. When Cue picks a subtitle by its release name, it

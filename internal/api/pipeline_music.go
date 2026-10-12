@@ -9,15 +9,15 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/rdborg/mediarium/internal/blocklist"
-	"github.com/rdborg/mediarium/internal/cleanup"
-	"github.com/rdborg/mediarium/internal/indexers"
-	"github.com/rdborg/mediarium/internal/music"
-	"github.com/rdborg/mediarium/internal/notify"
-	"github.com/rdborg/mediarium/internal/organizer"
-	"github.com/rdborg/mediarium/internal/plainerror"
-	"github.com/rdborg/mediarium/internal/queue"
-	"github.com/rdborg/mediarium/internal/settings"
+	"github.com/jhipsman/cueapp/internal/blocklist"
+	"github.com/jhipsman/cueapp/internal/cleanup"
+	"github.com/jhipsman/cueapp/internal/indexers"
+	"github.com/jhipsman/cueapp/internal/music"
+	"github.com/jhipsman/cueapp/internal/notify"
+	"github.com/jhipsman/cueapp/internal/organizer"
+	"github.com/jhipsman/cueapp/internal/plainerror"
+	"github.com/jhipsman/cueapp/internal/queue"
+	"github.com/jhipsman/cueapp/internal/settings"
 )
 
 // The album download pipeline: the same queue, downloaders, PAR2 repair and

@@ -9,8 +9,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/rdborg/mediarium/internal/library"
-	"github.com/rdborg/mediarium/internal/queue"
+	"github.com/jhipsman/cueapp/internal/library"
+	"github.com/jhipsman/cueapp/internal/queue"
 )
 
 func signUpAdmin(t *testing.T, client *http.Client, base string) {
@@ -157,7 +157,7 @@ func TestRetryReusesDownloadedFiles(t *testing.T) {
 	}
 	work := filepath.Join(server.TestIncompleteDir(), fmt.Sprintf("queue-%d", id))
 	writeBody(t, filepath.Join(work, release+".mkv"), "the movie")
-	writeBody(t, filepath.Join(work, ".mediarium-downloaded"), "0")
+	writeBody(t, filepath.Join(work, ".cue-downloaded"), "0")
 
 	postJSON[map[string]any](t, client, fmt.Sprintf("%s/api/queue/%d/retry", base, id), nil, http.StatusAccepted)
 	waitBackground(t, server)

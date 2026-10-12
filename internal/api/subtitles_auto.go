@@ -12,10 +12,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/library"
-	"github.com/rdborg/mediarium/internal/notify"
-	"github.com/rdborg/mediarium/internal/settings"
-	"github.com/rdborg/mediarium/internal/subtitles"
+	"github.com/jhipsman/cueapp/internal/library"
+	"github.com/jhipsman/cueapp/internal/notify"
+	"github.com/jhipsman/cueapp/internal/settings"
+	"github.com/jhipsman/cueapp/internal/subtitles"
 )
 
 const (

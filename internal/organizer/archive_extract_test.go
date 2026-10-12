@@ -13,7 +13,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/rdborg/mediarium/internal/organizer"
+	"github.com/jhipsman/cueapp/internal/organizer"
 )
 
 // The rardecode module ships no .rar fixtures and no RAR compressor is

@@ -10,7 +10,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/books"
+	"github.com/jhipsman/cueapp/internal/books"
 )
 
 // Authors: the other books by a book's author, and following an author so

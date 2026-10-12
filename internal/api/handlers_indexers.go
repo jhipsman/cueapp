@@ -10,9 +10,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/indexers"
-	"github.com/rdborg/mediarium/internal/plainerror"
-	"github.com/rdborg/mediarium/internal/settings"
+	"github.com/jhipsman/cueapp/internal/indexers"
+	"github.com/jhipsman/cueapp/internal/plainerror"
+	"github.com/jhipsman/cueapp/internal/settings"
 )
 
 // indexerPayload is an indexer as the UI sees it. For definition-based

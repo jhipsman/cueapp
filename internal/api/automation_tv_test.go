@@ -13,8 +13,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/api"
-	"github.com/rdborg/mediarium/internal/library"
+	"github.com/jhipsman/cueapp/internal/api"
+	"github.com/jhipsman/cueapp/internal/library"
 )
 
 type tvAutoEnv struct {

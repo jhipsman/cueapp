@@ -10,8 +10,9 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/rdborg/mediarium/internal/organizer"
-	"github.com/rdborg/mediarium/internal/queue"
+	"github.com/jhipsman/cueapp/internal/download"
+	"github.com/jhipsman/cueapp/internal/organizer"
+	"github.com/jhipsman/cueapp/internal/queue"
 )
 
 // One active download per library item, and retrying a failed Usenet
@@ -106,7 +107,18 @@ func episodesOverlap(a, b []int) bool {
 // downloadedMarker is written into a Usenet download's working folder once
 // every article has been fetched. It holds the number of articles no server
 // had, which PAR2 has to make up for.
-const downloadedMarker = ".mediarium-downloaded"
+const downloadedMarker = ".cue-downloaded"
+
+// adoptLegacyMarkers gives the marker files in a download's working folder
+// from before the rename to Cue their new names, so a download paused or
+// failed before the update carries on after it.
+func adoptLegacyMarkers(dir string) {
+	for old, cur := range map[string]string{".mediarium-downloaded": downloadedMarker, download.LegacyResumeFile: download.ResumeFile} {
+		if !fileExists(filepath.Join(dir, cur)) {
+			_ = os.Rename(filepath.Join(dir, old), filepath.Join(dir, cur))
+		}
+	}
+}
 
 // markDownloaded records that a working folder holds a finished download.
 func markDownloaded(dir string, missing int) {
@@ -124,6 +136,7 @@ func (s *Server) keptDownload(item queue.Item) (string, bool) {
 		return "", false
 	}
 	dir := filepath.Join(s.downloadsIncompleteDir(), fmt.Sprintf("queue-%d", item.ID))
+	adoptLegacyMarkers(dir)
 	if fileExists(filepath.Join(dir, downloadedMarker)) || keptResume(dir) {
 		return dir, true
 	}
@@ -173,6 +186,7 @@ func (s *Server) reuseDownloaded(queueID int64, downloadURL, incompleteDir strin
 	// Whether the files came from an earlier attempt or this item was paused
 	// and resumed, only a finished download is reused as it is; a partial one
 	// carries on from what it has (download.ResumeFile).
+	adoptLegacyMarkers(incompleteDir)
 	if !fileExists(filepath.Join(incompleteDir, downloadedMarker)) {
 		return false
 	}

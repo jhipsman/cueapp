@@ -7,7 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/rdborg/mediarium/internal/metadata"
+	"github.com/jhipsman/cueapp/internal/metadata"
 )
 
 func newTVFixtureServer(t *testing.T) *httptest.Server {

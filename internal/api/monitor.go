@@ -7,9 +7,9 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/indexers"
-	"github.com/rdborg/mediarium/internal/monitor"
-	"github.com/rdborg/mediarium/internal/settings"
+	"github.com/jhipsman/cueapp/internal/indexers"
+	"github.com/jhipsman/cueapp/internal/monitor"
+	"github.com/jhipsman/cueapp/internal/settings"
 )
 
 const (

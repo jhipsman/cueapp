@@ -29,8 +29,8 @@ import (
 	"time"
 	"unicode"
 
-	migrations "github.com/rdborg/mediarium/db"
-	"github.com/rdborg/mediarium/internal/crypto"
+	migrations "github.com/jhipsman/cueapp/db"
+	"github.com/jhipsman/cueapp/internal/crypto"
 	_ "modernc.org/sqlite" // registers the "sqlite" driver used to inspect staged databases
 )
 
@@ -50,7 +50,10 @@ const (
 	// MaxRestoreBytes is the largest backup zip a restore will accept.
 	MaxRestoreBytes int64 = 1 << 30
 
-	appName = "mediarium"
+	appName = "cue"
+	// legacyAppName is the manifest's app name in backups made before the
+	// rename to Cue; they restore the same way.
+	legacyAppName = "mediarium"
 
 	// Sanity caps on the *uncompressed* size of each entry, so a small zip
 	// cannot expand to fill the disk.
@@ -94,7 +97,7 @@ func invalidf(format string, args ...any) error {
 
 // FileName returns the download name for a backup created at t.
 func FileName(t time.Time) string {
-	return "mediarium-backup-" + t.Format(timeLayout) + ".zip"
+	return "cue-backup-" + t.Format(timeLayout) + ".zip"
 }
 
 // LatestMigration is the highest migration this binary knows about.
@@ -331,7 +334,7 @@ func validateFiles(dir string) (Manifest, error) {
 		if err := json.Unmarshal(data, &manifest); err != nil {
 			return Manifest{}, invalidf("The manifest.json in this backup is not valid.")
 		}
-		if manifest.App != "" && manifest.App != appName {
+		if manifest.App != "" && manifest.App != appName && manifest.App != legacyAppName {
 			return Manifest{}, invalidf("This backup was made by a different application (%q).", displayName(manifest.App))
 		}
 	} else if !errors.Is(err, fs.ErrNotExist) {

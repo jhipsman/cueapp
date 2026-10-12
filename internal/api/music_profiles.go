@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/rdborg/mediarium/internal/music"
-	"github.com/rdborg/mediarium/internal/settings"
+	"github.com/jhipsman/cueapp/internal/music"
+	"github.com/jhipsman/cueapp/internal/settings"
 )
 
 // Music quality profiles: listing, creating, editing and deleting them, and

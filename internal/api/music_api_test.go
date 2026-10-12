@@ -11,7 +11,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/rdborg/mediarium/internal/api"
+	"github.com/jhipsman/cueapp/internal/api"
 )
 
 // newFakeMusicBrainz serves the testdata/musicbrainz fixtures: one artist
@@ -46,7 +46,7 @@ func newFakeMusicBrainzHits(t *testing.T) (*httptest.Server, *coverHits) {
 	hits := &coverHits{hits: map[string]int{}}
 	fixture := func(name string) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
-			if ua := r.Header.Get("User-Agent"); !strings.HasPrefix(ua, "Mediarium/") {
+			if ua := r.Header.Get("User-Agent"); !strings.HasPrefix(ua, "Cue/") {
 				t.Errorf("MusicBrainz request without the identifying User-Agent: %q", ua)
 			}
 			body, err := os.ReadFile(filepath.Join("testdata", "musicbrainz", name))

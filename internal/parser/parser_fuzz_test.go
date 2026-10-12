@@ -7,7 +7,7 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"github.com/rdborg/mediarium/internal/parser"
+	"github.com/jhipsman/cueapp/internal/parser"
 )
 
 // FuzzParse checks that no name, however broken, panics, hangs, gives a

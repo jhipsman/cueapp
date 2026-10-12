@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/rdborg/mediarium/internal/mediafiles"
+	"github.com/jhipsman/cueapp/internal/mediafiles"
 )
 
 // A folder whose name merely starts like a library folder (movies2 next to

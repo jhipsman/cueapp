@@ -4,8 +4,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/rdborg/mediarium/internal/parser"
-	"github.com/rdborg/mediarium/internal/quality"
+	"github.com/jhipsman/cueapp/internal/parser"
+	"github.com/jhipsman/cueapp/internal/quality"
 )
 
 // maxFolderLevels is how many folders above a file are read for a quality the

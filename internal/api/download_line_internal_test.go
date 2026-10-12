@@ -5,9 +5,9 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/rdborg/mediarium/internal/queue"
-	"github.com/rdborg/mediarium/internal/settings"
-	"github.com/rdborg/mediarium/internal/store"
+	"github.com/jhipsman/cueapp/internal/queue"
+	"github.com/jhipsman/cueapp/internal/settings"
+	"github.com/jhipsman/cueapp/internal/store"
 )
 
 func TestWaitingPositions(t *testing.T) {

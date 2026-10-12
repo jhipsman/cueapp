@@ -5,7 +5,9 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"sync"
@@ -14,7 +16,11 @@ import (
 // ResumeFile is the name of the small file a download keeps in its folder
 // listing which articles are already saved. A download that was paused,
 // stopped or cut off by a restart reads it and fetches only the rest.
-const ResumeFile = ".mediarium-progress"
+const ResumeFile = ".cue-progress"
+
+// LegacyResumeFile is ResumeFile's name before the rename to Cue; a download
+// paused before the update finds its progress under it.
+const LegacyResumeFile = ".mediarium-progress"
 
 type resumeRecord struct {
 	Version int                `json:"v"`
@@ -64,6 +70,9 @@ func loadResume(dir string, nzb *NZB, paths []string) *resumeState {
 	}
 	for i, f := range nzb.Files {
 		st.done[i] = make([]bool, len(f.Segments))
+	}
+	if _, err := os.Stat(st.path); errors.Is(err, fs.ErrNotExist) {
+		_ = os.Rename(filepath.Join(dir, LegacyResumeFile), st.path)
 	}
 	data, err := os.ReadFile(st.path)
 	if err != nil {

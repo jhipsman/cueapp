@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/cleanup"
+	"github.com/jhipsman/cueapp/internal/cleanup"
 )
 
 func write(t *testing.T, path, content string) {

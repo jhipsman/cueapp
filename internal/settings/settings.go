@@ -7,7 +7,7 @@ import (
 	"database/sql"
 	"fmt"
 
-	"github.com/rdborg/mediarium/internal/crypto"
+	"github.com/jhipsman/cueapp/internal/crypto"
 )
 
 // Known setting keys. Using constants keeps callers from typo-ing a
@@ -93,7 +93,7 @@ const (
 	KeyHuntIntervalHours   = "automation.hunt_interval_hours"   // hours between searches for missing items and better versions: 1 to 168; unset = 6
 	KeyReleaseCheckMinutes = "automation.release_check_minutes" // minutes between checks of each indexer's newest releases: 5 to 1440; unset = 15
 
-	KeyPublicURL = "server.public_url" // the address you open Cue at from your own devices (like https://mediarium.example.com); links in notification messages use it; unset = no links
+	KeyPublicURL = "server.public_url" // the address you open Cue at from your own devices (like https://cue.example.com); links in notification messages use it; unset = no links
 
 	KeyNotifyOnProblems = "notify.on_problems" // "1" sends a notification (to the targets that listen for Health) when a new error is added to the problem log; unset or "0" sends none
 
@@ -118,7 +118,7 @@ const (
 	KeyBackupAuto           = "backup.auto"                    // "0" turns the nightly backup into /config/backups off; anything else (including unset) leaves it on
 	KeyBackupKeep           = "backup.keep"                    // how many saved backups are kept in /config/backups; unset = 7
 	KeyCleanupAuto          = "cleanup.auto"                   // "0" turns the daily automatic clean-up off; anything else (including unset) leaves it on
-	KeyTrashDays            = "library.trash_days"             // days removed titles' files stay in the recycle bin (.mediarium-trash in the library folder); unset = 7, "0" = delete straight away
+	KeyTrashDays            = "library.trash_days"             // days removed titles' files stay in the recycle bin (.cue-trash in the library folder); unset = 7, "0" = delete straight away
 	KeyHistoryRetentionDays = "cleanup.history_retention_days" // days finished downloads and activity are kept; unset = 90, "0" = forever
 	KeyCleanupLastRunAt     = "cleanup.last_run_at"            // when clean-up last ran (RFC 3339; set by the app, not user-editable)
 

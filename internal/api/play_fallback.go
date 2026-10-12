@@ -13,9 +13,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/archiveorg"
-	"github.com/rdborg/mediarium/internal/settings"
-	"github.com/rdborg/mediarium/internal/youtube"
+	"github.com/jhipsman/cueapp/internal/archiveorg"
+	"github.com/jhipsman/cueapp/internal/settings"
+	"github.com/jhipsman/cueapp/internal/youtube"
 )
 
 // When the stream add-ons and the torrent sites have nothing (old children's

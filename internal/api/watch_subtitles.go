@@ -17,8 +17,8 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"github.com/rdborg/mediarium/internal/subtitles"
-	"github.com/rdborg/mediarium/internal/watch"
+	"github.com/jhipsman/cueapp/internal/subtitles"
+	"github.com/jhipsman/cueapp/internal/watch"
 )
 
 // Subtitles in Watch: for whatever is playing, Cue finds an English subtitle

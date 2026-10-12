@@ -10,7 +10,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/rdborg/mediarium/internal/parser"
+	"github.com/jhipsman/cueapp/internal/parser"
 )
 
 // SidecarExts are the subtitle file types picked up from finished downloads.

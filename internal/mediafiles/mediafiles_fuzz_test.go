@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/rdborg/mediarium/internal/mediafiles"
+	"github.com/jhipsman/cueapp/internal/mediafiles"
 )
 
 const secretBody = "SECRET-OUTSIDE-THE-FOLDER"

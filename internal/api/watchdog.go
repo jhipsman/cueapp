@@ -8,7 +8,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/selfupdate"
+	"github.com/jhipsman/cueapp/internal/selfupdate"
 )
 
 const (

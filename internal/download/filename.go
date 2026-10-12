@@ -59,7 +59,7 @@ func outputFileNames(files []NZBFile) []string {
 	for i, f := range files {
 		name := sanitizeFilename(articleFilename(f.Subject, i))
 		fallback := fmt.Sprintf("file_%d.bin", i)
-		if strings.Trim(name, ". ") == "" || strings.HasPrefix(strings.ToLower(name), ".mediarium-") {
+		if strings.Trim(name, ". ") == "" || isMarkerName(name) {
 			name = fallback
 		}
 		name = shortenFileName(name, maxFileNameBytes)
@@ -102,4 +102,12 @@ func withSuffix(name, suffix string) string {
 
 func bytesReader(b []byte) io.Reader {
 	return bytes.NewReader(b)
+}
+
+// isMarkerName reports whether name could be one of the files a download
+// keeps in its folder (ResumeFile and the like), under Cue's names or those
+// from before the rename, so a posted file can never take its place.
+func isMarkerName(name string) bool {
+	lower := strings.ToLower(name)
+	return strings.HasPrefix(lower, ".cue-") || strings.HasPrefix(lower, ".mediarium-")
 }

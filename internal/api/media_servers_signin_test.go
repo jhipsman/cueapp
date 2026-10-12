@@ -122,7 +122,7 @@ func TestSignInWithPlex(t *testing.T) {
 	start := postJSON[map[string]any](t, admin, api, nil, http.StatusOK)
 	authURL, _ := start["authUrl"].(string)
 	if start["pinId"] != float64(77) || start["code"] != "PINCODE" ||
-		!strings.HasPrefix(authURL, "https://app.plex.tv/auth#?clientID=mediarium-") || !strings.Contains(authURL, "code=PINCODE") {
+		!strings.HasPrefix(authURL, "https://app.plex.tv/auth#?clientID=cue-") || !strings.Contains(authURL, "code=PINCODE") {
 		t.Fatalf("start: %+v", start)
 	}
 	// The same install id every time.

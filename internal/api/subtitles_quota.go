@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/subtitles"
+	"github.com/jhipsman/cueapp/internal/subtitles"
 )
 
 // subtitleGetBudget is how long one "get subtitles now" request works before

@@ -144,3 +144,62 @@ func TestPurgeTrashDeletesOnlyOldEntries(t *testing.T) {
 		t.Fatalf("left: %+v", list)
 	}
 }
+
+func TestTrashFromBeforeTheRenameIsMovedToTheNewBin(t *testing.T) {
+	root := t.TempDir()
+	folder := filepath.Join(root, "Heat (1995)")
+	writeFile(t, filepath.Join(folder, "Heat (1995).mkv"), "video")
+	e, err := TrashFolder(root, folder, "Heat (1995)", trashNow)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// A library from before Cue 2.2 has its bin under the old name.
+	if err := os.Rename(filepath.Join(root, TrashDir), filepath.Join(root, legacyTrashDir)); err != nil {
+		t.Fatal(err)
+	}
+
+	list, err := ListTrash(root)
+	if err != nil || len(list) != 1 || list[0].ID != e.ID {
+		t.Fatalf("list: %+v (err %v)", list, err)
+	}
+	if exists(filepath.Join(root, legacyTrashDir)) || !exists(filepath.Join(root, TrashDir, e.ID)) {
+		t.Fatal("the old bin should have been renamed to the new one")
+	}
+	if _, err := RestoreTrash(root, e.ID); err != nil || !exists(filepath.Join(folder, "Heat (1995).mkv")) {
+		t.Fatalf("restore after the move: %v", err)
+	}
+}
+
+func TestBothBinsAreMerged(t *testing.T) {
+	root := t.TempDir()
+	a := filepath.Join(root, "Heat (1995)")
+	b := filepath.Join(root, "Ronin (1998)")
+	writeFile(t, filepath.Join(a, "Heat.mkv"), "a")
+	writeFile(t, filepath.Join(b, "Ronin.mkv"), "b")
+	old, err := TrashFolder(root, a, "Heat (1995)", trashNow)
+	if err != nil {
+		t.Fatal(err)
+	}
+	cur, err := TrashFolder(root, b, "Ronin (1998)", trashNow.Add(time.Minute))
+	if err != nil {
+		t.Fatal(err)
+	}
+	// One entry is still in a bin under the old name, next to the new bin.
+	writeFile(t, filepath.Join(root, legacyTrashDir, "notes.txt"), "not an entry")
+	if err := os.Rename(filepath.Join(root, TrashDir, old.ID), filepath.Join(root, legacyTrashDir, old.ID)); err != nil {
+		t.Fatal(err)
+	}
+
+	list, err := ListTrash(root)
+	if err != nil || len(list) != 2 {
+		t.Fatalf("both entries should be listed: %+v (err %v)", list, err)
+	}
+	for _, id := range []string{old.ID, cur.ID} {
+		if !exists(filepath.Join(root, TrashDir, id)) {
+			t.Errorf("entry %s should be in the new bin", id)
+		}
+	}
+	if !exists(filepath.Join(root, legacyTrashDir, "notes.txt")) {
+		t.Error("a file that isn't a bin entry is left where it was")
+	}
+}

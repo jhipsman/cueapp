@@ -3,9 +3,9 @@ package store_test
 import (
 	"testing"
 
-	"github.com/rdborg/mediarium/internal/library"
-	"github.com/rdborg/mediarium/internal/music"
-	"github.com/rdborg/mediarium/internal/queue"
+	"github.com/jhipsman/cueapp/internal/library"
+	"github.com/jhipsman/cueapp/internal/music"
+	"github.com/jhipsman/cueapp/internal/queue"
 )
 
 // Removing a movie, a show or an artist leaves no row that only that title

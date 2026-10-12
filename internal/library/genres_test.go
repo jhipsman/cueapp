@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/rdborg/mediarium/internal/library"
+	"github.com/jhipsman/cueapp/internal/library"
 )
 
 func TestGenresAndAddedByRoundTrip(t *testing.T) {

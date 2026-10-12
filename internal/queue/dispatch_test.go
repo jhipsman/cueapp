@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/queue"
+	"github.com/jhipsman/cueapp/internal/queue"
 )
 
 // lineHarness runs a Dispatcher over a real database with a fake pipeline: a

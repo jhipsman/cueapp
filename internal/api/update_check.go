@@ -9,9 +9,9 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/plainerror"
-	"github.com/rdborg/mediarium/internal/settings"
-	"github.com/rdborg/mediarium/internal/updatecheck"
+	"github.com/jhipsman/cueapp/internal/plainerror"
+	"github.com/jhipsman/cueapp/internal/settings"
+	"github.com/jhipsman/cueapp/internal/updatecheck"
 )
 
 const (

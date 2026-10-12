@@ -6,10 +6,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/library"
-	"github.com/rdborg/mediarium/internal/metadata"
-	"github.com/rdborg/mediarium/internal/notify"
-	"github.com/rdborg/mediarium/internal/settings"
+	"github.com/jhipsman/cueapp/internal/library"
+	"github.com/jhipsman/cueapp/internal/metadata"
+	"github.com/jhipsman/cueapp/internal/notify"
+	"github.com/jhipsman/cueapp/internal/settings"
 )
 
 // publicLinks is the address the person set for Cue; without one,

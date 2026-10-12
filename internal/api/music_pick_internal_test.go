@@ -3,9 +3,9 @@ package api
 import (
 	"testing"
 
-	"github.com/rdborg/mediarium/internal/blocklist"
-	"github.com/rdborg/mediarium/internal/indexers"
-	"github.com/rdborg/mediarium/internal/music"
+	"github.com/jhipsman/cueapp/internal/blocklist"
+	"github.com/jhipsman/cueapp/internal/indexers"
+	"github.com/jhipsman/cueapp/internal/music"
 )
 
 func TestPickMusicRelease(t *testing.T) {

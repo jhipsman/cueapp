@@ -15,8 +15,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/books"
-	"github.com/rdborg/mediarium/internal/ebookconv"
+	"github.com/jhipsman/cueapp/internal/books"
+	"github.com/jhipsman/cueapp/internal/ebookconv"
 )
 
 // Kindle books (MOBI, AZW, AZW3) open in the reader as EPUB: Cue makes

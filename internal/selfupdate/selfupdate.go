@@ -33,7 +33,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/semver"
+	"github.com/jhipsman/cueapp/internal/semver"
 )
 
 // File names inside the update folder. The entrypoint script uses the same
@@ -70,7 +70,7 @@ var (
 	ErrEmpty            = errors.New("the file is empty")
 	ErrChecksumFormat   = errors.New("the checksum is not a 64-character hex SHA-256")
 	ErrChecksumMismatch = errors.New("the file does not match the checksum")
-	ErrNotMediarium     = errors.New("the file is not a Cue program")
+	ErrNotCue           = errors.New("the file is not a Cue program")
 	ErrWrongPlatform    = errors.New("the file is for another system")
 	ErrBadVersion       = errors.New("the version number cannot be compared")
 	ErrNotNewer         = errors.New("the version is not newer than the running one")
@@ -211,24 +211,28 @@ type Probe struct {
 // VersionLine is what `app --version-check` prints. The entrypoint parses the
 // same line with the shell.
 func VersionLine(version string) string {
-	return fmt.Sprintf("mediarium %s %s/%s", version, runtime.GOOS, runtime.GOARCH)
+	return fmt.Sprintf("cue %s %s/%s", version, runtime.GOOS, runtime.GOARCH)
 }
+
+// legacyProgramName is what a program from before the rename says instead of
+// "cue" for --version-check.
+const legacyProgramName = "mediarium"
 
 // ParseVersionLine reads the output of --version-check.
 func ParseVersionLine(out string) (Probe, error) {
 	fields := strings.Fields(out)
-	if len(fields) != 3 || fields[0] != "mediarium" {
-		return Probe{}, ErrNotMediarium
+	if len(fields) != 3 || (fields[0] != "cue" && fields[0] != legacyProgramName) {
+		return Probe{}, ErrNotCue
 	}
 	osArch := strings.Split(fields[2], "/")
 	if len(osArch) != 2 || osArch[0] == "" || osArch[1] == "" {
-		return Probe{}, ErrNotMediarium
+		return Probe{}, ErrNotCue
 	}
 	for _, s := range []string{fields[1], osArch[0], osArch[1]} {
 		if len(s) > 64 || strings.ContainsFunc(s, func(r rune) bool {
 			return !(r >= '0' && r <= '9' || r >= 'a' && r <= 'z' || r >= 'A' && r <= 'Z' || r == '.' || r == '-' || r == '+' || r == '_')
 		}) {
-			return Probe{}, ErrNotMediarium
+			return Probe{}, ErrNotCue
 		}
 	}
 	return Probe{Version: fields[1], OS: osArch[0], Arch: osArch[1]}, nil
@@ -287,7 +291,7 @@ func Inspect(ctx context.Context, path string) (Probe, error) {
 	if runErr != nil {
 		var exit *exec.ExitError
 		if errors.As(runErr, &exit) || errors.Is(runErr, context.DeadlineExceeded) {
-			return Probe{}, fmt.Errorf("%w: it did not answer --version-check", ErrNotMediarium)
+			return Probe{}, fmt.Errorf("%w: it did not answer --version-check", ErrNotCue)
 		}
 		return Probe{}, fmt.Errorf("start the file: %w", runErr)
 	}
@@ -305,7 +309,7 @@ func Inspect(ctx context.Context, path string) (Probe, error) {
 func checkELF(path string) error {
 	f, err := elf.Open(path)
 	if err != nil {
-		return fmt.Errorf("%w: it is not a Linux program", ErrNotMediarium)
+		return fmt.Errorf("%w: it is not a Linux program", ErrNotCue)
 	}
 	defer f.Close()
 	var want elf.Machine
@@ -321,7 +325,7 @@ func checkELF(path string) error {
 		return fmt.Errorf("%w: it is built for %s", ErrWrongPlatform, f.Machine)
 	}
 	if f.Type != elf.ET_EXEC && f.Type != elf.ET_DYN {
-		return fmt.Errorf("%w: it is not a program", ErrNotMediarium)
+		return fmt.Errorf("%w: it is not a program", ErrNotCue)
 	}
 	return nil
 }

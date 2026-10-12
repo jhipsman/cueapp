@@ -147,7 +147,7 @@ type ImportResult struct {
 
 // stagingSuffix marks the file a copy is written to before it takes its
 // final name, so a media server never sees half a movie under the real one.
-const stagingSuffix = ".mediarium-tmp"
+const stagingSuffix = ".cue-tmp"
 
 // Import places src at destPath, hardlinking when possible
 // ("hardlink-first move strategy") and falling back to a copy when the two

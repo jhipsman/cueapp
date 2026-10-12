@@ -7,8 +7,8 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"github.com/rdborg/mediarium/internal/organizer"
-	"github.com/rdborg/mediarium/internal/parser"
+	"github.com/jhipsman/cueapp/internal/organizer"
+	"github.com/jhipsman/cueapp/internal/parser"
 )
 
 func FuzzSanitize(f *testing.F) {

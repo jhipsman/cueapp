@@ -111,15 +111,15 @@ If the only admin has forgotten their password, reset it from the command line o
 In Docker (use your own PUID:PGID, so the database files keep the right owner):
 
 ```sh
-docker exec -it -u 1000:1000 mediarium /app/app reset-password <username>
+docker exec -it -u 1000:1000 cue /app/app reset-password <username>
 ```
 
-On the `-full` image the program is at `/opt/mediarium/app` instead of `/app/app`.
+On the `-full` image the program is at `/opt/cue/app` instead of `/app/app`.
 
 Running natively, with the same environment variables Cue normally runs with:
 
 ```sh
-mediarium reset-password <username>
+cue reset-password <username>
 ```
 
 It asks for the new password twice (at least 8 characters) and signs that account out of every open session. It works for any account, admin or basic user.

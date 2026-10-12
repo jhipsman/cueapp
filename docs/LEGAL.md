@@ -24,6 +24,10 @@ Cue is intended for content you have the legal right to obtain, for example publ
 
 Torrent traffic exposes your IP address to other people in the swarm. The optional built-in VPN feature is a privacy tool, not a legal shield, and it is not a substitute for making lawful choices.
 
+## Where Cue comes from
+
+Cue is a fork of [Mediarium](https://github.com/rdborg/Mediarium) by Ryan Borg, and is released under the same [GNU Affero General Public License v3.0](../LICENSE). Mediarium's copyright notice is kept in the license file next to Cue's. Cue is maintained separately and is **not** affiliated with or endorsed by the original Mediarium project or its author. Please report problems with Cue to [Cue's issue tracker](https://github.com/jhipsman/cueapp/issues), not to Mediarium.
+
 ## No affiliation, third-party names
 
 Cue is an independent project. It is **not** affiliated with, sponsored by or endorsed by TMDB, Trakt, OpenSubtitles, or any indexer, Usenet provider, VPN provider, or any other service or company it can connect to. Radarr, Sonarr, Prowlarr, SABnzbd, Bazarr, Plex, Jellyfin, Emby, Synology, Unraid, QNAP and all other product names, logos and trademarks mentioned in this repository belong to their respective owners and are used only to describe compatibility or comparison.

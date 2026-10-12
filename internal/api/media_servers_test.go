@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/library"
+	"github.com/jhipsman/cueapp/internal/library"
 )
 
 // fakePlexServer is a local stand-in for Plex with one movie library at

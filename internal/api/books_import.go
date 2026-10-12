@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/books"
+	"github.com/jhipsman/cueapp/internal/books"
 )
 
 // Importing books already on disk: the ebooks and audiobooks folders are read

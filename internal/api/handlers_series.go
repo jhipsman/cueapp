@@ -10,8 +10,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/library"
-	"github.com/rdborg/mediarium/internal/metadata"
+	"github.com/jhipsman/cueapp/internal/library"
+	"github.com/jhipsman/cueapp/internal/metadata"
 )
 
 type seriesPayload struct {

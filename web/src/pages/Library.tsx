@@ -51,7 +51,7 @@ interface Item {
 // The most titles one "search now" for a selection looks up (the server enforces it).
 const BULK_SEARCH_LIMIT = 25
 
-const STORAGE = { kind: 'mediarium-library-tab', view: 'mediarium-library-view', sort: 'mediarium-library-sort', reverse: 'mediarium-library-reverse' }
+const STORAGE = { kind: 'cue-library-tab', view: 'cue-library-view', sort: 'cue-library-sort', reverse: 'cue-library-reverse' }
 const remember = (k: string, v: string) => {
   try {
     localStorage.setItem(k, v)

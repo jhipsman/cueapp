@@ -7,12 +7,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/automation"
-	"github.com/rdborg/mediarium/internal/indexers"
-	"github.com/rdborg/mediarium/internal/library"
-	"github.com/rdborg/mediarium/internal/parser"
-	"github.com/rdborg/mediarium/internal/quality"
-	"github.com/rdborg/mediarium/internal/settings"
+	"github.com/jhipsman/cueapp/internal/automation"
+	"github.com/jhipsman/cueapp/internal/indexers"
+	"github.com/jhipsman/cueapp/internal/library"
+	"github.com/jhipsman/cueapp/internal/parser"
+	"github.com/jhipsman/cueapp/internal/quality"
+	"github.com/jhipsman/cueapp/internal/settings"
 )
 
 const (
@@ -29,7 +29,7 @@ func (s *Server) StartAutomation() *automation.Scheduler {
 	s.applySpeedLimit(time.Now())
 	_, _ = s.QueueRepo.ClearSettledFailures()
 	if s.cfg.PauseAutomation {
-		log.Print("Safe mode: MEDIARIUM_PAUSE_AUTOMATION is set, so automatic searching, downloading and refreshing are switched off until you remove it.")
+		log.Print("Safe mode: CUE_PAUSE_AUTOMATION is set, so automatic searching, downloading and refreshing are switched off until you remove it.")
 		return automation.NewScheduler()
 	}
 	sched := automation.NewScheduler(

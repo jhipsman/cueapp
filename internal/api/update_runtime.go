@@ -11,9 +11,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/selfupdate"
-	"github.com/rdborg/mediarium/internal/settings"
-	"github.com/rdborg/mediarium/internal/updatecheck"
+	"github.com/jhipsman/cueapp/internal/selfupdate"
+	"github.com/jhipsman/cueapp/internal/settings"
+	"github.com/jhipsman/cueapp/internal/updatecheck"
 )
 
 // updateRuntime is everything the Server keeps for updating itself: the

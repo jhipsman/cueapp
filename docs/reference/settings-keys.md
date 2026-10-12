@@ -43,7 +43,7 @@ The keys the app stores in its settings table. You normally change these from th
 | `library.naming_preset` | plex\|jellyfin\|kodi\|minimal\|custom |
 | `library.presets_version` | revision of the built-in quality presets last applied; unset means never (set at start, not user-editable) |
 | `library.quality_profile` | legacy: an old preset key (any-1080p, ultra-hd, any); only read once to pick the initial default profile |
-| `library.trash_days` | days removed titles' files stay in the recycle bin (.mediarium-trash in the library folder); unset = 7, "0" = delete straight away |
+| `library.trash_days` | days removed titles' files stay in the recycle bin (.cue-trash in the library folder); unset = 7, "0" = delete straight away |
 | `library.tv_path` | falls back to the TV_DIR env default when unset |
 | `mediaservers.client_id` | set by the app, not user-editable |
 | `metadata.omdb_api_key` | encrypted; an OMDb key for IMDb and Rotten Tomatoes ratings in Watch. Unset = TMDB's score only |
@@ -68,7 +68,7 @@ The keys the app stores in its settings table. You normally change these from th
 | `quality.language` | the audio language wanted, as a name like "English" (the default when unset); a release clearly in another language only is not picked automatically |
 | `scripts.after_import` | JSON: script (a file name in /config/scripts; empty = off) and timeoutSec (default 300). Only a signed-in browser session can set it, not an API key |
 | `scripts.last_run` | what the last run did (JSON; set by the app, not user-editable) |
-| `server.public_url` | the address you open Cue at from your own devices (like https://mediarium.example.com); links in notification messages use it; unset = no links |
+| `server.public_url` | the address you open Cue at from your own devices (like https://cue.example.com); links in notification messages use it; unset = no links |
 | `streams.addons` | encrypted JSON list of {url, name}: Stremio add-ons (Comet, Torrentio...) Play asks for streams first; unset = Cue's own search only |
 | `subtitles.auto_download` | "1" fetches subtitles automatically; unset or "0" only offers them ("ask me") |
 | `subtitles.enabled` | the master switch: "1" turns downloading subtitles on; unset or "0" leaves it off (upgrades from a version that had subtitles in use are switched on once, by a migration) |

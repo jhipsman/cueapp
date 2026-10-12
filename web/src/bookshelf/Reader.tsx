@@ -13,7 +13,7 @@ interface Prefs {
   font: Font
 }
 
-const PREFS_KEY = 'mediarium.reader'
+const PREFS_KEY = 'cue.reader'
 const THEMES: Record<Theme, { bg: string; fg: string; link: string }> = {
   light: { bg: '#fbfaf7', fg: '#1d1c1a', link: '#1f6feb' },
   sepia: { bg: '#f4ecd8', fg: '#3b2f22', link: '#8a4b14' },
@@ -199,7 +199,7 @@ function EpubReader({ book, src }: { book: Book; src: string }) {
           armed.current = true
         }, 1000)
         // Page percentages: worked out once per book and kept in this browser.
-        const key = `mediarium.reader.loc.${book.id}`
+        const key = `cue.reader.loc.${book.id}`
         let cached: string | null = null
         try {
           cached = localStorage.getItem(key)

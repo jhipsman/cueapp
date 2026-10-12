@@ -8,8 +8,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/introdb"
-	"github.com/rdborg/mediarium/internal/watch"
+	"github.com/jhipsman/cueapp/internal/introdb"
+	"github.com/jhipsman/cueapp/internal/watch"
 )
 
 // Skip intro and Next episode during the credits. The times come from

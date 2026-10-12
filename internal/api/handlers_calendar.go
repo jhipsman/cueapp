@@ -6,7 +6,7 @@ import (
 	"sort"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/books"
+	"github.com/jhipsman/cueapp/internal/books"
 )
 
 type calendarEntryPayload struct {

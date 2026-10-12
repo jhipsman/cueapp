@@ -8,9 +8,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/rdborg/mediarium/internal/library"
-	"github.com/rdborg/mediarium/internal/metadata"
-	"github.com/rdborg/mediarium/internal/parser"
+	"github.com/jhipsman/cueapp/internal/library"
+	"github.com/jhipsman/cueapp/internal/metadata"
+	"github.com/jhipsman/cueapp/internal/parser"
 )
 
 // Anime and daily shows. Anime releases count episodes from the start of the

@@ -37,9 +37,9 @@ export function installSteps(install: { kind: 'docker' | 'native'; full: boolean
         title: 'Synology Container Manager',
         steps: [
           'Open Container Manager and go to Project.',
-          'Select mediarium, then choose Action, Stop, and then Action, Clean. This removes the container, not your folders.',
+          'Select cue (mediarium if you installed before Cue 2.2), then choose Action, Stop, and then Action, Clean. This removes the container, not your folders.',
           'Go to Image, select ghcr.io/jhipsman/cue and delete it. If it says Update available, use that instead and skip the Build below.',
-          'Go back to Project, select mediarium and choose Action, Build. Container Manager downloads the new version and starts it.',
+          'Go back to Project, select it again and choose Action, Build. Container Manager downloads the new version and starts it.',
         ],
       },
       {

@@ -10,8 +10,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/store"
-	"github.com/rdborg/mediarium/internal/subtitles"
+	"github.com/jhipsman/cueapp/internal/store"
+	"github.com/jhipsman/cueapp/internal/subtitles"
 )
 
 func TestComputeQuota(t *testing.T) {

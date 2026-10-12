@@ -13,7 +13,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/library"
+	"github.com/jhipsman/cueapp/internal/library"
 )
 
 // fakeTMDB is a local stand-in for the movie database with 1000+ movies

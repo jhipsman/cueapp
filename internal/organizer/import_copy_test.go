@@ -95,7 +95,7 @@ func TestImportAcrossFilesystems(t *testing.T) {
 	if runtime.GOOS != "linux" {
 		t.Skip("needs a second filesystem at /dev/shm")
 	}
-	shm, err := os.MkdirTemp("/dev/shm", "mediarium-test-")
+	shm, err := os.MkdirTemp("/dev/shm", "cue-test-")
 	if err != nil {
 		t.Skip("no /dev/shm here")
 	}

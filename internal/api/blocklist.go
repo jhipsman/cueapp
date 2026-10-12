@@ -9,10 +9,10 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/blocklist"
-	"github.com/rdborg/mediarium/internal/download"
-	"github.com/rdborg/mediarium/internal/indexers"
-	"github.com/rdborg/mediarium/internal/library"
+	"github.com/jhipsman/cueapp/internal/blocklist"
+	"github.com/jhipsman/cueapp/internal/download"
+	"github.com/jhipsman/cueapp/internal/indexers"
+	"github.com/jhipsman/cueapp/internal/library"
 )
 
 const (

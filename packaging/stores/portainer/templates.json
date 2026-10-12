@@ -4,15 +4,15 @@
     {
       "id": 1,
       "type": 3,
-      "title": "Mediarium",
-      "name": "mediarium",
+      "title": "Cue",
+      "name": "cue",
       "description": "All-in-one media manager for movies and TV: search Usenet and torrent indexers, download with built-in clients, unpack and organise your library.",
-      "note": "Put your downloads, movies and TV inside <b>one</b> data folder so finished downloads are hardlinked. After deploying, open http://&lt;server-ip&gt;:8264 and follow the setup wizard. Guide: <a href=\"https://github.com/rdborg/Mediarium/blob/main/docs/INSTALL.md\" target=\"_blank\">docs/INSTALL.md</a>",
+      "note": "Put your downloads, movies and TV inside <b>one</b> data folder so finished downloads are hardlinked. After deploying, open http://&lt;server-ip&gt;:8264 and follow the setup wizard. Guide: <a href=\"https://github.com/jhipsman/cueapp/blob/main/docs/INSTALL.md\" target=\"_blank\">docs/INSTALL.md</a>",
       "categories": ["Media", "Downloaders"],
       "platform": "linux",
-      "logo": "https://raw.githubusercontent.com/rdborg/Mediarium/main/branding/mediarium-icon-512.png",
+      "logo": "https://raw.githubusercontent.com/jhipsman/cueapp/main/branding/cue-icon-512.png",
       "repository": {
-        "url": "https://github.com/rdborg/Mediarium",
+        "url": "https://github.com/jhipsman/cueapp",
         "stackfile": "packaging/stores/portainer/docker-compose.yml"
       },
       "env": [
@@ -25,8 +25,8 @@
         {
           "name": "CONFIG_PATH",
           "label": "Config folder (host)",
-          "description": "Folder on the host for Mediarium's database and key. Back it up.",
-          "default": "/srv/mediarium/config"
+          "description": "Folder on the host for Cue's database and key. Back it up.",
+          "default": "/srv/cue/config"
         },
         {
           "name": "PUID",

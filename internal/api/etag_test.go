@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/rdborg/mediarium/internal/library"
+	"github.com/jhipsman/cueapp/internal/library"
 )
 
 // conditionalGet asks for url the way a browser does, with the headers given.

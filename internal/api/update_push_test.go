@@ -21,7 +21,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/api"
+	"github.com/jhipsman/cueapp/internal/api"
 )
 
 // realProgram builds the app with a version number, once per version, and
@@ -44,14 +44,14 @@ func realProgram(t *testing.T, version string) []byte {
 		return b
 	}
 	if programDir == "" {
-		dir, err := os.MkdirTemp("", "mediarium-api-programs-*")
+		dir, err := os.MkdirTemp("", "cue-api-programs-*")
 		if err != nil {
 			t.Fatal(err)
 		}
 		programDir = dir
 	}
 	out := filepath.Join(programDir, "app-"+version)
-	cmd := exec.Command("go", "build", "-o", out, "-ldflags", "-X main.version="+version, "github.com/rdborg/mediarium/cmd/app")
+	cmd := exec.Command("go", "build", "-o", out, "-ldflags", "-X main.version="+version, "github.com/jhipsman/cueapp/cmd/app")
 	cmd.Env = append(os.Environ(), "CGO_ENABLED=0")
 	if b, err := cmd.CombinedOutput(); err != nil {
 		t.Fatalf("build version %s: %v\n%s", version, err, b)

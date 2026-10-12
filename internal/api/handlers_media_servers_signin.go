@@ -11,8 +11,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/mediaservers"
-	"github.com/rdborg/mediarium/internal/settings"
+	"github.com/jhipsman/cueapp/internal/mediaservers"
+	"github.com/jhipsman/cueapp/internal/settings"
 )
 
 // Finding media servers on the network and signing in to them (Sign in with
@@ -88,7 +88,7 @@ func (s *Server) mediaClientID() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	id = "mediarium-" + rnd
+	id = "cue-" + rnd
 	if err := s.Settings.Set(settings.KeyMediaServersClientID, id, false); err != nil {
 		return "", err
 	}

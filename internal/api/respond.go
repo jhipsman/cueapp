@@ -9,8 +9,8 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"github.com/rdborg/mediarium/internal/logbuf"
-	"github.com/rdborg/mediarium/internal/plainerror"
+	"github.com/jhipsman/cueapp/internal/logbuf"
+	"github.com/jhipsman/cueapp/internal/plainerror"
 )
 
 func writeJSON(w http.ResponseWriter, status int, v any) {

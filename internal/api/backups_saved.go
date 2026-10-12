@@ -11,8 +11,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/backup"
-	"github.com/rdborg/mediarium/internal/settings"
+	"github.com/jhipsman/cueapp/internal/backup"
+	"github.com/jhipsman/cueapp/internal/settings"
 )
 
 // Automatic backups: every night (on unless switched off) and before every

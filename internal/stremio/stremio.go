@@ -19,7 +19,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/netguard"
+	"github.com/jhipsman/cueapp/internal/netguard"
 )
 
 // Addon is one add-on, by its base address (what comes before /manifest.json).

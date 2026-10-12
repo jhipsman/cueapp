@@ -3,7 +3,7 @@ package library_test
 import (
 	"testing"
 
-	"github.com/rdborg/mediarium/internal/library"
+	"github.com/jhipsman/cueapp/internal/library"
 )
 
 func TestSpecialsStartUnmonitored(t *testing.T) {

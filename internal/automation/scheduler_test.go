@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/automation"
+	"github.com/jhipsman/cueapp/internal/automation"
 )
 
 func TestSchedulerRunsImmediatelyAndRepeatedly(t *testing.T) {

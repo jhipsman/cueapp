@@ -7,9 +7,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/blocklist"
-	"github.com/rdborg/mediarium/internal/library"
-	"github.com/rdborg/mediarium/internal/store"
+	"github.com/jhipsman/cueapp/internal/blocklist"
+	"github.com/jhipsman/cueapp/internal/library"
+	"github.com/jhipsman/cueapp/internal/store"
 )
 
 func newRepos(t *testing.T) (*blocklist.Repo, *library.Repo) {

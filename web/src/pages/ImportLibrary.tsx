@@ -19,7 +19,7 @@ import { FieldError, useValidation } from '../useValidation'
 
 type Kind = 'movie' | 'tv'
 
-const LAST_TAB = 'mediarium-library-tab'
+const LAST_TAB = 'cue-library-tab'
 
 function startingKind(asked: string | null): Kind {
   if (asked === 'tv' || asked === 'movie') return asked

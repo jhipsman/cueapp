@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/library"
-	"github.com/rdborg/mediarium/internal/store"
+	"github.com/jhipsman/cueapp/internal/library"
+	"github.com/jhipsman/cueapp/internal/store"
 )
 
 func movieEntry(tmdb int, title string, at time.Time) library.ImportEntry {

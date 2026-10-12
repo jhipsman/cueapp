@@ -5,7 +5,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/indexers"
+	"github.com/jhipsman/cueapp/internal/indexers"
 )
 
 // How long Play waits for the indexers. Sites behind Cloudflare (through

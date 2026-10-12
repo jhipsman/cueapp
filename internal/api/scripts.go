@@ -18,9 +18,9 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/auth"
-	"github.com/rdborg/mediarium/internal/notify"
-	"github.com/rdborg/mediarium/internal/settings"
+	"github.com/jhipsman/cueapp/internal/auth"
+	"github.com/jhipsman/cueapp/internal/notify"
+	"github.com/jhipsman/cueapp/internal/settings"
 )
 
 // A script to run after each import (Settings > System > Scripts). Off until
@@ -28,7 +28,7 @@ import (
 // the config folder (/config/scripts) can be picked, and only from a
 // signed-in browser session, not with an API key: whoever can choose what
 // runs can run anything as Cue's user. Scripts run one at a time, with
-// a time limit, and are told about the import in MEDIARIUM_* environment
+// a time limit, and are told about the import in CUE_* environment
 // variables.
 
 const (
@@ -123,11 +123,12 @@ func scriptPath(dir, name string) (string, error) {
 	return real, nil
 }
 
-// scriptEnv is what a script is told, in MEDIARIUM_* variables, plus the
-// little it needs to run (PATH, HOME, TZ, LANG). Nothing else from
-// Cue's own environment is passed on.
+// scriptEnv is what a script is told, in CUE_* variables, plus the little it
+// needs to run (PATH, HOME, TZ, LANG). Nothing else from Cue's own environment
+// is passed on. Each CUE_ variable is also given under its name from before
+// the rename, MEDIARIUM_..., so scripts written for that keep working.
 func scriptEnv(event string, it notify.Item) []string {
-	env := []string{"MEDIARIUM_EVENT=" + event}
+	env := []string{"CUE_EVENT=" + event, "MEDIARIUM_EVENT=" + event}
 	for _, k := range []string{"PATH", "HOME", "TZ", "LANG"} {
 		if v, ok := os.LookupEnv(k); ok {
 			env = append(env, k+"="+v)
@@ -139,7 +140,8 @@ func scriptEnv(event string, it notify.Item) []string {
 	}
 	add := func(k, v string) {
 		if v != "" {
-			env = append(env, "MEDIARIUM_"+k+"="+strings.ReplaceAll(v, "\x00", ""))
+			v = strings.ReplaceAll(v, "\x00", "")
+			env = append(env, "CUE_"+k+"="+v, "MEDIARIUM_"+k+"="+v)
 		}
 	}
 	add("MEDIA", media)
@@ -324,7 +326,7 @@ func (s *Server) handlePutScripts(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, s.scriptsPayload())
 }
 
-// POST /api/scripts/test runs the chosen script once, with MEDIARIUM_EVENT
+// POST /api/scripts/test runs the chosen script once, with CUE_EVENT
 // set to "test" and a made-up movie, and says how it went.
 func (s *Server) handleTestScript(w http.ResponseWriter, r *http.Request) {
 	if s.refuseScriptsByKey(w, r) {

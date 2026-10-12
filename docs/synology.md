@@ -59,7 +59,7 @@ Media                     (/volume1/Media)   <- Cue sees this as /data
 └── downloads                                <- /data/downloads
 
 docker
-└── mediarium             (/volume1/docker/mediarium)   <- Cue's settings, seen as /config
+└── cue             (/volume1/docker/cue)   <- Cue's settings, seen as /config
 ```
 
 Already have a shared folder with your movies and TV in it? Use that one and add a `downloads` folder inside it.
@@ -85,7 +85,7 @@ Bind mount failed: '/volume1/Media/downloads' does not exist
 
 In **File Station**:
 
-1. Open the `docker` shared folder and create a folder named `mediarium`. This holds Cue's settings and database.
+1. Open the `docker` shared folder and create a folder named `cue`. This holds Cue's settings and database.
 2. Open your `Media` shared folder (or whichever one you picked in step 3) and create `downloads`. Create `Movies`, `tv` and `Music` too if they aren't there yet.
 3. Check that your user has **Read/Write** on that shared folder: Control Panel, Shared Folder, select it, Edit, Permissions. If Radarr and Sonarr already work there, it does.
 
@@ -94,17 +94,17 @@ Not sure of a folder's path? Right-click it in File Station and choose **Propert
 ## 5. Create the project
 
 1. Open **Container Manager**, then **Project**, then **Create**.
-2. **Project name:** `mediarium`.
-3. **Path:** click **Set Path** and choose the `docker/mediarium` folder from step 4.
+2. **Project name:** `cue`.
+3. **Path:** click **Set Path** and choose the `docker/cue` folder from step 4.
 4. **Source:** choose **Create docker-compose.yml** and paste the text below.
 
 **One shared folder (recommended):**
 
 ```yaml
 services:
-  mediarium:
+  cue:
     image: ghcr.io/jhipsman/cue:latest
-    container_name: mediarium
+    container_name: cue
     restart: unless-stopped
     ports:
       - "8264:8264"
@@ -124,7 +124,7 @@ services:
       - MUSIC_DIR=/data/Music
     volumes:
       # CHANGE the left side of each line if your folders are somewhere else.
-      - /volume1/docker/mediarium:/config
+      - /volume1/docker/cue:/config
       - /volume1/Media:/data
 ```
 
@@ -132,9 +132,9 @@ services:
 
 ```yaml
 services:
-  mediarium:
+  cue:
     image: ghcr.io/jhipsman/cue:latest
-    container_name: mediarium
+    container_name: cue
     restart: unless-stopped
     ports:
       - "8264:8264"
@@ -147,7 +147,7 @@ services:
     volumes:
       # The names on the right (/movies, /tv, /downloads, /music) are what
       # Cue expects, so no folder lines are needed above.
-      - /volume1/docker/mediarium:/config
+      - /volume1/docker/cue:/config
       - /volume1/video/Movies:/movies
       - /volume1/video/tv:/tv
       - /volume1/downloads:/downloads
@@ -176,7 +176,7 @@ Downloads run **one at a time**. Each is downloaded, repaired, unpacked and move
 A folder in the compose text isn't there. Create it in File Station with exactly that name (capital letters count), then start the project again. If it still fails, stop the project and choose **Action, Build**, then **Start**.
 
 **The wizard shows `/movies`, `/tv` and `/downloads`, or says "not a mapped folder"**
-Cue shows the folders your compose text gives it. If you see the short names above, the `DOWNLOADS_DIR`, `MOVIES_DIR` and `TV_DIR` lines are missing or you changed the text after the first start. Fix the text (**Project, mediarium, YAML**), stop the project, choose **Action, Build**, then **Start**. If the wizard offers to switch a saved folder to the one your compose text maps, accept it.
+Cue shows the folders your compose text gives it. If you see the short names above, the `DOWNLOADS_DIR`, `MOVIES_DIR` and `TV_DIR` lines are missing or you changed the text after the first start. Fix the text (**Project, cue, YAML**), stop the project, choose **Action, Build**, then **Start**. If the wizard offers to switch a saved folder to the one your compose text maps, accept it.
 
 **"This folder isn't mapped to your server yet"**
 Docker only sees folders you map. The message shows the line to add under `volumes:`, for example `- /volume1/Media/Music:/music`. The part before the colon is the folder on your NAS. The part after it is the name Cue uses. Create the NAS folder first, add the line, then Build and Start the project.
@@ -205,18 +205,18 @@ Music, ebooks and audiobooks each switch on under **Settings, Media types**. If 
 
 ## Reach it from outside your home
 
-To open Cue on your phone away from home, or to share it with family, use the reverse proxy built into DSM. It gives Cue a proper web address with HTTPS (for example `https://mediarium.example.com`). Cue needs nothing special from it: no WebSocket option and no extra headers beyond the one below.
+To open Cue on your phone away from home, or to share it with family, use the reverse proxy built into DSM. It gives Cue a proper web address with HTTPS (for example `https://cue.example.com`). Cue needs nothing special from it: no WebSocket option and no extra headers beyond the one below.
 
 **Before you start:** you need a host name that points at your home internet address. Synology's free DDNS (**Control Panel, External Access, DDNS**, for example `yourname.synology.me`) works, or a name from your own domain.
 
 1. **Open port 443 on your router** and forward it to the NAS. Forward only 443 (and 80 if you want Let's Encrypt to renew over HTTP). **Never forward port 8264**: Cue should only be reachable through the proxy.
-2. **Get a certificate.** **Control Panel, Security, Certificate, Add, Add a new certificate, Get a certificate from Let's Encrypt.** Use your host name (for example `mediarium.yourname.synology.me`).
+2. **Get a certificate.** **Control Panel, Security, Certificate, Add, Add a new certificate, Get a certificate from Let's Encrypt.** Use your host name (for example `cue.yourname.synology.me`).
 3. **Create the proxy rule.** **Control Panel, Login Portal, Advanced, Reverse Proxy, Create.**
-   - **Source:** Protocol `HTTPS`, Hostname `mediarium.yourname.synology.me`, Port `443`.
+   - **Source:** Protocol `HTTPS`, Hostname `cue.yourname.synology.me`, Port `443`.
    - **Destination:** Protocol `HTTP`, Hostname `localhost`, Port `8264` (the port on the left of `8264:8264` in your project).
 4. **Add one header.** In the same window, open **Custom Header, Create** and add `X-Forwarded-Proto` with the value `$scheme`. If your DSM version lists only the WebSocket option, choose **Create** and type the name and value yourself. Cue works without this header, but with it your sign-in cookie is marked HTTPS-only.
 5. **Give the rule the certificate.** **Control Panel, Security, Certificate, Settings**, find your proxy entry and pick the certificate from step 2.
-6. Open `https://mediarium.yourname.synology.me` and sign in.
+6. Open `https://cue.yourname.synology.me` and sign in.
 
 **You don't need to change Cue's settings for this.** The DSM proxy runs on the NAS itself, so Cue already trusts it to pass on your visitors' real addresses (`TRUSTED_PROXIES` covers it by default). Sign-in limits, HTTPS-only cookies and the cross-site checks all keep working.
 
@@ -233,7 +233,7 @@ You can keep Radarr, Sonarr and SABnzbd running while you try Cue. They share th
 
 - **Bring your settings over:** [Move from Radarr, Sonarr, Prowlarr, SABnzbd and other apps](./migrate.md) imports your indexers, Usenet servers and library, so you don't type everything again.
 - **Let only one app download each title.** If Radarr and Cue both search for the same movie, you can download it twice. While you try Cue, add only new titles to it, or turn off monitoring in Radarr and Sonarr for the titles Cue looks after.
-- **Give Cue its own downloads folder.** Cue tidies up leftovers in its own download folder, so it must not share one with SABnzbd or qBittorrent. If your other apps use `/volume1/Media/downloads`, use `DOWNLOADS_DIR=/data/downloads/mediarium` instead. Cue creates that folder.
+- **Give Cue its own downloads folder.** Cue tidies up leftovers in its own download folder, so it must not share one with SABnzbd or qBittorrent. If your other apps use `/volume1/Media/downloads`, use `DOWNLOADS_DIR=/data/downloads/cue` instead. Cue creates that folder.
 - **Plex, Jellyfin and Emby** keep working as before. Connect them under **Settings, Connections, Media servers** so they refresh when Cue adds something ([media-servers.md](./media-servers.md)).
 - **Usenet connections:** Cue and SABnzbd both count against your provider's connection limit. If a download stops with "too many connections", stop SABnzbd or lower the number in one of them. Cue lowers its own number by itself when the provider says so (see [downloads.md](./downloads.md#usenet-connections)).
 
@@ -244,16 +244,16 @@ When Cue does everything you need, stop the old containers (**Container Manager,
 **Over SSH (quickest):**
 
 ```bash
-cd /volume1/docker/mediarium
+cd /volume1/docker/cue
 sudo docker compose pull
 sudo docker compose up -d
 ```
 
 **From Container Manager only:**
 
-1. **Project, mediarium, Action, Stop**, then **Action, Clean**. This removes the container, not your folders.
+1. **Project, cue, Action, Stop**, then **Action, Clean**. This removes the container, not your folders.
 2. **Image:** select `ghcr.io/jhipsman/cue` and **Delete** it. Newer versions of Container Manager may show **Update available** here with an **Update** button. If so, use that and skip the Build in the next step.
-3. **Project, mediarium, Action, Build**, then **Start** if it doesn't start by itself. Container Manager downloads the newest image because the old one is gone.
+3. **Project, cue, Action, Build**, then **Start** if it doesn't start by itself. Container Manager downloads the newest image because the old one is gone.
 
 Your settings and library are kept, and Cue updates its database when it starts. Read the [changelog](../CHANGELOG.md) first and back up before a big update.
 
@@ -261,7 +261,7 @@ When a new version is out, administrators see a card on the dashboard and on **S
 
 ## Backing up
 
-- **Hyper Backup:** include the `docker/mediarium` folder in a backup task. It holds everything that isn't a media file (`app.db` and `secret.key`; keep the two together).
+- **Hyper Backup:** include the `docker/cue` folder in a backup task. It holds everything that isn't a media file (`app.db` and `secret.key`; keep the two together).
 - **From the app:** **Settings, System, Server and backup** can download a backup zip. It contains your encryption key, so keep it private.
 
 ---

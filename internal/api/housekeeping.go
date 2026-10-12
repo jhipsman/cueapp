@@ -13,11 +13,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/cleanup"
-	"github.com/rdborg/mediarium/internal/indexers"
-	"github.com/rdborg/mediarium/internal/plainerror"
-	"github.com/rdborg/mediarium/internal/queue"
-	"github.com/rdborg/mediarium/internal/settings"
+	"github.com/jhipsman/cueapp/internal/cleanup"
+	"github.com/jhipsman/cueapp/internal/indexers"
+	"github.com/jhipsman/cueapp/internal/plainerror"
+	"github.com/jhipsman/cueapp/internal/queue"
+	"github.com/jhipsman/cueapp/internal/settings"
 )
 
 const (

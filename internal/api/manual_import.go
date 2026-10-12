@@ -11,11 +11,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/cleanup"
-	"github.com/rdborg/mediarium/internal/library"
-	"github.com/rdborg/mediarium/internal/organizer"
-	"github.com/rdborg/mediarium/internal/parser"
-	"github.com/rdborg/mediarium/internal/quality"
+	"github.com/jhipsman/cueapp/internal/cleanup"
+	"github.com/jhipsman/cueapp/internal/library"
+	"github.com/jhipsman/cueapp/internal/organizer"
+	"github.com/jhipsman/cueapp/internal/parser"
+	"github.com/jhipsman/cueapp/internal/quality"
 )
 
 // Manual import: a video file in the downloads folder that Cue could

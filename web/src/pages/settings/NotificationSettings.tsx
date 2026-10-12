@@ -82,7 +82,7 @@ const NEEDED: Record<string, string> = {
   'email.port': 'Add the port. It is usually 587.',
   'email.from': 'Add the address the emails should come from, for example you@example.com.',
   'email.to': 'Add the address the notifications should be sent to, for example you@example.com.',
-  'ntfy.topic': 'Add a topic name, for example mediarium-a1b2c3.',
+  'ntfy.topic': 'Add a topic name, for example cue-a1b2c3.',
   'gotify.url': 'Add the address of your Gotify server, for example https://gotify.example.com.',
   'gotify.token': 'Add the app token from your Gotify server.',
   'pushover.userKey': 'Add your Pushover user key.',

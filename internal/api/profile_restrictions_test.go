@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/rdborg/mediarium/internal/library"
+	"github.com/jhipsman/cueapp/internal/library"
 )
 
 func TestHuntHonoursProfileRestrictionsAndPreferredScores(t *testing.T) {

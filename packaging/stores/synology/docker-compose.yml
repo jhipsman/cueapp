@@ -1,12 +1,12 @@
-# Mediarium on Synology: paste into Container Manager -> Project -> Create ->
+# Cue on Synology: paste into Container Manager -> Project -> Create ->
 # "Create docker-compose.yml". Create the folders on the left of the colons
 # FIRST (File Station), or Docker stops with "Bind mount failed ... does not
 # exist". Change PUID, PGID, TZ and the /volume1 paths to match your NAS.
 # Full guide: docs/synology.md
 services:
-  mediarium:
-    image: ghcr.io/rdborg/mediarium:latest
-    container_name: mediarium
+  cue:
+    image: ghcr.io/jhipsman/cue:latest
+    container_name: cue
     restart: unless-stopped
     ports:
       - "8264:8264"
@@ -29,5 +29,5 @@ services:
       # - AUDIOBOOKS_DIR=/data/Audiobooks
     volumes:
       # CHANGE the left side of each line if your folders are somewhere else.
-      - /volume1/docker/mediarium:/config
+      - /volume1/docker/cue:/config
       - /volume1/Media:/data

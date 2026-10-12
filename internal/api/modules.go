@@ -4,7 +4,7 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/rdborg/mediarium/internal/settings"
+	"github.com/jhipsman/cueapp/internal/settings"
 )
 
 // The modules switchboard: which kinds of media Cue looks after.

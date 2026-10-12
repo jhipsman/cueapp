@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/rdborg/mediarium/internal/crypto"
+	"github.com/jhipsman/cueapp/internal/crypto"
 )
 
 // StoredConfig is a saved VPN config ("multiple provider

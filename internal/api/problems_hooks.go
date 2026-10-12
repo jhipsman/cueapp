@@ -6,8 +6,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/monitor"
-	"github.com/rdborg/mediarium/internal/problems"
+	"github.com/jhipsman/cueapp/internal/monitor"
+	"github.com/jhipsman/cueapp/internal/problems"
 )
 
 // The places in the API that put something in the problem log. The rest of the

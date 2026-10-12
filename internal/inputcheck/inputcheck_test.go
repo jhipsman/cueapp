@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/rdborg/mediarium/internal/inputcheck"
+	"github.com/jhipsman/cueapp/internal/inputcheck"
 )
 
 func TestChecks(t *testing.T) {

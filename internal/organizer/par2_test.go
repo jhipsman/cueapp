@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/rdborg/mediarium/internal/organizer"
+	"github.com/jhipsman/cueapp/internal/organizer"
 )
 
 func TestFindMainPar2Files(t *testing.T) {

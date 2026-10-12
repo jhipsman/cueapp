@@ -5,7 +5,7 @@ import (
 	"testing"
 	"unicode/utf8"
 
-	"github.com/rdborg/mediarium/internal/inputcheck"
+	"github.com/jhipsman/cueapp/internal/inputcheck"
 )
 
 // FuzzChecks feeds every check odd text. None may panic, the answer must be

@@ -9,8 +9,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/library"
-	"github.com/rdborg/mediarium/internal/mediaservers"
+	"github.com/jhipsman/cueapp/internal/library"
+	"github.com/jhipsman/cueapp/internal/mediaservers"
 )
 
 // Tags on movies and shows ("Kids", "4K"): set on a title or on a selection,

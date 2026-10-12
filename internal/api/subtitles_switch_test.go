@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/api"
+	"github.com/jhipsman/cueapp/internal/api"
 )
 
 // The subtitles switch: off by default, and while it is off nothing searches

@@ -19,8 +19,9 @@ import (
 const SavedDir = "backups"
 
 // savedName matches the file names Save writes (and nothing else, so a
-// request can never name another file).
-var savedName = regexp.MustCompile(`^mediarium-backup-\d{8}-\d{6}\.zip$`)
+// request can never name another file), including the mediarium-backup-
+// names saved before the rename to Cue.
+var savedName = regexp.MustCompile(`^(?:cue|mediarium)-backup-(\d{8}-\d{6})\.zip$`)
 
 // ValidName reports whether name is the name of a saved backup.
 func ValidName(name string) bool { return savedName.MatchString(name) }
@@ -80,13 +81,19 @@ func ListSaved(configDir string) ([]Saved, error) {
 		if err != nil {
 			continue
 		}
-		created, err := time.ParseInLocation(timeLayout, e.Name()[len("mediarium-backup-"):len(e.Name())-len(".zip")], time.Local)
+		created, err := time.ParseInLocation(timeLayout, savedName.FindStringSubmatch(e.Name())[1], time.Local)
 		if err != nil {
 			created = info.ModTime()
 		}
 		out = append(out, Saved{Name: e.Name(), Size: info.Size(), CreatedAt: created})
 	}
-	sort.Slice(out, func(i, j int) bool { return out[i].Name > out[j].Name })
+	// Newest first by the time in the name, so old and new names sort together.
+	sort.Slice(out, func(i, j int) bool {
+		if !out[i].CreatedAt.Equal(out[j].CreatedAt) {
+			return out[i].CreatedAt.After(out[j].CreatedAt)
+		}
+		return out[i].Name > out[j].Name
+	})
 	return out, nil
 }
 

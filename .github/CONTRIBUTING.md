@@ -26,8 +26,8 @@ You need **Go** (the minimum version is the `go` line in [`go.mod`](../go.mod)) 
 cd web && npm ci && npm run build && cd ..
 
 # build and run the server
-go build -o mediarium ./cmd/app
-CONFIG_DIR=./config DOWNLOADS_DIR=./downloads MOVIES_DIR=./movies TV_DIR=./tv ./mediarium
+go build -o cue ./cmd/app
+CONFIG_DIR=./config DOWNLOADS_DIR=./downloads MOVIES_DIR=./movies TV_DIR=./tv ./cue
 ```
 
 Open `http://localhost:8264`. For live-reloading frontend work, run `API_TARGET=http://localhost:8264 npm run dev` in `web/` alongside the server (Vite otherwise sends API calls to port 8080).
@@ -59,8 +59,8 @@ go run ./tools/docgen
 The Dockerfile builds `linux/amd64` and `linux/arm64`, cross-compiling Go natively for each:
 
 ```bash
-docker buildx create --use --name mediarium-builder   # once
-docker buildx build --platform linux/amd64,linux/arm64 -t mediarium:test .
+docker buildx create --use --name cue-builder   # once
+docker buildx build --platform linux/amd64,linux/arm64 -t cue:test .
 ```
 
 Add `--load` with a single `--platform` to get an image in your local `docker images`.

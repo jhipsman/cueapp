@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/rdborg/mediarium/internal/crypto"
+	"github.com/jhipsman/cueapp/internal/crypto"
 )
 
 type TargetType string

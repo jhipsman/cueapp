@@ -3,7 +3,7 @@ import Icon from './Icon'
 
 type Theme = 'system' | 'light' | 'dark'
 
-const STORAGE_KEY = 'mediarium-theme'
+const STORAGE_KEY = 'cue-theme'
 
 function applyTheme(theme: Theme) {
   if (theme === 'system') {

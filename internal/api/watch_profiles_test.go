@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/rdborg/mediarium/internal/auth"
+	"github.com/jhipsman/cueapp/internal/auth"
 )
 
 func TestWatchProfilesAndTheSettingsLock(t *testing.T) {

@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 
-	"github.com/rdborg/mediarium/internal/crypto"
+	"github.com/jhipsman/cueapp/internal/crypto"
 )
 
 // StoredClient is a configured Usenet server (a provider account the

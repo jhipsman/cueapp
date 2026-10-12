@@ -7,10 +7,10 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/rdborg/mediarium/internal/api"
-	"github.com/rdborg/mediarium/internal/library"
-	"github.com/rdborg/mediarium/internal/music"
-	"github.com/rdborg/mediarium/internal/queue"
+	"github.com/jhipsman/cueapp/internal/api"
+	"github.com/jhipsman/cueapp/internal/library"
+	"github.com/jhipsman/cueapp/internal/music"
+	"github.com/jhipsman/cueapp/internal/queue"
 )
 
 // libraryFile makes a real file in the movie folder and returns its path.

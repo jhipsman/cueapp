@@ -5,8 +5,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/rdborg/mediarium/internal/library"
-	"github.com/rdborg/mediarium/internal/queue"
+	"github.com/jhipsman/cueapp/internal/library"
+	"github.com/jhipsman/cueapp/internal/queue"
 )
 
 func TestQueueOrder(t *testing.T) {

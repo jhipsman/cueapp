@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/rdborg/mediarium/internal/quality"
-	"github.com/rdborg/mediarium/internal/settings"
+	"github.com/jhipsman/cueapp/internal/quality"
+	"github.com/jhipsman/cueapp/internal/settings"
 )
 
 // initProfiles seeds the built-in profiles on first start (or brings an older

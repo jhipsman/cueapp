@@ -8,8 +8,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/rdborg/mediarium/internal/auth"
-	"github.com/rdborg/mediarium/internal/watch"
+	"github.com/jhipsman/cueapp/internal/auth"
+	"github.com/jhipsman/cueapp/internal/watch"
 )
 
 // Watch profiles: one household account, a profile per person, picked on a

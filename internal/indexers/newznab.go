@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/netguard"
+	"github.com/jhipsman/cueapp/internal/netguard"
 )
 
 // Result is a single normalized search result, regardless of which

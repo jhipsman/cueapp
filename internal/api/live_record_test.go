@@ -13,8 +13,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/auth"
-	"github.com/rdborg/mediarium/internal/watch"
+	"github.com/jhipsman/cueapp/internal/auth"
+	"github.com/jhipsman/cueapp/internal/watch"
 )
 
 func TestLiveRecordingAndFollows(t *testing.T) {

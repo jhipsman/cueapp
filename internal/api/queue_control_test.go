@@ -16,13 +16,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/api"
-	"github.com/rdborg/mediarium/internal/config"
-	"github.com/rdborg/mediarium/internal/crypto"
-	"github.com/rdborg/mediarium/internal/download"
-	"github.com/rdborg/mediarium/internal/library"
-	"github.com/rdborg/mediarium/internal/queue"
-	"github.com/rdborg/mediarium/internal/store"
+	"github.com/jhipsman/cueapp/internal/api"
+	"github.com/jhipsman/cueapp/internal/config"
+	"github.com/jhipsman/cueapp/internal/crypto"
+	"github.com/jhipsman/cueapp/internal/download"
+	"github.com/jhipsman/cueapp/internal/library"
+	"github.com/jhipsman/cueapp/internal/queue"
+	"github.com/jhipsman/cueapp/internal/store"
 )
 
 // --- a Usenet server that can be told to stop answering ---
@@ -191,7 +191,7 @@ type controlEnv struct {
 const releaseName = "The.Fixture.Movie.1999.1080p.WEB-DL.x264-FIXTURE"
 
 // newControlServer builds a server with its own folders. safeMode turns on
-// MEDIARIUM_PAUSE_AUTOMATION.
+// CUE_PAUSE_AUTOMATION.
 func newControlServer(t *testing.T, safeMode bool) (*api.Server, string, *http.Client) {
 	t.Helper()
 	dir := t.TempDir()

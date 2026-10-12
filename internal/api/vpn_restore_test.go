@@ -10,11 +10,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/config"
-	"github.com/rdborg/mediarium/internal/crypto"
-	"github.com/rdborg/mediarium/internal/settings"
-	"github.com/rdborg/mediarium/internal/store"
-	"github.com/rdborg/mediarium/internal/vpn"
+	"github.com/jhipsman/cueapp/internal/config"
+	"github.com/jhipsman/cueapp/internal/crypto"
+	"github.com/jhipsman/cueapp/internal/settings"
+	"github.com/jhipsman/cueapp/internal/store"
+	"github.com/jhipsman/cueapp/internal/vpn"
 )
 
 func newBareServer(t *testing.T) *Server {

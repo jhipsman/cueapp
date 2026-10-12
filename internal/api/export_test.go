@@ -5,13 +5,13 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/crypto"
-	"github.com/rdborg/mediarium/internal/library"
-	"github.com/rdborg/mediarium/internal/metadata"
-	"github.com/rdborg/mediarium/internal/notify"
-	"github.com/rdborg/mediarium/internal/settings"
-	"github.com/rdborg/mediarium/internal/subtitles"
-	"github.com/rdborg/mediarium/internal/trakt"
+	"github.com/jhipsman/cueapp/internal/crypto"
+	"github.com/jhipsman/cueapp/internal/library"
+	"github.com/jhipsman/cueapp/internal/metadata"
+	"github.com/jhipsman/cueapp/internal/notify"
+	"github.com/jhipsman/cueapp/internal/settings"
+	"github.com/jhipsman/cueapp/internal/subtitles"
+	"github.com/jhipsman/cueapp/internal/trakt"
 )
 
 // TestHunt and TestRSSSync re-export the unexported hunt/rssSync jobs for

@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/rdborg/mediarium/internal/archiveorg"
-	"github.com/rdborg/mediarium/internal/youtube"
+	"github.com/jhipsman/cueapp/internal/archiveorg"
+	"github.com/jhipsman/cueapp/internal/youtube"
 )
 
 func TestHasTitle(t *testing.T) {

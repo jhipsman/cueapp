@@ -14,7 +14,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/rdborg/mediarium/internal/crypto"
+	"github.com/jhipsman/cueapp/internal/crypto"
 )
 
 // TestConvertPlaysInBrowsers makes files browsers can't open (an Xvid AVI

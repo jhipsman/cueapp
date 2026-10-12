@@ -20,7 +20,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/netguard"
+	"github.com/jhipsman/cueapp/internal/netguard"
 )
 
 const apiBaseURL = "https://api.trakt.tv"

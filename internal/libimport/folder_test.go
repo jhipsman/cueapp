@@ -5,7 +5,7 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/rdborg/mediarium/internal/libimport"
+	"github.com/jhipsman/cueapp/internal/libimport"
 )
 
 func TestScanMovieFolder(t *testing.T) {

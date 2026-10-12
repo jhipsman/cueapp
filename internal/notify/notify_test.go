@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/notify"
+	"github.com/jhipsman/cueapp/internal/notify"
 )
 
 var fixtureEvent = notify.Event{

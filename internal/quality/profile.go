@@ -10,7 +10,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/rdborg/mediarium/internal/parser"
+	"github.com/jhipsman/cueapp/internal/parser"
 )
 
 // Tier is one recognized quality level, ordered worst-to-best. This

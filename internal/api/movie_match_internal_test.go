@@ -3,7 +3,7 @@ package api
 import (
 	"testing"
 
-	"github.com/rdborg/mediarium/internal/library"
+	"github.com/jhipsman/cueapp/internal/library"
 )
 
 // Only releases of the movie itself may be grabbed: a title search also

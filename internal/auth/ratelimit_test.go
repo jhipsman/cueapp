@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/auth"
+	"github.com/jhipsman/cueapp/internal/auth"
 )
 
 func TestLoginLimiterBlocksAfterMaxAttempts(t *testing.T) {

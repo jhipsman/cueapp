@@ -3,7 +3,7 @@ import { useSyncExternalStore } from 'react'
 // "Include older titles" on Discover's "More like your library": off means
 // roughly the last 15 years only. The choice is remembered in this browser,
 // and every switch on the page follows it.
-const KEY = 'mediarium.discover.olderTitles'
+const KEY = 'cue.discover.olderTitles'
 
 function read(): boolean {
   try {

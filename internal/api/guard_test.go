@@ -14,11 +14,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/api"
-	"github.com/rdborg/mediarium/internal/config"
-	"github.com/rdborg/mediarium/internal/crypto"
-	"github.com/rdborg/mediarium/internal/logbuf"
-	"github.com/rdborg/mediarium/internal/store"
+	"github.com/jhipsman/cueapp/internal/api"
+	"github.com/jhipsman/cueapp/internal/config"
+	"github.com/jhipsman/cueapp/internal/crypto"
+	"github.com/jhipsman/cueapp/internal/logbuf"
+	"github.com/jhipsman/cueapp/internal/store"
 )
 
 // newServerWithDB is a signed-in server whose database handle the test can

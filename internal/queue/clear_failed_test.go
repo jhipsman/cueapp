@@ -3,7 +3,7 @@ package queue_test
 import (
 	"testing"
 
-	"github.com/rdborg/mediarium/internal/queue"
+	"github.com/jhipsman/cueapp/internal/queue"
 )
 
 func TestFailedTriesAreClearedOnceTheTitleIsDownloaded(t *testing.T) {

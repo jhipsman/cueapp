@@ -36,7 +36,7 @@ func FuzzPlainNotes(f *testing.F) {
 }
 
 func FuzzPickRelease(f *testing.F) {
-	f.Add([]byte(`[{"tag_name":"v1.2.3","name":"n","body":"b","prerelease":false,"assets":[{"name":"mediarium_1.2.3_linux_amd64.tar.gz","size":5},{"name":"../../x","size":1}]},{"tag_name":"v9.9.9-rc.1","prerelease":true},{"tag_name":"latest"},{"tag_name":"v1.2.3/../../x"}]`), "1.0.0")
+	f.Add([]byte(`[{"tag_name":"v1.2.3","name":"n","body":"b","prerelease":false,"assets":[{"name":"cue_1.2.3_linux_amd64.tar.gz","size":5},{"name":"../../x","size":1}]},{"tag_name":"v9.9.9-rc.1","prerelease":true},{"tag_name":"latest"},{"tag_name":"v1.2.3/../../x"}]`), "1.0.0")
 	f.Add([]byte(`[{"tag_name":"v99999999999999999999.0.0"}]`), "v1.0.0-beta.1")
 	f.Add([]byte(`[null,1,"x",[]]`), "")
 	f.Fuzz(func(t *testing.T, data []byte, running string) {
@@ -61,7 +61,7 @@ func FuzzPickRelease(f *testing.F) {
 }
 
 func FuzzSumFor(f *testing.F) {
-	f.Add([]byte("0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef  mediarium_1_linux_amd64.tar.gz\n"), "mediarium_1_linux_amd64.tar.gz")
+	f.Add([]byte("0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef  cue_1_linux_amd64.tar.gz\n"), "cue_1_linux_amd64.tar.gz")
 	f.Add([]byte("zz *./x\n"+strings.Repeat("a", 100000)), "x")
 	f.Fuzz(func(t *testing.T, sums []byte, name string) {
 		sum, err := SumFor(sums, name)

@@ -6,9 +6,9 @@ import (
 	"strconv"
 	"sync"
 
-	"github.com/rdborg/mediarium/internal/indexers"
-	"github.com/rdborg/mediarium/internal/metadata"
-	"github.com/rdborg/mediarium/internal/settings"
+	"github.com/jhipsman/cueapp/internal/indexers"
+	"github.com/jhipsman/cueapp/internal/metadata"
+	"github.com/jhipsman/cueapp/internal/settings"
 )
 
 // Which downloaders an item may use: Usenet, torrents, or both. Each movie

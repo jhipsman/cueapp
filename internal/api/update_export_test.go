@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/updatecheck"
+	"github.com/jhipsman/cueapp/internal/updatecheck"
 )
 
 // Hooks for the update, restart and watchdog tests (package api_test).

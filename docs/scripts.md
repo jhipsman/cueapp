@@ -6,7 +6,7 @@ It is off until you pick a script.
 
 ## Setting it up
 
-1. Put the script in the `scripts` folder inside your config folder. In the container that is `/config/scripts`; on the host it is the folder you mapped to `/config`, for example `/volume1/docker/mediarium/config/scripts` on a Synology. Cue creates the folder the first time you open the page.
+1. Put the script in the `scripts` folder inside your config folder. In the container that is `/config/scripts`; on the host it is the folder you mapped to `/config`, for example `/volume1/docker/cue/config/scripts` on a Synology. Cue creates the folder the first time you open the page.
 2. Make it executable: `chmod +x /path/to/config/scripts/myscript.sh`. It must also be readable by the user Cue runs as (`PUID`/`PGID`).
 3. Start it with a line naming what runs it. The container has a plain shell, so `#!/bin/sh` works. It has no Python or Bash; a script that needs them won't start.
 4. In Cue go to **Settings > System > Run a script after each import**, pick the script, and press **Save**. **Try it** runs it once straight away with a made-up movie, so you can see that it works.
@@ -19,17 +19,19 @@ Everything comes in environment variables. A variable is left out when there's n
 
 | Variable | What it holds |
 |---|---|
-| `MEDIARIUM_EVENT` | `imported`, or `test` for **Try it** |
-| `MEDIARIUM_MEDIA` | `movie`, `episode`, `show` (a season pack), `album`, `ebook` or `audiobook` |
-| `MEDIARIUM_TITLE` | The movie, show or book title; for music "Artist – Album" |
-| `MEDIARIUM_YEAR` | The year, when known |
-| `MEDIARIUM_EPISODE` | For TV: `S02E03`, `S02E03-E04`, or `Season 2` for a season pack |
-| `MEDIARIUM_QUALITY` | The quality, for example `Bluray-1080p` or `FLAC` |
-| `MEDIARIUM_PATH` | Where the file was saved, or the folder when several files came in together (a season pack, an album) |
-| `MEDIARIUM_FOLDER` | The folder the files are in |
-| `MEDIARIUM_RELEASE` | The name of the release that was downloaded |
-| `MEDIARIUM_SIZE` | The size in bytes |
-| `MEDIARIUM_PAGE` | The title's page in Cue, for example `/title/597` |
+| `CUE_EVENT` | `imported`, or `test` for **Try it** |
+| `CUE_MEDIA` | `movie`, `episode`, `show` (a season pack), `album`, `ebook` or `audiobook` |
+| `CUE_TITLE` | The movie, show or book title; for music "Artist – Album" |
+| `CUE_YEAR` | The year, when known |
+| `CUE_EPISODE` | For TV: `S02E03`, `S02E03-E04`, or `Season 2` for a season pack |
+| `CUE_QUALITY` | The quality, for example `Bluray-1080p` or `FLAC` |
+| `CUE_PATH` | Where the file was saved, or the folder when several files came in together (a season pack, an album) |
+| `CUE_FOLDER` | The folder the files are in |
+| `CUE_RELEASE` | The name of the release that was downloaded |
+| `CUE_SIZE` | The size in bytes |
+| `CUE_PAGE` | The title's page in Cue, for example `/title/597` |
+
+Scripts written before Cue 2.2 that read the old `MEDIARIUM_` names keep working: each variable is also set under its old name.
 
 Besides these it gets only `PATH`, `HOME`, `TZ` and `LANG`. Nothing else from Cue's own environment reaches it. It starts in the scripts folder.
 
@@ -37,7 +39,7 @@ A small example that keeps a list of everything imported:
 
 ```sh
 #!/bin/sh
-echo "$(date '+%Y-%m-%d %H:%M') $MEDIARIUM_MEDIA: $MEDIARIUM_TITLE $MEDIARIUM_EPISODE -> $MEDIARIUM_PATH" >> imported.log
+echo "$(date '+%Y-%m-%d %H:%M') $CUE_MEDIA: $CUE_TITLE $CUE_EPISODE -> $CUE_PATH" >> imported.log
 ```
 
 ## How it runs

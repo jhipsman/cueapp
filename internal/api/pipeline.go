@@ -17,18 +17,18 @@ import (
 
 	"github.com/anacrolix/torrent"
 
-	"github.com/rdborg/mediarium/internal/download"
-	"github.com/rdborg/mediarium/internal/indexers"
-	"github.com/rdborg/mediarium/internal/library"
-	"github.com/rdborg/mediarium/internal/netguard"
-	"github.com/rdborg/mediarium/internal/notify"
-	"github.com/rdborg/mediarium/internal/organizer"
-	"github.com/rdborg/mediarium/internal/parser"
-	"github.com/rdborg/mediarium/internal/plainerror"
-	"github.com/rdborg/mediarium/internal/quality"
-	"github.com/rdborg/mediarium/internal/queue"
-	"github.com/rdborg/mediarium/internal/settings"
-	"github.com/rdborg/mediarium/internal/torrentclient"
+	"github.com/jhipsman/cueapp/internal/download"
+	"github.com/jhipsman/cueapp/internal/indexers"
+	"github.com/jhipsman/cueapp/internal/library"
+	"github.com/jhipsman/cueapp/internal/netguard"
+	"github.com/jhipsman/cueapp/internal/notify"
+	"github.com/jhipsman/cueapp/internal/organizer"
+	"github.com/jhipsman/cueapp/internal/parser"
+	"github.com/jhipsman/cueapp/internal/plainerror"
+	"github.com/jhipsman/cueapp/internal/quality"
+	"github.com/jhipsman/cueapp/internal/queue"
+	"github.com/jhipsman/cueapp/internal/settings"
+	"github.com/jhipsman/cueapp/internal/torrentclient"
 )
 
 // runPipeline is the whole grab -> download -> organize flow (the

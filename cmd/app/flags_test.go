@@ -24,7 +24,7 @@ func TestProbeFlags(t *testing.T) {
 	}{
 		{"no arguments is a normal start", nil, false, 0, "", ""},
 		{"reset-password is not a probe", []string{"reset-password", "ryan"}, false, 0, "", ""},
-		{"version check", []string{"--version-check"}, true, 0, "mediarium 1.4.0 " + runtime.GOOS + "/" + runtime.GOARCH + "\n", ""},
+		{"version check", []string{"--version-check"}, true, 0, "cue 1.4.0 " + runtime.GOOS + "/" + runtime.GOARCH + "\n", ""},
 		{"a newer update is accepted", []string{"--accepts-update", "1.5.0"}, true, 0, "", ""},
 		{"1.10 is newer than 1.4", []string{"--accepts-update", "1.10.0"}, true, 0, "", ""},
 		{"the same version is accepted", []string{"--accepts-update", "1.4.0"}, true, 0, "", ""},

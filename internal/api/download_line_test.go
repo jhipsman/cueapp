@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/download"
-	"github.com/rdborg/mediarium/internal/library"
-	"github.com/rdborg/mediarium/internal/queue"
+	"github.com/jhipsman/cueapp/internal/download"
+	"github.com/jhipsman/cueapp/internal/library"
+	"github.com/jhipsman/cueapp/internal/queue"
 )
 
 // The download line, end to end: real pipelines against a fake Usenet server

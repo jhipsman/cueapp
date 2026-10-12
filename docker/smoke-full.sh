@@ -3,7 +3,7 @@
 # Cloudflare helper answer. Usage: docker/smoke-full.sh <image>
 set -eu
 image="${1:?usage: smoke-full.sh <image>}"
-name="mediarium-full-smoke-$$"
+name="cue-full-smoke-$$"
 cleanup() { docker rm -f "$name" >/dev/null 2>&1 || true; }
 trap cleanup EXIT
 
@@ -19,7 +19,7 @@ for _ in $(seq 1 120); do
 done
 
 if [ "$app" != 1 ] || [ "$helper" != 1 ]; then
-  echo "Smoke test failed (mediarium answering: $app, helper answering: $helper). Container log:" >&2
+  echo "Smoke test failed (Cue answering: $app, helper answering: $helper). Container log:" >&2
   docker logs "$name" >&2 || true
   exit 1
 fi

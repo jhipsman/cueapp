@@ -6,7 +6,7 @@ import { PosterFallback } from '../components/PosterCard'
 import { useDocumentTitle } from '../documentTitle'
 import { buildChapters, chapterAt, formatAudioPosition, formatClock, nextSpeed, overallPercent, parseAudioPosition } from './shelfMath'
 
-const SPEED_KEY = 'mediarium.player.speed'
+const SPEED_KEY = 'cue.player.speed'
 const SLEEP_CHOICES = [0, 15, 30, 45, 60, -1] // minutes; -1 = end of this chapter
 
 function savedSpeed(): number {

@@ -1,8 +1,8 @@
 package api
 
 import (
-	"github.com/rdborg/mediarium/internal/quality"
-	"github.com/rdborg/mediarium/internal/settings"
+	"github.com/jhipsman/cueapp/internal/quality"
+	"github.com/jhipsman/cueapp/internal/settings"
 )
 
 // preferredLanguage is the audio language wanted (Settings > Library >

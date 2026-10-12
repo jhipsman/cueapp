@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/metadata"
+	"github.com/jhipsman/cueapp/internal/metadata"
 )
 
 // "More like your library" on Discover: titles that TMDB relates to what is in

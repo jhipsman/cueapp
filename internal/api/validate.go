@@ -8,8 +8,8 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"github.com/rdborg/mediarium/internal/auth"
-	"github.com/rdborg/mediarium/internal/inputcheck"
+	"github.com/jhipsman/cueapp/internal/auth"
+	"github.com/jhipsman/cueapp/internal/inputcheck"
 )
 
 // Shared checks for values a person types into a form. They mirror

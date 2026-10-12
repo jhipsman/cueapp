@@ -12,10 +12,12 @@ set -e
 #   - it has not stopped right after starting three times in a row.
 # Otherwise it is ignored (one line says why) and the image's program starts, so a
 # bad update can never stop Cue from starting. Set
-# MEDIARIUM_SKIP_INSTALLED_UPDATE=1 to ignore an installed update by hand.
+# CUE_SKIP_INSTALLED_UPDATE=1 to ignore an installed update by hand.
+# Each CUE_ variable here is also read under its name from before the rename,
+# MEDIARIUM_..., and a program from then answers "mediarium" instead of "cue".
 # The installed program is only ever run as the app user (PUID/PGID), never as root.
 UPDATE_DIR="${CONFIG_DIR:-/config}/update"
-IMAGE_BIN="${MEDIARIUM_IMAGE_BIN:-/app/app}"
+IMAGE_BIN="${CUE_IMAGE_BIN:-${MEDIARIUM_IMAGE_BIN:-/app/app}}"
 APP_TO_RUN="$IMAGE_BIN"
 
 say() { echo "Cue: $*" >&2; }
@@ -24,7 +26,7 @@ say() { echo "Cue: $*" >&2; }
 run_as() { "$@"; }
 
 # probe PROGRAM prints the first line PROGRAM says for --version-check
-# ("mediarium 1.3.0 linux/amd64"), or nothing when it fails or takes over 10 s.
+# ("cue 2.2.0 linux/amd64"), or nothing when it fails or takes over 10 s.
 probe() {
   if command -v timeout >/dev/null 2>&1; then
     run_as timeout 10 "$1" --version-check 2>/dev/null </dev/null | head -n 1
@@ -33,7 +35,10 @@ probe() {
   fi
 }
 
-# choose_app sets APP_TO_RUN and exports MEDIARIUM_IMAGE_VERSION.
+# is_cue WORD: true for the first word a Cue program says for --version-check.
+is_cue() { [ "$1" = "cue" ] || [ "$1" = "mediarium" ]; }
+
+# choose_app sets APP_TO_RUN and exports CUE_IMAGE_VERSION.
 choose_app() {
   APP_TO_RUN="$IMAGE_BIN"
   [ -x "$IMAGE_BIN" ] || return 0
@@ -41,15 +46,17 @@ choose_app() {
   set -f
   set -- $image_line
   set +f
-  [ "$1" = "mediarium" ] && [ -n "$2" ] && [ -n "$3" ] || return 0
+  is_cue "$1" && [ -n "$2" ] && [ -n "$3" ] || return 0
   img_ver="$2"
   img_plat="$3"
-  # Tells the app it was started by this script, and which version the image holds.
+  # Tells the app it was started by this script, and which version the image
+  # holds (under the old name too, for an installed update from before the rename).
+  CUE_IMAGE_VERSION="$img_ver"
   MEDIARIUM_IMAGE_VERSION="$img_ver"
-  export MEDIARIUM_IMAGE_VERSION
+  export CUE_IMAGE_VERSION MEDIARIUM_IMAGE_VERSION
 
-  if [ -n "${MEDIARIUM_SKIP_INSTALLED_UPDATE:-}" ]; then
-    say "ignoring the installed update because MEDIARIUM_SKIP_INSTALLED_UPDATE is set."
+  if [ -n "${CUE_SKIP_INSTALLED_UPDATE:-${MEDIARIUM_SKIP_INSTALLED_UPDATE:-}}" ]; then
+    say "ignoring the installed update because CUE_SKIP_INSTALLED_UPDATE is set."
     return 0
   fi
   pushed="$UPDATE_DIR/app"
@@ -83,7 +90,7 @@ choose_app() {
   set -f
   set -- $line
   set +f
-  if [ "$1" != "mediarium" ] || [ -z "$2" ] || [ "$3" != "$img_plat" ]; then
+  if ! is_cue "$1" || [ -z "$2" ] || [ "$3" != "$img_plat" ]; then
     say "ignoring the installed update: it does not answer as a Cue program for this system."
     return 0
   fi

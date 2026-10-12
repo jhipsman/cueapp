@@ -19,7 +19,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/rdborg/mediarium/internal/problems"
+	"github.com/jhipsman/cueapp/internal/problems"
 )
 
 func main() {
@@ -229,7 +229,7 @@ func envDoc(root string) ([]byte, error) {
 	sort.Slice(vars, func(i, j int) bool { return vars[i].Name < vars[j].Name })
 	var b strings.Builder
 	b.WriteString("# Environment variables\n\n" + banner)
-	b.WriteString("Container-level settings only. Everything else (indexers, Usenet servers, naming, VPN, notifications) is set in the app under Settings, not here. `PUID`, `PGID` and `TZ` are read by the container entrypoint, not by the app.\n\n| Variable | Default |\n|---|---|\n")
+	b.WriteString("Container-level settings only. Everything else (indexers, Usenet servers, naming, VPN, notifications) is set in the app under Settings, not here. `PUID`, `PGID` and `TZ` are read by the container entrypoint, not by the app. Each `CUE_` variable also works under its name from before the rename, `MEDIARIUM_` (for example `MEDIARIUM_PAUSE_AUTOMATION`); the `CUE_` name wins when both are set.\n\n| Variable | Default |\n|---|---|\n")
 	for _, v := range vars {
 		fmt.Fprintf(&b, "| `%s` | `%s` |\n", v.Name, v.Default)
 	}

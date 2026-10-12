@@ -8,8 +8,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/books"
-	"github.com/rdborg/mediarium/internal/mediaservers"
+	"github.com/jhipsman/cueapp/internal/books"
+	"github.com/jhipsman/cueapp/internal/mediaservers"
 )
 
 // The Books part of Discover: Open Library's trending lists and a browse by

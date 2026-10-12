@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/download"
+	"github.com/jhipsman/cueapp/internal/download"
 )
 
 // A "Usenet server" is the news-server account from a Usenet provider

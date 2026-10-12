@@ -6,8 +6,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/rdborg/mediarium/internal/parser"
-	"github.com/rdborg/mediarium/internal/settings"
+	"github.com/jhipsman/cueapp/internal/parser"
+	"github.com/jhipsman/cueapp/internal/settings"
 )
 
 // Streaming only: Cue as a family streaming app. Watch is the front door; the

@@ -13,9 +13,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/cleanup"
-	"github.com/rdborg/mediarium/internal/music"
-	"github.com/rdborg/mediarium/internal/musicbrainz"
+	"github.com/jhipsman/cueapp/internal/cleanup"
+	"github.com/jhipsman/cueapp/internal/music"
+	"github.com/jhipsman/cueapp/internal/musicbrainz"
 )
 
 // Music library: finding artists on MusicBrainz, adding them with their

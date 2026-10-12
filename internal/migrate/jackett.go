@@ -8,7 +8,7 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/rdborg/mediarium/internal/indexers"
+	"github.com/jhipsman/cueapp/internal/indexers"
 )
 
 // Jackett is read with GET /api/v2.0/indexers?configured=true, the API key

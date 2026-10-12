@@ -13,7 +13,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/rdborg/mediarium/internal/library"
+	"github.com/jhipsman/cueapp/internal/library"
 )
 
 const (

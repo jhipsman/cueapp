@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/watch"
+	"github.com/jhipsman/cueapp/internal/watch"
 )
 
 // Live TV follows: a profile follows words (a team, a show), and every show

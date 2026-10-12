@@ -13,12 +13,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/books"
-	"github.com/rdborg/mediarium/internal/download"
-	"github.com/rdborg/mediarium/internal/indexers"
-	"github.com/rdborg/mediarium/internal/library"
-	"github.com/rdborg/mediarium/internal/music"
-	"github.com/rdborg/mediarium/internal/queue"
+	"github.com/jhipsman/cueapp/internal/books"
+	"github.com/jhipsman/cueapp/internal/download"
+	"github.com/jhipsman/cueapp/internal/indexers"
+	"github.com/jhipsman/cueapp/internal/library"
+	"github.com/jhipsman/cueapp/internal/music"
+	"github.com/jhipsman/cueapp/internal/queue"
 )
 
 // Pausing, resuming and stopping downloads.
@@ -746,6 +746,7 @@ func (s *Server) recoverAtStartup() {
 
 // keptResume reports whether dir holds part of a Usenet download.
 func keptResume(dir string) bool {
+	adoptLegacyMarkers(dir)
 	return fileExists(filepath.Join(dir, download.ResumeFile))
 }
 

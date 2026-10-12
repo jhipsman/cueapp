@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/library"
+	"github.com/jhipsman/cueapp/internal/library"
 )
 
 func TestWatchStats(t *testing.T) {

@@ -11,7 +11,7 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"github.com/rdborg/mediarium/internal/logbuf"
+	"github.com/jhipsman/cueapp/internal/logbuf"
 )
 
 const (

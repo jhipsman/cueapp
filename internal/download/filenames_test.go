@@ -55,10 +55,10 @@ func TestOutputFileNamesAreSafeAndDistinct(t *testing.T) {
 		},
 		{
 			name:     "the download's own bookkeeping files are not overwritten by a release",
-			subjects: []string{subjectFor(ResumeFile), subjectFor(ResumeFile + ".tmp"), subjectFor(".mediarium-downloaded")},
+			subjects: []string{subjectFor(ResumeFile), subjectFor(ResumeFile + ".tmp"), subjectFor(".cue-downloaded"), subjectFor(LegacyResumeFile)},
 			check: func(t *testing.T, got []string) {
 				for i, n := range got {
-					if strings.HasPrefix(n, ".mediarium-") {
+					if isMarkerName(n) {
 						t.Errorf("file %d got the name %q", i, n)
 					}
 				}

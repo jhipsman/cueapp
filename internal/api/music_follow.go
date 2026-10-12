@@ -9,7 +9,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/music"
+	"github.com/jhipsman/cueapp/internal/music"
 )
 
 // musicRefreshInterval is how often followed artists are checked for new

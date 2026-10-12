@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/rdborg/mediarium/internal/settings"
+	"github.com/jhipsman/cueapp/internal/settings"
 )
 
 func TestResolveAddonLinkKeepsLinksThatDontRedirect(t *testing.T) {

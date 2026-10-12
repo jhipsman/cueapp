@@ -14,7 +14,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/netguard"
+	"github.com/jhipsman/cueapp/internal/netguard"
 )
 
 // Client makes the HTTP calls to media servers. It holds no per-server
@@ -164,12 +164,17 @@ func (c *Client) exchange(req *http.Request, s Server, base string, out any) err
 	return nil
 }
 
+// legacyDeviceID is the device Plex, Jellyfin and Emby already know Cue as,
+// from before the rename. A new one would show up there as another device and
+// could lose its sign-in, so it stays.
+const legacyDeviceID = "mediarium"
+
 func (c *Client) authorize(req *http.Request, s Server) {
-	req.Header.Set("User-Agent", "Mediarium/"+c.Version)
+	req.Header.Set("User-Agent", "Cue/"+c.Version)
 	switch s.Kind {
 	case KindPlex:
 		req.Header.Set("X-Plex-Product", "Cue")
-		req.Header.Set("X-Plex-Client-Identifier", "mediarium")
+		req.Header.Set("X-Plex-Client-Identifier", legacyDeviceID)
 		if s.Token != "" {
 			req.Header.Set("X-Plex-Token", s.Token)
 		}
@@ -177,7 +182,7 @@ func (c *Client) authorize(req *http.Request, s Server) {
 		if s.Token != "" {
 			req.Header.Set("X-Emby-Token", s.Token)
 			// Newer Jellyfin versions can switch the legacy header off.
-			req.Header.Set("Authorization", mediaBrowserAuth("mediarium", c.Version, s.Token))
+			req.Header.Set("Authorization", mediaBrowserAuth(legacyDeviceID, c.Version, s.Token))
 		}
 	case KindEmby:
 		if s.Token != "" {

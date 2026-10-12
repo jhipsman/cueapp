@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/indexers"
+	"github.com/jhipsman/cueapp/internal/indexers"
 )
 
 const fixtureRSS = `<?xml version="1.0" encoding="UTF-8"?>

@@ -7,12 +7,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/fsinfo"
-	"github.com/rdborg/mediarium/internal/indexers"
-	"github.com/rdborg/mediarium/internal/organizer"
-	"github.com/rdborg/mediarium/internal/store"
-	"github.com/rdborg/mediarium/internal/subtitles"
-	"github.com/rdborg/mediarium/internal/vpn"
+	"github.com/jhipsman/cueapp/internal/fsinfo"
+	"github.com/jhipsman/cueapp/internal/indexers"
+	"github.com/jhipsman/cueapp/internal/organizer"
+	"github.com/jhipsman/cueapp/internal/store"
+	"github.com/jhipsman/cueapp/internal/subtitles"
+	"github.com/jhipsman/cueapp/internal/vpn"
 )
 
 type healthAction struct {
@@ -47,7 +47,7 @@ func (s *Server) collectHealth() []healthItem {
 
 	if s.cfg.PauseAutomation {
 		add("safe-mode", "warn", "Safe mode is on",
-			"Automatic searching, downloading and refreshing are paused because MEDIARIUM_PAUSE_AUTOMATION is set. Remove it and restart to resume.",
+			"Automatic searching, downloading and refreshing are paused because CUE_PAUSE_AUTOMATION is set. Remove it and restart to resume.",
 			"", "")
 	}
 

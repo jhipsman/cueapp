@@ -9,9 +9,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/library"
-	"github.com/rdborg/mediarium/internal/mediaservers"
-	"github.com/rdborg/mediarium/internal/settings"
+	"github.com/jhipsman/cueapp/internal/library"
+	"github.com/jhipsman/cueapp/internal/mediaservers"
+	"github.com/jhipsman/cueapp/internal/settings"
 )
 
 // fakeCleanupPlex is a Plex with a movie library and a TV library. Every

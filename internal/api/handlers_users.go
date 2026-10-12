@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/auth"
+	"github.com/jhipsman/cueapp/internal/auth"
 )
 
 // accountPayload is one row of the account list an administrator manages.

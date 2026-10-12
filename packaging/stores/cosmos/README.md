@@ -6,7 +6,7 @@ Cosmos lists apps ("servapps") from the [azukaar/cosmos-servapps-official](https
 
 ## Files here
 
-`servapps/Mediarium/`, laid out as in the official market:
+`servapps/Cue/`, laid out as in the official market:
 
 | File | What it is |
 |---|---|
@@ -24,8 +24,8 @@ Cosmos lists apps ("servapps") from the [azukaar/cosmos-servapps-official](https
 
 ## Steps
 
-1. Fork [azukaar/cosmos-servapps-official](https://github.com/azukaar/cosmos-servapps-official), copy `servapps/Mediarium/` into its `servapps/` folder.
-2. Open a pull request "Add Mediarium"; the repo's validation workflow runs on it.
+1. Fork [azukaar/cosmos-servapps-official](https://github.com/azukaar/cosmos-servapps-official), copy `servapps/Cue/` into its `servapps/` folder.
+2. Open a pull request "Add Cue"; the repo's validation workflow runs on it.
 3. After merge, mark Cosmos as available in `docs/PLATFORMS.md`.
 
 ## What only the maintainer can do

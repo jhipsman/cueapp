@@ -6,7 +6,7 @@
 
 DSM's **Package Center only installs `.spk` packages**: Synology's own, packages from a third-party package source such as [SynoCommunity](https://synocommunity.com), or an `.spk` file installed by hand. Docker images cannot be listed there.
 
-A native `.spk` is possible in principle (Mediarium is a single program), but it means cross-compiling for every Synology CPU family with the SynoCommunity [spksrc](https://github.com/SynoCommunity/spksrc) framework, submitting it there for review, and maintaining it. That is a "coming soon" item at best. Whether SynoCommunity would accept a package that merely wraps a Docker container was not verified.
+A native `.spk` is possible in principle (Cue is a single program), but it means cross-compiling for every Synology CPU family with the SynoCommunity [spksrc](https://github.com/SynoCommunity/spksrc) framework, submitting it there for review, and maintaining it. That is a "coming soon" item at best. Whether SynoCommunity would accept a package that merely wraps a Docker container was not verified.
 
 ## The practical one-click path: a Container Manager project
 
@@ -14,7 +14,7 @@ On DSM 7.2 and newer, **Container Manager → Project → Create** takes a compo
 
 ## Checklist before announcing it for Synology
 
-- [ ] The image `ghcr.io/rdborg/mediarium:latest` is published and public (Container Manager pulls it anonymously).
+- [ ] The image `ghcr.io/jhipsman/cue:latest` is published and public (Container Manager pulls it anonymously).
 - [ ] Walk through `docs/synology.md` on a real DSM 7.2 NAS once, and correct any menu names that differ.
 - [ ] Optional: screenshots of the Container Manager steps for the guide.
 

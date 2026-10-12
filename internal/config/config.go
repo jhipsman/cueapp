@@ -49,7 +49,7 @@ type Config struct {
 	// Settings wins once it has been set.
 	StreamingOnly bool
 
-	// PauseAutomation is the safe mode: MEDIARIUM_PAUSE_AUTOMATION=1 starts the
+	// PauseAutomation is the safe mode: CUE_PAUSE_AUTOMATION=1 starts the
 	// app with automatic searching, downloading, refreshing and the
 	// connectivity checks switched off, so the pages always load and a person can
 	// change settings. Nothing is saved; take the variable away and they run again.
@@ -64,7 +64,7 @@ type Config struct {
 
 	// Supervised is true when something restarts Cue after it exits, so
 	// the Restart button can work. Docker (with a restart policy), systemd and
-	// launchd are recognised by themselves; MEDIARIUM_SUPERVISED=1 says so for
+	// launchd are recognised by themselves; CUE_SUPERVISED=1 says so for
 	// any other service manager.
 	Supervised bool
 }
@@ -86,10 +86,10 @@ func Load() Config {
 		BundledFlareSolverr: truthy(envStr("BUNDLED_FLARESOLVERR", "")),
 		FlareSolverrURL:     envStr("FLARESOLVERR_URL", ""),
 		StreamingOnly:       envStr("CUE_STREAMING_ONLY", "1") != "0",
-		PauseAutomation:     truthy(envStr("MEDIARIUM_PAUSE_AUTOMATION", "")),
+		PauseAutomation:     truthy(envStr("CUE_PAUSE_AUTOMATION", "")),
 
-		ImageVersion: envStr("MEDIARIUM_IMAGE_VERSION", ""),
-		Supervised:   truthy(envStr("MEDIARIUM_SUPERVISED", "")),
+		ImageVersion: envStr("CUE_IMAGE_VERSION", ""),
+		Supervised:   truthy(envStr("CUE_SUPERVISED", "")),
 	}
 	cfg.DownloadsIncomplete = filepath.Join(cfg.DownloadsDir, "incomplete")
 	cfg.DownloadsComplete = filepath.Join(cfg.DownloadsDir, "complete")
@@ -98,12 +98,23 @@ func Load() Config {
 	return cfg
 }
 
+// envStr reads key, or def when it is empty. A CUE_ variable is also read
+// under its name from before the rename, MEDIARIUM_..., so an existing compose
+// file or service unit keeps working.
 func envStr(key, def string) string {
 	if v := os.Getenv(key); v != "" {
 		return v
 	}
+	if rest, ok := strings.CutPrefix(key, "CUE_"); ok {
+		if v := os.Getenv(legacyEnvPrefix + rest); v != "" {
+			return v
+		}
+	}
 	return def
 }
+
+// legacyEnvPrefix is the prefix CUE_ variables had before the rename.
+const legacyEnvPrefix = "MEDIARIUM_"
 
 func envInt(key string, def int) int {
 	if v := os.Getenv(key); v != "" {

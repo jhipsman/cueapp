@@ -188,7 +188,7 @@ func TestUpdateCheckSendsNothingButTheUserAgent(t *testing.T) {
 	gh := newFakeGitHub(t, releaseJSON(oneRelease("v1.2.0", false, "")))
 	e.server.TestSetGitHub(gh.srv.URL)
 	check(t, e)
-	if len(gh.agents) != 1 || gh.agents[0] != "Mediarium/1.1.0" {
+	if len(gh.agents) != 1 || gh.agents[0] != "Cue/1.1.0" {
 		t.Fatalf("User-Agent = %v", gh.agents)
 	}
 	for _, name := range []string{"Authorization", "Cookie", "X-Api-Key", "X-Forwarded-For", "Referer"} {

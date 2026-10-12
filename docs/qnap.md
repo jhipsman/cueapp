@@ -25,24 +25,24 @@ Shared folder "data"  (/share/data)          ->  mapped as /data
 ├── tv/
 └── music/                                   only if you use music
 Shared folder "Container" (/share/Container)
-└── mediarium/                               ->  mapped as /config
+└── cue/                               ->  mapped as /config
 ```
 
 1. **Control Panel → Privilege → Shared Folders → Create** a shared folder named `data` (or use the one you already have), and give your user **Read/Write**.
-2. In **File Station**, create a folder `mediarium` inside the `Container` shared folder (Container Station creates `Container` for you). Create `downloads`, `movies` and `tv` (and `music`) inside `data` too. **Create every folder you map before you start the application**, or Container Station stops with an error like `Bind mount failed: '/share/data/downloads' does not exist`.
+2. In **File Station**, create a folder `cue` inside the `Container` shared folder (Container Station creates `Container` for you). Create `downloads`, `movies` and `tv` (and `music`) inside `data` too. **Create every folder you map before you start the application**, or Container Station stops with an error like `Bind mount failed: '/share/data/downloads' does not exist`.
 3. `/share/data` is QNAP's shortcut to the shared folder, wherever it lives. If you are unsure, File Station → right-click the folder → **Properties** shows the path.
 
 ## Step 3: Create the application
 
 1. Open **Container Station → Applications → Create**.
-2. **Application name:** `mediarium`.
+2. **Application name:** `cue`.
 3. Paste this into the YAML editor and change the marked values:
 
 ```yaml
 services:
-  mediarium:
+  cue:
     image: ghcr.io/jhipsman/cue:latest
-    container_name: mediarium
+    container_name: cue
     restart: unless-stopped
     ports:
       - "8264:8264"
@@ -61,11 +61,11 @@ services:
       # - EBOOKS_DIR=/data/ebooks
       # - AUDIOBOOKS_DIR=/data/audiobooks
     volumes:
-      - /share/Container/mediarium:/config
+      - /share/Container/cue:/config
       - /share/data:/data
 ```
 
-   Already have a library? Point `MOVIES_DIR` and `TV_DIR` at it inside `/data` (for example `/data/media/movies`), and if other download apps use `/data/downloads`, give Cue its own: `DOWNLOADS_DIR=/data/downloads/mediarium`. See [Choosing your folders](./INSTALL.md#choosing-your-folders).
+   Already have a library? Point `MOVIES_DIR` and `TV_DIR` at it inside `/data` (for example `/data/media/movies`), and if other download apps use `/data/downloads`, give Cue its own: `DOWNLOADS_DIR=/data/downloads/cue`. See [Choosing your folders](./INSTALL.md#choosing-your-folders).
 4. Click **Validate** to check the YAML, then **Create**. Container Station downloads the image and starts Cue.
 5. Open `http://<nas-ip>:8264` and follow the setup wizard.
 
@@ -81,7 +81,7 @@ To add one later, edit the application's YAML, then save it with **Update** so t
 ## Updating
 
 1. Over SSH, download the newest image: `docker pull ghcr.io/jhipsman/cue:latest`.
-2. In **Container Station → Applications**, open **mediarium**'s actions menu, choose **Edit**, and save it with **Update** so the container is recreated with the new image.
+2. In **Container Station → Applications**, open **cue**'s actions menu, choose **Edit**, and save it with **Update** so the container is recreated with the new image.
 
 If your Container Station version has no such option, delete the application (your mapped folders are kept) and create it again with the same YAML: the newest image is used. Your settings and library stay, because they live in the folders you mapped. The menu names above can differ slightly between Container Station versions.
 
@@ -89,7 +89,7 @@ When a new version is out, administrators see a card on the dashboard and on **S
 
 ## Backing up
 
-Back up `/share/Container/mediarium` (`app.db` and `secret.key`; keep them together) with Hybrid Backup Sync, or use **Settings → System → Server and backup** in Cue to download a backup zip.
+Back up `/share/Container/cue` (`app.db` and `secret.key`; keep them together) with Hybrid Backup Sync, or use **Settings → System → Server and backup** in Cue to download a backup zip.
 
 ## Troubleshooting
 

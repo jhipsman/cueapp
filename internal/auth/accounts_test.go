@@ -4,7 +4,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/rdborg/mediarium/internal/auth"
+	"github.com/jhipsman/cueapp/internal/auth"
 )
 
 func ptr[T any](v T) *T { return &v }

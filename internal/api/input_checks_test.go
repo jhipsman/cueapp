@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/rdborg/mediarium/internal/indexers"
-	"github.com/rdborg/mediarium/internal/library"
+	"github.com/jhipsman/cueapp/internal/indexers"
+	"github.com/jhipsman/cueapp/internal/library"
 )
 
 // wantBad sends a request and wants a 400 whose message contains want.

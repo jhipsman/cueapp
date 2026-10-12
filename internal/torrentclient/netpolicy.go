@@ -10,7 +10,7 @@ import (
 
 	"github.com/anacrolix/torrent"
 
-	"github.com/rdborg/mediarium/internal/netguard"
+	"github.com/jhipsman/cueapp/internal/netguard"
 )
 
 // applyNetworkPolicy decides where the engine's own web requests may go. The

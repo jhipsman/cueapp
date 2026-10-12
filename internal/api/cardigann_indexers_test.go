@@ -16,8 +16,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/library"
-	"github.com/rdborg/mediarium/internal/store"
+	"github.com/jhipsman/cueapp/internal/library"
+	"github.com/jhipsman/cueapp/internal/store"
 )
 
 // fakeTracker is a small private torrent site with a login form, the kind
@@ -221,7 +221,7 @@ func TestDefinitionIndexerEndToEnd(t *testing.T) {
 	if !strings.HasPrefix(downloadURL, "rel_") {
 		t.Fatalf("download url should be an opaque reference, got %q", downloadURL)
 	}
-	if real := server.OfferedURL(downloadURL); !strings.HasPrefix(real, "mediarium-indexer://") {
+	if real := server.OfferedURL(downloadURL); !strings.HasPrefix(real, "cue-indexer://") {
 		t.Fatalf("the reference should stand for an indexer reference, got %q", real)
 	}
 

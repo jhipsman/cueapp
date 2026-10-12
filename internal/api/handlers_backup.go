@@ -11,8 +11,8 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/rdborg/mediarium/internal/auth"
-	"github.com/rdborg/mediarium/internal/backup"
+	"github.com/jhipsman/cueapp/internal/auth"
+	"github.com/jhipsman/cueapp/internal/backup"
 )
 
 // defaultRestartDelay gives the restore response time to reach the browser

@@ -76,7 +76,7 @@ func TestPickBuildsOwnURL(t *testing.T) {
 
 func TestPickKeepsOnlySafeAssetNames(t *testing.T) {
 	g := rel("v1.2.0", false)
-	json.Unmarshal([]byte(`{"assets":[{"name":"sha256sums.txt","size":1},{"name":"../evil","size":1},{"name":"a b","size":1},{"name":"mediarium_1.2.0_linux_amd64.tar.gz","size":9}]}`), &g)
+	json.Unmarshal([]byte(`{"assets":[{"name":"sha256sums.txt","size":1},{"name":"../evil","size":1},{"name":"a b","size":1},{"name":"cue_1.2.0_linux_amd64.tar.gz","size":9}]}`), &g)
 	got, _ := pick("jhipsman/cueapp", "1.0.0", []githubRelease{g})
 	if len(got.Assets) != 2 || got.Assets[0].Name != "sha256sums.txt" || got.Assets[1].Size != 9 {
 		t.Fatalf("assets = %+v", got.Assets)
@@ -193,7 +193,7 @@ func TestRequestCarriesNothingIdentifying(t *testing.T) {
 		t.Fatal(err)
 	}
 	h := f.headers[0]
-	if h.Get("User-Agent") != "Mediarium/1.9.0" {
+	if h.Get("User-Agent") != "Cue/1.9.0" {
 		t.Fatalf("User-Agent = %q", h.Get("User-Agent"))
 	}
 	for _, name := range []string{"Authorization", "Cookie", "X-Api-Key", "X-Forwarded-For", "Referer", "From"} {
@@ -205,10 +205,10 @@ func TestRequestCarriesNothingIdentifying(t *testing.T) {
 
 func TestUserAgentIsSanitised(t *testing.T) {
 	c := &Checker{Version: "1.0.0\r\nX-Evil: 1 é"}
-	if got := c.userAgent(); got != "Mediarium/1.0.0X-Evil:1" {
+	if got := c.userAgent(); got != "Cue/1.0.0X-Evil:1" {
 		t.Fatalf("userAgent = %q", got)
 	}
-	if got := (&Checker{}).userAgent(); got != "Mediarium/dev" {
+	if got := (&Checker{}).userAgent(); got != "Cue/dev" {
 		t.Fatalf("userAgent = %q", got)
 	}
 }
