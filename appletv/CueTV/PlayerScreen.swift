@@ -104,13 +104,17 @@ struct PlayerScreen: View {
 @MainActor
 struct SystemPlayer: UIViewControllerRepresentable {
     let player: AVPlayer
+    // For a film or episode: the player's own controls get Cue's extras
+    // (Skip Intro, Next Episode, speeds, another version).
+    var configure: ((AVPlayerViewController) -> Void)? = nil
 
     func makeUIViewController(context: Context) -> AVPlayerViewController {
         let vc = AVPlayerViewController()
         vc.player = player
-        // Live: the picture's frame rate and range on the TV, as Strand does
+        // The picture's frame rate and range on the TV, as Strand does
         // when "Match Frame Rate" is on in the Apple TV's settings.
         vc.appliesPreferredDisplayCriteriaAutomatically = true
+        configure?(vc)
         return vc
     }
 

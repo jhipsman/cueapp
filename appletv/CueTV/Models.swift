@@ -207,3 +207,16 @@ struct PlayRequest: Identifiable, Hashable {
     let subtitle: String
     let start: Double
 }
+
+struct Segment: Decodable {
+    let start: Double
+    let end: Double
+}
+
+// Where a title's intro, recap and credits are (seconds), when known.
+struct Skips: Decodable {
+    let intro: Segment?
+    let recap: Segment?
+    let creditsStart: Double?
+    let creditsFromEnd: Double?
+}

@@ -111,6 +111,10 @@ final class Cue: ObservableObject {
         try? await get("/api/watch/progress/\(r.kind)/\(r.tmdbId)?season=\(r.season)&episode=\(r.episode)")
     }
 
+    func skips(_ r: PlayRequest) async -> Skips? {
+        try? await get("/api/watch/skips/\(r.kind)/\(r.tmdbId)?season=\(r.season)&episode=\(r.episode)&duration=0")
+    }
+
     func convertInfo(_ token: String) async throws -> ConvertInfo { try await get("/api/play/convert?u=\(query(token))") }
 
     func saveProgress(_ r: PlayRequest, position: Double, duration: Double) async {
