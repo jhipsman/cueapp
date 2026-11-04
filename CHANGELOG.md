@@ -9,6 +9,8 @@ under [Unreleased]. How releases are cut: [docs/RELEASING.md](docs/RELEASING.md)
 ## [Unreleased]
 
 ### Added
+- **Streaming quality, per profile**: the profile menu has Streaming quality, as in apps like Nuvio: the picture to aim for (4K, 1080p, 720p), how big a file may be (Smart: the size streaming services use; up to 10-50 GB for a two-hour film; or any size), Dolby Vision (prefer, allow, avoid), and whether to prefer HDR, skip Remux, prefer HEVC and AV1, and prefer Dolby Digital Plus or Atmos. By default Cue picks a 4K version at a streaming size instead of the biggest file an add-on lists first.
+- **TV players**: the Fire TV and Google TV player has a rounded control panel with the time, speeds (0.5x to 2x) and icon buttons; on Apple TV, Apple's own player gets Skip Intro, Next Episode, speeds and Other Version.
 - **A frame of the video while scrubbing**: moving along the time bar shows the picture at that point, in the browser (hover or drag) and in the TV app (holding left or right), recordings included. Cue takes the frames from the file itself, every 10 seconds, and keeps them a while.
 - **Quicker Play and a Download**: the first title on Continue Watching (and any card pointed at) is looked up ahead, so Play starts at once; the player's Versions menu has Download, to save a version for offline. On the TV, Back returns the highlight to the card you opened.
 - **Record Live TV**: Record on any show in the guide (or on now) and Cue records it on the server, even with nothing open, then keeps it 30 days in a new Recordings group, to play in the browser or the TV app.
