@@ -1,4 +1,8 @@
-@file:OptIn(androidx.tv.material3.ExperimentalTvMaterial3Api::class)
+@file:OptIn(
+    androidx.tv.material3.ExperimentalTvMaterial3Api::class,
+    androidx.compose.ui.ExperimentalComposeUiApi::class,
+    androidx.compose.foundation.ExperimentalFoundationApi::class,
+)
 
 package app.cue.tv.home
 
@@ -42,7 +46,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.focusRestorer
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.foundation.gestures.LocalBringIntoViewSpec
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -134,11 +142,11 @@ fun SignInScreen(api: CueApi, startProblem: String, changeServer: () -> Unit, do
             Text("Sign in to ${api.server.removePrefix("https://").removePrefix("http://")}", color = Dim, fontSize = 14.sp)
             Gap(20.dp)
             OutlinedTextField(user, { user = it }, label = { androidx.compose.material3.Text("Username") }, singleLine = true,
-                colors = fieldColors(), modifier = Modifier.fillMaxWidth().focusRequester(first))
+                colors = fieldColors(), modifier = Modifier.fillMaxWidth().focusRequester(first).leaveWithArrows())
             Gap(10.dp)
             OutlinedTextField(password, { password = it }, label = { androidx.compose.material3.Text("Password") }, singleLine = true,
                 visualTransformation = PasswordVisualTransformation(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                colors = fieldColors(), modifier = Modifier.fillMaxWidth())
+                colors = fieldColors(), modifier = Modifier.fillMaxWidth().leaveWithArrows())
             if (problem.isNotEmpty()) {
                 Gap(10.dp)
                 Text(problem, color = Color(0xFFFF8A80), fontSize = 13.sp)
@@ -232,7 +240,7 @@ fun ProfilesScreen(api: CueApi, done: () -> Unit) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     OutlinedTextField(pin, { pin = it.filter(Char::isDigit).take(8) }, singleLine = true, colors = fieldColors(),
                         visualTransformation = PasswordVisualTransformation(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
-                        modifier = Modifier.width(180.dp))
+                        modifier = Modifier.width(180.dp).leaveWithArrows())
                     Button(onClick = { choose(p, pin) }) { Text("OK") }
                 }
             }
@@ -265,8 +273,25 @@ fun MainScreen(api: CueApi, playback: Playback, openWeb: (String) -> Unit, chang
     val open = remember { mutableStateListOf<Tile>() } // titles opened, one over another
     val memories = remember { List(tabs.size + 1) { FocusMemory() } }
     val titleMemory = remember { FocusMemory() }
-    BackHandler(enabled = open.isNotEmpty()) { open.removeAt(open.lastIndex) }
+    val tabFocus = remember { List(tabs.size + 1) { FocusRequester() } }
+    var tabsFocused by remember { mutableStateOf(false) }
+    // Whether a page may take the highlight when it shows: on opening the
+    // app and on coming back from a title, but not while the remote moves
+    // along the tabs (each tab's page shows as the highlight passes it).
+    var pageTakesFocus by remember { mutableStateOf(true) }
+    BackHandler(enabled = open.isNotEmpty()) {
+        open.removeAt(open.lastIndex)
+        pageTakesFocus = true
+    }
+    // Back in a page goes up to the tabs; on the tabs, to Home; on Home's
+    // tab it leaves the app.
+    BackHandler(enabled = open.isEmpty() && !tabsFocused) { runCatching { tabFocus[tab].requestFocus() } }
+    BackHandler(enabled = open.isEmpty() && tabsFocused && tab != 0) {
+        tab = 0
+        runCatching { tabFocus[0].requestFocus() }
+    }
     val onCard: (Tile) -> Unit = { c -> if (c.resumes) playback.play(c) else open.add(c) }
+    val tookFocus = { pageTakesFocus = false }
 
     if (open.isNotEmpty()) {
         val t = open.last()
@@ -277,25 +302,35 @@ fun MainScreen(api: CueApi, playback: Playback, openWeb: (String) -> Unit, chang
         Row(Modifier.fillMaxWidth().padding(start = 40.dp, end = 40.dp, top = 14.dp), verticalAlignment = Alignment.CenterVertically) {
             Text("Cue", fontSize = 22.sp, fontWeight = FontWeight.Black, color = LocalAccent.current)
             HGap(24.dp)
-            TabRow(selectedTabIndex = tab) {
+            // Coming up to the tabs lands on the tab showing, not whichever
+            // is nearest, so it doesn't change page by itself.
+            TabRow(
+                selectedTabIndex = tab,
+                modifier = Modifier
+                    .focusProperties { enter = { tabFocus[tab] } }
+                    .onFocusChanged {
+                        tabsFocused = it.hasFocus
+                        if (it.hasFocus) pageTakesFocus = false
+                    },
+            ) {
                 tabs.forEachIndexed { i, name ->
-                    Tab(selected = i == tab, onFocus = { tab = i }) {
+                    Tab(selected = i == tab, onFocus = { tab = i }, modifier = Modifier.focusRequester(tabFocus[i])) {
                         Text(name, fontSize = 14.sp, modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp))
                     }
                 }
-                Tab(selected = tab == tabs.size, onFocus = { tab = tabs.size }) {
+                Tab(selected = tab == tabs.size, onFocus = { tab = tabs.size }, modifier = Modifier.focusRequester(tabFocus[tabs.size])) {
                     Text(api.profileName.ifEmpty { "Profile" }, fontSize = 14.sp, modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp))
                 }
             }
         }
         Box(Modifier.fillMaxSize()) {
             when (tab) {
-                0 -> HomeScreen(api, null, memories[0], onCard)
-                1 -> HomeScreen(api, "tv", memories[1], onCard)
-                2 -> HomeScreen(api, "movie", memories[2], onCard)
+                0 -> HomeScreen(api, null, memories[0], pageTakesFocus, tookFocus, onCard)
+                1 -> HomeScreen(api, "tv", memories[1], pageTakesFocus, tookFocus, onCard)
+                2 -> HomeScreen(api, "movie", memories[2], pageTakesFocus, tookFocus, onCard)
                 3 -> LiveScreen(api, playback, openWeb)
                 4 -> SearchScreen(api, memories[4], onCard)
-                5 -> MyListScreen(api, memories[5], onCard)
+                5 -> MyListScreen(api, memories[5], pageTakesFocus, tookFocus, onCard)
                 else -> ProfileScreen(api, switchProfile, changeServer, openWeb)
             }
         }
@@ -307,7 +342,7 @@ fun MainScreen(api: CueApi, playback: Playback, openWeb: (String) -> Unit, chang
 // Home (and Shows and Movies): the banner at the top shows whatever poster
 // the highlight is on, as the TV's own apps do; the rows slide beneath.
 @Composable
-fun HomeScreen(api: CueApi, only: String?, memory: FocusMemory, onCard: (Tile) -> Unit) {
+fun HomeScreen(api: CueApi, only: String?, memory: FocusMemory, takeFocus: Boolean, tookFocus: () -> Unit, onCard: (Tile) -> Unit) {
     var home by remember { mutableStateOf<Home?>(homeCache) }
     var problem by remember { mutableStateOf("") }
     var spot by remember { mutableStateOf<Tile?>(null) }
@@ -332,9 +367,10 @@ fun HomeScreen(api: CueApi, only: String?, memory: FocusMemory, onCard: (Tile) -
     }
     val featured = h.hero?.takeIf { only == null || it.kind == only } ?: rows.flatMap { it.items }.firstOrNull { it.backdrop != null && !it.resumes }
     val shown = spot ?: featured
-    LaunchedEffect(rows.size) {
+    LaunchedEffect(rows.size, takeFocus) {
+        if (!takeFocus || rows.isEmpty()) return@LaunchedEffect
         delay(80)
-        memory.restore(rows.firstOrNull()?.let { r -> "${r.key}/${r.items.first().key}" })
+        if (memory.restore(rows.firstOrNull()?.let { r -> "${r.key}/${r.items.first().key}" })) tookFocus()
     }
     Column(Modifier.fillMaxSize()) {
         Box(Modifier.fillMaxWidth().height(210.dp)) {
@@ -351,9 +387,13 @@ fun HomeScreen(api: CueApi, only: String?, memory: FocusMemory, onCard: (Tile) -
                 }
             }
         }
-        LazyColumn(state = listState, contentPadding = PaddingValues(top = 6.dp, bottom = 120.dp)) {
-            items(rows, key = { it.key }) { r ->
-                CardRow(r, memory, onFocus = { spot = it }, onClick = onCard)
+        // The highlighted row moves up to just under the banner, and the
+        // highlighted poster stays near the left, as in the TV's own apps.
+        CompositionLocalProvider(LocalBringIntoViewSpec provides PivotSpec) {
+            LazyColumn(state = listState, contentPadding = PaddingValues(top = 6.dp, bottom = 120.dp)) {
+                items(rows, key = { it.key }) { r ->
+                    CardRow(r, memory, onFocus = { spot = it }, onClick = onCard)
+                }
             }
         }
     }
@@ -435,7 +475,7 @@ fun TitleScreen(api: CueApi, playback: Playback, card: Tile, memory: FocusMemory
             }
             if (c.kind == "tv" && t.seasons.isNotEmpty()) {
                 item {
-                    LazyRow(contentPadding = PaddingValues(horizontal = 48.dp, vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    LazyRow(Modifier.focusRestorer(), contentPadding = PaddingValues(horizontal = 48.dp, vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                         items(t.seasons, key = { it.number }) { s ->
                             Button(onClick = { season = s.number }, colors = if (s.number == season) ButtonDefaults.colors() else quietButton()) {
                                 Text(s.name, fontSize = 13.sp)
@@ -444,7 +484,7 @@ fun TitleScreen(api: CueApi, playback: Playback, card: Tile, memory: FocusMemory
                     }
                 }
                 item {
-                    LazyRow(contentPadding = PaddingValues(horizontal = 48.dp, vertical = 12.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                    LazyRow(Modifier.focusRestorer(), contentPadding = PaddingValues(horizontal = 48.dp, vertical = 12.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                         items(episodes, key = { "${it.season}-${it.episode}" }) { e ->
                             EpisodeCard(e) { playback.playTitle("tv", c.tmdbId, e.season, e.episode) }
                         }
@@ -504,18 +544,18 @@ fun SearchScreen(api: CueApi, memory: FocusMemory, onCard: (Tile) -> Unit) {
     Column(Modifier.fillMaxSize().padding(top = 16.dp)) {
         OutlinedTextField(query, { query = it }, singleLine = true, colors = fieldColors(),
             placeholder = { androidx.compose.material3.Text("Movies and shows") },
-            modifier = Modifier.padding(horizontal = 48.dp).width(420.dp))
+            modifier = Modifier.padding(horizontal = 48.dp).width(420.dp).leaveWithArrows())
         PosterGrid(results, memory, "search", onCard)
     }
 }
 
 @Composable
-fun MyListScreen(api: CueApi, memory: FocusMemory, onCard: (Tile) -> Unit) {
+fun MyListScreen(api: CueApi, memory: FocusMemory, takeFocus: Boolean, tookFocus: () -> Unit, onCard: (Tile) -> Unit) {
     var items by remember { mutableStateOf<List<Tile>?>(null) }
     LaunchedEffect(Unit) {
         items = runCatching { api.home().rows.firstOrNull { it.key == "my-list" }?.items ?: emptyList() }.getOrDefault(emptyList())
         delay(80)
-        items?.firstOrNull()?.let { memory.restore("list/${it.key}") }
+        if (takeFocus) items?.firstOrNull()?.let { if (memory.restore("list/${it.key}")) tookFocus() }
     }
     val list = items
     when {
