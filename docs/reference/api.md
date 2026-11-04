@@ -362,6 +362,8 @@ Every route the server exposes. Routes marked **public** need no sign-in; all ot
 
 | Method | Path | Access | What it does |
 |---|---|---|---|
+| GET | `/api/profile/streaming` | signed in | GET /api/profile/streaming: this profile's streaming preferences. |
+| PUT | `/api/profile/streaming` | signed in | PUT /api/profile/streaming: change them. |
 | PUT | `/api/profile/theme` | signed in | PUT /api/profile/theme {"accent","glow","background"}: the colors of the profile this device is on. |
 
 ## profiles
@@ -657,4 +659,4 @@ Every route the server exposes. Routes marked **public** need no sign-in; all ot
 | PUT | `/api/watched/settings` | admin | PUT /api/watched/settings {"sync": true, "cleanup": {...}} |
 | POST | `/api/watched/sync` | admin | POST /api/watched/sync: read what's been watched now. |
 
-357 routes.
+359 routes.

@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react'
 import Icon from './Icon'
 
-type Theme = 'system' | 'light' | 'dark'
+type Theme = 'light' | 'dark'
 
 const STORAGE_KEY = 'cue-theme'
 
 function applyTheme(theme: Theme) {
-  if (theme === 'system') {
+  if (theme === 'dark') {
     delete document.documentElement.dataset.theme
   } else {
     document.documentElement.dataset.theme = theme
@@ -16,15 +16,15 @@ function applyTheme(theme: Theme) {
 function savedTheme(): Theme {
   try {
     const stored = localStorage.getItem(STORAGE_KEY)
-    return stored === 'light' || stored === 'dark' ? stored : 'system'
+    return stored === 'light' ? 'light' : 'dark'
   } catch {
-    // storage can be blocked (private windows): follow the device
-    return 'system'
+    // storage can be blocked (private windows): Cue's own dark
+    return 'dark'
   }
 }
 
-// The app follows the OS colour scheme by default; this is the explicit
-// override, shown as a single icon button (sun, moon or auto).
+// Cue is dark, as Watch is; this switches the manager to light and back,
+// as a single icon button (sun or moon).
 export default function ThemeToggle() {
   const [theme, setTheme] = useState<Theme>(savedTheme)
 
@@ -37,12 +37,12 @@ export default function ThemeToggle() {
     }
   }, [theme])
 
-  const next: Theme = theme === 'system' ? 'light' : theme === 'light' ? 'dark' : 'system'
-  const label = theme === 'system' ? 'Theme: follows your device' : theme === 'light' ? 'Theme: light' : 'Theme: dark'
+  const next: Theme = theme === 'light' ? 'dark' : 'light'
+  const label = theme === 'light' ? 'Theme: light' : 'Theme: dark'
 
   return (
     <button className="icon-btn top-icon" onClick={() => setTheme(next)} title={`${label}. Click to change.`} aria-label={label}>
-      <Icon name={theme === 'system' ? 'monitor' : theme === 'light' ? 'sun' : 'moon'} size={18} />
+      <Icon name={theme === 'light' ? 'sun' : 'moon'} size={18} />
     </button>
   )
 }

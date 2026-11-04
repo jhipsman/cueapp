@@ -2,7 +2,7 @@
 
 A plain comparison of what Cue does **today** against the apps it can replace or sit beside, written from the source code.
 
-- **Snapshot:** 2026-10-11, version 2.1.9 plus the unreleased 2.2 changes (database migrations up to `0051`; see the [changelog](../CHANGELOG.md)). Read every "No" as "not found when this was written". If it matters to you, look in `internal/` and `web/src/pages`.
+- **Snapshot:** 2026-11-04, version 2.1.9 plus the unreleased 2.2 changes (database migrations up to `0052`; see the [changelog](../CHANGELOG.md)). Read every "No" as "not found when this was written". If it matters to you, look in `internal/` and `web/src/pages`.
 - **How each row was judged:** Yes = implemented and reachable in the UI or API. Partial = something real exists but it is narrower than the reference app. No = not found. The evidence is a package, file or endpoint you can open.
 - **Reference apps** are described from general knowledge of those projects and may be out of date for their newest versions. Uncertain claims are worded loosely or left out.
 - Abbreviations: **Rad** Radarr, **Son** Sonarr, **Lid** Lidarr, **Pro** Prowlarr, **Sab** SABnzbd, **qB** qBittorrent, **Baz** Bazarr.
@@ -176,7 +176,8 @@ Switch it on in Settings > Media types ([modules.md](./modules.md), [music.md](.
 | Profiles (Who's watching?) | **Yes** | one sign-in, a profile per person with its own Continue Watching, My List, progress and color theme, optional PIN (`/api/profiles`) | Plex, Netflix |
 | Live TV, guide, catch-up and recording | **Yes** | an Xtream Codes IPTV login gives channels, a guide grid, catch-up, reminders, follows and server-side recordings kept 30 days (`internal/iptv`, `/api/live/*`) | Plex, Jellyfin, Channels DVR |
 | Skip intro, subtitles while watching | **Yes** | Skip intro and recap from TheIntroDB or what your household skips (`internal/introdb`, `/api/watch/skips`); English subtitles from OpenSubtitles in the player | Plex, Netflix |
-| TV app | **Yes** | Android TV and Apple TV apps (`android/`, `appletv/`) that sign in to your Cue server and play from it | Plex, Jellyfin |
+| Pick a version by quality and size | **Yes** | each profile's Streaming quality: the picture to aim for, a size limit or Smart (the bitrate streaming services use), and HDR, Dolby Vision, Remux, HEVC/AV1 and sound preferences (`internal/api/stream_prefs.go`, `/api/profile/streaming`) | Nuvio, Stremio add-on settings |
+| TV apps | **Yes** | a native Fire TV / Google TV / Android TV app (Compose for TV, Media3 player with passthrough, frame-rate matching and a stats line) and a native Apple TV app in Apple's own player (`android/`, `appletv/`) | Plex, Jellyfin, Strand |
 
 ## 3. What to add next
 

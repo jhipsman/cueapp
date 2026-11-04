@@ -134,6 +134,8 @@ var memberRoutes = []string{
 	"GET /api/profiles",
 	"POST /api/profiles/{id}/select",
 	"PUT /api/profile/theme",
+	"GET /api/profile/streaming",
+	"PUT /api/profile/streaming",
 	"GET /api/watch/home",
 	"GET /api/watch/search",
 	"GET /api/watch/movie/{tmdbId}",

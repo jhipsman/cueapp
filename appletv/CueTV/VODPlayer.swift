@@ -23,6 +23,9 @@ final class Playback: ObservableObject {
     private var watcher: NSKeyValueObservation?
     private var ticker: Any?
     private var endObserver: NSObjectProtocol?
+    private var skips: Skips?
+    private weak var controller: AVPlayerViewController?
+    private var shownAction = ""
 
     init(request: PlayRequest) {
         self.request = request
@@ -30,6 +33,7 @@ final class Playback: ObservableObject {
 
     func start(cue: Cue) async {
         self.cue = cue
+        Task { skips = await cue.skips(request) }
         var start = request.start
         if start < 0 {
             start = 0
@@ -125,8 +129,12 @@ final class Playback: ObservableObject {
 
     // Saving where you are, and what happens at the end.
     private func track(_ p: AVPlayer) {
-        ticker = p.addPeriodicTimeObserver(forInterval: CMTime(seconds: 15, preferredTimescale: 1), queue: .main) { [weak self] _ in
-            Task { @MainActor in await self?.save() }
+        ticker = p.addPeriodicTimeObserver(forInterval: CMTime(seconds: 1, preferredTimescale: 1), queue: .main) { [weak self] t in
+            Task { @MainActor in
+                guard let self else { return }
+                self.updateActions()
+                if t.seconds.isFinite, Int(t.seconds) % 15 == 0 { await self.save() }
+            }
         }
         endObserver = NotificationCenter.default.addObserver(forName: .AVPlayerItemDidPlayToEndTime, object: nil, queue: .main) { [weak self] note in
             Task { @MainActor in
@@ -152,6 +160,62 @@ final class Playback: ObservableObject {
         await cue.saveProgress(request, position: position, duration: duration)
     }
 
+    // ---- The player's own controls, with Cue's extras ----
+
+    func configure(_ vc: AVPlayerViewController) {
+        controller = vc
+        // Speeds in the player's menu (0.5x to 2x).
+        vc.speeds = AVPlaybackSpeed.systemDefaultSpeeds
+        var items: [UIMenuElement] = []
+        items.append(UIAction(title: "Other Version", image: UIImage(systemName: "rectangle.stack")) { [weak self] _ in
+            Task { @MainActor in await self?.otherVersion() }
+        })
+        vc.transportBarCustomMenuItems = items
+    }
+
+    // Skip Intro (or Recap) while one plays, Next Episode at the credits.
+    private func updateActions() {
+        guard let vc = controller else { return }
+        let pos = position
+        var want = ""
+        if let i = skips?.intro, pos >= i.start, pos < i.end - 1 { want = "intro" }
+        if let r = skips?.recap, pos >= r.start, pos < r.end - 1 { want = "recap" }
+        if request.kind == "tv", duration > 0 {
+            let credits = skips?.creditsStart ?? skips?.creditsFromEnd.map { duration - $0 } ?? (duration - 40)
+            if pos >= credits { want = "next" }
+        }
+        guard want != shownAction else { return }
+        shownAction = want
+        switch want {
+        case "intro", "recap":
+            let seg = want == "intro" ? skips?.intro : skips?.recap
+            vc.contextualActions = [UIAction(title: want == "intro" ? "Skip Intro" : "Skip Recap", image: UIImage(systemName: "forward.fill")) { [weak self] _ in
+                guard let self, let end = seg?.end else { return }
+                Task { @MainActor in
+                    _ = await self.player?.seek(to: CMTime(seconds: max(end - self.offset, 0), preferredTimescale: 600))
+                }
+            }]
+        case "next":
+            vc.contextualActions = [UIAction(title: "Next Episode", image: UIImage(systemName: "forward.end.fill")) { [weak self] _ in
+                Task { @MainActor in await self?.ended() }
+            }]
+        default:
+            vc.contextualActions = []
+        }
+    }
+
+    private func otherVersion() async {
+        let at = position
+        if option < options {
+            option += 1
+            status = "Trying another version…"
+            await open(at: at)
+        } else {
+            option = 1
+            await open(at: at)
+        }
+    }
+
     private func ended() async {
         guard let cue else { return }
         let total = duration > 0 ? duration : position
@@ -162,6 +226,9 @@ final class Playback: ObservableObject {
         }
         request = PlayRequest(kind: "tv", tmdbId: request.tmdbId, season: n.season, episode: n.episode,
                               title: request.title, subtitle: "S\(n.season):E\(n.episode) · \(n.title)", start: 0)
+        skips = await cue.skips(request)
+        shownAction = ""
+        controller?.contextualActions = []
         option = 1
         knownDuration = 0
         await open(at: 0)
@@ -211,7 +278,7 @@ struct VODPlayerScreen: View {
         ZStack {
             Color.black.ignoresSafeArea()
             if let p = playback.player {
-                SystemPlayer(player: p).ignoresSafeArea()
+                SystemPlayer(player: p) { vc in playback.configure(vc) }.ignoresSafeArea()
             }
             if !playback.problem.isEmpty {
                 VStack(spacing: 24) {

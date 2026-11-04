@@ -1,4 +1,8 @@
-@file:OptIn(androidx.tv.material3.ExperimentalTvMaterial3Api::class)
+@file:OptIn(
+    androidx.tv.material3.ExperimentalTvMaterial3Api::class,
+    androidx.compose.ui.ExperimentalComposeUiApi::class,
+    androidx.compose.foundation.ExperimentalFoundationApi::class,
+)
 
 package app.cue.tv.home
 
@@ -25,7 +29,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.foundation.gestures.BringIntoViewSpec
+import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.focusRestorer
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -128,7 +141,9 @@ fun CardRow(row: Shelf, memory: FocusMemory, onFocus: (Tile) -> Unit = {}, onCli
     val wide = row.key == "continue" || row.key == "new-episodes"
     Column(Modifier.padding(bottom = 14.dp)) {
         Text(row.title, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = Color.White, modifier = Modifier.padding(start = 48.dp, bottom = 6.dp))
+        // Coming back to a row puts the highlight on the poster it was on.
         LazyRow(
+            modifier = Modifier.focusRestorer(),
             contentPadding = PaddingValues(horizontal = 48.dp, vertical = 10.dp),
             horizontalArrangement = Arrangement.spacedBy(14.dp),
         ) {
@@ -175,3 +190,26 @@ fun Gap(h: Dp) = Spacer(Modifier.height(h))
 
 @Composable
 fun HGap(w: Dp) = Spacer(Modifier.width(w))
+
+// Scrolling the TV way: the highlighted row or poster moves to near the
+// start of the list (rows to the top, posters to the left), instead of
+// only as far as it takes to show it.
+val PivotSpec = object : BringIntoViewSpec {
+    override fun calculateScrollDistance(offset: Float, size: Float, containerSize: Float): Float =
+        offset - containerSize * 0.04f
+}
+
+// On a TV a text box would keep the highlight (up and down move its
+// cursor): up and down leave it instead.
+@Composable
+fun Modifier.leaveWithArrows(): Modifier {
+    val focus = LocalFocusManager.current
+    return onPreviewKeyEvent { e ->
+        if (e.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
+        when (e.key) {
+            Key.DirectionDown -> focus.moveFocus(FocusDirection.Down)
+            Key.DirectionUp -> focus.moveFocus(FocusDirection.Up)
+            else -> false
+        }
+    }
+}

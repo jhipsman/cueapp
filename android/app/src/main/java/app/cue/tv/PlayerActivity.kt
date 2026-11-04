@@ -118,6 +118,8 @@ class PlayerActivity : Activity() {
     private lateinit var controls: View
     private lateinit var timeBar: TimeBar
     private lateinit var timeLeft: TextView
+    private lateinit var timeNow: TextView
+    private var speed = 1f
     private lateinit var playPause: TextView
     private lateinit var spinner: ProgressBar
     private lateinit var pauseBadge: ImageView
@@ -359,6 +361,11 @@ class PlayerActivity : Activity() {
 
     // ---- The controls ----
 
+    // The controls: the title at the top, and at the bottom a rounded,
+    // see-through panel: the time and the bar, then play and the jumps on
+    // the left, the speeds in a group, and Next episode, Versions, Audio,
+    // Subtitles and Surround on the right (icons that show their name when
+    // the remote is on them).
     private fun buildControls(): View {
         val title = TextView(this).apply {
             text = info.optString("title")
@@ -371,13 +378,14 @@ class PlayerActivity : Activity() {
             text = info.optString("subtitle")
             setTextColor(0xFFC7C8CC.toInt())
             size(13f)
+            typeface = Fonts.text(this@PlayerActivity)
             setPadding(0, px(4), 0, 0)
             visibility = if (text.isNullOrEmpty()) View.GONE else View.VISIBLE
         }
         val top = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(px(48), px(32), px(48), px(56))
-            background = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(0xCC000000.toInt(), 0x00000000))
+            background = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(0xB3000000.toInt(), 0x00000000))
             addView(title)
             addView(sub)
             addView(TextView(this@PlayerActivity).also { stats = it }.apply {
@@ -397,8 +405,13 @@ class PlayerActivity : Activity() {
                 showControls()
             }
         }
+        timeNow = TextView(this).apply {
+            setTextColor(0xFFE6E7EA.toInt())
+            size(13f)
+            typeface = Fonts.mono(this@PlayerActivity)
+        }
         timeLeft = TextView(this).apply {
-            setTextColor(Color.WHITE)
+            setTextColor(0xFFE6E7EA.toInt())
             size(13f)
             typeface = Fonts.mono(this@PlayerActivity)
         }
@@ -407,9 +420,18 @@ class PlayerActivity : Activity() {
             gravity = Gravity.CENTER_VERTICAL
             if (live) {
                 addView(liveBadge())
+                addView(TextView(this@PlayerActivity).apply {
+                    text = info.optString("subtitle")
+                    setTextColor(0xFFE6E7EA.toInt())
+                    size(13f)
+                    typeface = Fonts.text(this@PlayerActivity, 500)
+                    maxLines = 1
+                    setPadding(px(14), 0, 0, 0)
+                })
             } else {
+                addView(timeNow, LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { marginEnd = px(14) })
                 addView(timeBar, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
-                addView(timeLeft, LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { marginStart = px(12) })
+                addView(timeLeft, LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { marginStart = px(14) })
             }
         }
 
@@ -420,10 +442,11 @@ class PlayerActivity : Activity() {
             setPadding(0, px(14), 0, 0)
             addView(playPause)
             if (!live) {
-                addView(pill("10", R.drawable.ic_cue_replay) { seekBy(-10_000) })
-                addView(pill("10", R.drawable.ic_cue_forward) { seekBy(10_000) })
+                addView(pill("", R.drawable.ic_cue_replay) { seekBy(-10_000) })
+                addView(pill("", R.drawable.ic_cue_forward) { seekBy(10_000) })
             }
             addView(View(context), LinearLayout.LayoutParams(0, 1, 1f))
+            if (!live) addView(speedGroup())
             if (isShow && !live && !catchup) {
                 nextButton = pill("Next episode", R.drawable.ic_cue_next) {
                     learnCredits()
@@ -431,23 +454,98 @@ class PlayerActivity : Activity() {
                 }.also { addView(it) }
             }
             if (hasOther && !live && !catchup) {
-                addView(pill("Other version", R.drawable.ic_cue_versions) { end("other") })
+                addView(iconPill("Other version", R.drawable.ic_cue_versions) { end("other") })
             }
-            addView(pill("Audio", R.drawable.ic_cue_audio) { chooseTrack(C.TRACK_TYPE_AUDIO, "Audio") })
-            soundButton = pill(soundLabel(), R.drawable.ic_cue_audio) { setSurround(!surround) }.also { addView(it) }
-            addView(pill("Subtitles", R.drawable.ic_cue_subtitles) { subtitlesPressed() })
+            addView(iconPill("Audio", R.drawable.ic_cue_audio) { chooseTrack(C.TRACK_TYPE_AUDIO, "Audio") })
+            addView(iconPill("Subtitles", R.drawable.ic_cue_subtitles) { subtitlesPressed() })
+            soundButton = iconPill(soundLabel(), R.drawable.ic_cue_audio) { setSurround(!surround) }.also { addView(it) }
         }
-        val bottom = LinearLayout(this).apply {
+        val panel = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(px(36), px(80), px(36), px(28))
-            background = GradientDrawable(GradientDrawable.Orientation.BOTTOM_TOP, intArrayOf(0xE6000000.toInt(), 0x00000000))
+            setPadding(px(26), px(20), px(18), px(16))
+            background = GradientDrawable().apply {
+                cornerRadius = px(22).toFloat()
+                setColor(0xC2141519.toInt())
+                setStroke(px(1), 0x1FFFFFFF)
+            }
             addView(timeRow)
             addView(buttons)
+        }
+        // A soft shade behind the panel, so it reads over a bright picture.
+        val shade = View(this).apply {
+            background = GradientDrawable(GradientDrawable.Orientation.BOTTOM_TOP, intArrayOf(0x99000000.toInt(), 0x00000000))
         }
 
         return FrameLayout(this).apply {
             addView(top, FrameLayout.LayoutParams(MATCH, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.TOP))
-            addView(bottom, FrameLayout.LayoutParams(MATCH, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.BOTTOM))
+            addView(shade, FrameLayout.LayoutParams(MATCH, px(260), Gravity.BOTTOM))
+            addView(panel, FrameLayout.LayoutParams(MATCH, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.BOTTOM).apply {
+                setMargins(px(48), 0, px(48), px(34))
+            })
+        }
+    }
+
+    // The speeds, as a group of chips: the one playing is lit, the one the
+    // remote is on is white.
+    private fun speedGroup(): View = LinearLayout(this).apply {
+        orientation = LinearLayout.HORIZONTAL
+        gravity = Gravity.CENTER_VERTICAL
+        setPadding(px(4), px(4), px(4), px(4))
+        background = GradientDrawable().apply {
+            cornerRadius = px(22).toFloat()
+            setColor(0x1AFFFFFF)
+        }
+        val chips = mutableListOf<TextView>()
+        for (sp in listOf(0.5f, 1f, 1.5f, 2f)) {
+            val chip = TextView(this@PlayerActivity).apply {
+                text = (if (sp % 1f == 0f) "${sp.toInt()}" else "$sp") + "x"
+                size(13f)
+                typeface = Fonts.text(this@PlayerActivity, 600)
+                gravity = Gravity.CENTER
+                setPadding(px(14), 0, px(14), 0)
+                setTextColor(ColorStateList(
+                    arrayOf(intArrayOf(android.R.attr.state_focused), intArrayOf(android.R.attr.state_selected), intArrayOf()),
+                    intArrayOf(0xFF0B0C0F.toInt(), 0xFF0B0C0F.toInt(), 0xFFC7C8CC.toInt()),
+                ))
+                background = StateListDrawable().apply {
+                    addState(intArrayOf(android.R.attr.state_focused), GradientDrawable().apply {
+                        cornerRadius = px(18).toFloat()
+                        setColor(Color.WHITE)
+                    })
+                    addState(intArrayOf(android.R.attr.state_selected), GradientDrawable().apply {
+                        cornerRadius = px(18).toFloat()
+                        setColor(0xE6FFFFFF.toInt())
+                    })
+                    addState(intArrayOf(), GradientDrawable().apply {
+                        cornerRadius = px(18).toFloat()
+                        setColor(Color.TRANSPARENT)
+                    })
+                }
+                isSelected = sp == speed
+                isFocusable = true
+                isFocusableInTouchMode = true
+                setOnClickListener {
+                    speed = sp
+                    player.setPlaybackSpeed(sp)
+                    chips.forEach { c -> c.isSelected = c === this }
+                    scheduleHide()
+                }
+            }
+            chips += chip
+            addView(chip, LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, px(34)))
+        }
+        layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { marginEnd = px(10) }
+    }
+
+    // iconPill is a round icon button that shows its name while the remote
+    // is on it, so the row stays tidy.
+    private fun iconPill(label: String, icon: Int, onClick: () -> Unit): TextView = pill("", icon, onClick).apply {
+        tag = label
+        setOnFocusChangeListener { v, has ->
+            val t = v as TextView
+            t.text = if (has) (t.tag as? String).orEmpty() else ""
+            t.compoundDrawablePadding = if (has) px(8) else 0
+            t.setPadding(px(16), px(10), px(if (has) 20 else 16), px(10))
         }
     }
 
@@ -587,6 +685,7 @@ class PlayerActivity : Activity() {
                 }
             }
         })
+        if (speed != 1f) p.setPlaybackSpeed(speed) // kept when the player is made again (Surround)
         p.addAnalyticsListener(object : AnalyticsListener {
             override fun onVideoDecoderInitialized(eventTime: AnalyticsListener.EventTime, decoderName: String, initializedTimestampMs: Long, initializationDurationMs: Long) {
                 this@PlayerActivity.decoderName = decoderName
@@ -665,7 +764,10 @@ class PlayerActivity : Activity() {
     private fun setSurround(on: Boolean, remember: Boolean = true) {
         surround = on
         if (remember) getSharedPreferences("player", MODE_PRIVATE).edit().putBoolean("surround", on).apply()
-        soundButton?.text = soundLabel()
+        soundButton?.let { b ->
+            b.tag = soundLabel()
+            if (b.isFocused) b.text = soundLabel()
+        }
         val item = player.currentMediaItem
         val pos = player.currentPosition
         val playing = player.playWhenReady
@@ -758,7 +860,8 @@ class PlayerActivity : Activity() {
         val dur = length()
         val pos = if (pendingSeek >= 0) pendingSeek else position()
         timeBar.update(pos, dur, if (catchup) cuOffset + player.bufferedPosition else player.bufferedPosition)
-        timeLeft.text = if (dur > 0) clock(dur - pos) else ""
+        timeNow.text = clock(pos)
+        timeLeft.text = if (dur > 0) "-" + clock(dur - pos) else ""
         updateSkip(pos)
         // When the credits start (or near the end), offer the next episode.
         val next = nextButton

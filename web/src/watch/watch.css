@@ -1600,12 +1600,39 @@ html.watch-mode:has(.wx-live-preview.is-full) body {
     transform: scale(1.3);
   }
 }
+.vx-spinner.small {
+  width: 22px;
+  height: 22px;
+  border-width: 3px;
+}
+.vx-center {
+  flex-direction: column;
+}
+.vx-center-label {
+  margin-top: 14px;
+  font-size: 0.95rem;
+  color: #e4e5e8;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8);
+}
 @media (max-width: 640px) {
   .vx-title {
     display: none;
   }
-  .vx-volume input {
+  /* Phones use their own volume buttons; dropping this one lets every
+     other control fit on a 360px-wide screen. */
+  .vx-volume {
     display: none;
+  }
+  .vx-bottom {
+    padding-left: max(12px, env(safe-area-inset-left));
+    padding-right: max(12px, env(safe-area-inset-right));
+  }
+  .vx-row {
+    gap: 4px;
+  }
+  .vx-left,
+  .vx-right {
+    gap: 2px;
   }
   .vx-icon {
     width: 42px;
@@ -3000,4 +3027,13 @@ html.tv-mode .wx-card {
 }
 html.tv-mode .wx-card.wide {
   width: 252px;
+}
+
+/* An option's words wrap inside it instead of running past its edge
+   (buttons don't wrap elsewhere). */
+.wx-theme-option {
+  white-space: normal;
+}
+.wx-theme-option > span {
+  min-width: 0;
 }

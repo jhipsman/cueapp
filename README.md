@@ -5,7 +5,7 @@
   </picture>
 </p>
 
-<p align="center"><b>Browse anything, press Play, and it streams. Your movies, TV, music and books in one app.</b></p>
+<p align="center"><b>Browse anything, press Play, and it streams. Movies, shows and Live TV for your household, on your TV, Apple TV, phone and the web.</b></p>
 
 <p align="center">
   <a href="docs/INSTALL.md">Install</a> ·
@@ -18,9 +18,29 @@
 
 # Cue
 
-Cue is a self-hosted media manager. Find a movie or show, and it searches your Usenet and torrent indexers, downloads the best release, unpacks it, names it and puts it in your library, ready for Plex, Jellyfin or Emby.
+Cue is a self-hosted streaming app for your household. Browse every movie and show, press **Play**, and it streams: from your stream add-ons (Comet, Torrentio, MediaFusion) and Premiumize, from your own library, or from free sources like the Internet Archive. Live TV from your IPTV provider sits next to it, with a real guide, catch-up and recordings. It runs on your own server, with apps for the TV, the Apple TV, phones and the web.
 
-It does the jobs of Radarr, Sonarr, Prowlarr, SABnzbd, a torrent client and Bazarr in **one app**: one container, one web page, one search bar, one thing to update and back up.
+### Watch
+
+- **A streaming service of your own**: a banner, Continue Watching, My List, "Because you watched…", new episodes, and title pages with IMDb, Rotten Tomatoes and TMDB ratings.
+- **Play anything**: Cue finds a version and it starts. If one won't play, the next is tried by itself, and the Internet Archive and YouTube cover hard-to-find shows. It also tells you where a title is free (Tubi, Pluto) or on a service you have.
+- **Streaming quality per profile**, as in apps like Nuvio: the picture to aim for (4K, 1080p, 720p), how big a file may be (Smart picks the size streaming services use instead of the biggest file), and whether to prefer HDR, Dolby Vision, HEVC or Atmos and skip Remux.
+- **Live TV**: your IPTV provider's channels with logos, a guide grid, Favorites, catch-up, reminders, **Follow** a team or show, and **recordings** kept on the server for 30 days.
+- **Profiles**, Netflix-style: Who's watching?, a PIN, and each person's own progress, My List, colors and streaming quality.
+- **While watching**: Skip Intro and Skip Recap (TheIntroDB, plus what your household skips), English subtitles, the next episode at the credits, speeds, other versions, and frames on the time bar.
+- **Plays on anything**: files a browser or Apple TV can't open are converted as they play, keeping 4K, HDR and surround for the Apple TV.
+
+### Apps
+
+| | |
+|---|---|
+| **Fire TV, Google TV, Android TV** | A native app (Compose for TV) with a native player that plays MKV, HEVC, 4K HDR and Dolby Vision, sends Dolby and DTS to your speakers, and matches the TV's frame rate. Install it with Downloader from `<your server>/tv.apk`. [More](android/README.md) |
+| **Apple TV** | A native app in Apple's own player (Live TV guide, Home, title pages, Search, My List). Installed from Xcode on a Mac, with a free Apple ID. [More](appletv/README.md) |
+| **Phone, tablet, computer** | Watch in any browser; on a phone, add it to the home screen and it opens full screen like an app. |
+
+### And a full library manager
+
+Cue also does the jobs of Radarr, Sonarr, Prowlarr, SABnzbd, a torrent client and Bazarr in **one app**: find a movie or show, and it searches your Usenet and torrent indexers, downloads the best release, unpacks it, names it and puts it in your library, ready for Plex, Jellyfin or Emby. It starts in **streaming only** mode with all of this hidden; switch it on in Settings > Streaming.
 
 - **Movies and TV** (anime, daily shows and specials included), plus **music**, **ebooks** and **audiobooks** if you switch them on.
 - **Cue Books**, a built-in reader and audiobook player that opens as an app of its own and remembers your place on every device. It reads Kindle books too, jumps between audiobook chapters, and follows book series.
@@ -34,9 +54,9 @@ It does the jobs of Radarr, Sonarr, Prowlarr, SABnzbd, a torrent client and Baza
 - **What's been watched**, read from Plex, Jellyfin and Emby, with watch statistics and optional cleanup rules (all off until you switch them on).
 - Notifications, media-server refresh (Plex, Jellyfin, Emby, Audiobookshelf, Kavita), download hours, backups, and your own script after each import.
 - **Move over from Radarr, Sonarr, Prowlarr, SABnzbd** and eight other apps without redoing your setup. They are only read, never changed.
-- Runs on **Synology, Unraid, QNAP, any Linux server** and 64-bit Raspberry Pi.
+- Runs on **Synology, Unraid, QNAP, any Linux server**, a small cloud server and 64-bit Raspberry Pi.
 
-Cue is new. Movies and TV work end to end, and so do music, ebooks and audiobooks once you switch them on. It's used daily, but expect some rough edges. [FEATURES.md](docs/FEATURES.md) says what works and what doesn't yet.
+Cue is new. Watch, Live TV and the TV apps are used daily, and the library manager works end to end for movies and TV (and music, ebooks and audiobooks once you switch them on), but expect some rough edges. [FEATURES.md](docs/FEATURES.md) says what works and what doesn't yet.
 
 ## Screenshots
 

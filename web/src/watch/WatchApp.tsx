@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, NavLink, Route, Routes, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import CueWordmark from '../components/CueWordmark'
 import Icon from '../components/Icon'
@@ -11,6 +11,7 @@ import LivePage from './LivePage'
 import LivePlayer from './LivePlayer'
 import ManageProfiles from './ManageProfiles'
 import ThemePage from './ThemePage'
+import StreamingPage from './StreamingPage'
 import RecordingPlayer from './RecordingPlayer'
 import { applyTheme, savedTheme } from './theme'
 import WhoIsWatching from './WhoIsWatching'
@@ -45,6 +46,7 @@ export default function WatchApp() {
         <Route path="who" element={<WhoIsWatching />} />
         <Route path="profiles" element={<ManageProfiles />} />
         <Route path="theme" element={<ThemePage />} />
+        <Route path="quality" element={<StreamingPage />} />
         <Route path="recording/:id" element={<RecordingPlayer />} />
         <Route path="play/movie/:tmdbId" element={<PlayerPage />} />
         <Route path="play/tv/:tmdbId/:season/:episode" element={<PlayerPage />} />
@@ -95,21 +97,41 @@ function ProfileMenu() {
   const { streamingOnly } = useModules()
   const navigate = useNavigate()
   const [open, setOpen] = useState(false)
+  const wrap = useRef<HTMLDivElement>(null)
+  // Closes on Escape (focus back on the avatar) or a click anywhere else.
+  useEffect(() => {
+    if (!open) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return
+      setOpen(false)
+      wrap.current?.querySelector<HTMLButtonElement>('.wx-menu-button')?.focus()
+    }
+    const onDown = (e: PointerEvent) => {
+      if (!wrap.current?.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener('keydown', onKey)
+    document.addEventListener('pointerdown', onDown)
+    return () => {
+      document.removeEventListener('keydown', onKey)
+      document.removeEventListener('pointerdown', onDown)
+    }
+  }, [open])
   if (!active) return null
   const owner = active.main
   const multi = (data?.profiles.length ?? 0) > 1
   return (
-    <div className="wx-menu">
+    <div className="wx-menu" ref={wrap}>
       <button className="wx-menu-button" onClick={() => setOpen((o) => !o)} aria-expanded={open} aria-label={`Profile: ${active.name}`}>
         <Avatar profile={active} size={34} />
       </button>
       {open && (
-        <div className="wx-menu-list" onMouseLeave={() => setOpen(false)}>
+        <div className="wx-menu-list">
           <div className="wx-menu-who">
             <Avatar profile={active} size={28} /> {active.name}
           </div>
           {multi && <button onClick={() => navigate('/watch/who')}>Switch profile</button>}
           <button onClick={() => navigate('/watch/theme')}>Colors</button>
+          <button onClick={() => navigate('/watch/quality')}>Streaming quality</button>
           {owner && <button onClick={() => navigate('/watch/profiles')}>Manage profiles</button>}
           {onTV() && <button onClick={() => window.CueTV?.changeServer()}>Change server</button>}
           {owner && <button onClick={() => navigate(streamingOnly ? '/settings/streaming' : '/')}>{streamingOnly ? 'Settings' : 'Settings and library'}</button>}

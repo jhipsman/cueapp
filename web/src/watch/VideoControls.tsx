@@ -345,6 +345,7 @@ export default function VideoControls({ video, title, subtitle, onBack, live, no
       {waiting && video && (
         <div className="vx-center" aria-hidden="true">
           <div className="vx-spinner" />
+          {pos === 0 && <div className="vx-center-label">Starting…</div>}
         </div>
       )}
       {flash && !waiting && (
@@ -361,6 +362,10 @@ export default function VideoControls({ video, title, subtitle, onBack, live, no
           <Icon name="arrow-left" size={30} />
         </button>
         {note && <div className="vx-note">{note}</div>}
+      </div>
+      {/* Notes ("Trying version 2 of 3.") are read out by screen readers. */}
+      <div className="sr-only" role="status" aria-live="polite">
+        {note}
       </div>
 
       <div className="vx-bottom" onPointerUp={(e) => e.stopPropagation()}>
@@ -403,8 +408,8 @@ export default function VideoControls({ video, title, subtitle, onBack, live, no
 
         <div className="vx-row">
           <div className="vx-left">
-            <button className="vx-icon" onClick={toggle} aria-label={playing ? 'Pause' : 'Play'}>
-              <Icon name={playing ? 'pause' : 'play'} size={30} fill="currentColor" />
+            <button className="vx-icon" onClick={toggle} aria-label={waiting && pos === 0 ? 'Loading' : playing ? 'Pause' : 'Play'} aria-busy={waiting || undefined}>
+              {waiting && pos === 0 ? <span className="vx-spinner small" /> : <Icon name={playing ? 'pause' : 'play'} size={30} fill="currentColor" />}
             </button>
             {!live && (
               <>
