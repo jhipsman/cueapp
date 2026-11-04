@@ -139,7 +139,10 @@ func TestLiveTV(t *testing.T) {
 	w := call("GET", "/", "", s.handleLivePlay, "id", "10")
 	var play struct{ URL, Direct string }
 	_ = json.Unmarshal(w.Body.Bytes(), &play)
-	if !strings.HasPrefix(play.URL, "/api/live/hls?u=") || strings.Contains(play.URL, "pw") || play.Direct != "" {
+	// The sealed address is random letters, which can spell "pw" by chance:
+	// look for the provider's own path with the password in it instead.
+	leaked := strings.Contains(play.URL, "me/pw") || strings.Contains(play.URL, "me%2Fpw")
+	if !strings.HasPrefix(play.URL, "/api/live/hls?u=") || leaked || play.Direct != "" {
 		t.Fatalf("play: %s", w.Body)
 	}
 	r := httptest.NewRequest("GET", "/", nil).WithContext(auth.WithUser(context.Background(), user))
