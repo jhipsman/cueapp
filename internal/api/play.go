@@ -367,7 +367,10 @@ func (s *Server) servePlay(w http.ResponseWriter, r *http.Request, t playTarget)
 		writeError(w, http.StatusNotFound, entry.nothing)
 		return
 	}
-	// The playback quality setting (a data saver) puts bigger versions last.
+	// The profile's streaming preferences (the picture to aim for, how big
+	// a file may be, what to prefer), then the server's playback quality
+	// setting (a data saver), which puts bigger versions last.
+	entry.candidates = rankByPrefs(entry.candidates, s.profileStreamPrefs(r), targetSeconds(t))
 	entry.candidates = preferResolution(entry.candidates, s.playbackMaxRes())
 	if s.englishOnly() {
 		var other bool

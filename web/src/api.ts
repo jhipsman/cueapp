@@ -197,6 +197,16 @@ export interface WatchProfile {
   main: boolean // the owner's: the only one that can change settings
   theme?: WatchTheme
 }
+// How a profile wants versions picked when it presses Play.
+export interface StreamPrefs {
+  quality: '4k' | '1080p' | '720p'
+  size: 'smart' | '10' | '20' | '30' | '50' | 'any' // GB for a two-hour film
+  remux: 'avoid' | 'allow'
+  hdr: 'prefer' | 'any'
+  dolbyVision: 'prefer' | 'allow' | 'avoid'
+  efficient: boolean // prefer HEVC and AV1
+  lightSound: boolean // prefer Dolby Digital Plus / Atmos over TrueHD and DTS-HD
+}
 // A profile's colors in Watch.
 export interface WatchTheme {
   accent: string // "#rrggbb"
@@ -2312,6 +2322,8 @@ export const api = {
       // Safari plays a stream being made only as HLS.
       .then((p) => ({ ...p, stream: safari() ? p.hls : p.stream })),
   saveProfileTheme: (t: WatchTheme) => put<WatchTheme>('/profile/theme', t),
+  streamPrefs: () => get<StreamPrefs>('/profile/streaming'),
+  saveStreamPrefs: (p: StreamPrefs) => put<StreamPrefs>('/profile/streaming', p),
   getYouTube: () => get<{ set: boolean }>('/settings/youtube'),
   putYouTube: (apiKey: string) => put<{ set: boolean }>('/settings/youtube', { apiKey }),
   watchProviders: (kind: 'movie' | 'tv', tmdbId: number) =>

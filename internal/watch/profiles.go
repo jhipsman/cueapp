@@ -22,8 +22,10 @@ type Profile struct {
 	HasPIN bool
 	Main   bool // the account owner's: the only one that may change settings
 	Theme  Theme
-	secret string
-	pin    string // bcrypt hash
+	// StreamPrefs is how versions are picked when the profile presses Play.
+	StreamPrefs StreamPrefs
+	secret      string
+	pin         string // bcrypt hash
 }
 
 // Secret changes whenever the PIN does, so a sign-in to the profile made
@@ -70,15 +72,16 @@ func cleanAvatar(a string) string {
 	return AvatarColors[0]
 }
 
-const profileCols = `id, user_id, name, avatar, pin_hash, secret, is_main, theme`
+const profileCols = `id, user_id, name, avatar, pin_hash, secret, is_main, theme, stream_prefs`
 
 func scanProfile(sc interface{ Scan(...any) error }) (Profile, error) {
 	var p Profile
-	var theme string
-	if err := sc.Scan(&p.ID, &p.UserID, &p.Name, &p.Avatar, &p.pin, &p.secret, &p.Main, &theme); err != nil {
+	var theme, prefs string
+	if err := sc.Scan(&p.ID, &p.UserID, &p.Name, &p.Avatar, &p.pin, &p.secret, &p.Main, &theme, &prefs); err != nil {
 		return p, err
 	}
 	p.Theme = parseTheme(theme)
+	p.StreamPrefs = parseStreamPrefs(prefs)
 	p.HasPIN = p.pin != ""
 	return p, nil
 }

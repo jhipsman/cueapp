@@ -11,6 +11,7 @@ import LivePage from './LivePage'
 import LivePlayer from './LivePlayer'
 import ManageProfiles from './ManageProfiles'
 import ThemePage from './ThemePage'
+import StreamingPage from './StreamingPage'
 import RecordingPlayer from './RecordingPlayer'
 import { applyTheme, savedTheme } from './theme'
 import WhoIsWatching from './WhoIsWatching'
@@ -45,6 +46,7 @@ export default function WatchApp() {
         <Route path="who" element={<WhoIsWatching />} />
         <Route path="profiles" element={<ManageProfiles />} />
         <Route path="theme" element={<ThemePage />} />
+        <Route path="quality" element={<StreamingPage />} />
         <Route path="recording/:id" element={<RecordingPlayer />} />
         <Route path="play/movie/:tmdbId" element={<PlayerPage />} />
         <Route path="play/tv/:tmdbId/:season/:episode" element={<PlayerPage />} />
@@ -110,6 +112,7 @@ function ProfileMenu() {
           </div>
           {multi && <button onClick={() => navigate('/watch/who')}>Switch profile</button>}
           <button onClick={() => navigate('/watch/theme')}>Colors</button>
+          <button onClick={() => navigate('/watch/quality')}>Streaming quality</button>
           {owner && <button onClick={() => navigate('/watch/profiles')}>Manage profiles</button>}
           {onTV() && <button onClick={() => window.CueTV?.changeServer()}>Change server</button>}
           {owner && <button onClick={() => navigate(streamingOnly ? '/settings/streaming' : '/')}>{streamingOnly ? 'Settings' : 'Settings and library'}</button>}

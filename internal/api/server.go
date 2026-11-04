@@ -482,6 +482,8 @@ func (s *Server) protectedRoutes() *routeTable {
 	play.HandleFunc("GET /api/profiles", s.handleListWatchProfiles)
 	play.HandleFunc("POST /api/profiles/{id}/select", s.handleSelectWatchProfile)
 	play.HandleFunc("PUT /api/profile/theme", s.handlePutProfileTheme)
+	play.HandleFunc("GET /api/profile/streaming", s.handleGetStreamPrefs)
+	play.HandleFunc("PUT /api/profile/streaming", s.handlePutStreamPrefs)
 	play.HandleFunc("GET /api/watch/home", s.handleWatchHome)
 	play.HandleFunc("GET /api/watch/search", s.handleWatchSearch)
 	play.HandleFunc("GET /api/watch/movie/{tmdbId}", s.handleWatchMovie)

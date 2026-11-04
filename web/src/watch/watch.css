@@ -3001,3 +3001,12 @@ html.tv-mode .wx-card {
 html.tv-mode .wx-card.wide {
   width: 252px;
 }
+
+/* An option's words wrap inside it instead of running past its edge
+   (buttons don't wrap elsewhere). */
+.wx-theme-option {
+  white-space: normal;
+}
+.wx-theme-option > span {
+  min-width: 0;
+}
