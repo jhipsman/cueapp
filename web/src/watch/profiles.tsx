@@ -5,15 +5,16 @@ import { applyTheme } from './theme'
 
 // The household's profiles and the one this device is on, for every Watch page.
 
+// Each is dark enough for the white initial on it to read (4.5:1 or more).
 export const AVATAR_COLORS: Record<string, string> = {
-  teal: '#14b8a6',
-  red: '#e2453c',
-  blue: '#3b82f6',
-  purple: '#8b5cf6',
-  orange: '#f97316',
-  green: '#22c55e',
-  pink: '#ec4899',
-  yellow: '#eab308',
+  teal: '#0f766e',
+  red: '#dc2626',
+  blue: '#2563eb',
+  purple: '#7c3aed',
+  orange: '#c2410c',
+  green: '#15803d',
+  pink: '#be185d',
+  yellow: '#a16207',
 }
 
 interface ProfilesState {

@@ -608,7 +608,7 @@ export default function PlayerPage() {
           </button>
           <div className="wx-player-title">
             {answer?.title ?? 'Finding the best version…'}
-            {note && <small>{note}</small>}
+            {note && <small role="status">{note}</small>}
           </div>
         </div>
       )}

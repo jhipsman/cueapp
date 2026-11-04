@@ -15,7 +15,7 @@ if (demoEnabled()) installDemo()
 // takes effect immediately instead of flashing the OS default first.
 try {
   const stored = localStorage.getItem('cue-theme')
-  if (stored === 'light' || stored === 'dark') {
+  if (stored === 'light') {
     document.documentElement.dataset.theme = stored
   }
 } catch {

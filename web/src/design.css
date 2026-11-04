@@ -23,24 +23,6 @@
   --on-sec: #0b0e13;
 }
 
-@media (prefers-color-scheme: light) {
-  :root:not([data-theme='dark']) {
-    --c-dashboard: #0b7a6f;
-    --c-discover: #6a4fd8;
-    --c-library: #2b7217;
-    --c-wanted: #a84b06;
-    --c-calendar: var(--accent);
-    --c-rose: #be185d;
-    --c-activity: #1d4ed8;
-    --c-settings: #475569;
-    --c-profile: #0b7a6f;
-    --c-about: #0b7a6f;
-    --c-movie: #0b7a6f;
-    --c-tv: #6a4fd8;
-    --on-sec: #ffffff;
-  }
-}
-
 :root[data-theme='light'] {
   --c-dashboard: #0b7a6f;
   --c-discover: #6a4fd8;
@@ -1365,7 +1347,7 @@ fieldset.group .card, fieldset.group table { max-width: 100%; }
 .subnav a.active::before, .subnav a.active::after { display: none; }
 .subnav a.active .nav-ico { background: var(--sc); color: #10141a; box-shadow: none; }
 :root[data-theme="light"] .subnav a .nav-ico { color: color-mix(in srgb, var(--sc) 55%, #1b2330); }
-@media (prefers-color-scheme: light) { :root:not([data-theme="dark"]) .subnav a .nav-ico { color: color-mix(in srgb, var(--sc) 55%, #1b2330); } }
+:root[data-theme='light'] .subnav a .nav-ico { color: color-mix(in srgb, var(--sc) 55%, #1b2330); }
 :root[data-theme="light"] .subnav a.active .nav-ico { color: #10141a; }
 @media (max-height: 700px) { .subnav a .nav-ico { display: none; } .subnav a { padding: 2px 8px; } }
 
@@ -1757,10 +1739,8 @@ button.cal-more:hover { text-decoration: underline; }
 
 /* ==== Music module: colour, modules switchboard, collection import ======== */
 :root { --c-music: #ff9a62; }
-@media (prefers-color-scheme: light) { :root:not([data-theme='dark']) { --c-music: #b04607; } }
 :root[data-theme='light'] { --c-music: #b04607; }
 :root { --c-book: #7fc8a9; --c-audiobook: #c9a0ff; }
-@media (prefers-color-scheme: light) { :root:not([data-theme='dark']) { --c-book: #1f7a55; --c-audiobook: #6b3fb5; } }
 :root[data-theme='light'] { --c-book: #1f7a55; --c-audiobook: #6b3fb5; }
 
 /* Settings, Modules: one card per kind of media, side by side, equal height */
@@ -2170,8 +2150,7 @@ legend .srv-dot { margin-left: 6px; }
    the dark background (they were dim grey and hard to read). The selected
    item stays bold. */
 :root { --nav-text: #f4f6f9; }
-@media (prefers-color-scheme: light) { :root:not([data-theme="dark"]) { --nav-text: var(--text); } }
-:root[data-theme="light"] { --nav-text: var(--text); }
+:root[data-theme='light'] { --nav-text: var(--text); }
 .sidebar a,
 .sidebar .nav-label,
 .subnav .sn-pages a.sn-page,
@@ -2891,4 +2870,37 @@ a.bar-label:hover { color: var(--accent); }
 .auth-wordmark .cue-wordmark-ue {
   font-family: 'Sora', var(--font-display, sans-serif); font-weight: 800; font-size: 2.75rem; letter-spacing: -0.05em; line-height: 1.15;
   color: var(--text); text-shadow: 0 2px 18px rgba(52, 209, 191, 0.25); padding: 0 0.06em 0.1rem 0;
+}
+
+/* ==== Quiet pass: the manager as calm as Watch ===========================
+   One product: no coloured stripe down the edge of a card (its icon and its
+   words say what it is), no gradient lettering, no decorative circles, no
+   bounce. Thin edges keep the colour where it means something. */
+.wrow, .qrow, .ms-card, .slow-note, .waiting-list li, .mi-stat, .album-card, .artist-card,
+.music-profile, .info-card, .import-banner, .pl-row, .update-card, .health-item {
+  border-left-width: 1px;
+}
+.service-card.is-required, .service-card.is-optional, .service-card.is-included,
+.mig-app, .book-format, .stat-tile {
+  border-top-width: 1px;
+}
+.card > h2:first-child {
+  border-left: 0;
+  padding-left: 0;
+}
+.hero-welcome::before,
+.hero-welcome::after {
+  display: none;
+}
+.hero-welcome h1 span,
+.finish-card h1 span {
+  background: none;
+  -webkit-background-clip: border-box;
+  background-clip: border-box;
+  color: var(--accent);
+  animation: none;
+}
+.switch-thumb,
+.brand .brand-mark {
+  transition-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);
 }

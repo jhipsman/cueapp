@@ -30,9 +30,9 @@
   font-display: swap;
 }
 
-/* Cue brand + UI tokens (branding/cue-tokens.css) — dark is the default theme; the in-app
-   ThemeToggle sets data-theme="light"/"dark" explicitly, otherwise it
-   follows the OS via prefers-color-scheme. */
+/* Cue brand + UI tokens (branding/cue-tokens.css). Dark everywhere, as in
+   Watch, whatever the device's own setting: Cue is one product. The theme
+   button in the manager's top bar switches to light (data-theme="light"). */
 :root {
   color-scheme: dark;
 
@@ -67,33 +67,6 @@
   font-family: var(--font-body);
 }
 
-@media (prefers-color-scheme: light) {
-  :root:not([data-theme='dark']) {
-    color-scheme: light;
-    --bg: #f5f6f8;
-    --surface: #ffffff;
-    --surface-2: #eef0f3;
-    --border: #d9dde3;
-    --text: #1b1f26;
-    --text-dim: #444b58;
-    --text-faint: #5f6673;
-
-    --accent: #0b7a6f;
-    --accent-hover: #096b61;
-    --accent-pressed: #075a52;
-    --accent-subtle: rgba(11, 122, 111, 0.1);
-    --on-accent: #ffffff;
-    --focus-ring: rgba(11, 122, 111, 0.4);
-
-    --accent-2: #6a4fd8;
-    --accent-2-subtle: rgba(106, 79, 216, 0.1);
-
-    --success: #146c35;
-    --warning: #a84b06;
-    --danger: #c62828;
-    --info: #1d4ed8;
-  }
-}
 
 :root[data-theme='light'] {
   color-scheme: light;
@@ -626,7 +599,7 @@ td {
   background: var(--surface-2);
   border: 1px solid var(--border);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
-  animation: toast-in 0.25s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+  animation: toast-in 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
   max-width: 380px;
 }
 
