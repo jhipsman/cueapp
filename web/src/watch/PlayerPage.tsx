@@ -515,8 +515,40 @@ export default function PlayerPage() {
   }
 
   // This version won't play here: its original file, then the next version.
+  // Once a version has played for a while it is never swapped for another
+  // by itself: a hiccup picks it up again where it was (twice at most), and
+  // after that the viewer chooses (Versions > Other version).
+  const settled = useRef('')
+  const hiccups = useRef({ url: '', n: 0 })
+  function playedFor(v: HTMLVideoElement) {
+    let sec = 0
+    for (let i = 0; i < v.played.length; i++) sec += v.played.end(i) - v.played.start(i)
+    return sec
+  }
+  function midShow(): boolean {
+    const v = video.current
+    if (!answer || !v) return false
+    if (settled.current !== answer.url && playedFor(v) < 10) return false
+    settled.current = answer.url
+    const pos = Math.floor((conv?.offset ?? 0) + v.currentTime)
+    if (hiccups.current.url !== answer.url) hiccups.current = { url: answer.url, n: 0 }
+    if (hiccups.current.n < 2) {
+      hiccups.current.n++
+      setNote('Lost the stream for a moment, picking up where it was…')
+      if (conv?.stream) setConv({ ...conv, offset: pos })
+      else {
+        resumeAt.current = pos
+        v.load()
+      }
+      return true
+    }
+    setNote('This version keeps stopping. Choose Other version in the Versions menu to try another.')
+    return true
+  }
+
   function onError() {
     if (!answer) return
+    if (midShow()) return
     if (!useOriginal && answer.url && answer.streamUrl) {
       setUseOriginal(true)
       return
@@ -552,6 +584,7 @@ export default function PlayerPage() {
   const stalled = useRef<() => void>(() => undefined)
   stalled.current = () => {
     if (error || !answer) return // given up already: nothing to retry
+    if (midShow()) return
     if (conv?.stream) moveOn()
     else onError()
   }

@@ -33,6 +33,7 @@ under [Unreleased]. How releases are cut: [docs/RELEASING.md](docs/RELEASING.md)
 - **Stream add-ons**: paste a Stremio add-on link (Comet on ElfHosted, Torrentio, MediaFusion) in Settings > Downloading, and Play asks it for streams first, with its own scrapers and sorting. Links set up with your Premiumize key play straight away; Cue's own search is the fallback. See [docs/watch.md](docs/watch.md#stream-add-ons-comet-torrentio-mediafusion).
 
 ### Changed
+- **No more version switching mid-show**: Cue still tries the next version by itself when one won't start, but once the picture has played it never switches on its own. A stream that drops is picked up where it was (twice at most), then the player says so and leaves Other version to you. In the browser and the Fire TV / Google TV app.
 - **The last Mediarium names are now Cue**, and nothing you set up stops working:
   - Settings in the container's environment are `CUE_...` (for example `CUE_PAUSE_AUTOMATION`); the old `MEDIARIUM_...` names still work. Scripts after imports get both `CUE_...` and `MEDIARIUM_...` variables.
   - The compose files, guides and app store packages use `cue` for the service and container, `/opt/cue` and `cue.service` (with `/etc/cue/cue.env`) for a Linux install, and `cue_<version>_<os>_<arch>.tar.gz` for the release files. An existing container called `mediarium` keeps running as it is.
