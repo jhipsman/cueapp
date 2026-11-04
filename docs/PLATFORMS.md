@@ -16,6 +16,17 @@ Docker is the one way to install Cue today, and it covers most home servers and 
 
 The image is `ghcr.io/jhipsman/cue:latest`, built for `linux/amd64` and `linux/arm64`. `ghcr.io/jhipsman/cue:latest-full` is the same with a Cloudflare helper built in (see [INSTALL.md](./INSTALL.md#optional-getting-past-cloudflare-checks)). Every release also has tags with its version number, for example `:2.1.0` and `:2.1` (and `:2.1.0-full` and `:2.1-full`): see [Updating](./INSTALL.md#updating).
 
+## Apps to watch on
+
+The server above is where Cue runs; these are what you watch it on.
+
+| Device | App | How to install |
+|---|---|---|
+| Fire TV, Google TV, Android TV | Native app with its own player | Downloader, then `<your server>/tv.apk` ([guide](../android/README.md)) |
+| Apple TV | Native app in Apple's player | Xcode on a Mac, with a free Apple ID ([guide](../appletv/README.md)) |
+| iPhone, iPad, Android phones | Watch in the browser | Add to Home Screen (Safari) or Install app (Chrome) |
+| Computers | Watch in the browser | Open your server's address |
+
 ## Coming soon
 
 | Platform | What it will be | Status |

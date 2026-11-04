@@ -2,7 +2,7 @@
 
 Watch is the streaming side of Cue. Open it with **Watch** at the top of any page, or go to `/watch`. It looks and works like a streaming service: a banner, rows of artwork to scroll through, a search box, and a **Play** button on everything.
 
-It needs [Premiumize](downloads.md#premiumize) (the player streams straight from Premiumize; nothing is downloaded to your server) and, for IMDb ratings, an optional OMDb key.
+It needs something to play from: a [stream add-on](#stream-add-ons-comet-torrentio-mediafusion) such as Comet, or [Premiumize](downloads.md#premiumize), or both. The player streams straight from them; nothing is downloaded to your server. For IMDb ratings, add an optional OMDb key. Watch it in a browser, or in the [TV and Apple TV apps](#the-apps).
 
 ## Streaming only
 
@@ -30,12 +30,23 @@ Cue works like Netflix for a household: one sign-in, then **Who's watching?** an
 - **Browse.** Home has Continue Watching, My List, then trending, popular and genre rows of movies and shows. **Shows** and **Movies** at the top narrow it to one kind.
 - **Search anything.** Type in the search box: every movie and show TMDB knows comes up, not only what's in your library.
 - **Open a title.** Its page has the backdrop, description, IMDb and Rotten Tomatoes ratings (or TMDB's score), age rating, length, cast and genres, and **More like this**. A show has a season picker and its episodes, each with a thumbnail, description and length.
-- **Press Play.** Cue picks the best version Premiumize can stream at once ([how it picks](downloads.md#play-streaming-from-premiumize)) and it starts. If one won't play, the next one is tried by itself.
+- **Press Play.** Cue picks a version by the profile's [Streaming quality](#streaming-quality) and it starts. If one won't play, the next one is tried by itself; **Other version** in the player moves to the next one by hand.
 - **Pick up where you stopped.** Where you are is saved every 15 seconds, per account. Play on a title you started says **Resume**; on a show it goes to the episode you're on, or the next one.
 - **Next episode.** At the end of an episode a card offers the next one and plays it after 10 seconds.
 - **My List.** The **+** on a title's page saves it to My List, its own row on Home and its own page. This is separate from your library: adding to My List downloads nothing.
 
 The library manager (downloads, quality, settings) stays one click away: **Manage** in the top bar.
+
+## Streaming quality
+
+Each profile chooses how Cue picks a version when it presses Play, as in apps like Nuvio: the avatar menu > **Streaming quality**. It applies on every device and app.
+
+- **Picture**: 4K, 1080p or 720p to aim for. When nothing at it is found, the nearest below comes first; better is used only when nothing at it is found.
+- **File size**: **Smart** (the default) prefers the bitrate streaming services use for that picture, about 12 to 32 Mbps for 4K (10 to 30 GB for a two-hour film), so it starts fast and doesn't stutter. Or a limit (up to 10, 20, 30 or 50 GB for a two-hour film, an episode in proportion), or **Any size** (the add-on's own order, often the biggest file first).
+- **Dolby Vision**: prefer, allow or avoid (for a TV that shows it with odd colors).
+- **Prefer**: HDR, skipping Remux (Blu-ray copies of 40 to 80 GB), HEVC and AV1 (the same picture in about half the size), and Dolby Digital Plus or Atmos over TrueHD and DTS-HD (much bigger, and most TVs can't send them to speakers).
+
+Cue reads all of this from each version's name and size. The server-wide data saver in Settings > Streaming still applies on top, and the Internet Archive and YouTube stay last.
 
 ## Stream add-ons (Comet, Torrentio, MediaFusion)
 
@@ -117,6 +128,12 @@ Things to know:
 - Channels the provider lists without a guide id show "No guide for this channel" and still play.
 - Your login is stored encrypted, and stream addresses that hold the password never reach the browser.
 
+## The apps
+
+- **Fire TV, Google TV, Android TV**: a native app with its own player (every format the TV can decode, 4K HDR and Dolby Vision, Dolby and DTS to your speakers, the TV's refresh rate matched to the film). Install it with Downloader from your server's `/tv.apk`. See [the TV app](../android/README.md).
+- **Apple TV**: a native app that plays in Apple's own player; files it can't open are converted as they play, keeping 4K, HDR and surround. It's installed from Xcode on a Mac. See [the Apple TV app](../appletv/README.md).
+- **Phones and computers**: Watch in the browser. On an iPhone, Safari's **Share > Add to Home Screen** opens it full screen like an app; on Android, Chrome's **Install app**.
+
 ## For apps
 
 Everything Watch shows comes from the API, so a TV app can show the same things. All need a signed-in account (an API key from Settings > Profile, sent as `X-API-Key`) with permission to play, and the profile's token in `X-Cue-Profile`: list them with `GET /api/profiles`, and `POST /api/profiles/{id}/select` with `{"pin": "1234"}` (if it has one) answers with the token.
@@ -144,6 +161,8 @@ Everything Watch shows comes from the API, so a TV app can show the same things.
 | `GET /api/live/play/{id}` | where a channel plays: `url` through Cue, and `direct` (the provider's) for the TV app |
 | `PUT` / `DELETE /api/watch/list/{kind}/{tmdbId}` | add to or remove from My List |
 | `GET /api/watch/skips/{kind}/{tmdbId}?season=&episode=&duration=` | where the intro, recap and credits are, in seconds |
+| `GET` / `PUT /api/profile/streaming` | the profile's [Streaming quality](#streaming-quality): `{"quality":"4k|1080p|720p","size":"smart|10|20|30|50|any","remux":"avoid|allow","hdr":"prefer|any","dolbyVision":"prefer|allow|avoid","efficient":true,"lightSound":true}` |
+| `GET /api/play/convert?u=` | for a version a player can't open (`convert` in what to play, asked with `client=web`): its length and where it plays converted, as an MP4 stream (`stream`) or HLS (`hls`; add `&apple=1` for the Apple TV, which keeps HEVC, HDR and Dolby sound, and `&t=` to start further in) |
 | `PUT /api/profile/theme` | the profile's colors: `{"accent":"#34d1bf","glow":"off|soft|strong","background":"midnight|black|slate|tinted"}` |
 
 `kind` is `movie` or `tv`.
