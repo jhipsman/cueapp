@@ -4,6 +4,7 @@ package app.cue.tv.home
 
 import android.os.Build
 import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
