@@ -6,7 +6,12 @@
 
 package app.cue.tv.home
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.layout.offset
+import androidx.compose.ui.zIndex
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -55,7 +60,6 @@ import androidx.compose.ui.unit.sp
 import androidx.tv.material3.Border
 import androidx.tv.material3.Card
 import androidx.tv.material3.CardDefaults
-import androidx.tv.material3.Glow
 import androidx.tv.material3.Text
 import coil.compose.AsyncImage
 
@@ -107,21 +111,22 @@ fun PosterCard(card: Tile, memory: FocusMemory, memKey: String, wide: Boolean = 
     val w: Dp = if (wide) 224.dp else 112.dp
     val h: Dp = if (wide) 126.dp else 168.dp
     var focused by remember { mutableStateOf(false) }
-    val shape = RoundedCornerShape(10.dp)
-    Column(Modifier.width(w)) {
+    val shape = RoundedCornerShape(CardCorner)
+    // Drawn above its neighbours while it's lifted.
+    Column(Modifier.width(w).zIndex(if (focused) 1f else 0f)) {
         Card(
             onClick = { onClick(card) },
             modifier = Modifier
                 .size(w, h)
+                .lift(focused, if (wide) 1.09f else 1.11f, shape)
                 .focusRequester(memory.requester(memKey))
                 .onFocusChanged {
                     focused = it.isFocused
                     if (it.isFocused) { memory.key = memKey; onFocus(card) }
                 },
             shape = CardDefaults.shape(shape),
-            scale = CardDefaults.scale(focusedScale = 1.07f),
-            border = CardDefaults.border(focusedBorder = Border(BorderStroke(2.dp, Color(0xE6FFFFFF)), shape = shape)),
-            glow = CardDefaults.glow(focusedGlow = Glow(elevationColor = Color(0x40FFFFFF), elevation = 14.dp)),
+            scale = CardDefaults.scale(focusedScale = 1f),
+            border = CardDefaults.border(focusedBorder = Border(BorderStroke(1.dp, Color(0x59FFFFFF)), shape = shape)),
         ) {
             Box(Modifier.fillMaxSize()) {
                 Art(small(if (wide) card.backdrop ?: card.poster else card.poster), Modifier.fillMaxSize(), card.title)
@@ -136,13 +141,15 @@ fun PosterCard(card: Tile, memory: FocusMemory, memKey: String, wide: Boolean = 
                     }
                 }
                 if (card.isNew) Chip("NEW", Modifier.align(Alignment.TopStart).padding(7.dp), bg = accent, fg = Color.Black)
+                Sheen(focused)
             }
         }
-        val nameColor = if (focused) Color.White else Color(0xCCFFFFFF)
+        val nameColor by animateColorAsState(if (focused) Color.White else Color(0xB3FFFFFF), tween(250), label = "name")
+        val drop by animateDpAsState(if (focused) 8.dp else 0.dp, tween(380, easing = Settle), label = "drop")
         Text(card.title, fontSize = if (wide) 12.sp else 11.sp, fontWeight = FontWeight.Medium, color = nameColor, maxLines = 1,
-            overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 8.dp, start = 2.dp))
+            overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 9.dp, start = 2.dp).offset(y = drop))
         if (wide) card.episodeTitle?.let {
-            Text(it, fontSize = 10.sp, color = Dim, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(start = 2.dp, top = 1.dp))
+            Text(it, fontSize = 10.sp, color = Dim, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(start = 2.dp, top = 1.dp).offset(y = drop))
         }
     }
 }
@@ -152,12 +159,13 @@ fun PosterCard(card: Tile, memory: FocusMemory, memKey: String, wide: Boolean = 
 fun CardRow(row: Shelf, memory: FocusMemory, onFocus: (Tile) -> Unit = {}, onClick: (Tile) -> Unit) {
     val wide = row.key == "continue" || row.key == "new-episodes"
     Column(Modifier.padding(bottom = 14.dp)) {
-        Text(row.title, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = Color(0xF2FFFFFF), modifier = Modifier.padding(start = 50.dp, bottom = 2.dp))
+        Text(row.title, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = Color(0xF2FFFFFF), modifier = Modifier.padding(start = Gutter + 2.dp, bottom = 2.dp))
         // Coming back to a row puts the highlight on the poster it was on.
         LazyRow(
             modifier = Modifier.focusRestorer(),
-            contentPadding = PaddingValues(horizontal = 48.dp, vertical = 12.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            // Room above and below for a card's lift and shadow.
+            contentPadding = PaddingValues(horizontal = Gutter, vertical = 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(18.dp),
         ) {
             items(row.items, key = { it.key }) { c ->
                 PosterCard(c, memory, "${row.key}/${c.key}", wide, onFocus, onClick)
@@ -181,6 +189,10 @@ fun HGap(w: Dp) = Spacer(Modifier.width(w))
 // start of the list (rows to the top, posters to the left), instead of
 // only as far as it takes to show it.
 val PivotSpec = object : BringIntoViewSpec {
+    // Gliding there with a long, soft settle, as Apple TV's lists do.
+    override val scrollAnimationSpec: androidx.compose.animation.core.AnimationSpec<Float> =
+        androidx.compose.animation.core.tween(480, easing = Settle)
+
     override fun calculateScrollDistance(offset: Float, size: Float, containerSize: Float): Float =
         offset - containerSize * 0.04f
 }

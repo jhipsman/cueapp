@@ -7,7 +7,13 @@
 package app.cue.tv.home
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.Crossfade
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.togetherWith
+import androidx.compose.ui.zIndex
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -312,7 +318,7 @@ fun MainScreen(api: CueApi, playback: Playback, openWeb: (String) -> Unit, chang
     Box(Modifier.fillMaxSize()) {
         AmbientBackground(if (tab <= 2) ambient else null)
         Column(Modifier.fillMaxSize()) {
-            Row(Modifier.fillMaxWidth().padding(start = 40.dp, end = 40.dp, top = 12.dp, bottom = 2.dp), verticalAlignment = Alignment.CenterVertically) {
+            Row(Modifier.fillMaxWidth().padding(start = Gutter, end = Gutter, top = 12.dp, bottom = 2.dp), verticalAlignment = Alignment.CenterVertically) {
                 Text("cue", fontFamily = Type.display(), fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color.White)
                 HGap(22.dp)
                 // Coming up to the tabs lands on the tab showing, not whichever
@@ -340,8 +346,9 @@ fun MainScreen(api: CueApi, playback: Playback, openWeb: (String) -> Unit, chang
                     }
                 }
             }
-            Box(Modifier.fillMaxSize()) {
-                when (tab) {
+            // Pages cross-fade as the highlight moves along the tabs.
+            Crossfade(targetState = tab, animationSpec = tween(280, easing = Settle), label = "tab", modifier = Modifier.fillMaxSize()) { page ->
+                when (page) {
                     0 -> HomeScreen(api, null, memories[0], pageTakesFocus, tookFocus, setAmbient, onCard)
                     1 -> HomeScreen(api, "tv", memories[1], pageTakesFocus, tookFocus, setAmbient, onCard)
                     2 -> HomeScreen(api, "movie", memories[2], pageTakesFocus, tookFocus, setAmbient, onCard)
@@ -401,7 +408,7 @@ fun HomeScreen(api: CueApi, only: String?, memory: FocusMemory, takeFocus: Boole
         delay(80)
         if (memory.restore(rows.firstOrNull()?.let { r -> "${r.key}/${r.items.first().key}" })) tookFocus()
     }
-    Column(Modifier.fillMaxSize()) {
+    Column(Modifier.fillMaxSize().rise(0, 10.dp)) {
         settled?.let { Banner(api, it) } ?: Gap(16.dp)
         // The highlighted row moves up to just under the banner, and the
         // highlighted poster stays near the left, as in the TV's own apps.
@@ -419,25 +426,39 @@ fun HomeScreen(api: CueApi, only: String?, memory: FocusMemory, takeFocus: Boole
 // left under the logo, the scores and two lines of the story.
 @Composable
 fun Banner(api: CueApi, c: Tile) {
-    val shape = RoundedCornerShape(18.dp)
-    val logo = key(c.kind, c.tmdbId) { rememberLogo(api, c.kind, c.tmdbId, c.logo?.takeIf { it.isNotEmpty() }) }
+    val shape = RoundedCornerShape(PanelCorner)
     Box(
-        Modifier.padding(horizontal = 40.dp).padding(top = 6.dp).fillMaxWidth().height(226.dp)
+        Modifier.padding(horizontal = Gutter).padding(top = 8.dp).fillMaxWidth().height(226.dp)
             .clip(shape).background(Color(0xFF16171B)).border(1.dp, Color(0x14FFFFFF), shape),
     ) {
-        Crossfade(targetState = small(c.backdrop), animationSpec = tween(450), label = "banner") { u ->
+        // The picture changes with a slow cross-fade and drifts gently.
+        Crossfade(targetState = small(c.backdrop), animationSpec = tween(700, easing = Settle), label = "banner",
+            modifier = Modifier.fillMaxHeight().fillMaxWidth(0.8f).align(Alignment.TopEnd)) { u ->
             if (u != null) AsyncImage(model = u, contentDescription = null, contentScale = ContentScale.Crop,
-                modifier = Modifier.fillMaxHeight().fillMaxWidth(0.8f).align(Alignment.TopEnd))
+                modifier = Modifier.fillMaxSize().drift())
         }
         Box(Modifier.fillMaxSize().background(Brush.horizontalGradient(0.18f to Color(0xF516171B), 0.48f to Color(0x9916171B), 0.75f to Color.Transparent)))
         Box(Modifier.fillMaxSize().background(Brush.verticalGradient(0.5f to Color.Transparent, 1f to Color(0xCC16171B))))
-        Column(Modifier.align(Alignment.BottomStart).padding(start = 30.dp, bottom = 22.dp).width(400.dp)) {
-            TitleMark(c.title, logo, maxWidth = 280.dp, maxHeight = 78.dp, fontSize = 30.sp)
-            Gap(10.dp)
-            FactsRow(c, extra = listOfNotNull(if (c.kind == "tv") "Series" else "Movie", epCode(c.season, c.episode)))
-            c.overview?.let {
-                Gap(6.dp)
-                Text(it, fontSize = 11.sp, color = Color(0xCCFFFFFF), maxLines = 2, overflow = TextOverflow.Ellipsis, lineHeight = 15.sp)
+        // The words fade out, and the new ones fade in as they rise.
+        AnimatedContent(
+            targetState = c,
+            contentKey = { it.key },
+            transitionSpec = {
+                (fadeIn(tween(420, delayMillis = 120, easing = Settle)) + slideInVertically(tween(520, delayMillis = 120, easing = Settle)) { it / 8 }) togetherWith
+                    fadeOut(tween(160))
+            },
+            label = "banner-words",
+            modifier = Modifier.align(Alignment.BottomStart),
+        ) { cc ->
+            val logo = rememberLogo(api, cc.kind, cc.tmdbId, cc.logo?.takeIf { it.isNotEmpty() })
+            Column(Modifier.padding(start = 32.dp, bottom = 24.dp).width(400.dp)) {
+                TitleMark(cc.title, logo, maxWidth = 280.dp, maxHeight = 78.dp, fontSize = 30.sp)
+                Gap(10.dp)
+                FactsRow(cc, extra = listOfNotNull(if (cc.kind == "tv") "Series" else "Movie", epCode(cc.season, cc.episode)))
+                cc.overview?.let {
+                    Gap(6.dp)
+                    Text(it, fontSize = 11.sp, color = Color(0xCCFFFFFF), maxLines = 2, overflow = TextOverflow.Ellipsis, lineHeight = 15.sp)
+                }
             }
         }
     }
@@ -478,32 +499,36 @@ fun TitleScreen(api: CueApi, playback: Playback, card: Tile, memory: FocusMemory
     }
     val c = t.card
     val logo = rememberLogo(api, c.kind, c.tmdbId, c.logo)
-    Box(Modifier.fillMaxSize().background(Background)) {
+    Box(Modifier.fillMaxSize().background(Background).rise(0, 0.dp)) {
         // The picture fills the screen; the words sit on its darker left.
-        AsyncImage(model = c.backdrop, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
+        AsyncImage(model = c.backdrop, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize().settleIn())
         Box(Modifier.fillMaxSize().background(Brush.horizontalGradient(0f to Color(0xF20C0D10), 0.42f to Color(0xA60C0D10), 0.75f to Color(0x1A0C0D10))))
         Box(Modifier.fillMaxSize().background(Brush.verticalGradient(0.45f to Color.Transparent, 1f to Color(0xF20C0D10))))
+        CompositionLocalProvider(LocalBringIntoViewSpec provides PivotSpec) {
         LazyColumn(contentPadding = PaddingValues(bottom = 120.dp)) {
             item {
-                Column(Modifier.padding(start = 56.dp, top = 150.dp, bottom = 20.dp).width(520.dp)) {
-                    TitleMark(c.title, logo, maxWidth = 380.dp, maxHeight = 120.dp, fontSize = 40.sp)
+                Column(Modifier.padding(start = Gutter, top = 150.dp, bottom = 20.dp).width(520.dp)) {
+                    Box(Modifier.rise(0, 24.dp)) { TitleMark(c.title, logo, maxWidth = 380.dp, maxHeight = 120.dp, fontSize = 40.sp) }
                     Gap(14.dp)
                     val length = t.runtime?.takeIf { it > 0 }?.let { if (it >= 60) "${it / 60}h ${it % 60}m" else "${it}m" }
-                    FactsRow(c, t.ratings, listOfNotNull(t.certification, length, t.genres.firstOrNull(),
-                        if (c.kind == "tv" && t.seasons.size > 0) (if (t.seasons.size == 1) "1 season" else "${t.seasons.size} seasons") else null))
+                    Box(Modifier.rise(90)) {
+                        FactsRow(c, t.ratings, listOfNotNull(t.certification, length, t.genres.firstOrNull(),
+                            if (c.kind == "tv" && t.seasons.size > 0) (if (t.seasons.size == 1) "1 season" else "${t.seasons.size} seasons") else null))
+                    }
                     c.overview?.let {
                         Gap(10.dp)
-                        Text(it, fontSize = 12.sp, color = Color(0xD9FFFFFF), maxLines = 3, overflow = TextOverflow.Ellipsis, lineHeight = 17.sp)
+                        Text(it, fontSize = 12.sp, color = Color(0xD9FFFFFF), maxLines = 3, overflow = TextOverflow.Ellipsis, lineHeight = 17.sp,
+                            modifier = Modifier.rise(170))
                     }
                     if (t.directors.isNotEmpty()) {
                         Gap(8.dp)
-                        Row {
+                        Row(Modifier.rise(230)) {
                             Text(if (c.kind == "tv") "Created by  " else "Directed by  ", fontSize = 10.sp, color = Dim)
                             Text(t.directors.take(2).joinToString(", "), fontSize = 10.sp, color = Color(0xE6FFFFFF))
                         }
                     }
                     Gap(18.dp)
-                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Row(Modifier.rise(290), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         val resumeTv = c.kind == "tv" && t.resumeSeason != null && t.resumeEpisode != null
                         val started = (t.resumePosition ?: 0.0) > 0
                         Pill(
@@ -530,14 +555,14 @@ fun TitleScreen(api: CueApi, playback: Playback, card: Tile, memory: FocusMemory
             }
             if (c.kind == "tv" && t.seasons.isNotEmpty()) {
                 item {
-                    LazyRow(Modifier.focusRestorer(), contentPadding = PaddingValues(horizontal = 56.dp, vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    LazyRow(Modifier.focusRestorer(), contentPadding = PaddingValues(horizontal = Gutter, vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         items(t.seasons, key = { it.number }) { s ->
                             Pill(s.name, primary = s.number == season) { season = s.number }
                         }
                     }
                 }
                 item {
-                    LazyRow(Modifier.focusRestorer(), contentPadding = PaddingValues(horizontal = 56.dp, vertical = 12.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                    LazyRow(Modifier.focusRestorer(), contentPadding = PaddingValues(horizontal = Gutter, vertical = 16.dp), horizontalArrangement = Arrangement.spacedBy(18.dp)) {
                         items(episodes, key = { "${it.season}-${it.episode}" }) { e ->
                             EpisodeCard(e) { playback.playTitle("tv", c.tmdbId, e.season, e.episode) }
                         }
@@ -550,20 +575,22 @@ fun TitleScreen(api: CueApi, playback: Playback, card: Tile, memory: FocusMemory
                 }
             }
         }
+        }
     }
 }
 
 @Composable
 fun EpisodeCard(e: Episode, onClick: () -> Unit) {
     val accent = LocalAccent.current
-    Column(Modifier.width(220.dp)) {
+    var focused by remember { mutableStateOf(false) }
+    val shape = RoundedCornerShape(CardCorner)
+    Column(Modifier.width(220.dp).zIndex(if (focused) 1f else 0f)) {
         Card(
             onClick = onClick,
-            modifier = Modifier.size(220.dp, 124.dp),
-            shape = CardDefaults.shape(RoundedCornerShape(10.dp)),
-            scale = CardDefaults.scale(focusedScale = 1.06f),
-            border = CardDefaults.border(focusedBorder = Border(BorderStroke(2.dp, Color(0xE6FFFFFF)), shape = RoundedCornerShape(10.dp))),
-            glow = CardDefaults.glow(focusedGlow = androidx.tv.material3.Glow(elevationColor = Color(0x40FFFFFF), elevation = 14.dp)),
+            modifier = Modifier.size(220.dp, 124.dp).lift(focused, 1.08f, shape).onFocusChanged { focused = it.isFocused },
+            shape = CardDefaults.shape(shape),
+            scale = CardDefaults.scale(focusedScale = 1f),
+            border = CardDefaults.border(focusedBorder = Border(BorderStroke(1.dp, Color(0x59FFFFFF)), shape = shape)),
         ) {
             Box(Modifier.fillMaxSize()) {
                 Art(small(e.still), Modifier.fillMaxSize(), e.title)
@@ -576,10 +603,11 @@ fun EpisodeCard(e: Episode, onClick: () -> Unit) {
                     Text("✓", color = Color.Black, fontSize = 12.sp, fontWeight = FontWeight.Bold,
                         modifier = Modifier.align(Alignment.TopEnd).padding(6.dp).clip(CircleShape).background(accent).padding(horizontal = 6.dp))
                 }
+                Sheen(focused)
             }
         }
         Text("${e.episode}. ${e.title}", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = Color.White, maxLines = 1,
-            overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 6.dp))
+            overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 9.dp))
         e.overview?.let { Text(it, fontSize = 10.sp, color = Dim, maxLines = 2, overflow = TextOverflow.Ellipsis, lineHeight = 13.sp) }
     }
 }
@@ -599,7 +627,7 @@ fun SearchScreen(api: CueApi, memory: FocusMemory, onCard: (Tile) -> Unit) {
     Column(Modifier.fillMaxSize().padding(top = 16.dp)) {
         OutlinedTextField(query, { query = it }, singleLine = true, colors = fieldColors(),
             placeholder = { androidx.compose.material3.Text("Movies and shows") },
-            modifier = Modifier.padding(horizontal = 48.dp).width(420.dp).leaveWithArrows())
+            modifier = Modifier.padding(horizontal = Gutter).width(420.dp).leaveWithArrows())
         PosterGrid(results, memory, "search", onCard)
     }
 }
@@ -624,9 +652,9 @@ fun MyListScreen(api: CueApi, memory: FocusMemory, takeFocus: Boolean, tookFocus
 fun PosterGrid(items: List<Tile>, memory: FocusMemory, prefix: String, onCard: (Tile) -> Unit) {
     LazyVerticalGrid(
         columns = GridCells.Adaptive(118.dp),
-        contentPadding = PaddingValues(horizontal = 48.dp, vertical = 20.dp),
-        horizontalArrangement = Arrangement.spacedBy(14.dp),
-        verticalArrangement = Arrangement.spacedBy(18.dp),
+        contentPadding = PaddingValues(horizontal = Gutter, vertical = 20.dp),
+        horizontalArrangement = Arrangement.spacedBy(18.dp),
+        verticalArrangement = Arrangement.spacedBy(22.dp),
     ) {
         items(items, key = { it.key }) { c -> PosterCard(c, memory, "$prefix/${c.key}", onClick = onCard) }
     }
@@ -672,7 +700,7 @@ fun LiveScreen(api: CueApi, playback: Playback, openWeb: (String) -> Unit) {
         else -> l.channels.filter { it.category == group }
     }
     Row(Modifier.fillMaxSize().padding(top = 12.dp)) {
-        LazyColumn(Modifier.width(200.dp), contentPadding = PaddingValues(start = 40.dp, bottom = 60.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        LazyColumn(Modifier.width(208.dp), contentPadding = PaddingValues(start = Gutter, bottom = 60.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             item {
                 Pill("Full guide") { openWeb("/watch/live") }
                 Gap(8.dp)
@@ -681,7 +709,7 @@ fun LiveScreen(api: CueApi, playback: Playback, openWeb: (String) -> Unit) {
                 Pill(name, primary = id == group, modifier = Modifier.fillMaxWidth()) { group = id }
             }
         }
-        LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(start = 20.dp, end = 40.dp, bottom = 60.dp),
+        LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(start = 20.dp, end = Gutter, bottom = 60.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)) {
             items(shown.take(400), key = { it.id }) { ch ->
                 ChannelCard(api, ch) { playback.playLive(ch, shown) }
