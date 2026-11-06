@@ -237,6 +237,7 @@ export interface WatchCard {
   episode?: number
   episodeTitle?: string
   new?: boolean // the episode came out in the last two weeks
+  logoUrl?: string // logo artwork: on the Home banner and title pages ("" when none)
 }
 export interface WatchRow {
   key: string
@@ -2326,6 +2327,7 @@ export const api = {
   saveStreamPrefs: (p: StreamPrefs) => put<StreamPrefs>('/profile/streaming', p),
   getYouTube: () => get<{ set: boolean }>('/settings/youtube'),
   putYouTube: (apiKey: string) => put<{ set: boolean }>('/settings/youtube', { apiKey }),
+  watchLogo: (kind: 'movie' | 'tv', tmdbId: number) => get<{ url: string }>(`/watch/logo/${kind}/${tmdbId}`),
   watchProviders: (kind: 'movie' | 'tv', tmdbId: number) =>
     get<WatchProviders>(`/watch/providers/${kind}/${tmdbId}?region=${userRegion()}`),
   playMovie: (id: number, option = 1, fresh = false) => get<PlayAnswer>(`/play/movies/${id}?option=${option}${fresh ? '&fresh=1' : ''}`),

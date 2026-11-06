@@ -4,7 +4,7 @@ import { api, type WatchCard, type WatchHome, type WatchKind } from '../api'
 import Icon from '../components/Icon'
 import SetupCard from './SetupCard'
 import { useDocumentTitle } from '../documentTitle'
-import { epCode, playHref, Row, SpotlightContext, titleHref } from './parts'
+import { Ambient, epCode, playHref, Row, SpotlightContext, TitleMark, titleHref, useLogo } from './parts'
 import { onTV } from './tv'
 
 // Home: a banner, then rows to scroll. With only set, just movies or just
@@ -72,7 +72,9 @@ export default function Home({ only }: { only?: WatchKind }) {
   const shown = (tv && spot) || hero
 
   return (
-    <div className={tv ? 'wx-tvhome' : undefined}>
+    <div className={tv ? 'wx-tvhome' : 'wx-home'}>
+      {/* The banner's picture, soft and dark, glowing behind the page. */}
+      {shown?.backdropUrl && <Ambient url={shown.backdropUrl} />}
       {shown && <Banner card={shown} featured={shown === hero} />}
       <div className="wx-rows" style={shown ? undefined : { marginTop: 90 }}>
         {!only && <SetupCard />}
@@ -99,10 +101,12 @@ function Banner({ card, featured }: { card: WatchCard; featured: boolean }) {
   // the beginning (the first episode of a show).
   const resumes = !featured && (card.progress !== undefined || !!card.episode)
   const play = resumes ? playHref(card.kind, card.tmdbId, card.season, card.episode) : playHref(card.kind, card.tmdbId, 1, 1)
+  const logo = useLogo(card)
   return (
-    <header className="wx-hero" style={{ backgroundImage: card.backdropUrl ? `url(${card.backdropUrl})` : undefined }}>
-      <div className="wx-hero-body" key={`${card.kind}-${card.tmdbId}-${card.episode ?? 0}`}>
-        <h1>{card.title}</h1>
+    <header className={`wx-hero${onTV() ? '' : ' inset'}`}>
+      {card.backdropUrl && <div className="wx-hero-pic drift" key={card.backdropUrl} style={{ backgroundImage: `url(${card.backdropUrl})` }} />}
+      <div className="wx-hero-body rise" key={`${card.kind}-${card.tmdbId}-${card.episode ?? 0}`}>
+        <TitleMark title={card.title} logo={logo} />
         <div className="wx-meta">
           {card.episode ? (
             <span>
