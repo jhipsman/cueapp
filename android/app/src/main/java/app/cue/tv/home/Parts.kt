@@ -25,6 +25,10 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.compositionLocalOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -51,6 +55,7 @@ import androidx.compose.ui.unit.sp
 import androidx.tv.material3.Border
 import androidx.tv.material3.Card
 import androidx.tv.material3.CardDefaults
+import androidx.tv.material3.Glow
 import androidx.tv.material3.Text
 import coil.compose.AsyncImage
 
@@ -92,45 +97,52 @@ fun Art(url: String?, modifier: Modifier = Modifier, label: String = "") {
     }
 }
 
-// A poster that grows and gets a ring in the profile's colour when the
-// highlight is on it, its name underneath; wide is Continue Watching's.
+// A card that lifts, gets a thin white edge and a soft glow when the
+// highlight is on it, its name underneath (white while highlighted).
+// wide is Continue Watching's: the picture with the episode's code on it,
+// and the show and the episode's name underneath, as in the TV apps.
 @Composable
 fun PosterCard(card: Tile, memory: FocusMemory, memKey: String, wide: Boolean = false, onFocus: (Tile) -> Unit = {}, onClick: (Tile) -> Unit) {
     val accent = LocalAccent.current
-    val w: Dp = if (wide) 210.dp else 104.dp
-    val h: Dp = if (wide) 118.dp else 156.dp
+    val w: Dp = if (wide) 224.dp else 112.dp
+    val h: Dp = if (wide) 126.dp else 168.dp
+    var focused by remember { mutableStateOf(false) }
+    val shape = RoundedCornerShape(10.dp)
     Column(Modifier.width(w)) {
         Card(
             onClick = { onClick(card) },
             modifier = Modifier
                 .size(w, h)
                 .focusRequester(memory.requester(memKey))
-                .onFocusChanged { if (it.isFocused) { memory.key = memKey; onFocus(card) } },
-            shape = CardDefaults.shape(RoundedCornerShape(8.dp)),
-            scale = CardDefaults.scale(focusedScale = 1.08f),
-            border = CardDefaults.border(focusedBorder = Border(BorderStroke(2.5.dp, accent), shape = RoundedCornerShape(8.dp))),
+                .onFocusChanged {
+                    focused = it.isFocused
+                    if (it.isFocused) { memory.key = memKey; onFocus(card) }
+                },
+            shape = CardDefaults.shape(shape),
+            scale = CardDefaults.scale(focusedScale = 1.07f),
+            border = CardDefaults.border(focusedBorder = Border(BorderStroke(2.dp, Color(0xE6FFFFFF)), shape = shape)),
+            glow = CardDefaults.glow(focusedGlow = Glow(elevationColor = Color(0x40FFFFFF), elevation = 14.dp)),
         ) {
             Box(Modifier.fillMaxSize()) {
                 Art(small(if (wide) card.backdrop ?: card.poster else card.poster), Modifier.fillMaxSize(), card.title)
                 if (wide) {
-                    Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color.Transparent, Color(0xDD000000)))))
-                    Column(Modifier.align(Alignment.BottomStart).padding(10.dp)) {
-                        Text(card.title, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.White, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                        if (card.episodeLine.isNotEmpty()) Text(card.episodeLine, fontSize = 10.sp, color = Color(0xCCFFFFFF), maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    }
+                    Box(Modifier.fillMaxSize().background(Brush.verticalGradient(0.55f to Color.Transparent, 1f to Color(0x99000000))))
+                    epCode(card.season, card.episode)?.let { Chip(it, Modifier.align(Alignment.BottomStart).padding(start = 8.dp, bottom = 10.dp)) }
                 }
                 card.progress?.takeIf { it > 0 }?.let { p ->
-                    Box(Modifier.align(Alignment.BottomStart).fillMaxWidth().height(3.dp).background(Color(0x55FFFFFF)))
-                    Box(Modifier.align(Alignment.BottomStart).fillMaxWidth(p.toFloat().coerceIn(0f, 1f)).height(3.dp).background(accent))
+                    Box(Modifier.align(Alignment.BottomStart).padding(horizontal = 8.dp, vertical = 5.dp).fillMaxWidth().height(3.dp)
+                        .clip(RoundedCornerShape(2.dp)).background(Color(0x40FFFFFF))) {
+                        Box(Modifier.fillMaxWidth(p.toFloat().coerceIn(0f, 1f)).fillMaxHeight().background(accent))
+                    }
                 }
-                if (card.isNew) {
-                    Text("NEW", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = Color.Black,
-                        modifier = Modifier.padding(6.dp).clip(RoundedCornerShape(3.dp)).background(accent).padding(horizontal = 5.dp, vertical = 1.dp))
-                }
+                if (card.isNew) Chip("NEW", Modifier.align(Alignment.TopStart).padding(7.dp), bg = accent, fg = Color.Black)
             }
         }
-        if (!wide) {
-            Text(card.title, fontSize = 11.sp, color = Dim, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 6.dp))
+        val nameColor = if (focused) Color.White else Color(0xCCFFFFFF)
+        Text(card.title, fontSize = if (wide) 12.sp else 11.sp, fontWeight = FontWeight.Medium, color = nameColor, maxLines = 1,
+            overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 8.dp, start = 2.dp))
+        if (wide) card.episodeTitle?.let {
+            Text(it, fontSize = 10.sp, color = Dim, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(start = 2.dp, top = 1.dp))
         }
     }
 }
@@ -140,43 +152,17 @@ fun PosterCard(card: Tile, memory: FocusMemory, memKey: String, wide: Boolean = 
 fun CardRow(row: Shelf, memory: FocusMemory, onFocus: (Tile) -> Unit = {}, onClick: (Tile) -> Unit) {
     val wide = row.key == "continue" || row.key == "new-episodes"
     Column(Modifier.padding(bottom = 14.dp)) {
-        Text(row.title, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = Color.White, modifier = Modifier.padding(start = 48.dp, bottom = 6.dp))
+        Text(row.title, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = Color(0xF2FFFFFF), modifier = Modifier.padding(start = 50.dp, bottom = 2.dp))
         // Coming back to a row puts the highlight on the poster it was on.
         LazyRow(
             modifier = Modifier.focusRestorer(),
-            contentPadding = PaddingValues(horizontal = 48.dp, vertical = 10.dp),
-            horizontalArrangement = Arrangement.spacedBy(14.dp),
+            contentPadding = PaddingValues(horizontal = 48.dp, vertical = 12.dp),
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             items(row.items, key = { it.key }) { c ->
                 PosterCard(c, memory, "${row.key}/${c.key}", wide, onFocus, onClick)
             }
         }
-    }
-}
-
-// Year, score and kind in a line.
-@Composable
-fun MetaLine(card: Tile, extra: String = "") {
-    val bits = listOfNotNull(
-        card.year?.toString(),
-        card.rating?.takeIf { it > 0 }?.let { "★ %.1f".format(it) },
-        if (card.kind == "tv") "Series" else "Movie",
-        extra.takeIf { it.isNotEmpty() },
-    )
-    Text(bits.joinToString("   ·   "), fontSize = 12.sp, color = Color(0xDDFFFFFF))
-}
-
-// The big picture at the top of Home and a title's page, faded into the
-// background on the left and at the bottom so the words stand out.
-@Composable
-fun Backdrop(url: String?, modifier: Modifier = Modifier) {
-    Box(modifier) {
-        if (url != null) {
-            AsyncImage(model = url, contentDescription = null, contentScale = ContentScale.Crop,
-                modifier = Modifier.fillMaxHeight().fillMaxWidth(0.78f).align(Alignment.TopEnd))
-        }
-        Box(Modifier.fillMaxSize().background(Brush.horizontalGradient(0.2f to Background, 0.55f to Background.copy(alpha = 0.6f), 1f to Color.Transparent)))
-        Box(Modifier.fillMaxSize().background(Brush.verticalGradient(0.55f to Color.Transparent, 1f to Background)))
     }
 }
 
