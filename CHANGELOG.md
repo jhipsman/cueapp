@@ -8,6 +8,9 @@ under [Unreleased]. How releases are cut: [docs/RELEASING.md](docs/RELEASING.md)
 
 ## [Unreleased]
 
+### Security
+- Releases are signed with a new update key, held only by the project owner. **Update now** installs only releases signed with it.
+
 ### Added
 - **Live TV, channel surfing** (Fire TV, Google TV): rest on a channel and its live picture plays, muted, in the banner at the top of Live TV; in the player, up and down (or channel up and down) change channel in place with a banner of the channel's number, name and what's on, tuning only the channel you stop on.
 - **Up next** (Fire TV, Google TV): when an episode ends, the next one fills the screen (its still, the show's logo, its name and story) and plays after a countdown round the Play button; Back stays where you were.
