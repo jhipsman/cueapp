@@ -699,6 +699,11 @@ fun LiveScreen(api: CueApi, playback: Playback, openWeb: (String) -> Unit) {
         "*", "" -> l.channels
         else -> l.channels.filter { it.category == group }
     }
+    // The highlighted channel, big at the top, as Home's banner is.
+    var spot by remember { mutableStateOf<Channel?>(null) }
+    val shownSpot = spot ?: shown.firstOrNull()
+    Column(Modifier.fillMaxSize()) {
+    shownSpot?.let { LiveBanner(api, it) }
     Row(Modifier.fillMaxSize().padding(top = 12.dp)) {
         LazyColumn(Modifier.width(208.dp), contentPadding = PaddingValues(start = Gutter, bottom = 60.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             item {
@@ -709,61 +714,142 @@ fun LiveScreen(api: CueApi, playback: Playback, openWeb: (String) -> Unit) {
                 Pill(name, primary = id == group, modifier = Modifier.fillMaxWidth()) { group = id }
             }
         }
-        LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(start = 20.dp, end = Gutter, bottom = 60.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            items(shown.take(400), key = { it.id }) { ch ->
-                ChannelCard(api, ch) { playback.playLive(ch, shown) }
+        CompositionLocalProvider(LocalBringIntoViewSpec provides PivotSpec) {
+            LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(start = 20.dp, end = Gutter, top = 6.dp, bottom = 60.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                items(shown.take(400), key = { it.id }) { ch ->
+                    ChannelCard(api, ch, onFocus = { spot = ch }) { playback.playLive(ch, shown) }
+                }
+            }
+        }
+    }
+    }
+}
+
+// The highlighted channel at the top of Live TV: its logo, what's on now
+// (with a red LIVE pill, the time and how far through), and what's next.
+// The words fade and rise in as the highlight moves, as on Home.
+@Composable
+fun LiveBanner(api: CueApi, ch: Channel) {
+    val shape = RoundedCornerShape(PanelCorner)
+    Box(
+        Modifier.padding(horizontal = Gutter).padding(top = 8.dp).fillMaxWidth().height(132.dp)
+            .clip(shape).background(Color(0x991B1D22)).border(1.dp, Color(0x14FFFFFF), shape),
+    ) {
+        AnimatedContent(
+            targetState = ch,
+            contentKey = { it.id },
+            transitionSpec = {
+                (fadeIn(tween(380, delayMillis = 100, easing = Settle)) + slideInVertically(tween(480, delayMillis = 100, easing = Settle)) { it / 6 }) togetherWith
+                    fadeOut(tween(150))
+            },
+            label = "live-banner",
+        ) { c ->
+            Row(Modifier.fillMaxSize().padding(horizontal = 26.dp), verticalAlignment = Alignment.CenterVertically) {
+                Box(Modifier.size(132.dp, 76.dp).clip(RoundedCornerShape(CardCorner)).background(Color(0x14FFFFFF)), contentAlignment = Alignment.Center) {
+                    ChannelLogo(api, c, Modifier.fillMaxSize().padding(10.dp))
+                }
+                HGap(24.dp)
+                Column(Modifier.weight(1f)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Chip("LIVE", bg = Color(0xFFE5484D))
+                        HGap(10.dp)
+                        Text((if (c.num > 0) "${c.num}  " else "") + c.name, fontSize = 12.sp, color = Dim, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    }
+                    Gap(6.dp)
+                    Text(c.now?.title ?: "No guide for this channel", fontFamily = Type.display(), fontSize = 22.sp, fontWeight = FontWeight.Bold,
+                        color = Color.White, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    c.now?.let { now ->
+                        Gap(8.dp)
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text("${clockTime(now.start)} – ${clockTime(now.stop)}", fontSize = 11.sp, color = Dim)
+                            HGap(12.dp)
+                            Box(Modifier.width(220.dp).height(3.dp).clip(RoundedCornerShape(2.dp)).background(Color(0x33FFFFFF))) {
+                                Box(Modifier.fillMaxWidth(now.progress()).fillMaxHeight().background(Color(0xFFE5484D)))
+                            }
+                        }
+                    }
+                }
+                c.next?.let { n ->
+                    HGap(20.dp)
+                    Column(Modifier.width(220.dp)) {
+                        Text("Next · ${clockTime(n.start)}", fontSize = 10.sp, color = Dim)
+                        Text(n.title, fontSize = 13.sp, color = Color(0xE6FFFFFF), maxLines = 2, overflow = TextOverflow.Ellipsis)
+                    }
+                }
             }
         }
     }
 }
 
+fun clockTime(ms: Long): String = java.text.DateFormat.getTimeInstance(java.text.DateFormat.SHORT).format(java.util.Date(ms))
+
+// A channel's logo, fetched through Cue (it needs the sign-in), or its
+// first letters when it has none.
 @Composable
-fun ChannelCard(api: CueApi, ch: Channel, onClick: () -> Unit) {
-    val accent = LocalAccent.current
+fun ChannelLogo(api: CueApi, ch: Channel, modifier: Modifier = Modifier) {
+    Box(modifier, contentAlignment = Alignment.Center) {
+        Text(ch.name.take(3).uppercase(), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Dim)
+        ch.logo?.let { path ->
+            AsyncImage(
+                model = ImageRequest.Builder(androidx.compose.ui.platform.LocalContext.current)
+                    .data(api.server + path)
+                    .addHeader("Cookie", api.cookie)
+                    .addHeader("X-Cue-Profile", api.profileToken)
+                    .build(),
+                contentDescription = null,
+                modifier = Modifier.fillMaxSize(),
+            )
+        }
+    }
+}
+
+// A channel: its logo, what's on now (and how far through) and next. It
+// lifts and catches the light when highlighted, like the posters.
+@Composable
+fun ChannelCard(api: CueApi, ch: Channel, onFocus: () -> Unit = {}, onClick: () -> Unit) {
+    var focused by remember { mutableStateOf(false) }
+    val shape = RoundedCornerShape(CardCorner)
     Card(
         onClick = onClick,
-        modifier = Modifier.fillMaxWidth().height(72.dp),
-        shape = CardDefaults.shape(RoundedCornerShape(10.dp)),
-        scale = CardDefaults.scale(focusedScale = 1.02f),
-        colors = CardDefaults.colors(containerColor = Panel),
-        border = CardDefaults.border(focusedBorder = Border(BorderStroke(2.dp, accent), shape = RoundedCornerShape(10.dp))),
+        modifier = Modifier.fillMaxWidth().height(72.dp).zIndex(if (focused) 1f else 0f)
+            .lift(focused, 1.025f, shape)
+            .onFocusChanged {
+                focused = it.isFocused
+                if (it.isFocused) onFocus()
+            },
+        shape = CardDefaults.shape(shape),
+        scale = CardDefaults.scale(focusedScale = 1f),
+        colors = CardDefaults.colors(containerColor = Color(0x991B1D22), focusedContainerColor = Color(0xCC2A2D34)),
+        border = CardDefaults.border(focusedBorder = Border(BorderStroke(1.dp, Color(0x59FFFFFF)), shape = shape)),
     ) {
-        Row(Modifier.fillMaxSize().padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-            Box(Modifier.size(96.dp, 54.dp).clip(RoundedCornerShape(6.dp)).background(Color(0xFF2A2D33)), contentAlignment = Alignment.Center) {
-                Text(ch.name.take(3).uppercase(), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Dim)
-                ch.logo?.let { path ->
-                    AsyncImage(
-                        model = ImageRequest.Builder(androidx.compose.ui.platform.LocalContext.current)
-                            .data(api.server + path)
-                            .addHeader("Cookie", api.cookie)
-                            .addHeader("X-Cue-Profile", api.profileToken)
-                            .build(),
-                        contentDescription = null,
-                        modifier = Modifier.fillMaxSize().padding(6.dp),
-                    )
+        Box(Modifier.fillMaxSize()) {
+            Row(Modifier.fillMaxSize().padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+                Box(Modifier.size(96.dp, 54.dp).clip(RoundedCornerShape(10.dp)).background(Color(0x14FFFFFF))) {
+                    ChannelLogo(api, ch, Modifier.fillMaxSize().padding(6.dp))
                 }
-            }
-            HGap(14.dp)
-            Column(Modifier.weight(1f)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    if (ch.num > 0) Text("${ch.num}  ", fontSize = 11.sp, color = Dim)
-                    Text(ch.name, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Color.White, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    if (ch.favorite) Text("  ★", fontSize = 11.sp, color = Color(0xFFFFD60A))
+                HGap(14.dp)
+                Column(Modifier.weight(1f)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        if (ch.num > 0) Text("${ch.num}  ", fontSize = 11.sp, color = Dim)
+                        Text(ch.name, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Color.White, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        if (ch.favorite) Text("  ★", fontSize = 11.sp, color = Color(0xFFFFD60A))
+                    }
+                    ch.now?.let { now ->
+                        Text(now.title, fontSize = 12.sp, color = Color(0xE6FFFFFF), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Box(Modifier.padding(top = 5.dp).width(240.dp).height(3.dp).clip(RoundedCornerShape(2.dp)).background(Color(0x33FFFFFF))) {
+                            Box(Modifier.fillMaxWidth(now.progress()).fillMaxHeight().background(Color(0xFFE5484D)))
+                        }
+                    }
                 }
-                ch.now?.let { now ->
-                    Text(now.title, fontSize = 12.sp, color = Color(0xE6FFFFFF), maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    Box(Modifier.padding(top = 4.dp).width(240.dp).height(3.dp).background(Color(0x33FFFFFF))) {
-                        Box(Modifier.fillMaxWidth(now.progress()).height(3.dp).background(accent))
+                ch.next?.let { n ->
+                    Column(Modifier.width(220.dp)) {
+                        Text("Next · ${clockTime(n.start)}", fontSize = 10.sp, color = Dim)
+                        Text(n.title, fontSize = 12.sp, color = Dim, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     }
                 }
             }
-            ch.next?.let { n ->
-                Column(Modifier.width(220.dp)) {
-                    Text("Next · ${java.text.DateFormat.getTimeInstance(java.text.DateFormat.SHORT).format(java.util.Date(n.start))}", fontSize = 10.sp, color = Dim)
-                    Text(n.title, fontSize = 12.sp, color = Dim, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                }
-            }
+            Sheen(focused)
         }
     }
 }

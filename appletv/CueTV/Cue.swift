@@ -94,6 +94,17 @@ final class Cue: ObservableObject {
 
     func title(_ kind: String, _ id: Int) async throws -> WatchTitle { try await get("/api/watch/\(kind)/\(id)") }
 
+    // A title's logo artwork ("" when it has none), looked up once.
+    private var logos: [String: String] = [:]
+    func logo(_ kind: String, _ id: Int) async -> String {
+        let key = "\(kind)-\(id)"
+        if let u = logos[key] { return u }
+        struct Answer: Decodable { let url: String }
+        guard let a: Answer = try? await get("/api/watch/logo/\(kind)/\(id)") else { return "" }
+        logos[key] = a.url
+        return a.url
+    }
+
     func season(_ id: Int, _ n: Int) async throws -> [WatchEpisode] { try await get("/api/watch/tv/\(id)/season/\(n)") }
 
     func next(_ id: Int, season: Int, episode: Int) async throws -> WatchEpisode {

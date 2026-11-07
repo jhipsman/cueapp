@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import { Link, NavLink, Route, Routes, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import CueWordmark from '../components/CueWordmark'
 import Icon from '../components/Icon'
@@ -57,6 +57,7 @@ export default function WatchApp() {
             <>
               <TopBar />
               <PhoneTabs />
+              <SectionView>
               <Routes>
                 <Route index element={<Home />} />
                 <Route path="movies" element={<Home only="movie" />} />
@@ -68,12 +69,33 @@ export default function WatchApp() {
                 <Route path="tv/:tmdbId" element={<TitlePage kind="tv" />} />
                 <Route path="*" element={<Home />} />
               </Routes>
+              </SectionView>
             </>
           }
         />
         </Routes>
         </RemindersProvider>
       </ProfilesProvider>
+    </div>
+  )
+}
+
+// SectionView plays a short fade-and-rise each time the section changes
+// (Home, Shows, Movies, Live TV, a title...), as the TV apps do, without
+// remounting the page (Shows and Movies keep what they loaded).
+function SectionView({ children }: { children: ReactNode }) {
+  const { pathname } = useLocation()
+  const box = useRef<HTMLDivElement>(null)
+  useLayoutEffect(() => {
+    const el = box.current
+    if (!el) return
+    el.classList.remove('wx-view-in')
+    void el.offsetWidth // restart the animation
+    el.classList.add('wx-view-in')
+  }, [pathname])
+  return (
+    <div className="wx-view" ref={box}>
+      {children}
     </div>
   )
 }

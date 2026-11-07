@@ -54,17 +54,16 @@ struct TitleView: View {
                            startPoint: .leading, endPoint: .init(x: 0.75, y: 0.5))
             LinearGradient(colors: [Color.cueBackground, .clear], startPoint: .bottom, endPoint: .init(x: 0.5, y: 0.5))
             VStack(alignment: .leading, spacing: 20) {
-                Text(t.title)
-                    .font(.system(size: 80, weight: .heavy))
-                    .lineLimit(2)
-                    .shadow(color: .black.opacity(0.5), radius: 12)
-                if let tag = t.tagline, !tag.isEmpty {
-                    Text(tag).font(.callout).italic().foregroundStyle(.white.opacity(0.7))
-                }
+                TitleLogo(kind: t.kind, tmdbId: t.tmdbId, title: t.title, known: t.logoUrl ?? "", size: 80, maxWidth: 820, maxHeight: 260)
+                ScoresLine(ratings: t.ratings)
                 MetaLine(year: t.year, rating: t.rating, kind: t.kind, extra: [t.certification, runtime(t.runtime), t.genres?.prefix(3).joined(separator: ", ")]
                     .compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: "   "))
                 if let o = t.overview {
                     Text(o).lineLimit(4).frame(maxWidth: 1100, alignment: .leading).foregroundStyle(.white.opacity(0.9))
+                }
+                if let d = t.directors, !d.isEmpty {
+                    (Text(t.kind == "tv" ? "Created by  " : "Directed by  ").foregroundColor(.gray) + Text(d.prefix(2).joined(separator: ", ")))
+                        .font(.caption)
                 }
                 HStack(spacing: 30) {
                     Button { play(t) } label: { Label(playLabel(t), systemImage: "play.fill") }

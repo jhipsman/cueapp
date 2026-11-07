@@ -106,9 +106,10 @@ struct WatchCard: Decodable, Hashable, Identifiable {
     let episode: Int?
     let episodeTitle: String?
     let isNew: Bool?
+    let logoUrl: String? // the Home banner only ("" when there is none)
 
     enum CodingKeys: String, CodingKey {
-        case kind, tmdbId, title, year, overview, posterUrl, backdropUrl, rating, progress, season, episode, episodeTitle
+        case kind, tmdbId, title, year, overview, posterUrl, backdropUrl, rating, progress, season, episode, episodeTitle, logoUrl
         case isNew = "new"
     }
 
@@ -158,6 +159,16 @@ struct WatchTitle: Decodable {
     let resumeEpisode: Int?
     let resumePosition: Double?
     let more: [WatchCard]?
+    let logoUrl: String?
+    let directors: [String]?
+    let ratings: Ratings?
+}
+
+// Scores from IMDb, Rotten Tomatoes and Metacritic (when Cue has an OMDb key).
+struct Ratings: Decodable, Hashable {
+    let imdb: String?
+    let rottenTomatoes: String?
+    let metacritic: String?
 }
 
 struct WatchEpisode: Decodable, Hashable, Identifiable {
