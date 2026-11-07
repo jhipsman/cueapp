@@ -69,6 +69,7 @@ under [Unreleased]. How releases are cut: [docs/RELEASING.md](docs/RELEASING.md)
 ## [2.1.9] - 2026-10-07
 
 ### Fixed
+- **Banner trailers showed YouTube's "Video player configuration error" (153)**: the page sends no referrer, and YouTube's player won't start without one. The trailer now sends the site's address only, and shows only once YouTube says it's playing; one that can't play leaves the banner's picture as it is.
 - **Skip intro no longer gets stuck**: it shows for a few seconds as the intro starts and then gets out of the way (it comes back with the controls, or when the mouse moves), so OK pauses again; intro and recap times over three minutes long are treated as wrong and ignored.
 - **The next episode no longer starts early**: at the credits (whose times from TheIntroDB or learned skips can be minutes off) the player now only offers the next episode, as a button (Fire TV / Google TV) or an Up next card (web); it plays by itself only once the episode has really ended.
 - **OK pauses and plays on Fire TV and Google TV** with the controls showing too: the highlight rests on the time bar, where OK used to do nothing, so pausing meant moving over to the pause button.

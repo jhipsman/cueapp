@@ -121,6 +121,9 @@ function Banner({ card, featured }: { card: WatchCard; featured: boolean }) {
             title="Trailer"
             tabIndex={-1}
             allow="autoplay; encrypted-media"
+            // The site sends no referrer, and YouTube's player refuses to
+            // start without one (its error 153): send the site's address only.
+            referrerPolicy="strict-origin-when-cross-origin"
             onLoad={trailer.loaded}
           />
         </div>
@@ -163,11 +166,12 @@ function Banner({ card, featured }: { card: WatchCard; featured: boolean }) {
   )
 }
 
-// How long the banner rests before its trailer starts, how long the player
-// gets to load out of sight (so YouTube's own title and buttons are gone),
-// and how long a trailer plays before the banner settles back to its picture.
+// How long the banner rests before its trailer starts, how long it stays out
+// of sight after YouTube says it's playing (so YouTube's own title and
+// buttons are gone), and how long a trailer plays before the banner settles
+// back to its picture.
 const TRAILER_REST = 2500
-const TRAILER_HIDDEN = 1600
+const TRAILER_HIDDEN = 1200
 const TRAILER_LENGTH = 60_000
 
 // A computer with a mouse, a wide enough window, and no request for less
@@ -231,6 +235,34 @@ function useTrailer(id: string | undefined, forKey: string) {
   }, [id, forKey])
   const command = (func: string) =>
     frame.current?.contentWindow?.postMessage(JSON.stringify({ event: 'command', func, args: [] }), 'https://www.youtube-nocookie.com')
+  // The trailer shows only once YouTube says it's playing; if it can't play
+  // (an error, or not allowed outside YouTube) the banner keeps its picture.
+  useEffect(() => {
+    let reveal = 0
+    const onMsg = (e: MessageEvent) => {
+      if (e.origin !== 'https://www.youtube-nocookie.com' || e.source !== frame.current?.contentWindow || typeof e.data !== 'string') return
+      let m: { event?: string; info?: unknown }
+      try {
+        m = JSON.parse(e.data)
+      } catch {
+        return
+      }
+      const state =
+        m.event === 'onStateChange' ? m.info : m.event === 'infoDelivery' && m.info && typeof m.info === 'object' ? (m.info as { playerState?: number }).playerState : undefined
+      if (m.event === 'onError') {
+        window.clearTimeout(reveal)
+        setState((s) => ({ ...s, src: '', playing: false }))
+      } else if (state === 1) {
+        window.clearTimeout(reveal)
+        reveal = window.setTimeout(() => setState((s) => (s.src ? { ...s, playing: true } : s)), TRAILER_HIDDEN)
+      }
+    }
+    window.addEventListener('message', onMsg)
+    return () => {
+      window.clearTimeout(reveal)
+      window.removeEventListener('message', onMsg)
+    }
+  }, [])
   return {
     box,
     frame,
@@ -238,9 +270,16 @@ function useTrailer(id: string | undefined, forKey: string) {
     playing: state.key === forKey && state.playing,
     waiting: state.key === forKey && state.waiting,
     sound: state.sound,
-    // The player loads out of sight, then fades in once YouTube's own
-    // overlays have gone.
-    loaded: () => window.setTimeout(() => setState((s) => (s.src ? { ...s, playing: true } : s)), TRAILER_HIDDEN),
+    // The player loads out of sight; it's asked to say how it's doing (a
+    // few times: it may not be ready at the first).
+    loaded: () => {
+      for (const ms of [0, 500, 1500, 3000]) {
+        window.setTimeout(
+          () => frame.current?.contentWindow?.postMessage(JSON.stringify({ event: 'listening', id: 1, channel: 'widget' }), 'https://www.youtube-nocookie.com'),
+          ms,
+        )
+      }
+    },
     toggleSound: () =>
       setState((s) => {
         command(s.sound ? 'mute' : 'unMute')
