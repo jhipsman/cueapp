@@ -1,4 +1,5 @@
 import Foundation
+import SwiftUI
 
 // Talking to Cue: the server's address, signing in (a cookie, kept by the
 // system), and the profile this Apple TV is on (sent with every request,
@@ -93,6 +94,21 @@ final class Cue: ObservableObject {
     func search(_ q: String) async throws -> [WatchCard] { try await get("/api/watch/search?q=\(query(q))") }
 
     func title(_ kind: String, _ id: Int) async throws -> WatchTitle { try await get("/api/watch/\(kind)/\(id)") }
+
+    // The main colour of a title's picture, for the glow behind it (nil until
+    // known, or when there's no picture), looked up once.
+    private var colours: [String: Color] = [:]
+    func colour(_ kind: String, _ id: Int) async -> Color? {
+        let key = "\(kind)-\(id)"
+        if let c = colours[key] { return c }
+        struct Answer: Decodable { let colour: String }
+        guard let a: Answer = try? await get("/api/watch/extras/\(kind)/\(id)") else { return nil }
+        let p = a.colour.split(separator: ",").compactMap { Double($0.trimmingCharacters(in: .whitespaces)) }
+        guard p.count == 3 else { return nil }
+        let c = Color(red: p[0] / 255, green: p[1] / 255, blue: p[2] / 255)
+        colours[key] = c
+        return c
+    }
 
     // A title's logo artwork ("" when it has none), looked up once.
     private var logos: [String: String] = [:]

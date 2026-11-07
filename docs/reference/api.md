@@ -632,6 +632,7 @@ Every route the server exposes. Routes marked **public** need no sign-in; all ot
 
 | Method | Path | Access | What it does |
 |---|---|---|---|
+| GET | `/api/watch/extras/{kind}/{tmdbId}` | signed in | GET /api/watch/extras/{kind}/{tmdbId}: a title's logo, the main colour of its picture (for the glow and highlights) and its trailer (for the living banner), ... |
 | GET | `/api/watch/home` | signed in | GET /api/watch/home: Continue Watching, My List and the shelves. |
 | DELETE | `/api/watch/list/{kind}/{tmdbId}` | signed in | DELETE /api/watch/list/{kind}/{tmdbId} |
 | PUT | `/api/watch/list/{kind}/{tmdbId}` | signed in | PUT /api/watch/list/{kind}/{tmdbId} |
@@ -648,6 +649,7 @@ Every route the server exposes. Routes marked **public** need no sign-in; all ot
 | GET | `/api/watch/tv/{tmdbId}` | signed in | GET /api/watch/tv/{tmdbId} |
 | GET | `/api/watch/tv/{tmdbId}/next` | signed in | GET /api/watch/tv/{tmdbId}/next?season=1&episode=2: the episode to play after that one, for autoplay. |
 | GET | `/api/watch/tv/{tmdbId}/season/{season}` | signed in | GET /api/watch/tv/{tmdbId}/season/{season}: the season's episodes, with thumbnails and how far this account got in each. |
+| GET | `/api/watch/year` | signed in | GET /api/watch/year?year=2026: the profile's year in Cue (this year unless asked): hours, titles, the most watched shows and movie, the busiest day and month. |
 
 ## watched
 
@@ -660,4 +662,4 @@ Every route the server exposes. Routes marked **public** need no sign-in; all ot
 | PUT | `/api/watched/settings` | admin | PUT /api/watched/settings {"sync": true, "cleanup": {...}} |
 | POST | `/api/watched/sync` | admin | POST /api/watched/sync: read what's been watched now. |
 
-360 routes.
+362 routes.

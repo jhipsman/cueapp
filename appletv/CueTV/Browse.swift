@@ -136,6 +136,7 @@ struct Banner: View {
             LinearGradient(colors: [Color.cueBackground.opacity(0.95), Color.cueBackground.opacity(0.55), .clear],
                            startPoint: .leading, endPoint: .init(x: 0.7, y: 0.5))
             LinearGradient(colors: [Color.cueBackground, .clear], startPoint: .bottom, endPoint: .init(x: 0.5, y: 0.55))
+            TintGlow(kind: card.kind, tmdbId: card.tmdbId)
             VStack(alignment: .leading, spacing: 20) {
                 TitleLogo(kind: card.kind, tmdbId: card.tmdbId, title: card.title, known: card.logoUrl)
                 MetaLine(year: card.year, rating: card.rating, kind: card.kind, extra: nil)

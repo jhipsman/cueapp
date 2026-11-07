@@ -492,6 +492,8 @@ func (s *Server) protectedRoutes() *routeTable {
 	play.HandleFunc("GET /api/watch/tv/{tmdbId}/next", s.handleWatchNext)
 	play.HandleFunc("GET /api/watch/providers/{kind}/{tmdbId}", s.handleWatchProviders)
 	play.HandleFunc("GET /api/watch/logo/{kind}/{tmdbId}", s.handleWatchLogo)
+	play.HandleFunc("GET /api/watch/extras/{kind}/{tmdbId}", s.handleWatchExtras)
+	play.HandleFunc("GET /api/watch/year", s.handleWatchYear)
 	play.HandleFunc("GET /api/watch/skips/{kind}/{tmdbId}", s.handleWatchSkips)
 	play.HandleFunc("GET /api/watch/subtitles/{kind}/{tmdbId}", s.handleWatchSubtitles)
 	play.HandleFunc("POST /api/watch/skips/learn", s.handleLearnSkip)

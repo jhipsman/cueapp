@@ -239,6 +239,37 @@ export interface WatchCard {
   new?: boolean // the episode came out in the last two weeks
   logoUrl?: string // logo artwork: on the Home banner and title pages ("" when none)
 }
+// What brings a title's artwork alive: its logo, the main colour of its
+// picture ("r, g, b") and a YouTube trailer id.
+export interface WatchExtras {
+  logo: string
+  colour: string
+  trailer?: string
+}
+// A profile's year in Cue (GET /watch/year).
+export interface WatchYearShow {
+  kind: WatchKind
+  tmdbId: number
+  title: string
+  hours: number
+  episodes?: number
+  backdropUrl?: string
+}
+export interface WatchYear {
+  year: number
+  hours: number
+  titles: number
+  shows: number
+  movies: number
+  episodes: number
+  days: number
+  top: (WatchYearShow & { episodes: number })[]
+  topMovie?: WatchYearShow
+  busiestDay?: string
+  busiestDayHours?: number
+  busiestMonth?: string
+  first?: string
+}
 export interface WatchRow {
   key: string
   title: string
@@ -2328,6 +2359,8 @@ export const api = {
   getYouTube: () => get<{ set: boolean }>('/settings/youtube'),
   putYouTube: (apiKey: string) => put<{ set: boolean }>('/settings/youtube', { apiKey }),
   watchLogo: (kind: 'movie' | 'tv', tmdbId: number) => get<{ url: string }>(`/watch/logo/${kind}/${tmdbId}`),
+  watchExtras: (kind: 'movie' | 'tv', tmdbId: number) => get<WatchExtras>(`/watch/extras/${kind}/${tmdbId}`),
+  watchYear: (year?: number) => get<WatchYear>(`/watch/year${year ? `?year=${year}` : ''}`),
   watchProviders: (kind: 'movie' | 'tv', tmdbId: number) =>
     get<WatchProviders>(`/watch/providers/${kind}/${tmdbId}?region=${userRegion()}`),
   playMovie: (id: number, option = 1, fresh = false) => get<PlayAnswer>(`/play/movies/${id}?option=${option}${fresh ? '&fresh=1' : ''}`),

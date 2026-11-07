@@ -975,3 +975,98 @@ func (s *Server) handleWatchLogo(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", "private, max-age=86400")
 	writeJSON(w, http.StatusOK, map[string]string{"url": u})
 }
+
+// watchExtras is what the apps need to bring a title's artwork alive.
+type watchExtras struct {
+	Logo    string `json:"logo"`              // logo artwork, "" when none
+	Colour  string `json:"colour"`            // the picture's main colour, "r, g, b"
+	Trailer string `json:"trailer,omitempty"` // a YouTube video id
+}
+
+// GET /api/watch/extras/{kind}/{tmdbId}: a title's logo, the main colour of
+// its picture (for the glow and highlights) and its trailer (for the living
+// banner), in one answer the apps ask for as the highlight rests on a title.
+func (s *Server) handleWatchExtras(w http.ResponseWriter, r *http.Request) {
+	kind := r.PathValue("kind")
+	tmdbID, err := strconv.Atoi(r.PathValue("tmdbId"))
+	if (kind != watch.KindMovie && kind != watch.KindTV) || err != nil || tmdbID <= 0 {
+		writeError(w, http.StatusBadRequest, "That isn't a movie or show.")
+		return
+	}
+	ctx := r.Context()
+	tm := s.TMDB()
+	var backdrop string
+	var trailers []metadata.Trailer
+	if kind == watch.KindMovie {
+		d, err := tm.GetMovieDetail(ctx, tmdbID)
+		if err != nil {
+			writeUpstreamError(w, "load the movie from TMDB", err)
+			return
+		}
+		backdrop, trailers = d.BackdropPath, d.Trailers()
+	} else {
+		d, err := tm.GetShowFull(ctx, tmdbID)
+		if err != nil {
+			writeUpstreamError(w, "load the show from TMDB", err)
+			return
+		}
+		backdrop, trailers = d.BackdropPath, d.Trailers()
+	}
+	var ex watchExtras
+	if len(trailers) > 0 {
+		ex.Trailer = trailers[0].Key
+	}
+	var wg sync.WaitGroup
+	wg.Add(2)
+	go func() { defer wg.Done(); ex.Logo, _ = tm.Logo(ctx, kind, tmdbID) }()
+	go func() { defer wg.Done(); ex.Colour, _ = tm.MainColour(ctx, backdrop) }()
+	wg.Wait()
+	w.Header().Set("Cache-Control", "private, max-age=3600")
+	writeJSON(w, http.StatusOK, ex)
+}
+
+// yearShow is a title in the year's recap, with its picture.
+type yearShow struct {
+	watch.YearShow
+	BackdropURL string `json:"backdropUrl,omitempty"`
+}
+
+type yearAnswer struct {
+	watch.YearStats
+	Top      []yearShow `json:"top"`
+	TopMovie *yearShow  `json:"topMovie,omitempty"`
+}
+
+// GET /api/watch/year?year=2026: the profile's year in Cue (this year
+// unless asked): hours, titles, the most watched shows and movie, the
+// busiest day and month.
+func (s *Server) handleWatchYear(w http.ResponseWriter, r *http.Request) {
+	pid, ok := s.watchProfile(w, r)
+	if !ok {
+		return
+	}
+	year := time.Now().Year()
+	if v := r.URL.Query().Get("year"); v != "" {
+		y, err := strconv.Atoi(v)
+		if err != nil || y < 2000 || y > year {
+			writeError(w, http.StatusBadRequest, "That isn't a year Cue can look back on.")
+			return
+		}
+		year = y
+	}
+	st, err := s.WatchRepo.Year(pid, year)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "Couldn't add up the year.")
+		return
+	}
+	pic := func(y watch.YearShow) yearShow { return yearShow{y, metadata.BackdropURL(y.BackdropPath)} }
+	a := yearAnswer{YearStats: st, Top: make([]yearShow, 0, len(st.Top))}
+	for _, t := range st.Top {
+		a.Top = append(a.Top, pic(t))
+	}
+	if st.TopMovie != nil {
+		m := pic(*st.TopMovie)
+		a.TopMovie = &m
+	}
+	writeJSON(w, http.StatusOK, a)
+}

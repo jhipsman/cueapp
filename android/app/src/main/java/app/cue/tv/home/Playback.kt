@@ -22,6 +22,21 @@ class Playback(
     var note by mutableStateOf("") // shown over the screens while a version is found
         private set
 
+    // The episode that comes next, offered full screen when one ends.
+    data class UpNext(val showId: Int, val show: String, val backdrop: String?, val episode: Episode)
+    var upNext by mutableStateOf<UpNext?>(null)
+        private set
+
+    fun playUpNext() {
+        val u = upNext ?: return
+        upNext = null
+        playTitle("tv", u.showId, u.episode.season, u.episode.episode, 0.0)
+    }
+
+    fun dismissUpNext() {
+        upNext = null
+    }
+
     private data class Vod(val kind: String, val id: Int, val season: Int, val episode: Int, var option: Int = 1, var options: Int = 1, var silent: Int = 0)
 
     private var vod: Vod? = null
@@ -147,10 +162,21 @@ class Playback(
         }
         val v = vod ?: return
         when (reason) {
-            "ended", "next" -> if (v.kind == "tv") scope.launch {
+            // Next pressed: straight on. The episode ended by itself: the Up
+            // next screen, which counts down and plays it (or Back stays).
+            "next" -> if (v.kind == "tv") scope.launch {
                 try {
                     val n = api.next(v.id, v.season, v.episode)
                     playTitle("tv", v.id, n.season, n.episode, 0.0)
+                } catch (e: Exception) {
+                    // the last episode
+                }
+            }
+            "ended" -> if (v.kind == "tv") scope.launch {
+                try {
+                    val n = api.next(v.id, v.season, v.episode)
+                    val show = runCatching { api.title("tv", v.id).card }.getOrNull()
+                    upNext = UpNext(v.id, show?.title ?: "", show?.backdrop, n)
                 } catch (e: Exception) {
                     // the last episode
                 }

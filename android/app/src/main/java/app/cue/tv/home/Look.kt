@@ -19,7 +19,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -93,9 +95,9 @@ fun AmbientBackground(url: String?) {
         Box(Modifier.fillMaxSize().background(Brush.verticalGradient(0f to Color(0x99000000), 0.45f to Color(0xCC0C0D10), 1f to Color(0xF20C0D10))))
         // With no picture (Live TV, Search, the profile): a soft glow of the
         // profile's colour from the top left instead.
-        val glow by androidx.compose.animation.core.animateFloatAsState(if (url == null) 1f else 0f, tween(700), label = "accent-glow")
+        val glow by androidx.compose.animation.core.animateFloatAsState(if (url == null) 1f else 0.75f, tween(700), label = "accent-glow")
         if (glow > 0f) {
-            val accent = LocalAccent.current
+            val accent = tint()
             Box(Modifier.fillMaxSize().drawBehind {
                 drawRect(Brush.radialGradient(
                     listOf(accent.copy(alpha = 0.18f * glow), Color.Transparent),
@@ -109,22 +111,55 @@ fun AmbientBackground(url: String?) {
 
 // Logo artwork per title, looked up once as the highlight reaches it ("" is
 // none: the name is drawn instead).
-object Logos {
-    val found = mutableStateMapOf<String, String>()
+// A title's extras: its logo artwork, the main colour of its picture and a
+// YouTube trailer, looked up once per title (GET /api/watch/extras).
+data class Extras(val logo: String, val colour: Color?, val trailer: String)
+
+object ExtrasStore {
+    val found = mutableStateMapOf<String, Extras>()
+    private val asking = HashSet<String>()
+
+    suspend fun load(api: CueApi, kind: String, id: Int) {
+        val k = "$kind-$id"
+        if (found.containsKey(k) || !asking.add(k)) return
+        try {
+            val o = api.obj("/api/watch/extras/$kind/$id")
+            found[k] = Extras(o.optString("logo"), parseColour(o.optString("colour")), o.optString("trailer"))
+        } catch (e: Exception) {
+            found[k] = Extras("", null, "")
+        } finally {
+            asking.remove(k)
+        }
+    }
+
+    // "r, g, b" as the server sends it.
+    private fun parseColour(s: String): Color? {
+        val p = s.split(",").mapNotNull { it.trim().toIntOrNull() }
+        return if (p.size == 3) Color(p[0], p[1], p[2]) else null
+    }
 }
 
-private fun logoKey(kind: String, id: Int) = "$kind-$id"
+@Composable
+fun rememberExtras(api: CueApi, kind: String, tmdbId: Int, ask: Boolean = true): Extras? {
+    val k = "$kind-$tmdbId"
+    LaunchedEffect(k, ask) { if (ask) ExtrasStore.load(api, kind, tmdbId) }
+    return ExtrasStore.found[k]
+}
 
 @Composable
 fun rememberLogo(api: CueApi, kind: String, tmdbId: Int, known: String? = null): String? {
-    val k = logoKey(kind, tmdbId)
-    if (known != null) return known
-    LaunchedEffect(k) {
-        if (Logos.found.containsKey(k)) return@LaunchedEffect
-        val u = runCatching { api.obj("/api/watch/logo/$kind/$tmdbId").optString("url") }.getOrNull() ?: return@LaunchedEffect
-        Logos.found[k] = u
-    }
-    return Logos.found[k]
+    val ex = rememberExtras(api, kind, tmdbId, ask = known == null)
+    return known ?: ex?.logo
+}
+
+// The colour of the picture in view: the glow, halos and progress bars take
+// it (the profile's colour until one is known).
+val LocalTint = compositionLocalOf { mutableStateOf<Color?>(null) }
+
+@Composable
+fun tint(): Color {
+    val t = LocalTint.current.value ?: LocalAccent.current
+    return androidx.compose.animation.animateColorAsState(t, tween(800), label = "tint").value
 }
 
 // A title's name as its logo, left-aligned, or in Sora when it has none.
@@ -222,7 +257,11 @@ fun Modifier.lift(focused: Boolean, scale: Float, shape: androidx.compose.ui.gra
     val s by androidx.compose.animation.core.animateFloatAsState(if (focused) scale else 1f, liftSpring, label = "lift")
     val e by androidx.compose.animation.core.animateFloatAsState(if (focused) 1f else 0f,
         androidx.compose.animation.core.tween(380, easing = Settle), label = "shadow")
+    // The highlighted card's shadow glows in the picture's colour.
+    val glowColour = tint()
     return this.graphicsLayer {
+        spotShadowColor = glowColour
+        ambientShadowColor = glowColour.copy(alpha = 0.6f)
         scaleX = s
         scaleY = s
         translationY = -5.dp.toPx() * e
