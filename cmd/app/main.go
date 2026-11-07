@@ -76,7 +76,7 @@ var version = "dev"
 //
 // Only the public half belongs here; the private half stays with whoever
 // publishes releases (see docs/RELEASING.md).
-var updatePublicKey = "ZmKrzWG6+bZEHwLiKj8bLYSL3iwUem6yUA3EVGVlrJk="
+var updatePublicKey = "N49pSo72Xj4tancSd2o1ODgOozDW8R6WGWRga/qiEqc="
 
 func main() {
 	if handled, code := handleProbeFlags(os.Args[1:], os.Stdout, os.Stderr); handled {

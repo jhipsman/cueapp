@@ -411,7 +411,7 @@ func TestParsePublicKey(t *testing.T) {
 		}
 	}
 	// The key the project ships is a valid ed25519 key.
-	if _, err := ParsePublicKey("ZmKrzWG6+bZEHwLiKj8bLYSL3iwUem6yUA3EVGVlrJk="); err != nil {
+	if _, err := ParsePublicKey("N49pSo72Xj4tancSd2o1ODgOozDW8R6WGWRga/qiEqc="); err != nil {
 		t.Errorf("the shipped key does not parse: %v", err)
 	}
 }
