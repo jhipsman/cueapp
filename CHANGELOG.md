@@ -59,6 +59,8 @@ under [Unreleased]. How releases are cut: [docs/RELEASING.md](docs/RELEASING.md)
 ## [2.1.9] - 2026-10-07
 
 ### Fixed
+- **The next episode no longer starts early**: at the credits (whose times from TheIntroDB or learned skips can be minutes off) the player now only offers the next episode, as a button (Fire TV / Google TV) or an Up next card (web); it plays by itself only once the episode has really ended.
+- **OK pauses and plays on Fire TV and Google TV** with the controls showing too: the highlight rests on the time bar, where OK used to do nothing, so pausing meant moving over to the pause button.
 - **Phone rows**: on Continue Watching a movie (no episode line under it) sat lower than the shows beside it, and on touch screens the rows' scroll arrows stayed showing as dark strips over the cards once a row was touched. Cards now keep their own height with the picture at the top, and the arrows are left to mice. The New episode badge is a small chip like the episode's code.
 - Adding a media server by pasting the address from your browser (`https://host/web/#/home` for Jellyfin, `.../web/index.html#!/home` for Emby and Plex) failed. The part that only opens the server's web app is now dropped, so it becomes `https://host`; an address with a folder before it, like `https://host/jellyfin/web/#/home`, becomes `https://host/jellyfin` (suggested by msholly on GitHub, #29).
 

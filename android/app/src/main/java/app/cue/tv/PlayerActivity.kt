@@ -884,7 +884,10 @@ class PlayerActivity : Activity() {
         timeNow.text = clock(pos)
         timeLeft.text = if (dur > 0) "-" + clock(dur - pos) else ""
         updateSkip(pos)
-        // When the credits start (or near the end), offer the next episode.
+        // When the credits start (or near the end), offer the next episode:
+        // the controls show with Next episode in them. Nothing starts by
+        // itself before the episode ends (credits times can be minutes off);
+        // at the end the next one plays.
         val next = nextButton
         val credits = when {
             creditsStart > 0 -> creditsStart
@@ -894,9 +897,7 @@ class PlayerActivity : Activity() {
         val atCredits = credits > 0 && pos >= credits
         if (next != null && !nextOffered && dur > 0 && (atCredits || dur - pos < 45_000) && player.isPlaying) {
             nextOffered = true
-            showControls()
-            next.requestFocus()
-            startCountdown()
+            showControls(playPause)
         }
     }
 
@@ -1075,6 +1076,15 @@ class PlayerActivity : Activity() {
                     KeyEvent.KEYCODE_DPAD_DOWN -> { if (live) end("channel-down") else showControls(); return true }
                 }
             } else {
+                // OK on the time bar (where the highlight rests) pauses and
+                // plays, as OK does with the controls hidden; on a button it
+                // presses that button.
+                if (!live && (code == KeyEvent.KEYCODE_DPAD_CENTER || code == KeyEvent.KEYCODE_ENTER) &&
+                    (currentFocus == null || currentFocus === timeBar)) {
+                    togglePlay()
+                    showControls(timeBar)
+                    return true
+                }
                 scheduleHide()
             }
         }
@@ -1199,14 +1209,6 @@ class PlayerActivity : Activity() {
             countdownLeft--
             main.postDelayed(this, 1000)
         }
-    }
-
-    // startCountdown plays the next episode in 10 seconds unless the viewer
-    // does something else (any key but OK, or pausing).
-    private fun startCountdown() {
-        if (nextButton == null || countdownLeft >= 0) return
-        countdownLeft = 10
-        main.post(countdown)
     }
 
     private fun cancelCountdown() {
