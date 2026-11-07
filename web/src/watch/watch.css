@@ -3732,3 +3732,32 @@ html.tv-mode .wx-card:focus .wx-card-sub {
   padding-left: 18px;
   background-color: rgba(255, 255, 255, 0.08);
 }
+
+/* A card is a button, and a button centres what's inside it: in a row
+   stretched to its tallest card, a card without a second line (a movie on
+   Continue Watching) slid down out of line. Cards keep their own height,
+   their picture at the top. */
+.wx .wx-card {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  align-self: flex-start;
+}
+/* The row's arrows are for a mouse: on a touch screen a row is swiped, and
+   the arrows stayed showing as dark strips once the row was touched. */
+@media (hover: none) {
+  .wx-row-arrow {
+    display: none;
+  }
+}
+/* "New episode" as a small chip on the picture, like the episode's code. */
+.wx-card .wx-card-new {
+  top: 9px;
+  left: 9px;
+  padding: 2px 7px;
+  border-radius: 5px;
+  font-size: 0.62rem;
+  letter-spacing: 0.05em;
+  box-shadow: none;
+}
