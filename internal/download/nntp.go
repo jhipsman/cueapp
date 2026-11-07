@@ -125,11 +125,29 @@ func (c *NNTPConn) FetchBody(messageID string) ([]byte, error) {
 	return c.readDotTerminated()
 }
 
-// Quit says goodbye and closes the connection. It never waits long for the
-// server's answer, and always closes.
+// quitWait is how long Quit waits for the server's goodbye.
+const quitWait = 2 * time.Second
+
+// Quit says goodbye and closes the connection. It waits briefly (quitWait)
+// for the server's "205" answer first: a provider counts a connection against
+// the login's limit until it has handled QUIT, so closing at once and opening
+// another connection straight away can be refused as one too many. It never
+// waits longer than that, and always closes.
 func (c *NNTPConn) Quit() error {
-	c.conn.SetDeadline(time.Now().Add(5 * time.Second)) //nolint:errcheck
-	_, _ = c.conn.Write([]byte("QUIT\r\n"))
+	c.conn.SetDeadline(time.Now().Add(quitWait)) //nolint:errcheck
+	if _, err := c.conn.Write([]byte("QUIT\r\n")); err == nil {
+		// Skip whatever an interrupted command left unread (the rest of an
+		// article, say) until the goodbye, the deadline or a hang-up.
+		for {
+			line, err := readBoundedLine(c.reader, maxNNTPStatusLine)
+			if err != nil {
+				break
+			}
+			if code, _, err := parseStatusLine(line); err == nil && code == 205 {
+				break
+			}
+		}
+	}
 	return c.conn.Close()
 }
 

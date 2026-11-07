@@ -124,7 +124,12 @@ func waitOrClosed(conn net.Conn, rw *bufio.ReadWriter, d time.Duration) bool {
 func (s *limitedNNTP) handle(conn net.Conn) {
 	defer conn.Close()
 	allowed := s.enter()
-	defer s.leave(allowed)
+	left := false
+	defer func() {
+		if !left {
+			s.leave(allowed)
+		}
+	}()
 	rw := bufio.NewReadWriter(bufio.NewReader(conn), bufio.NewWriter(conn))
 	if !allowed && s.atGreet {
 		rw.WriteString(s.message + "\r\n")
@@ -168,6 +173,10 @@ func (s *limitedNNTP) handle(conn net.Conn) {
 			rw.WriteString("222 body follows\r\n")
 			writeDotTerminated(rw, body)
 		case upper == "QUIT":
+			// Like a real provider, the connection stops counting against
+			// the limit once QUIT is handled, before the goodbye is sent.
+			s.leave(allowed)
+			left = true
 			rw.WriteString("205 bye\r\n")
 			rw.Flush()
 			return
@@ -371,12 +380,12 @@ func TestTwoDownloadsShareOneLoginsConnections(t *testing.T) {
 		}()
 	}
 	wg.Wait()
-	// The provider may briefly still count a connection that was just closed,
-	// so one or two refusals are not the downloads going over the limit. What
-	// matters: they never had more than 4 working at once, they did not fight
-	// for places, and the limit was not lowered by mistake.
+	// A worker that is done says QUIT and waits for the provider's goodbye
+	// before giving its place to the other download, so the provider never
+	// counts more than 4: it refuses nothing, at most 4 work at once, and the
+	// limit is not lowered by mistake.
 	_, refused, _ := srv.stats()
-	if refused > 2 {
+	if refused != 0 {
 		t.Errorf("the provider refused %d connections: the downloads went over its limit", refused)
 	}
 	if peak := srv.workingPeak(); peak > 4 {

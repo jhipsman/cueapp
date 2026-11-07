@@ -72,15 +72,18 @@ func (s *Server) runBookPipeline(queueID int64, b books.Book, f books.Format, re
 			return err
 		}
 		plain := plainerror.Message(stepErr)
+		// Blocklist before the entry shows as failed: a person may blocklist
+		// it by hand as soon as it does, and that reason must not be
+		// overwritten by this one afterwards.
+		blocklisted := isBadRelease(stepErr) &&
+			s.Blocklist.Add(blocklist.Entry{ReleaseTitle: releaseTitle, Protocol: string(protocol), Reason: stepErr.Error()}) == nil
 		_ = s.QueueRepo.SetStatus(queueID, queue.StatusFailed, plain)
 		noteDownloadFailure(queueID, label, bookLink(b.ID), stepErr)
 		_ = s.BookRepo.SetState(b.ID, f, restore, "", "")
 		_ = s.QueueRepo.LogActivity(0, "failed", fmt.Sprintf("%s (%s): %s", label, f, plain))
 		s.notifyItem("failed", notify.Item{Media: string(f), Title: b.Title, Year: b.Year, Reason: plain, Release: releaseTitle, LinkPath: bookLink(b.ID)})
-		if isBadRelease(stepErr) {
-			if err := s.Blocklist.Add(blocklist.Entry{ReleaseTitle: releaseTitle, Protocol: string(protocol), Reason: stepErr.Error()}); err == nil {
-				s.background(func() { s.searchBook(b.ID, f, true) })
-			}
+		if blocklisted {
+			s.background(func() { s.searchBook(b.ID, f, true) })
 		}
 		return stepErr
 	}

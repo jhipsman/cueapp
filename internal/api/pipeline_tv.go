@@ -160,9 +160,12 @@ func (s *Server) runTVPipeline(queueID int64, series library.Series, season int,
 		// The person reads this message; the raw error goes to the log only
 		// (noteDownloadFailure keeps it as the technical detail).
 		plain := plainerror.Message(stepErr)
+		// Blocklist before the entry shows as failed: a person may blocklist
+		// it by hand as soon as it does, and that reason must not be
+		// overwritten by this one afterwards.
+		blocklisted := isBadRelease(stepErr) && s.blocklistBadRelease(releaseTitle, protocol, 0, series.ID, stepErr)
 		_ = s.QueueRepo.SetStatus(queueID, queue.StatusFailed, plain)
 		noteDownloadFailure(queueID, series.Title, fmt.Sprintf("/series/%d", series.ID), stepErr)
-		blocklisted := isBadRelease(stepErr) && s.blocklistBadRelease(releaseTitle, protocol, 0, series.ID, stepErr)
 		releaseTargets()
 		message := fmt.Sprintf("%s: %s", series.Title, plain)
 		_ = s.QueueRepo.LogSeriesActivity(series.ID, "failed", message)

@@ -62,9 +62,12 @@ func (s *Server) runPipeline(queueID, movieID int64, movieTitle string, movieYea
 		// The person reads this message; the raw error goes to the log only
 		// (noteDownloadFailure keeps it as the technical detail).
 		plain := plainerror.Message(stepErr)
+		// Blocklist before the entry shows as failed: a person may blocklist
+		// it by hand as soon as it does, and that reason must not be
+		// overwritten by this one afterwards.
+		blocklisted := isBadRelease(stepErr) && s.blocklistBadRelease(releaseTitle, protocol, movieID, 0, stepErr)
 		_ = s.QueueRepo.SetStatus(queueID, queue.StatusFailed, plain)
 		noteDownloadFailure(queueID, movieTitle, fmt.Sprintf("/title/%d", tmdbID), stepErr)
-		blocklisted := isBadRelease(stepErr) && s.blocklistBadRelease(releaseTitle, protocol, movieID, 0, stepErr)
 		_ = s.MovieRepo.SetStatus(movieID, restoreStatus, "", "")
 		message := fmt.Sprintf("%s: %s", movieTitle, plain)
 		_ = s.QueueRepo.LogActivity(movieID, "failed", message)

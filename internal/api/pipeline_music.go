@@ -126,9 +126,12 @@ func (s *Server) runMusicPipeline(queueID, artistID, albumID int64, restore musi
 		// The person reads this message; the raw error goes to the log only
 		// (noteDownloadFailure keeps it as the technical detail).
 		plain := plainerror.Message(stepErr)
+		// Blocklist before the entry shows as failed: a person may blocklist
+		// it by hand as soon as it does, and that reason must not be
+		// overwritten by this one afterwards.
+		blocklisted := isBadRelease(stepErr) && s.blocklistAlbumRelease(albumID, releaseTitle, protocol, stepErr)
 		_ = s.QueueRepo.SetStatus(queueID, queue.StatusFailed, plain)
 		noteDownloadFailure(queueID, label, fmt.Sprintf("/music/artist/%d", artistID), stepErr)
-		blocklisted := isBadRelease(stepErr) && s.blocklistAlbumRelease(albumID, releaseTitle, protocol, stepErr)
 		_ = s.MusicRepo.SetAlbumStatus(albumID, restore)
 		message := fmt.Sprintf("%s: %s", label, plain)
 		_ = s.QueueRepo.LogItemEvent(queue.ItemEvent{AlbumID: albumID, Kind: "failed", Level: queue.LevelError, Message: message})

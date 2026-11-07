@@ -11,9 +11,11 @@ import (
 	"github.com/jhipsman/cueapp/internal/queue"
 )
 
-// failedGrab leaves one failed queue item behind: a hunt grabs a release but
-// there is no Usenet provider, so the pipeline fails (a setup failure, which
-// deliberately does not blocklist anything).
+// failedGrab leaves one failed queue item behind: a hunt grabs a release
+// whose "NZB" is not one (the fixture indexer answers with its RSS feed), so
+// the pipeline fails and blocklists the release automatically. It returns
+// once that pipeline, and the automatic retry it starts, have finished, so
+// nothing it does can land after the test's own requests.
 func failedGrab(t *testing.T) (base string, client *http.Client, movieID int64, item map[string]any, srvServer interface{ TestHunt(context.Context) }) {
 	t.Helper()
 	server, base, client := loginNewServer(t)
@@ -24,7 +26,9 @@ func failedGrab(t *testing.T) (base string, client *http.Client, movieID int64, 
 		t.Fatal(err)
 	}
 	server.TestHunt(context.Background())
-	items := waitForQueue(t, client, base, 1)
+	waitForQueue(t, client, base, 1)
+	server.TestWaitBackground()
+	items := getJSON[[]map[string]any](t, client, base+"/api/queue")
 	if len(items) != 1 || items[0]["status"] != "failed" {
 		t.Fatalf("expected one failed grab, got %+v", items)
 	}
@@ -93,11 +97,19 @@ func TestRemoveAndClearOnlyTouchFinishedEntries(t *testing.T) {
 func TestBlocklistAndSearchAnotherFromTheQueue(t *testing.T) {
 	base, client, _, item, _ := failedGrab(t)
 
+	// The failure already blocklisted the release automatically...
+	list := getJSON[[]map[string]any](t, client, base+"/api/blocklist")
+	if len(list) != 1 || list[0]["releaseTitle"] != item["releaseTitle"] || strings.Contains(fmt.Sprint(list[0]["reason"]), "you") {
+		t.Fatalf("the failed release should be blocklisted automatically: %+v", list)
+	}
+
 	postJSON[map[string]any](t, client, fmt.Sprintf("%s/api/queue/%d/blocklist", base, int64(item["id"].(float64))), nil, http.StatusOK)
 
-	list := getJSON[[]map[string]any](t, client, base+"/api/blocklist")
+	// ...and blocklisting it by hand replaces that entry's reason with the
+	// person's, without adding a second entry.
+	list = getJSON[[]map[string]any](t, client, base+"/api/blocklist")
 	if len(list) != 1 || list[0]["releaseTitle"] != item["releaseTitle"] || !strings.Contains(fmt.Sprint(list[0]["reason"]), "you") {
-		t.Fatalf("the release should be on the blocklist: %+v", list)
+		t.Fatalf("the release should be on the blocklist, blocklisted by you: %+v", list)
 	}
 	for _, q := range getJSON[[]map[string]any](t, client, base+"/api/queue") {
 		if q["id"] == item["id"] {
