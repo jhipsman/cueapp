@@ -5,6 +5,7 @@ import Icon from '../components/Icon'
 import SetupCard from './SetupCard'
 import { useDocumentTitle } from '../documentTitle'
 import { Ambient, epCode, playHref, Row, SpotlightContext, TitleMark, titleHref, useExtras, useTint } from './parts'
+import { Frames, useFrames, useTrailer } from './living'
 import { onTV } from './tv'
 
 // Home: a banner, then rows to scroll. With only set, just movies or just
@@ -109,8 +110,10 @@ function Banner({ card, featured }: { card: WatchCard; featured: boolean }) {
   const logo = card.logoUrl !== undefined ? card.logoUrl : ex === undefined ? undefined : (ex?.logo ?? '')
   useTint(ex?.colour)
   const trailer = useTrailer(ex?.trailer, `${card.kind}-${card.tmdbId}`)
+  // No trailer: real frames from the title itself, moving gently.
+  const frames = useFrames(card, ex !== undefined && !ex?.trailer)
   return (
-    <header className={`wx-hero${onTV() ? '' : ' inset'}${trailer.playing ? ' playing' : ''}`} ref={trailer.box}>
+    <header className={`wx-hero${onTV() ? '' : ' inset'}${trailer.playing ? ' playing' : ''}${frames.length > 1 ? ' framing' : ''}`} ref={trailer.box}>
       {card.backdropUrl && <div className="wx-hero-pic drift" key={card.backdropUrl} style={{ backgroundImage: `url(${card.backdropUrl})` }} />}
       {trailer.src && (
         <div className="wx-hero-trailer" aria-hidden="true">
@@ -128,6 +131,7 @@ function Banner({ card, featured }: { card: WatchCard; featured: boolean }) {
           />
         </div>
       )}
+      {frames.length > 1 && <Frames urls={frames} />}
       {trailer.waiting && <span className="wx-trailer-wait" aria-hidden="true" />}
       {trailer.playing && (
         <button className="wx-trailer-sound" onClick={trailer.toggleSound} aria-label={trailer.sound ? 'Mute the trailer' : 'Play the trailer with sound'}>
@@ -164,126 +168,4 @@ function Banner({ card, featured }: { card: WatchCard; featured: boolean }) {
       </div>
     </header>
   )
-}
-
-// How long the banner rests before its trailer starts, how long it stays out
-// of sight after YouTube says it's playing (so YouTube's own title and
-// buttons are gone), and how long a trailer plays before the banner settles
-// back to its picture.
-const TRAILER_REST = 2500
-const TRAILER_HIDDEN = 1200
-const TRAILER_LENGTH = 60_000
-
-// A computer with a mouse, a wide enough window, and no request for less
-// motion: phones and TVs keep the still picture.
-function trailersAllowed(): boolean {
-  return matchMedia('(hover: hover) and (min-width: 900px)').matches && !matchMedia('(prefers-reduced-motion: reduce)').matches && !onTV()
-}
-
-function useTrailer(id: string | undefined, forKey: string) {
-  const box = useRef<HTMLElement>(null)
-  const frame = useRef<HTMLIFrameElement>(null)
-  const [state, setState] = useState<{ key: string; src: string; playing: boolean; waiting: boolean; sound: boolean }>({
-    key: '',
-    src: '',
-    playing: false,
-    waiting: false,
-    sound: false,
-  })
-  useEffect(() => {
-    setState({ key: forKey, src: '', playing: false, waiting: false, sound: false })
-    if (!id || !trailersAllowed()) return
-    let rest = 0
-    let stopAt = 0
-    let visible = true
-    const arm = () => {
-      window.clearTimeout(rest)
-      if (!visible || document.hidden) return
-      setState((s) => ({ ...s, waiting: true }))
-      rest = window.setTimeout(() => {
-        const q = new URLSearchParams({
-          autoplay: '1', mute: '1', controls: '0', playsinline: '1', rel: '0', modestbranding: '1',
-          iv_load_policy: '3', disablekb: '1', enablejsapi: '1', loop: '1', playlist: id, start: '4',
-          origin: location.origin,
-        })
-        setState((s) => ({ ...s, waiting: false, src: `https://www.youtube-nocookie.com/embed/${id}?${q}` }))
-        stopAt = window.setTimeout(stop, TRAILER_LENGTH)
-      }, TRAILER_REST)
-    }
-    const stop = () => {
-      window.clearTimeout(rest)
-      window.clearTimeout(stopAt)
-      setState((s) => ({ ...s, src: '', playing: false, waiting: false, sound: false }))
-    }
-    const seen = new IntersectionObserver(
-      ([e]) => {
-        visible = e.intersectionRatio > 0.5
-        if (visible) arm()
-        else stop()
-      },
-      { threshold: [0, 0.5, 1] },
-    )
-    if (box.current) seen.observe(box.current)
-    const onHide = () => (document.hidden ? stop() : arm())
-    document.addEventListener('visibilitychange', onHide)
-    arm()
-    return () => {
-      stop()
-      seen.disconnect()
-      document.removeEventListener('visibilitychange', onHide)
-    }
-  }, [id, forKey])
-  const command = (func: string) =>
-    frame.current?.contentWindow?.postMessage(JSON.stringify({ event: 'command', func, args: [] }), 'https://www.youtube-nocookie.com')
-  // The trailer shows only once YouTube says it's playing; if it can't play
-  // (an error, or not allowed outside YouTube) the banner keeps its picture.
-  useEffect(() => {
-    let reveal = 0
-    const onMsg = (e: MessageEvent) => {
-      if (e.origin !== 'https://www.youtube-nocookie.com' || e.source !== frame.current?.contentWindow || typeof e.data !== 'string') return
-      let m: { event?: string; info?: unknown }
-      try {
-        m = JSON.parse(e.data)
-      } catch {
-        return
-      }
-      const state =
-        m.event === 'onStateChange' ? m.info : m.event === 'infoDelivery' && m.info && typeof m.info === 'object' ? (m.info as { playerState?: number }).playerState : undefined
-      if (m.event === 'onError') {
-        window.clearTimeout(reveal)
-        setState((s) => ({ ...s, src: '', playing: false }))
-      } else if (state === 1) {
-        window.clearTimeout(reveal)
-        reveal = window.setTimeout(() => setState((s) => (s.src ? { ...s, playing: true } : s)), TRAILER_HIDDEN)
-      }
-    }
-    window.addEventListener('message', onMsg)
-    return () => {
-      window.clearTimeout(reveal)
-      window.removeEventListener('message', onMsg)
-    }
-  }, [])
-  return {
-    box,
-    frame,
-    src: state.key === forKey ? state.src : '',
-    playing: state.key === forKey && state.playing,
-    waiting: state.key === forKey && state.waiting,
-    sound: state.sound,
-    // The player loads out of sight; it's asked to say how it's doing (a
-    // few times: it may not be ready at the first).
-    loaded: () => {
-      for (const ms of [0, 500, 1500, 3000]) {
-        window.setTimeout(
-          () => frame.current?.contentWindow?.postMessage(JSON.stringify({ event: 'listening', id: 1, channel: 'widget' }), 'https://www.youtube-nocookie.com'),
-          ms,
-        )
-      }
-    },
-    toggleSound: () =>
-      setState((s) => {
-        command(s.sound ? 'mute' : 'unMute')
-        return { ...s, sound: !s.sound }
-      }),
-  }
 }

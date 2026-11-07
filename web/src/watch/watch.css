@@ -4245,3 +4245,70 @@ html.tv-mode .wx-card:focus .wx-card-sub {
     animation: none;
   }
 }
+
+/* The banner's real frames, when a title has no trailer: one at a time,
+   each drifting, crossfading to the next, under the banner's shade. */
+.wx-hero-frames {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  animation: wx-fade-in 1.2s var(--wx-settle) both;
+}
+.wx-hero-frames > div {
+  position: absolute;
+  inset: -3%;
+  background-size: cover;
+  background-position: center;
+  opacity: 0;
+  transition: opacity 1.4s ease;
+}
+.wx-hero-frames > div.show {
+  opacity: 1;
+  animation: wx-kenburns 6s linear both;
+}
+.wx-hero.framing .wx-hero-pic {
+  opacity: 0;
+  transition: opacity 1.2s var(--wx-settle);
+}
+@media (prefers-reduced-motion: reduce) {
+  .wx-hero-frames > div.show {
+    animation: none;
+  }
+}
+
+/* A title's page: its trailer and frames fade into the page like its picture. */
+.wx-titlepage .wx-hero-trailer,
+.wx-titlepage .wx-hero-frames {
+  -webkit-mask-image: linear-gradient(to bottom, #000 55%, transparent);
+  mask-image: linear-gradient(to bottom, #000 55%, transparent);
+}
+
+/* A card's own trailer, once the mouse rests on it: it fills the card at
+   twice the size drawn at half (YouTube won't play under 200 pixels),
+   fading in once it plays. */
+.wx-card-trailer {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  container-type: size;
+  opacity: 0;
+  transition: opacity 0.7s var(--wx-settle);
+  pointer-events: none;
+}
+.wx-card-trailer.on {
+  opacity: 1;
+}
+.wx-card-trailer iframe {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: calc(2 * max(100cqw, 177.78cqh));
+  height: calc(2 * max(100cqh, 56.25cqw));
+  border: 0;
+  transform: translate(-50%, -50%) scale(0.59);
+}
+.wx-card:has(.wx-card-trailer.on) .wx-chip,
+.wx-card:has(.wx-card-trailer.on) .wx-card-progress {
+  opacity: 0;
+}
