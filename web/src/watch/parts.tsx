@@ -46,9 +46,9 @@ export function Card({ card, wide }: { card: WatchCard; wide?: boolean }) {
   let img = wide ? card.backdropUrl || card.posterUrl : card.posterUrl
   // A TV's posters are small: a smaller picture loads and draws faster.
   if (img && onTV()) img = img.replace('/t/p/w500/', '/t/p/w342/').replace('/t/p/w1280/', '/t/p/w780/')
-  // Continue Watching plays straight away; anything else opens its page.
-  const open = () =>
-    navigate(card.progress !== undefined || card.episode ? playHref(card.kind, card.tmdbId, card.season, card.episode) : titleHref(card))
+  // A card opens its page, Continue Watching and new episodes too: Resume
+  // (or Play) is there, with the episodes, so nothing starts by surprise.
+  const open = () => navigate(titleHref(card))
   const code = card.episode ? epCode(card.season, card.episode) : ''
   return (
     <button

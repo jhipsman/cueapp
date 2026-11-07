@@ -118,3 +118,73 @@ struct CardRow: View {
         }
     }
 }
+
+// A title's name as its logo artwork, as Apple's TV app draws it, or in big
+// letters when it has none. Until the lookup answers, a quiet space, so the
+// name doesn't flash before the logo replaces it.
+struct TitleLogo: View {
+    @EnvironmentObject var cue: Cue
+    let kind: String
+    let tmdbId: Int
+    let title: String
+    var known: String? = nil // "" when the server said there is none
+    var size: CGFloat = 76
+    var maxWidth: CGFloat = 760
+    var maxHeight: CGFloat = 220
+    @State private var url: String?
+
+    var body: some View {
+        Group {
+            if let u = url, !u.isEmpty, let link = URL(string: u) {
+                AsyncImage(url: link) { phase in
+                    if let img = phase.image {
+                        img.resizable().scaledToFit()
+                            .frame(maxWidth: maxWidth, maxHeight: maxHeight, alignment: .bottomLeading)
+                            .shadow(color: .black.opacity(0.5), radius: 16)
+                    } else if phase.error != nil {
+                        name
+                    } else {
+                        Color.clear.frame(width: 1, height: maxHeight * 0.6)
+                    }
+                }
+            } else if url != nil {
+                name
+            } else {
+                Color.clear.frame(width: 1, height: maxHeight * 0.6)
+            }
+        }
+        .task(id: "\(kind)-\(tmdbId)") {
+            url = known
+            if known == nil { url = await cue.logo(kind, tmdbId) }
+        }
+    }
+
+    private var name: some View {
+        Text(title)
+            .font(.system(size: size, weight: .heavy))
+            .lineLimit(2)
+            .shadow(color: .black.opacity(0.5), radius: 12)
+    }
+}
+
+// IMDb, Rotten Tomatoes and Metacritic, each with its own badge.
+struct ScoresLine: View {
+    let ratings: Ratings?
+
+    var body: some View {
+        HStack(spacing: 18) {
+            if let s = ratings?.imdb { score("IMDb", s, Color(red: 0.96, green: 0.77, blue: 0.09), .black) }
+            if let s = ratings?.rottenTomatoes { score("RT", s, Color(red: 0.98, green: 0.2, blue: 0.04), .white) }
+            if let s = ratings?.metacritic { score("MC", s, Color(white: 0.25), .white) }
+        }
+    }
+
+    private func score(_ badge: String, _ value: String, _ bg: Color, _ fg: Color) -> some View {
+        HStack(spacing: 8) {
+            Text(badge).font(.system(size: 18, weight: .black)).foregroundStyle(fg)
+                .padding(.horizontal, 7).padding(.vertical, 2)
+                .background(bg, in: RoundedRectangle(cornerRadius: 5))
+            Text(value).font(.callout.weight(.bold))
+        }
+    }
+}

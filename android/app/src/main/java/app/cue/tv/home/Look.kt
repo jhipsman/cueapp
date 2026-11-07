@@ -91,6 +91,19 @@ fun AmbientBackground(url: String?) {
             }
         }
         Box(Modifier.fillMaxSize().background(Brush.verticalGradient(0f to Color(0x99000000), 0.45f to Color(0xCC0C0D10), 1f to Color(0xF20C0D10))))
+        // With no picture (Live TV, Search, the profile): a soft glow of the
+        // profile's colour from the top left instead.
+        val glow by androidx.compose.animation.core.animateFloatAsState(if (url == null) 1f else 0f, tween(700), label = "accent-glow")
+        if (glow > 0f) {
+            val accent = LocalAccent.current
+            Box(Modifier.fillMaxSize().drawBehind {
+                drawRect(Brush.radialGradient(
+                    listOf(accent.copy(alpha = 0.18f * glow), Color.Transparent),
+                    center = androidx.compose.ui.geometry.Offset(size.width * 0.12f, 0f),
+                    radius = size.width * 0.6f,
+                ))
+            })
+        }
     }
 }
 

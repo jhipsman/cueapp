@@ -151,7 +151,7 @@ data class Tile(
     val logo: String? = null,
 ) {
     val key get() = "$kind-$tmdbId-${season ?: 0}-${episode ?: 0}"
-    // Being watched: opening it carries on playing.
+    // Being watched (Continue Watching, new episodes): its page offers Resume.
     val resumes get() = progress != null || episode != null
     val episodeLine get() = if (season != null && episode != null) "S$season:E$episode" + (episodeTitle?.let { " · $it" } ?: "") else ""
 

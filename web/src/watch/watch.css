@@ -3480,3 +3480,255 @@ html.tv-mode .wx-card:focus .wx-card-sub {
     display: none;
   }
 }
+
+/* ==== Moving between sections, and touch screens ==== */
+
+/* A section arriving fades in as it rises (no transform is left behind
+   afterwards, so nothing fixed inside it is affected for long). */
+.wx-view-in {
+  animation: wx-view-in 0.45s var(--wx-settle) backwards;
+}
+@keyframes wx-view-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+/* The top bar's sections: a line slides in under the one you're on. */
+.wx-links a {
+  position: relative;
+  transition: color 0.25s;
+}
+.wx-links a::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -6px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--wx-text);
+  transform: scaleX(0);
+  transition: transform 0.4s var(--wx-settle);
+}
+.wx-links a.active::after {
+  transform: scaleX(1);
+}
+/* The phone's tabs: the one you tap pops a little and lights up. */
+.wx-tabs a {
+  transition: color 0.25s;
+}
+.wx-tabs a svg {
+  transition: transform 0.4s var(--wx-settle);
+}
+.wx-tabs a.active svg {
+  animation: wx-pop 0.45s var(--wx-settle);
+}
+.wx-tabs a:active svg {
+  transform: scale(0.88);
+}
+@keyframes wx-pop {
+  40% {
+    transform: scale(1.18);
+  }
+}
+
+/* Phones and tablets have no pointer to hover with: a tapped card would
+   stay lifted (and hang off the row) because the browser keeps it
+   "hovered". There, a card only dips a little while pressed. */
+@media (hover: none) {
+  .wx-card:hover .wx-card-art {
+    transform: none;
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.04);
+  }
+  .wx-card:hover .wx-card-art::before {
+    opacity: 0;
+  }
+  .wx-card:hover .wx-card-art::after {
+    animation: none;
+  }
+  .wx-card:hover .wx-card-name,
+  .wx-card:hover .wx-card-sub {
+    transform: none;
+    color: inherit;
+  }
+  .wx-card:hover .wx-card-name {
+    color: rgba(255, 255, 255, 0.72);
+  }
+  .wx-card:active .wx-card-art {
+    transform: scale(0.97);
+    transition-duration: 0.15s;
+  }
+  .wx-btn:hover {
+    transform: none;
+    box-shadow: none;
+    background: rgba(255, 255, 255, 0.16);
+    color: #fff;
+  }
+  .wx-btn.play:hover {
+    background: rgba(255, 255, 255, 0.95);
+    color: #0b0c0f;
+  }
+  .wx-btn:active {
+    transform: scale(0.96);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wx-view-in {
+    animation: wx-fade-in 0.25s backwards;
+  }
+  .wx-tabs a.active svg {
+    animation: none;
+  }
+}
+
+/* ==== Live TV in the TV apps' look ====
+   A soft glow of the profile's colour behind the page; rounded, frosted
+   panels; the groups as pills; programmes as rounded tiles that light up
+   when pointed at; the one on now tinted, the one picked ringed; a red
+   LIVE pill. */
+.wx-live {
+  position: relative;
+  isolation: isolate;
+}
+.wx-live::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(60% 50% at 15% 0%, rgba(var(--wx-accent-rgb), 0.16), transparent 70%),
+    radial-gradient(50% 40% at 90% 10%, rgba(255, 255, 255, 0.05), transparent 70%);
+}
+.wx-live-preview {
+  border-radius: var(--wx-panel-radius);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.08),
+    0 30px 60px rgba(0, 0, 0, 0.5);
+}
+.wx-live-preview.is-full {
+  border-radius: 0;
+}
+.wx-live-info > * {
+  animation: wx-rise 0.6s var(--wx-settle) both;
+}
+.wx-live-info > :nth-child(2) {
+  animation-delay: 0.06s;
+}
+.wx-live-info > :nth-child(3) {
+  animation-delay: 0.12s;
+}
+.wx-live-info > :nth-child(n + 4) {
+  animation-delay: 0.18s;
+}
+.wx-live-info-logo,
+.wx-guide-logo {
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.08);
+}
+.wx-live-badge {
+  border: 0;
+  border-radius: 999px;
+  background: #e5484d;
+  color: #fff;
+  padding: 3px 10px;
+}
+.wx-live-badge i {
+  background: #fff;
+}
+.wx-live-progress > div,
+.wx-guide-now {
+  background: #e5484d;
+}
+.wx-guide-now {
+  box-shadow: 0 0 10px rgba(229, 72, 77, 0.6);
+}
+
+/* Panels: rounded and frosted over the glow. */
+.wx-live-side,
+.wx-live .wx-guide {
+  border-radius: var(--wx-panel-radius);
+  background: rgba(27, 29, 34, 0.72);
+  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.06);
+}
+.wx-guide-times,
+.wx-guide-corner,
+.wx-guide-chan {
+  background: rgba(30, 32, 38, 0.96);
+}
+/* Groups: pills, white for the one shown. */
+.wx-live-side li button {
+  border-radius: 999px;
+  transition:
+    background 0.25s,
+    color 0.25s,
+    transform 0.35s var(--wx-settle);
+}
+.wx-live-side li button.active {
+  background: #fff;
+  color: #0b0c0f;
+}
+.wx-live-side li button.active::before {
+  display: none;
+}
+.wx-live-side li button.active small {
+  color: rgba(11, 12, 15, 0.55);
+}
+.wx-live-find {
+  border-radius: 999px;
+}
+/* Programmes: rounded tiles with a gap between them. */
+.wx-prog {
+  top: 5px;
+  bottom: 5px;
+  border-left: 0;
+  border-radius: 10px;
+  margin-left: 3px;
+  background: rgba(255, 255, 255, 0.06);
+  transition:
+    background 0.25s,
+    box-shadow 0.35s var(--wx-settle);
+}
+.wx-prog.now {
+  background: rgba(var(--wx-accent-rgb), 0.16);
+}
+.wx-prog.past {
+  background: rgba(255, 255, 255, 0.025);
+}
+.wx-prog.picked {
+  box-shadow: inset 0 0 0 2px #fff;
+}
+@media (hover: hover) {
+  .wx-prog:hover {
+    background: rgba(255, 255, 255, 0.16);
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.4);
+  }
+  .wx-guide-chan-play:hover .wx-guide-logo {
+    transform: scale(1.06);
+  }
+}
+.wx-guide-logo {
+  transition: transform 0.35s var(--wx-settle);
+}
+.wx-guide-row {
+  border-bottom-color: rgba(255, 255, 255, 0.04);
+}
+.wx-guide-row.playing .wx-guide-chan {
+  box-shadow: inset 3px 0 0 #e5484d;
+}
+@media (max-width: 640px) {
+  .wx-live .wx-guide {
+    border-radius: 0;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+.wx-live-select select {
+  border-radius: 999px;
+  padding-left: 18px;
+  background-color: rgba(255, 255, 255, 0.08);
+}

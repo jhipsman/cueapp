@@ -11,15 +11,12 @@ final class Nav: ObservableObject {
     @Published var path = NavigationPath()
 }
 
-// Opening a card: one being watched plays straight away (it carries on);
-// anything else opens its page.
+// Opening a card opens its page, Continue Watching and new episodes too:
+// Resume (or Play) is there, with the episodes, so nothing starts by
+// surprise.
 @MainActor
 func openCard(_ card: WatchCard, cue: Cue, nav: Nav) {
-    if card.resumes {
-        cue.play(card)
-    } else {
-        nav.path.append(card)
-    }
+    nav.path.append(card)
 }
 
 // A tab's own navigation: its page, and titles opened from it.
@@ -140,10 +137,7 @@ struct Banner: View {
                            startPoint: .leading, endPoint: .init(x: 0.7, y: 0.5))
             LinearGradient(colors: [Color.cueBackground, .clear], startPoint: .bottom, endPoint: .init(x: 0.5, y: 0.55))
             VStack(alignment: .leading, spacing: 20) {
-                Text(card.title)
-                    .font(.system(size: 76, weight: .heavy))
-                    .lineLimit(2)
-                    .shadow(color: .black.opacity(0.5), radius: 12)
+                TitleLogo(kind: card.kind, tmdbId: card.tmdbId, title: card.title, known: card.logoUrl)
                 MetaLine(year: card.year, rating: card.rating, kind: card.kind, extra: nil)
                 if let o = card.overview {
                     Text(o).font(.body).lineLimit(3).frame(maxWidth: 1000, alignment: .leading).foregroundStyle(.white.opacity(0.9))
