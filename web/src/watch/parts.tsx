@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useRef, useState, type PointerEve
 import { useNavigate } from 'react-router-dom'
 import { api, type WatchCard, type WatchExtras, type WatchRatings } from '../api'
 import Icon from '../components/Icon'
+import { CardTrailer, trailersAllowed } from './living'
 import { onTV } from './tv'
 
 // Building blocks shared by the Watch pages.
@@ -50,9 +51,13 @@ export function Card({ card, wide }: { card: WatchCard; wide?: boolean }) {
   // (or Play) is there, with the episodes, so nothing starts by surprise.
   const open = () => navigate(titleHref(card))
   const code = card.episode ? epCode(card.season, card.episode) : ''
-  // Pointed at, a wide card's logo floats in front of its picture.
+  // Pointed at, a wide card's logo floats in front of its picture, and
+  // once the mouse rests a moment the card plays the title's trailer.
   const [hot, setHot] = useState(false)
-  const ex = useExtras(hot && wide ? card : null)
+  const [resting, setResting] = useState(false)
+  const restTimer = useRef(0)
+  const ex = useExtras(hot ? card : null)
+  useEffect(() => () => window.clearTimeout(restTimer.current), [])
   // The picture tilts toward the pointer, its glare following it (a mouse
   // only: touch screens have no pointer resting on a card).
   const tilt = (e: PointerEvent<HTMLButtonElement>) => {
@@ -72,11 +77,15 @@ export function Card({ card, wide }: { card: WatchCard; wide?: boolean }) {
       onMouseEnter={() => {
         warm(card)
         setHot(true)
+        window.clearTimeout(restTimer.current)
+        restTimer.current = window.setTimeout(() => setResting(true), 1300)
       }}
       onPointerMove={tilt}
       onPointerLeave={(e) => {
         e.currentTarget.style.removeProperty('--px')
         e.currentTarget.style.removeProperty('--py')
+        window.clearTimeout(restTimer.current)
+        setResting(false)
       }}
       onFocus={() => {
         warm(card)
@@ -86,6 +95,7 @@ export function Card({ card, wide }: { card: WatchCard; wide?: boolean }) {
     >
       <span className="wx-card-art">
         {img ? <img src={img} alt="" loading="lazy" /> : <span className="wx-card-fallback">{card.title}</span>}
+        {resting && ex?.trailer && trailersAllowed() && <CardTrailer id={ex.trailer} />}
         {wide && ex?.logo && <img className="wx-card-logo" src={ex.logo} alt="" />}
         {wide && code && <span className="wx-chip">{code}</span>}
         {card.new && <span className="wx-card-new">New episode</span>}

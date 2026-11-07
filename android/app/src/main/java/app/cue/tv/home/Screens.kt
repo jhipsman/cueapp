@@ -495,8 +495,13 @@ fun Banner(api: CueApi, c: Tile) {
         }
         // Rest on a title and its trailer fades in, muted, over the picture.
         val ex = rememberExtras(api, c.kind, c.tmdbId)
-        key(c.kind, c.tmdbId) {
-            TrailerLayer(api.server, ex?.trailer, Modifier.fillMaxHeight().fillMaxWidth(0.8f).align(Alignment.TopEnd))
+        key(c.kind, c.tmdbId, c.season, c.episode) {
+            if (ex != null && ex.trailer.isEmpty()) {
+                // No trailer: a moment of the title itself.
+                ClipLayer(api, c, Modifier.fillMaxHeight().fillMaxWidth(0.8f).align(Alignment.TopEnd))
+            } else {
+                TrailerLayer(api.server, ex?.trailer, Modifier.fillMaxHeight().fillMaxWidth(0.8f).align(Alignment.TopEnd))
+            }
         }
         Box(Modifier.fillMaxSize().background(Brush.horizontalGradient(0.18f to Color(0xF516171B), 0.48f to Color(0x9916171B), 0.75f to Color.Transparent)))
         Box(Modifier.fillMaxSize().background(Brush.verticalGradient(0.5f to Color.Transparent, 1f to Color(0xCC16171B))))
@@ -567,6 +572,15 @@ fun TitleScreen(api: CueApi, playback: Playback, card: Tile, memory: FocusMemory
     Box(Modifier.fillMaxSize().background(Background).rise(0, 0.dp)) {
         // The picture fills the screen; the words sit on its darker left.
         AsyncImage(model = c.backdrop, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize().settleIn())
+        // Rest here a moment and the picture comes alive: the trailer, or a
+        // moment of the episode or film Play would start.
+        key(c.kind, c.tmdbId) {
+            if (titleExtras != null && titleExtras.trailer.isEmpty()) {
+                ClipLayer(api, c.copy(season = t.resumeSeason, episode = t.resumeEpisode, progress = null), Modifier.fillMaxSize())
+            } else {
+                TrailerLayer(api.server, titleExtras?.trailer, Modifier.fillMaxSize())
+            }
+        }
         Box(Modifier.fillMaxSize().background(Brush.horizontalGradient(0f to Color(0xF20C0D10), 0.42f to Color(0xA60C0D10), 0.75f to Color(0x1A0C0D10))))
         Box(Modifier.fillMaxSize().background(Brush.verticalGradient(0.45f to Color.Transparent, 1f to Color(0xF20C0D10))))
         CompositionLocalProvider(LocalBringIntoViewSpec provides PivotSpec) {

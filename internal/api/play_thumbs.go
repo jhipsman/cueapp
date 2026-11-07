@@ -55,7 +55,9 @@ func (c *thumbCache) put(k string, b []byte) {
 	}
 }
 
-// GET /api/thumb?u=<token>&t=<seconds>: a JPEG of the picture there.
+// GET /api/thumb?u=<token>&t=<seconds>[&w=1280]: a JPEG of the picture there.
+// w=1280 is a sharp frame for the web banner's moving pictures (when a
+// title has no trailer); the time bar's are small.
 func (s *Server) handleThumb(w http.ResponseWriter, r *http.Request) {
 	link, ok := s.convertTarget(r)
 	if !ok || !canConvert() {
@@ -64,7 +66,11 @@ func (s *Server) handleThumb(w http.ResponseWriter, r *http.Request) {
 	}
 	t, _ := strconv.ParseFloat(r.URL.Query().Get("t"), 64)
 	at := int(t) / thumbStep * thumbStep
-	key := fmt.Sprintf("%s@%d", link, at)
+	width, quality := thumbWidth, "6"
+	if r.URL.Query().Get("w") == "1280" {
+		width, quality = 1280, "4"
+	}
+	key := fmt.Sprintf("%s@%d/%d", link, at, width)
 	if b, ok := thumbs.get(key); ok {
 		writeThumb(w, b)
 		return
@@ -86,7 +92,7 @@ func (s *Server) handleThumb(w http.ResponseWriter, r *http.Request) {
 		args = append(args, "-user_agent", convertUA)
 	}
 	args = append(args, "-ss", strconv.Itoa(at), "-i", link, "-frames:v", "1", "-an", "-sn",
-		"-vf", fmt.Sprintf("scale=%d:-2", thumbWidth), "-q:v", "6", "-f", "mjpeg", "pipe:1")
+		"-vf", fmt.Sprintf("scale=%d:-2", width), "-q:v", quality, "-f", "mjpeg", "pipe:1")
 	cmd := exec.CommandContext(ctx, ffmpeg, args...)
 	var out, errOut bytes.Buffer
 	cmd.Stdout, cmd.Stderr = &out, &errOut

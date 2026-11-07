@@ -552,7 +552,7 @@ Every route the server exposes. Routes marked **public** need no sign-in; all ot
 
 | Method | Path | Access | What it does |
 |---|---|---|---|
-| GET | `/api/thumb` | **public** | GET /api/thumb?u=<token>&t=<seconds>: a JPEG of the picture there. |
+| GET | `/api/thumb` | **public** | GET /api/thumb?u=<token>&t=<seconds>[&w=1280]: a JPEG of the picture there. |
 
 ## tmdb
 

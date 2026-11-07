@@ -342,3 +342,77 @@ fun UpNextScreen(api: CueApi, next: Playback.UpNext, play: () -> Unit, dismiss: 
         }
     }
 }
+
+// ---- A real clip, when there's no trailer ----
+
+// ClipLayer plays a moment of the title itself, muted, when it has no
+// trailer: the stream Play would use (looked up now, so Play then starts at
+// once), from a little before where you stopped (a mini "previously") or,
+// for a title not started, from early on, too early to spoil much. It fades
+// in at its first picture and stops after a while, or whenever this screen
+// isn't in front (so it never shares the TV's video decoder with the player).
+@androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
+@Composable
+fun ClipLayer(api: CueApi, tile: Tile, modifier: Modifier = Modifier) {
+    val ctx = LocalContext.current
+    if (!trailersFit(ctx)) return
+    val key = "${tile.kind}-${tile.tmdbId}-${tile.season ?: 0}-${tile.episode ?: 0}"
+    var url by remember(key) { mutableStateOf<String?>(null) }
+    var shown by remember(key) { mutableStateOf(false) }
+    var ended by remember(key) { mutableStateOf(false) }
+    LaunchedEffect(key) {
+        delay(TRAILER_REST_MS)
+        val path = if (tile.kind == "tv") "/api/play/tmdb/tv/${tile.tmdbId}/${tile.season ?: 1}/${tile.episode ?: 1}" else "/api/play/tmdb/movie/${tile.tmdbId}"
+        url = runCatching { api.obj(path).optString("url").ifEmpty { null } }.getOrNull()
+        delay(45_000)
+        shown = false
+        delay(900)
+        ended = true
+    }
+    val u = url ?: return
+    if (ended) return
+    val player = remember(u) {
+        androidx.media3.exoplayer.ExoPlayer.Builder(ctx).build().apply {
+            volume = 0f
+            setMediaItem(androidx.media3.common.MediaItem.fromUri(u))
+            var placed = false
+            addListener(object : androidx.media3.common.Player.Listener {
+                override fun onPlaybackStateChanged(state: Int) {
+                    if (state != androidx.media3.common.Player.STATE_READY || placed) return
+                    placed = true
+                    val dur = duration.takeIf { it > 0 } ?: return
+                    val p = tile.progress
+                    val at = if (p != null && p > 0.02) (p * dur).toLong() - 20_000 else dur / 10
+                    seekTo(at.coerceIn(0, dur - 5_000))
+                }
+                override fun onRenderedFirstFrame() { if (placed) shown = true }
+            })
+            prepare()
+            playWhenReady = true
+        }
+    }
+    val owner = androidx.compose.ui.platform.LocalLifecycleOwner.current
+    androidx.compose.runtime.DisposableEffect(player, owner) {
+        val watch = androidx.lifecycle.LifecycleEventObserver { _, e ->
+            if (e == androidx.lifecycle.Lifecycle.Event.ON_PAUSE) { player.stop(); shown = false; ended = true }
+        }
+        owner.lifecycle.addObserver(watch)
+        onDispose {
+            owner.lifecycle.removeObserver(watch)
+            player.release()
+        }
+    }
+    val alpha by animateFloatAsState(if (shown) 1f else 0f, tween(900, easing = Settle), label = "clip")
+    AndroidView(
+        factory = { c ->
+            androidx.media3.ui.PlayerView(c).apply {
+                useController = false
+                isFocusable = false
+                resizeMode = androidx.media3.ui.AspectRatioFrameLayout.RESIZE_MODE_ZOOM
+                setShutterBackgroundColor(android.graphics.Color.TRANSPARENT)
+                this.player = player
+            }
+        },
+        modifier = modifier.graphicsLayer { this.alpha = alpha },
+    )
+}

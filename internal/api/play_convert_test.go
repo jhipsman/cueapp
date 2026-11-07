@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
+	"image/jpeg"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -115,6 +117,17 @@ func TestThumbFrames(t *testing.T) {
 			if rec.Code != 200 || rec.Header().Get("Content-Type") != "image/jpeg" || rec.Body.Len() < 500 || !bytes.HasPrefix(rec.Body.Bytes(), []byte{0xff, 0xd8}) {
 				t.Fatalf("%s at %s: %d %d bytes", link, at, rec.Code, rec.Body.Len())
 			}
+		}
+	}
+	// A sharp frame for the web banner: 1280 wide, and kept apart from the
+	// time bar's small one at the same moment.
+	tok := s.convertToken(clip)
+	for _, w := range []int{1280, 320} {
+		rec := httptest.NewRecorder()
+		s.handleThumb(rec, httptest.NewRequest("GET", fmt.Sprintf("/api/thumb?u=%s&t=14&w=%d", url.QueryEscape(tok), w), nil))
+		cfg, err := jpeg.DecodeConfig(rec.Body)
+		if rec.Code != 200 || err != nil || cfg.Width != w {
+			t.Fatalf("w=%d: %d, %v, width %d", w, rec.Code, err, cfg.Width)
 		}
 	}
 	// A file one can probe and convert too (recordings play this way).
