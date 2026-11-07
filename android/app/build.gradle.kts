@@ -74,6 +74,8 @@ dependencies {
     implementation("androidx.compose.foundation:foundation")
     implementation("androidx.compose.material3:material3")
     implementation("androidx.activity:activity-compose:1.9.3")
+    // FileProvider, to hand a downloaded update to Android's installer.
+    implementation("androidx.core:core-ktx:1.13.1")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.7")
     implementation("androidx.tv:tv-material:1.0.0")
     implementation("io.coil-kt:coil-compose:2.7.0")

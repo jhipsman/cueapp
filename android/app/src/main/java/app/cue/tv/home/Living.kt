@@ -69,12 +69,14 @@ private fun trailersFit(ctx: Context): Boolean =
     !(ctx.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager).isLowRamDevice
 
 // TrailerLayer plays a title's YouTube trailer, muted, after the highlight
-// has rested on it a moment. It loads out of sight and fades in only once
-// YouTube says it's playing (and its own title and buttons have gone), so a
-// trailer that can't play here just never appears.
+// has rested on it a moment. It sits under the title's picture: it loads out
+// of sight and says when it's really playing (and YouTube's own title and
+// buttons have gone), and the picture above it fades away then. Fading the
+// picture, not the web player, keeps it smooth on a Fire TV. A trailer that
+// can't play here just never appears.
 @SuppressLint("SetJavaScriptEnabled")
 @Composable
-fun TrailerLayer(server: String, videoId: String?, modifier: Modifier = Modifier) {
+fun TrailerLayer(server: String, videoId: String?, modifier: Modifier = Modifier, onShown: (Boolean) -> Unit = {}) {
     val ctx = LocalContext.current
     if (videoId.isNullOrEmpty() || !trailersFit(ctx)) return
     var started by remember(videoId) { mutableStateOf(false) }
@@ -87,14 +89,14 @@ fun TrailerLayer(server: String, videoId: String?, modifier: Modifier = Modifier
         delay(900)
         started = false
     }
-    val alpha by animateFloatAsState(if (playing) 1f else 0f, tween(900, easing = Settle), label = "trailer")
+    LaunchedEffect(playing) { onShown(playing) }
     if (!started) return
     AndroidView(
         factory = { c ->
             WebView(c).apply {
                 isFocusable = false
                 isFocusableInTouchMode = false
-                setBackgroundColor(android.graphics.Color.TRANSPARENT)
+                setBackgroundColor(android.graphics.Color.BLACK)
                 settings.javaScriptEnabled = true
                 settings.domStorageEnabled = true
                 settings.mediaPlaybackRequiresUserGesture = false
@@ -109,7 +111,7 @@ fun TrailerLayer(server: String, videoId: String?, modifier: Modifier = Modifier
             }
         },
         onRelease = { it.destroy() },
-        modifier = modifier.graphicsLayer { this.alpha = alpha },
+        modifier = modifier,
     )
 }
 
@@ -119,14 +121,14 @@ fun TrailerLayer(server: String, videoId: String?, modifier: Modifier = Modifier
 private fun trailerPage(id: String, origin: String): String {
     val safe = id.filter { it.isLetterOrDigit() || it == '-' || it == '_' }
     return """<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1">
-<style>html,body{margin:0;height:100%;background:transparent;overflow:hidden}
-#p{position:absolute;top:50%;left:50%;width:max(100vw,177.78vh);height:max(100vh,56.25vw);transform:translate(-50%,-50%) scale(1.18);border:0}</style>
+<style>html,body{margin:0;height:100%;background:#000;overflow:hidden}
+#p{position:absolute;top:50%;left:50%;width:max(100vw,177.78vh);height:max(100vh,56.25vw);transform:translate(-50%,-50%) scale(1.1);border:0}</style>
 </head><body><div id="p"></div><script>
 var t=document.createElement('script');t.src='https://www.youtube.com/iframe_api';document.head.appendChild(t);
 function onYouTubeIframeAPIReady(){new YT.Player('p',{videoId:'$safe',host:'https://www.youtube-nocookie.com',
 playerVars:{autoplay:1,mute:1,controls:0,playsinline:1,rel:0,modestbranding:1,iv_load_policy:3,disablekb:1,fs:0,start:4,loop:1,playlist:'$safe',origin:'$origin'},
 events:{onReady:function(e){e.target.mute();e.target.playVideo()},
-onStateChange:function(e){if(e.data==1){setTimeout(function(){Cue.playing()},1200)}else if(e.data==0||e.data==2){Cue.stopped()}},
+onStateChange:function(e){if(e.data==1){setTimeout(function(){Cue.playing()},3000)}else if(e.data==0||e.data==2){Cue.stopped()}},
 onError:function(){Cue.stopped()}}})}
 </script></body></html>"""
 }
@@ -348,12 +350,15 @@ fun UpNextScreen(api: CueApi, next: Playback.UpNext, play: () -> Unit, dismiss: 
 // ClipLayer plays a moment of the title itself, muted, when it has no
 // trailer: the stream Play would use (looked up now, so Play then starts at
 // once), from a little before where you stopped (a mini "previously") or,
-// for a title not started, from early on, too early to spoil much. It fades
-// in at its first picture and stops after a while, or whenever this screen
-// isn't in front (so it never shares the TV's video decoder with the player).
-@androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
+// for a title not started, from early on, too early to spoil much. Like the
+// trailer it sits under the picture and says when its first frame is up, and
+// stops after a while, or whenever this screen isn't in front (so it never
+// shares the TV's video decoder with the player). It draws into a
+// TextureView, which is clipped, rounded and layered like the rest of the
+// screen (a SurfaceView would cut a hole through the app instead), cropped
+// to fill its box whatever the video's shape.
 @Composable
-fun ClipLayer(api: CueApi, tile: Tile, modifier: Modifier = Modifier) {
+fun ClipLayer(api: CueApi, tile: Tile, modifier: Modifier = Modifier, onShown: (Boolean) -> Unit = {}) {
     val ctx = LocalContext.current
     if (!trailersFit(ctx)) return
     val key = "${tile.kind}-${tile.tmdbId}-${tile.season ?: 0}-${tile.episode ?: 0}"
@@ -364,13 +369,16 @@ fun ClipLayer(api: CueApi, tile: Tile, modifier: Modifier = Modifier) {
         delay(TRAILER_REST_MS)
         val path = if (tile.kind == "tv") "/api/play/tmdb/tv/${tile.tmdbId}/${tile.season ?: 1}/${tile.episode ?: 1}" else "/api/play/tmdb/movie/${tile.tmdbId}"
         url = runCatching { api.obj(path).optString("url").ifEmpty { null } }.getOrNull()
+        if (url == null) return@LaunchedEffect
         delay(45_000)
         shown = false
         delay(900)
         ended = true
     }
+    LaunchedEffect(shown) { onShown(shown) }
     val u = url ?: return
     if (ended) return
+    val crop = remember(u) { VideoCrop() }
     val player = remember(u) {
         androidx.media3.exoplayer.ExoPlayer.Builder(ctx).build().apply {
             volume = 0f
@@ -384,6 +392,9 @@ fun ClipLayer(api: CueApi, tile: Tile, modifier: Modifier = Modifier) {
                     val p = tile.progress
                     val at = if (p != null && p > 0.02) (p * dur).toLong() - 20_000 else dur / 10
                     seekTo(at.coerceIn(0, dur - 5_000))
+                }
+                override fun onVideoSizeChanged(size: androidx.media3.common.VideoSize) {
+                    if (size.width > 0 && size.height > 0) crop.video(size.width * size.pixelWidthHeightRatio / size.height)
                 }
                 override fun onRenderedFirstFrame() { if (placed) shown = true }
             })
@@ -402,17 +413,39 @@ fun ClipLayer(api: CueApi, tile: Tile, modifier: Modifier = Modifier) {
             player.release()
         }
     }
-    val alpha by animateFloatAsState(if (shown) 1f else 0f, tween(900, easing = Settle), label = "clip")
     AndroidView(
         factory = { c ->
-            androidx.media3.ui.PlayerView(c).apply {
-                useController = false
+            android.view.TextureView(c).apply {
                 isFocusable = false
-                resizeMode = androidx.media3.ui.AspectRatioFrameLayout.RESIZE_MODE_ZOOM
-                setShutterBackgroundColor(android.graphics.Color.TRANSPARENT)
-                this.player = player
+                crop.view = this
+                addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ -> crop.apply() }
+                player.setVideoTextureView(this)
             }
         },
-        modifier = modifier.graphicsLayer { this.alpha = alpha },
+        onRelease = { crop.view = null },
+        modifier = modifier,
     )
+}
+
+// Crops a video to fill its TextureView, as ContentScale.Crop does a picture
+// (a TextureView on its own stretches the video to the box).
+private class VideoCrop {
+    var view: android.view.TextureView? = null
+    private var aspect = 0f
+
+    fun video(a: Float) {
+        aspect = a
+        view?.post { apply() }
+    }
+
+    fun apply() {
+        val v = view ?: return
+        val w = v.width.toFloat()
+        val h = v.height.toFloat()
+        if (w <= 0f || h <= 0f || aspect <= 0f) return
+        val box = w / h
+        val m = android.graphics.Matrix()
+        if (aspect > box) m.setScale(aspect / box, 1f, w / 2, h / 2) else m.setScale(1f, box / aspect, w / 2, h / 2)
+        v.setTransform(m)
+    }
 }

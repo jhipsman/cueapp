@@ -39,6 +39,9 @@ jobs:
           chmod +x gradlew
           ./gradlew --no-daemon --stacktrace assembleRelease
           cp app/build/outputs/apk/release/app-release.apk ../cue-tv.apk
+          # The build number (the APK's versionCode), beside it, so the app
+          # on a TV can tell a newer build is out (Cue forwards /tv.version here).
+          echo "${{ github.run_number }}" > ../cue-tv.version
 
       - uses: actions/upload-artifact@v4
         with:
@@ -56,7 +59,9 @@ jobs:
             On the TV, install it with the Downloader app from http://<your Cue server>:8264/tv.apk or this release's cue-tv.apk link.
           prerelease: true
           make_latest: false
-          files: cue-tv.apk
+          files: |
+            cue-tv.apk
+            cue-tv.version
 
       # After publishing, so a lint error shows red without holding back the
       # APK on main; on a pull request it is the check.

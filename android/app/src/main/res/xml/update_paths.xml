@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The one folder the update's download lands in (home/Updates.kt). -->
+<paths>
+    <cache-path name="updates" path="updates/" />
+</paths>

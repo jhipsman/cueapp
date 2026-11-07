@@ -44,7 +44,12 @@ decoder and how the sound leaves the TV).
    at home) and install.
 4. Open Cue, enter the server's address, sign in, and pick your profile.
 
-To update, do step 3 again: each new build installs over the last.
+To update: Cue offers each new build itself. When there's one, a card says
+**A new version of Cue is ready** on opening (and Profile shows **Update
+Cue**): choose Update, and Android's installer asks to install it over this
+one. The first time, Android asks you to allow Cue to install apps (on a Fire
+TV: Settings > My Fire TV > Developer options > Install unknown apps > Cue).
+Or do step 3 again: each new build installs over the last.
 
 ## How it is built
 

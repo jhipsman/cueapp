@@ -19,8 +19,10 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.ui.zIndex
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.runtime.key
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.luminance
@@ -70,6 +72,7 @@ import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.foundation.gestures.LocalBringIntoViewSpec
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -125,6 +128,11 @@ fun CueRoot(api: CueApi, playback: Playback, openWeb: (String) -> Unit, changeSe
             }
         }
     }
+    // A newer build of this app: offered on opening and on coming back to it.
+    val ctx = androidx.compose.ui.platform.LocalContext.current
+    LaunchedEffect(stage, inFront) {
+        if (stage == Stage.Ready && inFront) AppUpdate.check(ctx, api.server)
+    }
     LaunchedEffect(stage) {
         if (stage != Stage.Checking) return@LaunchedEffect
         problem = ""
@@ -165,6 +173,9 @@ fun CueRoot(api: CueApi, playback: Playback, openWeb: (String) -> Unit, changeSe
                 }
             }
             playback.upNext?.let { u -> UpNextScreen(api, u, play = { playback.playUpNext() }, dismiss = { playback.dismissUpNext() }) }
+            AppUpdate.offer?.takeIf { AppUpdate.showing && playback.upNext == null && stage == Stage.Ready }?.let { o ->
+                UpdateCard(api, o, later = { AppUpdate.later() })
+            }
             saver?.let { Screensaver(api, it) }
             if (playback.note.isNotEmpty()) {
                 Text(playback.note, fontSize = 14.sp, color = Color.White,
@@ -487,21 +498,28 @@ fun Banner(api: CueApi, c: Tile) {
         Modifier.padding(horizontal = Gutter).padding(top = 8.dp).fillMaxWidth().height(226.dp)
             .clip(shape).background(Color(0xFF16171B)).border(1.dp, Color(0x14FFFFFF), shape),
     ) {
+        // Rest on a title and its trailer (or, without one, a moment of the
+        // title itself) plays, muted, in a 16:9 frame at the right, so the
+        // whole picture shows; its left edge fades into the card. It sits
+        // under the still picture, which fades away once it's really playing.
+        val ex = rememberExtras(api, c.kind, c.tmdbId)
+        var live by remember(c.key) { mutableStateOf(false) }
+        val still by animateFloatAsState(if (live) 0f else 1f, tween(900, easing = Settle), label = "banner-still")
+        Box(Modifier.fillMaxHeight().aspectRatio(16f / 9f).align(Alignment.TopEnd)) {
+            key(c.kind, c.tmdbId, c.season, c.episode) {
+                if (ex != null && ex.trailer.isEmpty()) {
+                    ClipLayer(api, c, Modifier.fillMaxSize()) { live = it }
+                } else {
+                    TrailerLayer(api.server, ex?.trailer, Modifier.fillMaxSize()) { live = it }
+                }
+            }
+            Box(Modifier.fillMaxSize().background(Brush.horizontalGradient(0f to Color(0xFF16171B), 0.35f to Color.Transparent)))
+        }
         // The picture changes with a slow cross-fade and drifts gently.
         Crossfade(targetState = small(c.backdrop), animationSpec = tween(700, easing = Settle), label = "banner",
-            modifier = Modifier.fillMaxHeight().fillMaxWidth(0.8f).align(Alignment.TopEnd)) { u ->
+            modifier = Modifier.fillMaxHeight().fillMaxWidth(0.8f).align(Alignment.TopEnd).graphicsLayer { alpha = still }) { u ->
             if (u != null) AsyncImage(model = u, contentDescription = null, contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxSize().drift())
-        }
-        // Rest on a title and its trailer fades in, muted, over the picture.
-        val ex = rememberExtras(api, c.kind, c.tmdbId)
-        key(c.kind, c.tmdbId, c.season, c.episode) {
-            if (ex != null && ex.trailer.isEmpty()) {
-                // No trailer: a moment of the title itself.
-                ClipLayer(api, c, Modifier.fillMaxHeight().fillMaxWidth(0.8f).align(Alignment.TopEnd))
-            } else {
-                TrailerLayer(api.server, ex?.trailer, Modifier.fillMaxHeight().fillMaxWidth(0.8f).align(Alignment.TopEnd))
-            }
         }
         Box(Modifier.fillMaxSize().background(Brush.horizontalGradient(0.18f to Color(0xF516171B), 0.48f to Color(0x9916171B), 0.75f to Color.Transparent)))
         Box(Modifier.fillMaxSize().background(Brush.verticalGradient(0.5f to Color.Transparent, 1f to Color(0xCC16171B))))
@@ -570,17 +588,21 @@ fun TitleScreen(api: CueApi, playback: Playback, card: Tile, memory: FocusMemory
     val pageTint = LocalTint.current
     LaunchedEffect(titleExtras?.colour) { titleExtras?.colour?.let { pageTint.value = it } }
     Box(Modifier.fillMaxSize().background(Background).rise(0, 0.dp)) {
-        // The picture fills the screen; the words sit on its darker left.
-        AsyncImage(model = c.backdrop, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize().settleIn())
         // Rest here a moment and the picture comes alive: the trailer, or a
-        // moment of the episode or film Play would start.
+        // moment of the episode or film Play would start. It plays under the
+        // picture, which fades away once it's really playing.
+        var live by remember(card.key) { mutableStateOf(false) }
+        val still by animateFloatAsState(if (live) 0f else 1f, tween(900, easing = Settle), label = "title-still")
         key(c.kind, c.tmdbId) {
             if (titleExtras != null && titleExtras.trailer.isEmpty()) {
-                ClipLayer(api, c.copy(season = t.resumeSeason, episode = t.resumeEpisode, progress = null), Modifier.fillMaxSize())
+                ClipLayer(api, c.copy(season = t.resumeSeason, episode = t.resumeEpisode, progress = null), Modifier.fillMaxSize()) { live = it }
             } else {
-                TrailerLayer(api.server, titleExtras?.trailer, Modifier.fillMaxSize())
+                TrailerLayer(api.server, titleExtras?.trailer, Modifier.fillMaxSize()) { live = it }
             }
         }
+        // The picture fills the screen; the words sit on its darker left.
+        AsyncImage(model = c.backdrop, contentDescription = null, contentScale = ContentScale.Crop,
+            modifier = Modifier.fillMaxSize().graphicsLayer { alpha = still }.settleIn())
         Box(Modifier.fillMaxSize().background(Brush.horizontalGradient(0f to Color(0xF20C0D10), 0.42f to Color(0xA60C0D10), 0.75f to Color(0x1A0C0D10))))
         Box(Modifier.fillMaxSize().background(Brush.verticalGradient(0.45f to Color.Transparent, 1f to Color(0xF20C0D10))))
         CompositionLocalProvider(LocalBringIntoViewSpec provides PivotSpec) {
@@ -972,7 +994,8 @@ fun ProfileScreen(api: CueApi, switchProfile: () -> Unit, changeServer: () -> Un
             Text(api.server, fontSize = 12.sp, color = Dim)
             Gap(20.dp)
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                Pill("Switch profile", primary = true, onClick = switchProfile)
+                if (AppUpdate.offer != null) Pill("Update Cue", primary = true) { AppUpdate.showing = true }
+                Pill("Switch profile", primary = AppUpdate.offer == null, onClick = switchProfile)
                 Pill("Your year in Cue") { openWeb("/watch/year") }
                 Pill("Web version") { openWeb("/watch") }
                 Pill("Change server", onClick = changeServer)
