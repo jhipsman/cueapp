@@ -71,6 +71,9 @@ under [Unreleased]. How releases are cut: [docs/RELEASING.md](docs/RELEASING.md)
 - **Play.** With Premiumize set up, a **Play** button on every movie and episode starts it straight away, streamed from Premiumize, with nothing downloaded to your server. Cue searches your indexers, ranks the releases with the title's quality profile, checks which ones Premiumize already has in one go, and plays the best of those. If a version won't play, the next one starts by itself. For apps, the same answer comes from `GET /api/play/movies/{id}` and `GET /api/play/series/{id}/{season}/{episode}`. See [docs/downloads.md](docs/downloads.md#play-streaming-from-premiumize).
 - **Premiumize.me as a downloader.** Add your Premiumize API key in Settings > Downloading > Usenet and torrents, under Cloud downloader, and torrents (or Usenet, or both, your choice) are downloaded by Premiumize on its own servers instead of by the built-in client. Releases Premiumize already has are ready at once. Cue then fetches the finished files over HTTPS, picks up where it stopped after a pause, and removes the transfer and its files from your Premiumize cloud once they are home. Torrents fetched this way need no VPN and don't seed. See [docs/downloads.md](docs/downloads.md#premiumize).
 
+### Fixed
+- **Fire TV, Google TV**: the banner's preview is smooth (the picture fades away over it instead of the video fading in), shows the whole frame in a 16:9 window instead of a cropped strip, and a title page's preview is no longer cut off. The no-trailer clip no longer shows through the app as a hole while it loads.
+
 ## [2.1.9] - 2026-10-07
 
 ### Fixed
