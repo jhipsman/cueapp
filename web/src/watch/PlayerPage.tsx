@@ -127,6 +127,9 @@ export default function PlayerPage() {
   const [note, setNote] = useState('')
   const [next, setNext] = useState<WatchEpisode | null>(null)
   const [countdown, setCountdown] = useState<number | null>(null)
+  // The next episode's card, offered at the credits; it only counts down
+  // (and plays by itself) once this episode has really ended.
+  const [offerNext, setOfferNext] = useState(false)
   const resumeAt = useRef(0)
   // How many times this title moved on by itself because a version had no
   // sound; it stops after a couple, so it never runs through every version.
@@ -165,6 +168,7 @@ export default function PlayerPage() {
     setAnswer(null)
     setNext(null)
     setCountdown(null)
+    setOfferNext(false)
     setNote('')
     resumeAt.current = 0
     silentSkips.current = 0
@@ -486,7 +490,8 @@ export default function PlayerPage() {
       const at = (conv?.offset ?? 0) + v.currentTime
       lastPos.current = at
       setPos(at)
-      // The credits: the next episode's card, counting down.
+      // The credits: the next episode's card, to press if wanted. Nothing
+      // starts by itself until the episode ends (credits times can be off).
       const creditsAt = skips?.creditsStart || (skips?.creditsFromEnd && length ? length - skips.creditsFromEnd : 0)
       if (kind === 'tv' && creditsAt > 0 && at >= creditsAt && !creditsDone.current) {
         creditsDone.current = true
@@ -494,7 +499,7 @@ export default function PlayerPage() {
           .watchNext(tmdbId, season, episode)
           .then((n) => {
             setNext(n)
-            setCountdown(NEXT_COUNTDOWN)
+            setOfferNext(true)
           })
           .catch(() => undefined)
       }
@@ -509,9 +514,21 @@ export default function PlayerPage() {
     }
   }
 
+  // The episode has ended: the next one plays after a short countdown.
   function onEnded() {
     save()
-    if (next) setCountdown(NEXT_COUNTDOWN)
+    if (kind !== 'tv') return
+    if (next) {
+      setCountdown(NEXT_COUNTDOWN)
+      return
+    }
+    api
+      .watchNext(tmdbId, season, episode)
+      .then((n) => {
+        setNext(n)
+        setCountdown(NEXT_COUNTDOWN)
+      })
+      .catch(() => undefined)
   }
 
   // This version won't play here: its original file, then the next version.
@@ -870,11 +887,11 @@ export default function PlayerPage() {
         </button>
       )}
 
-      {next && countdown !== null && (
+      {next && (countdown !== null || offerNext) && (
         <div className="wx-next">
           {next.stillUrl && <img src={next.stillUrl} alt="" />}
           <div className="wx-next-body">
-            <small>Next episode in {countdown}s</small>
+            <small>{countdown !== null ? `Next episode in ${countdown}s` : 'Up next'}</small>
             <div style={{ fontWeight: 700 }}>
               {epCode(next.season, next.episode)} {next.title}
             </div>
@@ -882,8 +899,14 @@ export default function PlayerPage() {
               <button className="wx-btn play small" onClick={() => setCountdown(0)}>
                 <Icon name="play" size={16} /> Play now
               </button>
-              <button className="wx-btn small" onClick={() => setCountdown(null)}>
-                Cancel
+              <button
+                className="wx-btn small"
+                onClick={() => {
+                  setCountdown(null)
+                  setOfferNext(false)
+                }}
+              >
+                {countdown !== null ? 'Cancel' : 'Hide'}
               </button>
             </div>
           </div>
