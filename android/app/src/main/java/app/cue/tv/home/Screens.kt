@@ -7,6 +7,20 @@
 package app.cue.tv.home
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.togetherWith
+import androidx.compose.ui.zIndex
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.runtime.key
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -98,7 +112,7 @@ fun CueRoot(api: CueApi, playback: Playback, openWeb: (String) -> Unit, changeSe
     }
     androidx.tv.material3.MaterialTheme(
         colorScheme = androidx.tv.material3.darkColorScheme(primary = accent, onPrimary = Color.Black, surface = Panel, background = Background),
-    ) { CompositionLocalProvider(LocalAccent provides accent) {
+    ) { CompositionLocalProvider(LocalAccent provides accent) { androidx.tv.material3.ProvideTextStyle(androidx.compose.ui.text.TextStyle(fontFamily = Type.text())) {
         Box(Modifier.fillMaxSize().background(Background)) {
             when (stage) {
                 Stage.Checking -> Centered { Text("Cue", fontSize = 48.sp, fontWeight = FontWeight.Black, color = Teal) }
@@ -122,7 +136,7 @@ fun CueRoot(api: CueApi, playback: Playback, openWeb: (String) -> Unit, changeSe
                 }
             }
         }
-    } }
+    } } }
 }
 
 // ---- Signing in ----
@@ -292,46 +306,57 @@ fun MainScreen(api: CueApi, playback: Playback, openWeb: (String) -> Unit, chang
     }
     val onCard: (Tile) -> Unit = { c -> if (c.resumes) playback.play(c) else open.add(c) }
     val tookFocus = { pageTakesFocus = false }
+    // The picture glowing behind the tabs and the page (Home's highlight).
+    var ambient by remember { mutableStateOf<String?>(null) }
+    val setAmbient: (String?) -> Unit = { ambient = it }
 
     if (open.isNotEmpty()) {
         val t = open.last()
         TitleScreen(api, playback, t, titleMemory) { c -> open.add(c) }
         return
     }
-    Column(Modifier.fillMaxSize()) {
-        Row(Modifier.fillMaxWidth().padding(start = 40.dp, end = 40.dp, top = 14.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text("Cue", fontSize = 22.sp, fontWeight = FontWeight.Black, color = LocalAccent.current)
-            HGap(24.dp)
-            // Coming up to the tabs lands on the tab showing, not whichever
-            // is nearest, so it doesn't change page by itself.
-            TabRow(
-                selectedTabIndex = tab,
-                modifier = Modifier
-                    .focusProperties { enter = { tabFocus[tab] } }
-                    .onFocusChanged {
-                        tabsFocused = it.hasFocus
-                        if (it.hasFocus) pageTakesFocus = false
-                    },
-            ) {
-                tabs.forEachIndexed { i, name ->
-                    Tab(selected = i == tab, onFocus = { tab = i }, modifier = Modifier.focusRequester(tabFocus[i])) {
-                        Text(name, fontSize = 14.sp, modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp))
+    Box(Modifier.fillMaxSize()) {
+        AmbientBackground(if (tab <= 2) ambient else null)
+        Column(Modifier.fillMaxSize()) {
+            Row(Modifier.fillMaxWidth().padding(start = Gutter, end = Gutter, top = 12.dp, bottom = 2.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text("cue", fontFamily = Type.display(), fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                HGap(22.dp)
+                // Coming up to the tabs lands on the tab showing, not whichever
+                // is nearest, so it doesn't change page by itself.
+                TabRow(
+                    selectedTabIndex = tab,
+                    modifier = Modifier
+                        .focusProperties { enter = { tabFocus[tab] } }
+                        .onFocusChanged {
+                            tabsFocused = it.hasFocus
+                            if (it.hasFocus) pageTakesFocus = false
+                        },
+                ) {
+                    tabs.forEachIndexed { i, name ->
+                        Tab(selected = i == tab, onFocus = { tab = i }, modifier = Modifier.focusRequester(tabFocus[i])) {
+                            Text(name, fontSize = 12.sp, fontWeight = FontWeight.Medium, modifier = Modifier.padding(horizontal = 13.dp, vertical = 5.dp))
+                        }
+                    }
+                    Tab(selected = tab == tabs.size, onFocus = { tab = tabs.size }, modifier = Modifier.focusRequester(tabFocus[tabs.size])) {
+                        Box(Modifier.padding(horizontal = 8.dp, vertical = 3.dp).size(22.dp).clip(CircleShape).background(LocalAccent.current),
+                            contentAlignment = Alignment.Center) {
+                            Text(api.profileName.take(1).uppercase().ifEmpty { "?" }, fontSize = 11.sp, fontWeight = FontWeight.Bold,
+                            color = if (LocalAccent.current.luminance() > 0.45f) Color.Black else Color.White)
+                        }
                     }
                 }
-                Tab(selected = tab == tabs.size, onFocus = { tab = tabs.size }, modifier = Modifier.focusRequester(tabFocus[tabs.size])) {
-                    Text(api.profileName.ifEmpty { "Profile" }, fontSize = 14.sp, modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp))
-                }
             }
-        }
-        Box(Modifier.fillMaxSize()) {
-            when (tab) {
-                0 -> HomeScreen(api, null, memories[0], pageTakesFocus, tookFocus, onCard)
-                1 -> HomeScreen(api, "tv", memories[1], pageTakesFocus, tookFocus, onCard)
-                2 -> HomeScreen(api, "movie", memories[2], pageTakesFocus, tookFocus, onCard)
-                3 -> LiveScreen(api, playback, openWeb)
-                4 -> SearchScreen(api, memories[4], onCard)
-                5 -> MyListScreen(api, memories[5], pageTakesFocus, tookFocus, onCard)
-                else -> ProfileScreen(api, switchProfile, changeServer, openWeb)
+            // Pages cross-fade as the highlight moves along the tabs.
+            Crossfade(targetState = tab, animationSpec = tween(280, easing = Settle), label = "tab", modifier = Modifier.fillMaxSize()) { page ->
+                when (page) {
+                    0 -> HomeScreen(api, null, memories[0], pageTakesFocus, tookFocus, setAmbient, onCard)
+                    1 -> HomeScreen(api, "tv", memories[1], pageTakesFocus, tookFocus, setAmbient, onCard)
+                    2 -> HomeScreen(api, "movie", memories[2], pageTakesFocus, tookFocus, setAmbient, onCard)
+                    3 -> LiveScreen(api, playback, openWeb)
+                    4 -> SearchScreen(api, memories[4], onCard)
+                    5 -> MyListScreen(api, memories[5], pageTakesFocus, tookFocus, onCard)
+                    else -> ProfileScreen(api, switchProfile, changeServer, openWeb)
+                }
             }
         }
     }
@@ -339,10 +364,13 @@ fun MainScreen(api: CueApi, playback: Playback, openWeb: (String) -> Unit, chang
 
 // ---- Home ----
 
-// Home (and Shows and Movies): the banner at the top shows whatever poster
-// the highlight is on, as the TV's own apps do; the rows slide beneath.
+// Home (and Shows and Movies), laid out like the TV apps: a rounded banner
+// card at the top shows whatever the highlight is on (its picture, logo,
+// scores and story), its picture glows behind the whole screen, and the
+// rows slide up beneath it.
 @Composable
-fun HomeScreen(api: CueApi, only: String?, memory: FocusMemory, takeFocus: Boolean, tookFocus: () -> Unit, onCard: (Tile) -> Unit) {
+fun HomeScreen(api: CueApi, only: String?, memory: FocusMemory, takeFocus: Boolean, tookFocus: () -> Unit,
+               setAmbient: (String?) -> Unit, onCard: (Tile) -> Unit) {
     var home by remember { mutableStateOf<Home?>(homeCache) }
     var problem by remember { mutableStateOf("") }
     var spot by remember { mutableStateOf<Tile?>(null) }
@@ -367,32 +395,69 @@ fun HomeScreen(api: CueApi, only: String?, memory: FocusMemory, takeFocus: Boole
     }
     val featured = h.hero?.takeIf { only == null || it.kind == only } ?: rows.flatMap { it.items }.firstOrNull { it.backdrop != null && !it.resumes }
     val shown = spot ?: featured
+    // The highlight settles before the banner follows it, so moving quickly
+    // along a row doesn't redraw it for every poster passed.
+    var settled by remember { mutableStateOf(shown) }
+    LaunchedEffect(shown?.key) {
+        delay(160)
+        settled = shown
+    }
+    LaunchedEffect(settled?.backdrop) { setAmbient(settled?.backdrop) }
     LaunchedEffect(rows.size, takeFocus) {
         if (!takeFocus || rows.isEmpty()) return@LaunchedEffect
         delay(80)
         if (memory.restore(rows.firstOrNull()?.let { r -> "${r.key}/${r.items.first().key}" })) tookFocus()
     }
-    Column(Modifier.fillMaxSize()) {
-        Box(Modifier.fillMaxWidth().height(210.dp)) {
-            Backdrop(small(shown?.backdrop), Modifier.fillMaxSize())
-            shown?.let { c ->
-                Column(Modifier.align(Alignment.BottomStart).padding(start = 48.dp, bottom = 8.dp).width(470.dp)) {
-                    Text(c.title, fontSize = 30.sp, fontWeight = FontWeight.Bold, color = Color.White, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    Gap(4.dp)
-                    MetaLine(c, c.episodeLine)
-                    c.overview?.let {
-                        Gap(6.dp)
-                        Text(it, fontSize = 13.sp, color = Color(0xE6FFFFFF), maxLines = 3, overflow = TextOverflow.Ellipsis, lineHeight = 18.sp)
-                    }
-                }
-            }
-        }
+    Column(Modifier.fillMaxSize().rise(0, 10.dp)) {
+        settled?.let { Banner(api, it) } ?: Gap(16.dp)
         // The highlighted row moves up to just under the banner, and the
         // highlighted poster stays near the left, as in the TV's own apps.
         CompositionLocalProvider(LocalBringIntoViewSpec provides PivotSpec) {
-            LazyColumn(state = listState, contentPadding = PaddingValues(top = 6.dp, bottom = 120.dp)) {
+            LazyColumn(state = listState, contentPadding = PaddingValues(top = 10.dp, bottom = 120.dp)) {
                 items(rows, key = { it.key }) { r ->
                     CardRow(r, memory, onFocus = { spot = it }, onClick = onCard)
+                }
+            }
+        }
+    }
+}
+
+// The banner card: the picture to the right, fading into the card on the
+// left under the logo, the scores and two lines of the story.
+@Composable
+fun Banner(api: CueApi, c: Tile) {
+    val shape = RoundedCornerShape(PanelCorner)
+    Box(
+        Modifier.padding(horizontal = Gutter).padding(top = 8.dp).fillMaxWidth().height(226.dp)
+            .clip(shape).background(Color(0xFF16171B)).border(1.dp, Color(0x14FFFFFF), shape),
+    ) {
+        // The picture changes with a slow cross-fade and drifts gently.
+        Crossfade(targetState = small(c.backdrop), animationSpec = tween(700, easing = Settle), label = "banner",
+            modifier = Modifier.fillMaxHeight().fillMaxWidth(0.8f).align(Alignment.TopEnd)) { u ->
+            if (u != null) AsyncImage(model = u, contentDescription = null, contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize().drift())
+        }
+        Box(Modifier.fillMaxSize().background(Brush.horizontalGradient(0.18f to Color(0xF516171B), 0.48f to Color(0x9916171B), 0.75f to Color.Transparent)))
+        Box(Modifier.fillMaxSize().background(Brush.verticalGradient(0.5f to Color.Transparent, 1f to Color(0xCC16171B))))
+        // The words fade out, and the new ones fade in as they rise.
+        AnimatedContent(
+            targetState = c,
+            contentKey = { it.key },
+            transitionSpec = {
+                (fadeIn(tween(420, delayMillis = 120, easing = Settle)) + slideInVertically(tween(520, delayMillis = 120, easing = Settle)) { it / 8 }) togetherWith
+                    fadeOut(tween(160))
+            },
+            label = "banner-words",
+            modifier = Modifier.align(Alignment.BottomStart),
+        ) { cc ->
+            val logo = rememberLogo(api, cc.kind, cc.tmdbId, cc.logo?.takeIf { it.isNotEmpty() })
+            Column(Modifier.padding(start = 32.dp, bottom = 24.dp).width(400.dp)) {
+                TitleMark(cc.title, logo, maxWidth = 280.dp, maxHeight = 78.dp, fontSize = 30.sp)
+                Gap(10.dp)
+                FactsRow(cc, extra = listOfNotNull(if (cc.kind == "tv") "Series" else "Movie", epCode(cc.season, cc.episode)))
+                cc.overview?.let {
+                    Gap(6.dp)
+                    Text(it, fontSize = 11.sp, color = Color(0xCCFFFFFF), maxLines = 2, overflow = TextOverflow.Ellipsis, lineHeight = 15.sp)
                 }
             }
         }
@@ -433,58 +498,71 @@ fun TitleScreen(api: CueApi, playback: Playback, card: Tile, memory: FocusMemory
         return
     }
     val c = t.card
-    Box(Modifier.fillMaxSize()) {
-        Backdrop(small(c.backdrop), Modifier.fillMaxWidth().height(420.dp))
+    val logo = rememberLogo(api, c.kind, c.tmdbId, c.logo)
+    Box(Modifier.fillMaxSize().background(Background).rise(0, 0.dp)) {
+        // The picture fills the screen; the words sit on its darker left.
+        AsyncImage(model = c.backdrop, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize().settleIn())
+        Box(Modifier.fillMaxSize().background(Brush.horizontalGradient(0f to Color(0xF20C0D10), 0.42f to Color(0xA60C0D10), 0.75f to Color(0x1A0C0D10))))
+        Box(Modifier.fillMaxSize().background(Brush.verticalGradient(0.45f to Color.Transparent, 1f to Color(0xF20C0D10))))
+        CompositionLocalProvider(LocalBringIntoViewSpec provides PivotSpec) {
         LazyColumn(contentPadding = PaddingValues(bottom = 120.dp)) {
             item {
-                Column(Modifier.padding(start = 48.dp, top = 110.dp, bottom = 18.dp).width(560.dp)) {
-                    Text(c.title, fontSize = 38.sp, fontWeight = FontWeight.Black, color = Color.White, maxLines = 2, lineHeight = 42.sp)
-                    t.tagline?.let { Text(it, fontSize = 13.sp, color = Dim) }
-                    Gap(8.dp)
-                    MetaLine(c, listOfNotNull(t.certification, t.runtime?.takeIf { it > 0 }?.let { if (it >= 60) "${it / 60}h ${it % 60}m" else "${it}m" },
-                        t.genres.take(3).joinToString(", ").takeIf { it.isNotEmpty() }).joinToString("   ·   "))
+                Column(Modifier.padding(start = Gutter, top = 150.dp, bottom = 20.dp).width(520.dp)) {
+                    Box(Modifier.rise(0, 24.dp)) { TitleMark(c.title, logo, maxWidth = 380.dp, maxHeight = 120.dp, fontSize = 40.sp) }
+                    Gap(14.dp)
+                    val length = t.runtime?.takeIf { it > 0 }?.let { if (it >= 60) "${it / 60}h ${it % 60}m" else "${it}m" }
+                    Box(Modifier.rise(90)) {
+                        FactsRow(c, t.ratings, listOfNotNull(t.certification, length, t.genres.firstOrNull(),
+                            if (c.kind == "tv" && t.seasons.size > 0) (if (t.seasons.size == 1) "1 season" else "${t.seasons.size} seasons") else null))
+                    }
                     c.overview?.let {
                         Gap(10.dp)
-                        Text(it, fontSize = 13.sp, color = Color(0xE6FFFFFF), maxLines = 4, overflow = TextOverflow.Ellipsis, lineHeight = 19.sp)
+                        Text(it, fontSize = 12.sp, color = Color(0xD9FFFFFF), maxLines = 3, overflow = TextOverflow.Ellipsis, lineHeight = 17.sp,
+                            modifier = Modifier.rise(170))
                     }
-                    Gap(16.dp)
-                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    if (t.directors.isNotEmpty()) {
+                        Gap(8.dp)
+                        Row(Modifier.rise(230)) {
+                            Text(if (c.kind == "tv") "Created by  " else "Directed by  ", fontSize = 10.sp, color = Dim)
+                            Text(t.directors.take(2).joinToString(", "), fontSize = 10.sp, color = Color(0xE6FFFFFF))
+                        }
+                    }
+                    Gap(18.dp)
+                    Row(Modifier.rise(290), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         val resumeTv = c.kind == "tv" && t.resumeSeason != null && t.resumeEpisode != null
-                        Button(onClick = {
+                        val started = (t.resumePosition ?: 0.0) > 0
+                        Pill(
+                            if (started) "▶  Resume" else "▶  Play",
+                            primary = true,
+                            small = if (resumeTv) epCode(t.resumeSeason, t.resumeEpisode) else null,
+                            modifier = Modifier.focusRequester(playFocus),
+                        ) {
                             if (c.kind == "tv") {
                                 val s = t.resumeSeason ?: season.takeIf { it > 0 } ?: 1
                                 playback.playTitle("tv", c.tmdbId, s, t.resumeEpisode ?: 1)
                             } else {
                                 playback.playTitle("movie", c.tmdbId, 0, 0)
                             }
-                        }, modifier = Modifier.focusRequester(playFocus)) {
-                            Text(when {
-                                resumeTv -> "▶  Resume S${t.resumeSeason}:E${t.resumeEpisode}"
-                                (t.resumePosition ?: 0.0) > 0 -> "▶  Resume"
-                                else -> "▶  Play"
-                            })
                         }
-                        Button(onClick = {
+                        Pill(if (inList) "✓  My List" else "+  My List") {
                             scope.launch {
                                 val on = !inList
                                 if (runCatching { api.setInList(c.kind, c.tmdbId, on) }.isSuccess) inList = on
                             }
-                        }, colors = quietButton()) { Text(if (inList) "✓  In My List" else "+  My List") }
+                        }
                     }
                 }
             }
             if (c.kind == "tv" && t.seasons.isNotEmpty()) {
                 item {
-                    LazyRow(Modifier.focusRestorer(), contentPadding = PaddingValues(horizontal = 48.dp, vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    LazyRow(Modifier.focusRestorer(), contentPadding = PaddingValues(horizontal = Gutter, vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         items(t.seasons, key = { it.number }) { s ->
-                            Button(onClick = { season = s.number }, colors = if (s.number == season) ButtonDefaults.colors() else quietButton()) {
-                                Text(s.name, fontSize = 13.sp)
-                            }
+                            Pill(s.name, primary = s.number == season) { season = s.number }
                         }
                     }
                 }
                 item {
-                    LazyRow(Modifier.focusRestorer(), contentPadding = PaddingValues(horizontal = 48.dp, vertical = 12.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                    LazyRow(Modifier.focusRestorer(), contentPadding = PaddingValues(horizontal = Gutter, vertical = 16.dp), horizontalArrangement = Arrangement.spacedBy(18.dp)) {
                         items(episodes, key = { "${it.season}-${it.episode}" }) { e ->
                             EpisodeCard(e) { playback.playTitle("tv", c.tmdbId, e.season, e.episode) }
                         }
@@ -497,22 +575,26 @@ fun TitleScreen(api: CueApi, playback: Playback, card: Tile, memory: FocusMemory
                 }
             }
         }
+        }
     }
 }
 
 @Composable
 fun EpisodeCard(e: Episode, onClick: () -> Unit) {
     val accent = LocalAccent.current
-    Column(Modifier.width(220.dp)) {
+    var focused by remember { mutableStateOf(false) }
+    val shape = RoundedCornerShape(CardCorner)
+    Column(Modifier.width(220.dp).zIndex(if (focused) 1f else 0f)) {
         Card(
             onClick = onClick,
-            modifier = Modifier.size(220.dp, 124.dp),
-            shape = CardDefaults.shape(RoundedCornerShape(8.dp)),
-            scale = CardDefaults.scale(focusedScale = 1.06f),
-            border = CardDefaults.border(focusedBorder = Border(BorderStroke(2.5.dp, accent), shape = RoundedCornerShape(8.dp))),
+            modifier = Modifier.size(220.dp, 124.dp).lift(focused, 1.08f, shape).onFocusChanged { focused = it.isFocused },
+            shape = CardDefaults.shape(shape),
+            scale = CardDefaults.scale(focusedScale = 1f),
+            border = CardDefaults.border(focusedBorder = Border(BorderStroke(1.dp, Color(0x59FFFFFF)), shape = shape)),
         ) {
             Box(Modifier.fillMaxSize()) {
                 Art(small(e.still), Modifier.fillMaxSize(), e.title)
+                Chip("E${e.episode}", Modifier.align(Alignment.BottomStart).padding(start = 8.dp, bottom = 10.dp))
                 e.progress?.takeIf { it > 0 && !e.finished }?.let { p ->
                     Box(Modifier.align(Alignment.BottomStart).fillMaxWidth().height(3.dp).background(Color(0x55FFFFFF)))
                     Box(Modifier.align(Alignment.BottomStart).fillMaxWidth(p.toFloat().coerceIn(0f, 1f)).height(3.dp).background(accent))
@@ -521,10 +603,11 @@ fun EpisodeCard(e: Episode, onClick: () -> Unit) {
                     Text("✓", color = Color.Black, fontSize = 12.sp, fontWeight = FontWeight.Bold,
                         modifier = Modifier.align(Alignment.TopEnd).padding(6.dp).clip(CircleShape).background(accent).padding(horizontal = 6.dp))
                 }
+                Sheen(focused)
             }
         }
         Text("${e.episode}. ${e.title}", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = Color.White, maxLines = 1,
-            overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 6.dp))
+            overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 9.dp))
         e.overview?.let { Text(it, fontSize = 10.sp, color = Dim, maxLines = 2, overflow = TextOverflow.Ellipsis, lineHeight = 13.sp) }
     }
 }
@@ -544,7 +627,7 @@ fun SearchScreen(api: CueApi, memory: FocusMemory, onCard: (Tile) -> Unit) {
     Column(Modifier.fillMaxSize().padding(top = 16.dp)) {
         OutlinedTextField(query, { query = it }, singleLine = true, colors = fieldColors(),
             placeholder = { androidx.compose.material3.Text("Movies and shows") },
-            modifier = Modifier.padding(horizontal = 48.dp).width(420.dp).leaveWithArrows())
+            modifier = Modifier.padding(horizontal = Gutter).width(420.dp).leaveWithArrows())
         PosterGrid(results, memory, "search", onCard)
     }
 }
@@ -569,9 +652,9 @@ fun MyListScreen(api: CueApi, memory: FocusMemory, takeFocus: Boolean, tookFocus
 fun PosterGrid(items: List<Tile>, memory: FocusMemory, prefix: String, onCard: (Tile) -> Unit) {
     LazyVerticalGrid(
         columns = GridCells.Adaptive(118.dp),
-        contentPadding = PaddingValues(horizontal = 48.dp, vertical = 20.dp),
-        horizontalArrangement = Arrangement.spacedBy(14.dp),
-        verticalArrangement = Arrangement.spacedBy(18.dp),
+        contentPadding = PaddingValues(horizontal = Gutter, vertical = 20.dp),
+        horizontalArrangement = Arrangement.spacedBy(18.dp),
+        verticalArrangement = Arrangement.spacedBy(22.dp),
     ) {
         items(items, key = { it.key }) { c -> PosterCard(c, memory, "$prefix/${c.key}", onClick = onCard) }
     }
@@ -617,19 +700,16 @@ fun LiveScreen(api: CueApi, playback: Playback, openWeb: (String) -> Unit) {
         else -> l.channels.filter { it.category == group }
     }
     Row(Modifier.fillMaxSize().padding(top = 12.dp)) {
-        LazyColumn(Modifier.width(200.dp), contentPadding = PaddingValues(start = 40.dp, bottom = 60.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        LazyColumn(Modifier.width(208.dp), contentPadding = PaddingValues(start = Gutter, bottom = 60.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             item {
-                Button(onClick = { openWeb("/watch/live") }, colors = quietButton()) { Text("Full guide", fontSize = 12.sp) }
+                Pill("Full guide") { openWeb("/watch/live") }
                 Gap(8.dp)
             }
             items(groups, key = { it.first }) { (id, name) ->
-                Button(onClick = { group = id }, colors = if (id == group) ButtonDefaults.colors() else quietButton(),
-                    modifier = Modifier.fillMaxWidth()) {
-                    Text(name, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                }
+                Pill(name, primary = id == group, modifier = Modifier.fillMaxWidth()) { group = id }
             }
         }
-        LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(start = 20.dp, end = 40.dp, bottom = 60.dp),
+        LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(start = 20.dp, end = Gutter, bottom = 60.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)) {
             items(shown.take(400), key = { it.id }) { ch ->
                 ChannelCard(api, ch) { playback.playLive(ch, shown) }
@@ -702,9 +782,9 @@ fun ProfileScreen(api: CueApi, switchProfile: () -> Unit, changeServer: () -> Un
             Text(api.server, fontSize = 12.sp, color = Dim)
             Gap(20.dp)
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                Button(onClick = switchProfile) { Text("Switch profile") }
-                Button(onClick = { openWeb("/watch") }, colors = quietButton()) { Text("Web version") }
-                Button(onClick = changeServer, colors = quietButton()) { Text("Change server") }
+                Pill("Switch profile", primary = true, onClick = switchProfile)
+                Pill("Web version") { openWeb("/watch") }
+                Pill("Change server", onClick = changeServer)
             }
         }
     }

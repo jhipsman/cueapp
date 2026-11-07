@@ -30,7 +30,7 @@ Cue works like Netflix for a household: one sign-in, then **Who's watching?** an
 - **Browse.** Home has Continue Watching, My List, then trending, popular and genre rows of movies and shows. **Shows** and **Movies** at the top narrow it to one kind.
 - **Search anything.** Type in the search box: every movie and show TMDB knows comes up, not only what's in your library.
 - **Open a title.** Its page has the backdrop, description, IMDb and Rotten Tomatoes ratings (or TMDB's score), age rating, length, cast and genres, and **More like this**. A show has a season picker and its episodes, each with a thumbnail, description and length.
-- **Press Play.** Cue picks a version by the profile's [Streaming quality](#streaming-quality) and it starts. If one won't play, the next one is tried by itself; **Other version** in the player moves to the next one by hand.
+- **Press Play.** Cue picks a version by the profile's [Streaming quality](#streaming-quality) and it starts. If one won't start, the next one is tried by itself. Once the picture has played, Cue never changes the version on its own: if the stream drops, it picks up where it was (twice at most), and then **Other version** in the player is yours to press.
 - **Pick up where you stopped.** Where you are is saved every 15 seconds, per account. Play on a title you started says **Resume**; on a show it goes to the episode you're on, or the next one.
 - **Next episode.** At the end of an episode a card offers the next one and plays it after 10 seconds.
 - **My List.** The **+** on a title's page saves it to My List, its own row on Home and its own page. This is separate from your library: adding to My List downloads nothing.

@@ -41,6 +41,9 @@ type watchCard struct {
 	EpisodeTitle string  `json:"episodeTitle,omitempty"`
 	// New: the episode came out in the last two weeks.
 	New bool `json:"new,omitempty"`
+	// LogoURL is the title's logo artwork, on the Home banner and title
+	// pages only (the TV apps draw it instead of the name).
+	LogoURL string `json:"logoUrl,omitempty"`
 }
 
 type watchRow struct {
@@ -229,6 +232,7 @@ func (s *Server) handleWatchHome(w http.ResponseWriter, r *http.Request) {
 		}
 		if len(withArt) > 0 {
 			hero := withArt[time.Now().Hour()%min(len(withArt), 5)]
+			hero.LogoURL, _ = s.TMDB().Logo(r.Context(), hero.Kind, hero.TMDBID)
 			home.Hero = &hero
 			break
 		}
@@ -586,8 +590,9 @@ func (s *Server) handleWatchMovie(w http.ResponseWriter, r *http.Request) {
 		t.ResumePosition = p.Position
 	}
 	var wg sync.WaitGroup
-	wg.Add(2)
+	wg.Add(3)
 	go func() { defer wg.Done(); t.Ratings = s.ratingsFor(ctx, d.IMDBID) }()
+	go func() { defer wg.Done(); t.LogoURL, _ = tm.Logo(ctx, watch.KindMovie, tmdbID) }()
 	go func() {
 		defer wg.Done()
 		more, _ := tm.RelatedMovies(ctx, tmdbID, metadata.RelatedRecommended)
@@ -647,8 +652,9 @@ func (s *Server) handleWatchShow(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var wg sync.WaitGroup
-	wg.Add(2)
+	wg.Add(3)
 	go func() { defer wg.Done(); t.Ratings = s.ratingsFor(ctx, d.ExternalIDs.IMDBID) }()
+	go func() { defer wg.Done(); t.LogoURL, _ = tm.Logo(ctx, watch.KindTV, tmdbID) }()
 	go func() {
 		defer wg.Done()
 		more, _ := tm.RelatedShows(ctx, tmdbID, metadata.RelatedRecommended)
@@ -949,4 +955,23 @@ func (s *Server) handlePutOMDb(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]bool{"set": key != ""})
+}
+
+// GET /api/watch/logo/{kind}/{tmdbId}: a title's logo artwork, for the TV
+// apps' banner as the highlight moves along a row. {"url": ""} when TMDB
+// has none.
+func (s *Server) handleWatchLogo(w http.ResponseWriter, r *http.Request) {
+	kind := r.PathValue("kind")
+	tmdbID, err := strconv.Atoi(r.PathValue("tmdbId"))
+	if (kind != watch.KindMovie && kind != watch.KindTV) || err != nil || tmdbID <= 0 {
+		writeError(w, http.StatusBadRequest, "That isn't a movie or show.")
+		return
+	}
+	u, err := s.TMDB().Logo(r.Context(), kind, tmdbID)
+	if err != nil {
+		writeUpstreamError(w, "look up the logo on TMDB", err)
+		return
+	}
+	w.Header().Set("Cache-Control", "private, max-age=86400")
+	writeJSON(w, http.StatusOK, map[string]string{"url": u})
 }

@@ -124,6 +124,9 @@ class PlayerActivity : Activity() {
     private lateinit var spinner: ProgressBar
     private lateinit var pauseBadge: ImageView
     private var nextButton: TextView? = null
+    private var otherButton: View? = null
+    // Times this version was picked up again after the stream dropped.
+    private var hiccups = 0
     private var subtitle: TextView? = null
     // Whether Watch has another version to try, and whether the sound was
     // checked yet (a version whose sound this TV can't play moves on).
@@ -344,6 +347,24 @@ class PlayerActivity : Activity() {
                     player.prepare()
                     return
                 }
+                if (started && !live) {
+                    // Once the picture has played, Cue never swaps the
+                    // version by itself: a dropped stream is picked up where
+                    // it was (twice), then the viewer chooses.
+                    if (hiccups < 2) {
+                        hiccups++
+                        val pos = player.currentPosition
+                        Toast.makeText(this@PlayerActivity, "Lost the stream for a moment, picking up where it was…", Toast.LENGTH_SHORT).show()
+                        player.prepare()
+                        player.seekTo(pos)
+                        player.playWhenReady = true
+                        return
+                    }
+                    val msg = if (hasOther) "This version keeps stopping. Choose Other version to try another, or play to try again." else "This version keeps stopping. Press play to try again."
+                    Toast.makeText(this@PlayerActivity, msg, Toast.LENGTH_LONG).show()
+                    showControls(otherButton)
+                    return
+                }
                 end("error", error.errorCodeName)
             }
         }
@@ -454,7 +475,7 @@ class PlayerActivity : Activity() {
                 }.also { addView(it) }
             }
             if (hasOther && !live && !catchup) {
-                addView(iconPill("Other version", R.drawable.ic_cue_versions) { end("other") })
+                otherButton = iconPill("Other version", R.drawable.ic_cue_versions) { end("other") }.also { addView(it) }
             }
             addView(iconPill("Audio", R.drawable.ic_cue_audio) { chooseTrack(C.TRACK_TYPE_AUDIO, "Audio") })
             addView(iconPill("Subtitles", R.drawable.ic_cue_subtitles) { subtitlesPressed() })
@@ -911,7 +932,18 @@ class PlayerActivity : Activity() {
     }
 
     private fun togglePlay() {
-        if (player.isPlaying) player.pause() else player.play()
+        if (player.isPlaying) {
+            player.pause()
+            return
+        }
+        // After the stream dropped for good the player is idle: try again
+        // from where it was.
+        if (player.playbackState == Player.STATE_IDLE) {
+            val pos = player.currentPosition
+            player.prepare()
+            player.seekTo(pos)
+        }
+        player.play()
     }
 
     private fun seekBy(ms: Long) {

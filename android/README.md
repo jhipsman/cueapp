@@ -5,10 +5,13 @@ for TV, the toolkit Google TV's own apps use) and talk to your Cue server
 directly; videos play in its own player (Media3 ExoPlayer).
 
 **Screens**: Who's watching?, then tabs along the top (Home, Shows, Movies,
-Live TV, Search, My List and the profile). Home's banner shows whatever
-poster the highlight is on and the rows slide beneath it; a title's page
-has Play or Resume, My List, a show's seasons and episodes, and More Like
-This. Live TV lists the groups and channels with what's on now and next;
+Live TV, Search, My List and the profile). Home's banner is a rounded card
+that shows whatever the highlight is on (its picture, logo artwork, scores
+and story), with that picture glowing softly behind the whole screen; the
+rows slide beneath it. A title's page fills the screen with its picture,
+logo, IMDb, Rotten Tomatoes and Metacritic scores, who directed or created
+it, Play or Resume and My List, a show's seasons and episodes, and More
+Like This. Live TV lists the groups and channels with what's on now and next;
 the full guide grid opens in the web view (as does Profile > Web version).
 
 **The remote**: Back in a page goes up to the tabs, then to Home, then out.

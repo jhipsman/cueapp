@@ -148,6 +148,7 @@ data class Tile(
     val kind: String, val tmdbId: Int, val title: String, val year: Int?, val overview: String?,
     val poster: String?, val backdrop: String?, val rating: Double?, val progress: Double?,
     val season: Int?, val episode: Int?, val episodeTitle: String?, val isNew: Boolean,
+    val logo: String? = null,
 ) {
     val key get() = "$kind-$tmdbId-${season ?: 0}-${episode ?: 0}"
     // Being watched: opening it carries on playing.
@@ -159,6 +160,8 @@ data class Tile(
             o.optString("kind"), o.optInt("tmdbId"), o.optString("title"), o.int("year"), o.str("overview"),
             o.str("posterUrl"), o.str("backdropUrl"), o.dbl("rating"), o.dbl("progress"),
             o.int("season"), o.int("episode"), o.str("episodeTitle"), o.optBoolean("new"),
+            // Only the Home banner and title pages carry it ("" there: none).
+            if (o.has("logoUrl") || o.has("genres")) o.optString("logoUrl") else null,
         )
     }
 }
@@ -182,10 +185,21 @@ data class Home(val hero: Tile?, val rows: List<Shelf>) {
 
 data class Season(val number: Int, val name: String)
 
+// Scores from IMDb, Rotten Tomatoes and Metacritic (when Cue has an OMDb key).
+data class Ratings(val imdb: String?, val rottenTomatoes: String?, val metacritic: String?) {
+    companion object {
+        fun from(o: JSONObject?): Ratings? {
+            o ?: return null
+            val r = Ratings(o.str("imdb"), o.str("rottenTomatoes"), o.str("metacritic"))
+            return if (r.imdb == null && r.rottenTomatoes == null && r.metacritic == null) null else r
+        }
+    }
+}
+
 data class Title(
     val card: Tile, val tagline: String?, val runtime: Int?, val genres: List<String>, val certification: String?,
     val seasons: List<Season>, val inList: Boolean, val resumeSeason: Int?, val resumeEpisode: Int?, val resumePosition: Double?,
-    val more: List<Tile>,
+    val more: List<Tile>, val directors: List<String> = emptyList(), val ratings: Ratings? = null,
 ) {
     companion object {
         fun from(o: JSONObject): Title {
@@ -196,6 +210,8 @@ data class Title(
                 (0 until s.length()).map { s.getJSONObject(it).let { x -> Season(x.optInt("number"), x.optString("name")) } },
                 o.optBoolean("inList"), o.int("resumeSeason"), o.int("resumeEpisode"), o.dbl("resumePosition"),
                 (o.optJSONArray("more") ?: JSONArray()).cards(),
+                (o.optJSONArray("directors") ?: JSONArray()).let { d -> (0 until d.length()).map { d.getString(it) } },
+                Ratings.from(o.optJSONObject("ratings")),
             )
         }
     }

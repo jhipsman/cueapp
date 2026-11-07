@@ -1,4 +1,4 @@
-import { createContext, useContext, useRef } from 'react'
+import { createContext, useContext, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api, type WatchCard, type WatchRatings } from '../api'
 import Icon from '../components/Icon'
@@ -36,8 +36,10 @@ export function epCode(season?: number, episode?: number): string {
 // shown big in the banner (see Home).
 export const SpotlightContext = createContext<((c: WatchCard) => void) | null>(null)
 
-// Card is a poster, or (wide) a landscape image with a caption and a
-// progress bar, as on Continue Watching.
+// Card is a poster, or (wide) a landscape picture with the episode's code
+// on it, as on Continue Watching; its name sits underneath, as in the TV
+// apps. Highlighted, the picture lifts with a shadow and a light sweeps
+// across it once (watch.css).
 export function Card({ card, wide }: { card: WatchCard; wide?: boolean }) {
   const navigate = useNavigate()
   const spotlight = useContext(SpotlightContext)
@@ -47,6 +49,7 @@ export function Card({ card, wide }: { card: WatchCard; wide?: boolean }) {
   // Continue Watching plays straight away; anything else opens its page.
   const open = () =>
     navigate(card.progress !== undefined || card.episode ? playHref(card.kind, card.tmdbId, card.season, card.episode) : titleHref(card))
+  const code = card.episode ? epCode(card.season, card.episode) : ''
   return (
     <button
       className={`wx-card${wide ? ' wide' : ''}`}
@@ -58,25 +61,67 @@ export function Card({ card, wide }: { card: WatchCard; wide?: boolean }) {
         spotlight?.(card)
       }}
     >
-      {img ? <img src={img} alt={card.title} loading="lazy" /> : <div className="wx-card-fallback">{card.title}</div>}
-      {wide && (
-        <div className="wx-card-caption">
-          {card.title}
-          {card.episode ? (
-            <small>
-              {epCode(card.season, card.episode)} {card.episodeTitle}
-            </small>
-          ) : null}
-        </div>
-      )}
-      {card.new && <span className="wx-card-new">New episode</span>}
-      {card.progress !== undefined && card.progress > 0 && (
-        <div className="wx-card-progress">
-          <div style={{ width: `${Math.round(card.progress * 100)}%` }} />
-        </div>
-      )}
+      <span className="wx-card-art">
+        {img ? <img src={img} alt="" loading="lazy" /> : <span className="wx-card-fallback">{card.title}</span>}
+        {wide && code && <span className="wx-chip">{code}</span>}
+        {card.new && <span className="wx-card-new">New episode</span>}
+        {card.progress !== undefined && card.progress > 0 && (
+          <span className="wx-card-progress">
+            <span style={{ width: `${Math.round(card.progress * 100)}%` }} />
+          </span>
+        )}
+      </span>
+      <span className="wx-card-name">{card.title}</span>
+      {wide && card.episodeTitle && <span className="wx-card-sub">{card.episodeTitle}</span>}
     </button>
   )
+}
+
+// Ambient is a picture drawn huge, blurred and dark behind a page, so the
+// page takes on its colours (as Apple's TV app does). It cross-fades when
+// the picture changes.
+export function Ambient({ url }: { url: string }) {
+  const small = url.replace(/\/t\/p\/w\d+\//, '/t/p/w300/')
+  return (
+    <div className="wx-ambient" aria-hidden="true">
+      <div key={small} style={{ backgroundImage: `url(${small})` }} />
+    </div>
+  )
+}
+
+// Logo artwork per title, looked up once ("" is none: the name is drawn).
+const logos = new Map<string, string>()
+
+export function useLogo(card: { kind: WatchCard['kind']; tmdbId: number; logoUrl?: string } | null | undefined): string | undefined {
+  const key = card ? `${card.kind}-${card.tmdbId}` : ''
+  const known = card?.logoUrl
+  const [, bump] = useState(0)
+  useEffect(() => {
+    if (!card || known !== undefined || logos.has(key)) return
+    let live = true
+    api
+      .watchLogo(card.kind, card.tmdbId)
+      .then((r) => {
+        logos.set(key, r.url)
+        if (live) bump((n) => n + 1)
+      })
+      .catch(() => logos.set(key, ''))
+    return () => {
+      live = false
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key, known])
+  if (!card) return undefined
+  return known ?? logos.get(key)
+}
+
+// TitleMark is a title's name as its logo artwork, or in big letters when
+// it has none. Until the lookup answers, a quiet space of the same height,
+// so the name doesn't flash before the logo replaces it.
+export function TitleMark({ title, logo }: { title: string; logo: string | undefined }) {
+  if (logo === undefined) return <div className="wx-logo-wait" aria-label={title} />
+  if (logo) return <img className="wx-logo" src={logo} alt={title} />
+  return <h1>{title}</h1>
 }
 
 // Row is a titled strip that scrolls sideways, with arrows on hover.
@@ -119,6 +164,11 @@ export function Scores({ ratings, tmdb }: { ratings?: WatchRatings; tmdb?: numbe
       {ratings?.rottenTomatoes && (
         <span className="wx-score" title="Rotten Tomatoes critics">
           <span className="wx-badge-rt">RT</span> {ratings.rottenTomatoes}
+        </span>
+      )}
+      {ratings?.metacritic && (
+        <span className="wx-score" title="Metacritic critics">
+          <span className="wx-badge-mc">MC</span> {ratings.metacritic}
         </span>
       )}
       {!ratings?.imdb && tmdb ? (

@@ -4,7 +4,7 @@ import { api, type WatchEpisode, type WatchKind, type WatchTitle } from '../api'
 import Icon from '../components/Icon'
 import { useDocumentTitle } from '../documentTitle'
 import FreeElsewhere from './FreeElsewhere'
-import { Card, epCode, minutes, playHref, Row, Scores } from './parts'
+import { Ambient, Card, epCode, minutes, playHref, Row, Scores, TitleMark } from './parts'
 import { onTV } from './tv'
 
 // A movie's or a show's page: the banner with ratings and Play, then for a
@@ -64,11 +64,12 @@ export default function TitlePage({ kind }: { kind: WatchKind }) {
   const playLabel = resuming ? 'Resume' : startedShow ? `Play ${epCode(title.resumeSeason, title.resumeEpisode)}` : 'Play'
 
   return (
-    <div>
-      <header className="wx-hero" style={{ backgroundImage: title.backdropUrl ? `url(${title.backdropUrl})` : undefined }}>
-        <div className="wx-hero-body">
-          <h1>{title.title}</h1>
-          {title.tagline && <p className="wx-tagline">{title.tagline}</p>}
+    <div className="wx-titlepage">
+      {title.backdropUrl && <Ambient url={title.backdropUrl} />}
+      <header className="wx-hero">
+        {title.backdropUrl && <div className="wx-hero-pic settle" style={{ backgroundImage: `url(${title.backdropUrl})` }} />}
+        <div className="wx-hero-body rise">
+          <TitleMark title={title.title} logo={title.logoUrl ?? ''} />
           <div className="wx-meta">
             <Scores ratings={title.ratings} tmdb={title.rating} />
             {title.year ? <span>{title.year}</span> : null}
@@ -80,15 +81,19 @@ export default function TitlePage({ kind }: { kind: WatchKind }) {
               </span>
             ) : null}
           </div>
-          {title.overview && <p className="wx-overview">{title.overview}</p>}
+          {title.overview && <p className="wx-overview clamp">{title.overview}</p>}
+          {title.directors && title.directors.length > 0 && (
+            <p className="wx-credit">
+              <span>{kind === 'tv' ? 'Created by' : 'Directed by'}</span> {title.directors.slice(0, 2).join(', ')}
+            </p>
+          )}
           <div className="wx-actions">
             <button className="wx-btn play" onClick={() => navigate(playHref(kind, tmdbId, title.resumeSeason, title.resumeEpisode))}>
               <Icon name="play" size={22} /> {playLabel}
             </button>
-            <button className="wx-round" onClick={() => void toggleList()} title={inList ? 'Remove from My List' : 'Add to My List'} aria-pressed={inList}>
-              <Icon name={inList ? 'check' : 'plus'} size={24} strokeWidth={2.5} />
+            <button className="wx-btn" onClick={() => void toggleList()} aria-pressed={inList}>
+              <Icon name={inList ? 'check' : 'plus'} size={20} strokeWidth={2.5} /> My List
             </button>
-            <span className="wx-dim">{inList ? 'In My List' : 'My List'}</span>
           </div>
         </div>
       </header>
@@ -106,12 +111,6 @@ export default function TitlePage({ kind }: { kind: WatchKind }) {
               <p>
                 <span>Genres: </span>
                 {title.genres.join(', ')}
-              </p>
-            )}
-            {title.directors && title.directors.length > 0 && (
-              <p>
-                <span>{kind === 'tv' ? 'Created by: ' : 'Director: '}</span>
-                {title.directors.join(', ')}
               </p>
             )}
             {title.networks && title.networks.length > 0 && (

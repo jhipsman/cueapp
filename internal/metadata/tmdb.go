@@ -53,6 +53,8 @@ type Client struct {
 
 	// pages caches Discover list and browse pages for a few minutes.
 	pages pageCache
+	// logos caches the logo artwork found for each title (see Logo).
+	logos pageCache
 
 	// now is the clock "upcoming" lists count from; nil means time.Now.
 	now func() time.Time
