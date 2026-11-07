@@ -33,6 +33,7 @@ under [Unreleased]. How releases are cut: [docs/RELEASING.md](docs/RELEASING.md)
 - **Stream add-ons**: paste a Stremio add-on link (Comet on ElfHosted, Torrentio, MediaFusion) in Settings > Downloading, and Play asks it for streams first, with its own scrapers and sorting. Links set up with your Premiumize key play straight away; Cue's own search is the fallback. See [docs/watch.md](docs/watch.md#stream-add-ons-comet-torrentio-mediafusion).
 
 ### Changed
+- **Continue Watching and new episodes open their page** instead of playing as soon as they're chosen, in every app; Resume is there, with the episodes.
 - **Live TV in the new look, everywhere**: on the web, a glow of the profile's colour behind the page, rounded frosted panels, the groups as pills, programmes as rounded tiles that light up, a red LIVE pill and a red line at now; on Fire TV and Google TV, a banner for the highlighted channel (what's on, how far through, what's next) and channel cards that lift and catch the light like the posters.
 - **Moving between sections**: on the web, each section fades in as it rises, a line slides under the section you're on, and the phone's tabs pop when tapped. On phones and tablets a tapped card no longer stays lifted (it dips while pressed instead).
 - **Apple TV**: titles drawn with their logo artwork on Home's banner and title pages, with IMDb, Rotten Tomatoes and Metacritic scores and who directed or created it.

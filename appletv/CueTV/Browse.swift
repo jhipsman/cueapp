@@ -11,15 +11,12 @@ final class Nav: ObservableObject {
     @Published var path = NavigationPath()
 }
 
-// Opening a card: one being watched plays straight away (it carries on);
-// anything else opens its page.
+// Opening a card opens its page, Continue Watching and new episodes too:
+// Resume (or Play) is there, with the episodes, so nothing starts by
+// surprise.
 @MainActor
 func openCard(_ card: WatchCard, cue: Cue, nav: Nav) {
-    if card.resumes {
-        cue.play(card)
-    } else {
-        nav.path.append(card)
-    }
+    nav.path.append(card)
 }
 
 // A tab's own navigation: its page, and titles opened from it.

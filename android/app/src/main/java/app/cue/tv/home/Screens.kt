@@ -304,7 +304,9 @@ fun MainScreen(api: CueApi, playback: Playback, openWeb: (String) -> Unit, chang
         tab = 0
         runCatching { tabFocus[0].requestFocus() }
     }
-    val onCard: (Tile) -> Unit = { c -> if (c.resumes) playback.play(c) else open.add(c) }
+    // A card opens its page, Continue Watching and new episodes too: Resume
+    // (or Play) is there, with the episodes, so nothing starts by surprise.
+    val onCard: (Tile) -> Unit = { c -> open.add(c) }
     val tookFocus = { pageTakesFocus = false }
     // The picture glowing behind the tabs and the page (Home's highlight).
     var ambient by remember { mutableStateOf<String?>(null) }
