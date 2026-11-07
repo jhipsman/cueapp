@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 're
 import { Link, NavLink, Route, Routes, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import CueWordmark from '../components/CueWordmark'
 import Screensaver from './Screensaver'
+import YearPage from './YearPage'
 import Icon from '../components/Icon'
 import Home from './Home'
 import MyList from './MyList'
@@ -49,6 +50,7 @@ export default function WatchApp() {
         <Route path="profiles" element={<ManageProfiles />} />
         <Route path="theme" element={<ThemePage />} />
         <Route path="quality" element={<StreamingPage />} />
+        <Route path="year" element={<YearPage />} />
         <Route path="recording/:id" element={<RecordingPlayer />} />
         <Route path="play/movie/:tmdbId" element={<PlayerPage />} />
         <Route path="play/tv/:tmdbId/:season/:episode" element={<PlayerPage />} />
@@ -156,6 +158,7 @@ function ProfileMenu() {
           {multi && <button onClick={() => navigate('/watch/who')}>Switch profile</button>}
           <button onClick={() => navigate('/watch/theme')}>Colors</button>
           <button onClick={() => navigate('/watch/quality')}>Streaming quality</button>
+          <button onClick={() => navigate('/watch/year')}>Your year in Cue</button>
           {owner && <button onClick={() => navigate('/watch/profiles')}>Manage profiles</button>}
           {onTV() && <button onClick={() => window.CueTV?.changeServer()}>Change server</button>}
           {owner && <button onClick={() => navigate(streamingOnly ? '/settings/streaming' : '/')}>{streamingOnly ? 'Settings' : 'Settings and library'}</button>}

@@ -388,7 +388,7 @@ class PlayerActivity : Activity() {
     // Subtitles and Surround on the right (icons that show their name when
     // the remote is on them).
     private fun buildControls(): View {
-        val title = TextView(this).apply {
+        val title = TextView(this).also { titleText = it }.apply {
             text = info.optString("title")
             setTextColor(Color.WHITE)
             size(22f)
@@ -441,7 +441,7 @@ class PlayerActivity : Activity() {
             gravity = Gravity.CENTER_VERTICAL
             if (live) {
                 addView(liveBadge())
-                addView(TextView(this@PlayerActivity).apply {
+                addView(TextView(this@PlayerActivity).also { liveNowText = it }.apply {
                     text = info.optString("subtitle")
                     setTextColor(0xFFE6E7EA.toInt())
                     size(13f)
@@ -1054,8 +1054,8 @@ class PlayerActivity : Activity() {
             }
             if (live) {
                 when (code) {
-                    KeyEvent.KEYCODE_CHANNEL_UP, KeyEvent.KEYCODE_PAGE_UP -> { end("channel-up"); return true }
-                    KeyEvent.KEYCODE_CHANNEL_DOWN, KeyEvent.KEYCODE_PAGE_DOWN -> { end("channel-down"); return true }
+                    KeyEvent.KEYCODE_CHANNEL_UP, KeyEvent.KEYCODE_PAGE_UP -> { zap(1); return true }
+                    KeyEvent.KEYCODE_CHANNEL_DOWN, KeyEvent.KEYCODE_PAGE_DOWN -> { zap(-1); return true }
                 }
             }
             if (!controlsShowing()) {
@@ -1072,8 +1072,8 @@ class PlayerActivity : Activity() {
                     }
                     KeyEvent.KEYCODE_DPAD_LEFT -> { if (live) { if (!showGuide()) showControls() } else { seekBy(-10_000); showControls(timeBar) }; return true }
                     KeyEvent.KEYCODE_DPAD_RIGHT -> { if (live) showControls() else { seekBy(10_000); showControls(timeBar) }; return true }
-                    KeyEvent.KEYCODE_DPAD_UP -> { if (live) end("channel-up") else showControls(); return true }
-                    KeyEvent.KEYCODE_DPAD_DOWN -> { if (live) end("channel-down") else showControls(); return true }
+                    KeyEvent.KEYCODE_DPAD_UP -> { if (live) zap(1) else showControls(); return true }
+                    KeyEvent.KEYCODE_DPAD_DOWN -> { if (live) zap(-1) else showControls(); return true }
                 }
             } else {
                 // OK on the time bar (where the highlight rests) pauses and
@@ -1437,7 +1437,8 @@ class PlayerActivity : Activity() {
                 isFocusableInTouchMode = true
                 tag = id
                 setOnClickListener {
-                    if (id == current) hideGuide() else end("channel", id)
+                    hideGuide()
+                    if (id != info.optString("id")) zapTo(id)
                 }
             }
             list.addView(row, LinearLayout.LayoutParams(MATCH, ViewGroup.LayoutParams.WRAP_CONTENT).apply { bottomMargin = px(2) })
@@ -1466,6 +1467,136 @@ class PlayerActivity : Activity() {
         main.removeCallbacks(guideHider)
         main.postDelayed(guideHider, 15_000)
         return true
+    }
+
+    // ---- Flipping channels, as on a TV ----
+    //
+    // Up and down (or channel up and down) change channel without leaving the
+    // player: a banner with the channel's number, name and what's on shows at
+    // once, and the stream is asked for once the remote rests a moment, so
+    // flicking past several channels only tunes the last.
+    private var titleText: TextView? = null
+    private var liveNowText: TextView? = null
+    private var zapBanner: TextView? = null
+    private var zapTarget = ""
+    private val zapHider = Runnable { zapBanner?.animate()?.alpha(0f)?.setDuration(400)?.start() }
+    private val zapTuner = Runnable { tune(zapTarget) }
+
+    private fun channelList(): List<JSONObject> {
+        val a = info.optJSONArray("channels") ?: return emptyList()
+        return (0 until a.length()).mapNotNull { a.optJSONObject(it) }
+    }
+
+    private fun zap(delta: Int) {
+        val list = channelList()
+        if (list.size < 2) return
+        val current = zapTarget.ifEmpty { info.optString("id") }
+        val i = list.indexOfFirst { it.optString("id") == current }.coerceAtLeast(0)
+        zapTo(list[(i + delta + list.size) % list.size].optString("id"))
+    }
+
+    private fun zapTo(id: String) {
+        val c = channelList().firstOrNull { it.optString("id") == id } ?: return
+        zapTarget = id
+        hideControls()
+        showZapBanner(c)
+        main.removeCallbacks(zapTuner)
+        main.postDelayed(zapTuner, 450)
+    }
+
+    private fun showZapBanner(c: JSONObject) {
+        val b = zapBanner ?: TextView(this).also { tv ->
+            tv.setTextColor(Color.WHITE)
+            tv.size(16f)
+            tv.typeface = Fonts.text(this, 500)
+            tv.setLineSpacing(0f, 1.15f)
+            tv.setPadding(px(22), px(14), px(26), px(14))
+            tv.background = GradientDrawable().apply {
+                cornerRadius = px(16).toFloat()
+                setColor(0xE6141519.toInt())
+                setStroke(px(1), 0x1FFFFFFF)
+            }
+            findViewById<ViewGroup>(android.R.id.content).addView(tv, FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.TOP or Gravity.START).apply { leftMargin = px(48); topMargin = px(36) })
+            zapBanner = tv
+        }
+        val num = c.optString("num")
+        val now = c.optString("now")
+        val until = c.optString("until")
+        val text = android.text.SpannableStringBuilder()
+        if (num.isNotEmpty()) {
+            val start = text.length
+            text.append(num).append("   ")
+            text.setSpan(android.text.style.ForegroundColorSpan(teal), start, start + num.length, 0)
+            text.setSpan(android.text.style.RelativeSizeSpan(1.5f), start, start + num.length, 0)
+        }
+        val nameStart = text.length
+        text.append(c.optString("name"))
+        text.setSpan(android.text.style.StyleSpan(android.graphics.Typeface.BOLD), nameStart, text.length, 0)
+        text.setSpan(android.text.style.RelativeSizeSpan(1.25f), nameStart, text.length, 0)
+        if (now.isNotEmpty()) {
+            val s0 = text.length
+            text.append("\n").append(now).append(if (until.isNotEmpty()) "  ·  until $until" else "")
+            text.setSpan(android.text.style.ForegroundColorSpan(0xFFC7C8CC.toInt()), s0, text.length, 0)
+        }
+        b.text = text
+        b.animate().cancel()
+        if (b.alpha < 1f) {
+            b.translationY = -px(8).toFloat()
+            b.animate().alpha(1f).translationY(0f).setDuration(220).start()
+        }
+        main.removeCallbacks(zapHider)
+        main.postDelayed(zapHider, 3500)
+    }
+
+    // tune asks Cue for the channel's stream and switches to it in place.
+    private fun tune(id: String) {
+        if (id.isEmpty() || server.isEmpty()) return
+        val c = channelList().firstOrNull { it.optString("id") == id } ?: return
+        val cookie = CookieManager.getInstance().getCookie(server)
+        val token = info.optString("token")
+        Thread {
+            val answer = try {
+                val u = URL("$server/api/live/play/${java.net.URLEncoder.encode(id, "UTF-8").replace("+", "%20")}")
+                val h = u.openConnection() as HttpURLConnection
+                h.connectTimeout = 8000
+                h.readTimeout = 15000
+                h.setRequestProperty("User-Agent", "CueTV/1 (native)")
+                if (cookie != null) h.setRequestProperty("Cookie", cookie)
+                if (token.isNotEmpty()) h.setRequestProperty("X-Cue-Profile", token)
+                val ok = h.responseCode == 200
+                val body = (if (ok) h.inputStream else h.errorStream)?.bufferedReader()?.use { it.readText() } ?: ""
+                h.disconnect()
+                if (ok) JSONObject(body) else null
+            } catch (_: Exception) {
+                null
+            }
+            runOnUiThread {
+                if (finished || id != zapTarget) return@runOnUiThread
+                val direct = answer?.optString("direct").orEmpty()
+                val url = direct.ifEmpty { answer?.optString("url")?.takeIf { it.isNotEmpty() }?.let { server + it }.orEmpty() }
+                if (url.isEmpty()) {
+                    Toast.makeText(this, "${c.optString("name")} won't play right now.", Toast.LENGTH_LONG).show()
+                    return@runOnUiThread
+                }
+                info.put("id", id)
+                val num = c.optString("num")
+                info.put("title", (if (num.isNotEmpty()) "$num  " else "") + c.optString("name"))
+                val now = c.optString("now")
+                info.put("subtitle", if (now.isNotEmpty()) "$now · until ${c.optString("until")}" else "")
+                titleText?.text = info.optString("title")
+                liveNowText?.text = info.optString("subtitle")
+                started = false
+                hiccups = 0
+                alts.clear()
+                answer?.optJSONArray("directAlts")?.let { list ->
+                    for (i in 0 until list.length()) list.optString(i).takeIf { it.isNotEmpty() }?.let { alts.addLast(it) }
+                }
+                player.setMediaItem(MediaItem.fromUri(url))
+                player.prepare()
+                player.playWhenReady = true
+            }
+        }.start()
     }
 
     private fun hideGuide() {

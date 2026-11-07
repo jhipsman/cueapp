@@ -145,6 +145,7 @@ var memberRoutes = []string{
 	"GET /api/watch/providers/{kind}/{tmdbId}",
 	"GET /api/watch/logo/{kind}/{tmdbId}",
 	"GET /api/watch/extras/{kind}/{tmdbId}",
+	"GET /api/watch/year",
 	"GET /api/watch/skips/{kind}/{tmdbId}",
 	"GET /api/watch/subtitles/{kind}/{tmdbId}",
 	"POST /api/watch/skips/learn",

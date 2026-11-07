@@ -98,6 +98,10 @@ Episodes show **Skip intro** (and **Skip recap**) for a few seconds as one start
 - **Cards with depth**: a card tilts toward the mouse (or sways gently on a TV), and Continue Watching cards float the title's logo in front of the picture.
 - **Screensaver**: after three minutes untouched on a computer or TV, Cue shows your own titles full screen with a clock: new episodes, where you stopped, your list. Any button brings you back.
 
+## Your year in Cue
+
+The profile menu's **Your year in Cue** (and Profile > **Your year in Cue** on the TV) tells the profile's year in slides: hours watched, titles and days, the show and movie of the year, the top five shows and the busiest day. It counts where each movie and episode got to (a rewatch counts once).
+
 ## Colors
 
 Each profile has its own color theme: open the profile menu (the avatar at the top right) and choose **Colors**. Pick a color (or any color, on a phone or computer), how much it glows, and a background: **Midnight** (Cue's own), **Black** (best on OLED TVs), **Slate**, or **Tinted** with your color. Watch changes as you pick; **Save** keeps it for the profile on every device, the TV app's player included.

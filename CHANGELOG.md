@@ -9,6 +9,10 @@ under [Unreleased]. How releases are cut: [docs/RELEASING.md](docs/RELEASING.md)
 ## [Unreleased]
 
 ### Added
+- **Live TV, channel surfing** (Fire TV, Google TV): rest on a channel and its live picture plays, muted, in the banner at the top of Live TV; in the player, up and down (or channel up and down) change channel in place with a banner of the channel's number, name and what's on, tuning only the channel you stop on.
+- **Up next** (Fire TV, Google TV): when an episode ends, the next one fills the screen (its still, the show's logo, its name and story) and plays after a countdown round the Play button; Back stays where you were.
+- **Your year in Cue** (web, and from Profile on the TV): the profile's year told in full-screen slides: hours watched, titles and days, the show of the year, the top five shows, the movie of the year and the busiest day and month. `GET /api/watch/year`.
+- **Voice search** (Google TV, Android TV): Speak on Search, and the remote's search or mic key opens Search listening.
 - **The artwork comes alive**:
   - **Living banner** (web on a computer, Fire TV, Google TV): rest on Home's banner and, after a ring fills, the title's trailer fades in muted behind its logo while the story steps aside; on the web a button turns the sound on. It stops when you move on, scroll away or switch tabs.
   - **Cards with depth**: on the web a card tilts toward the mouse with a glare that follows it; on the TV the highlighted card sways gently in depth. Continue Watching cards float the title's logo in front of the picture.

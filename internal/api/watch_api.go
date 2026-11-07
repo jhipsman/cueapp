@@ -1024,3 +1024,49 @@ func (s *Server) handleWatchExtras(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", "private, max-age=3600")
 	writeJSON(w, http.StatusOK, ex)
 }
+
+// yearShow is a title in the year's recap, with its picture.
+type yearShow struct {
+	watch.YearShow
+	BackdropURL string `json:"backdropUrl,omitempty"`
+}
+
+type yearAnswer struct {
+	watch.YearStats
+	Top      []yearShow `json:"top"`
+	TopMovie *yearShow  `json:"topMovie,omitempty"`
+}
+
+// GET /api/watch/year?year=2026: the profile's year in Cue (this year
+// unless asked): hours, titles, the most watched shows and movie, the
+// busiest day and month.
+func (s *Server) handleWatchYear(w http.ResponseWriter, r *http.Request) {
+	pid, ok := s.watchProfile(w, r)
+	if !ok {
+		return
+	}
+	year := time.Now().Year()
+	if v := r.URL.Query().Get("year"); v != "" {
+		y, err := strconv.Atoi(v)
+		if err != nil || y < 2000 || y > year {
+			writeError(w, http.StatusBadRequest, "That isn't a year Cue can look back on.")
+			return
+		}
+		year = y
+	}
+	st, err := s.WatchRepo.Year(pid, year)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "Couldn't add up the year.")
+		return
+	}
+	pic := func(y watch.YearShow) yearShow { return yearShow{y, metadata.BackdropURL(y.BackdropPath)} }
+	a := yearAnswer{YearStats: st, Top: make([]yearShow, 0, len(st.Top))}
+	for _, t := range st.Top {
+		a.Top = append(a.Top, pic(t))
+	}
+	if st.TopMovie != nil {
+		m := pic(*st.TopMovie)
+		a.TopMovie = &m
+	}
+	writeJSON(w, http.StatusOK, a)
+}

@@ -8,6 +8,7 @@ package app.cue.tv.home
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.animation.AnimatedContent
@@ -163,6 +164,7 @@ fun CueRoot(api: CueApi, playback: Playback, openWeb: (String) -> Unit, changeSe
                     stage = Stage.Profiles
                 }
             }
+            playback.upNext?.let { u -> UpNextScreen(api, u, play = { playback.playUpNext() }, dismiss = { playback.dismissUpNext() }) }
             saver?.let { Screensaver(api, it) }
             if (playback.note.isNotEmpty()) {
                 Text(playback.note, fontSize = 14.sp, color = Color.White,
@@ -346,6 +348,8 @@ fun MainScreen(api: CueApi, playback: Playback, openWeb: (String) -> Unit, chang
     // (or Play) is there, with the episodes, so nothing starts by surprise.
     val onCard: (Tile) -> Unit = { c -> open.add(c) }
     val tookFocus = { pageTakesFocus = false }
+    // The remote's search (or mic) key: Search, listening straight away.
+    var listenNow by remember { mutableStateOf(false) }
     // The picture glowing behind the tabs and the page (Home's highlight).
     var ambient by remember { mutableStateOf<String?>(null) }
     val setAmbient: (String?) -> Unit = { ambient = it }
@@ -355,7 +359,15 @@ fun MainScreen(api: CueApi, playback: Playback, openWeb: (String) -> Unit, chang
         TitleScreen(api, playback, t, titleMemory) { c -> open.add(c) }
         return
     }
-    Box(Modifier.fillMaxSize()) {
+    Box(Modifier.fillMaxSize().onPreviewKeyEvent {
+        if (it.type == KeyEventType.KeyDown && (it.key == androidx.compose.ui.input.key.Key.Search || it.key == androidx.compose.ui.input.key.Key.VoiceAssist)) {
+            tab = 4
+            listenNow = true
+            true
+        } else {
+            false
+        }
+    }) {
         AmbientBackground(if (tab <= 2) ambient else null)
         Column(Modifier.fillMaxSize()) {
             Row(Modifier.fillMaxWidth().padding(start = Gutter, end = Gutter, top = 12.dp, bottom = 2.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -393,7 +405,7 @@ fun MainScreen(api: CueApi, playback: Playback, openWeb: (String) -> Unit, chang
                     1 -> HomeScreen(api, "tv", memories[1], pageTakesFocus, tookFocus, setAmbient, onCard)
                     2 -> HomeScreen(api, "movie", memories[2], pageTakesFocus, tookFocus, setAmbient, onCard)
                     3 -> LiveScreen(api, playback, openWeb)
-                    4 -> SearchScreen(api, memories[4], onCard)
+                    4 -> SearchScreen(api, memories[4], listen = listenNow, listened = { listenNow = false }, onCard = onCard)
                     5 -> MyListScreen(api, memories[5], pageTakesFocus, tookFocus, onCard)
                     else -> ProfileScreen(api, switchProfile, changeServer, openWeb)
                 }
@@ -668,8 +680,28 @@ fun EpisodeCard(e: Episode, onClick: () -> Unit) {
 // ---- Search and My List ----
 
 @Composable
-fun SearchScreen(api: CueApi, memory: FocusMemory, onCard: (Tile) -> Unit) {
+fun SearchScreen(api: CueApi, memory: FocusMemory, listen: Boolean = false, listened: () -> Unit = {}, onCard: (Tile) -> Unit) {
     var query by remember { mutableStateOf("") }
+    // Voice search, where the TV lets apps listen (Google TV, Android TV;
+    // on Fire TV Alexa usually keeps the microphone to itself).
+    val ctx = androidx.compose.ui.platform.LocalContext.current
+    val speech = remember {
+        android.content.Intent(android.speech.RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
+            .putExtra(android.speech.RecognizerIntent.EXTRA_LANGUAGE_MODEL, android.speech.RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+            .putExtra(android.speech.RecognizerIntent.EXTRA_PROMPT, "Say a movie or show")
+    }
+    val canListen = remember { speech.resolveActivity(ctx.packageManager) != null }
+    val listener = androidx.activity.compose.rememberLauncherForActivityResult(
+        androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult(),
+    ) { r ->
+        r.data?.getStringArrayListExtra(android.speech.RecognizerIntent.EXTRA_RESULTS)?.firstOrNull()?.let { query = it }
+    }
+    LaunchedEffect(listen) {
+        if (listen) {
+            listened()
+            if (canListen) runCatching { listener.launch(speech) }
+        }
+    }
     var results by remember { mutableStateOf<List<Tile>>(emptyList()) }
     LaunchedEffect(query) {
         val q = query.trim()
@@ -678,9 +710,12 @@ fun SearchScreen(api: CueApi, memory: FocusMemory, onCard: (Tile) -> Unit) {
         results = runCatching { api.search(q) }.getOrDefault(results)
     }
     Column(Modifier.fillMaxSize().padding(top = 16.dp)) {
-        OutlinedTextField(query, { query = it }, singleLine = true, colors = fieldColors(),
-            placeholder = { androidx.compose.material3.Text("Movies and shows") },
-            modifier = Modifier.padding(horizontal = Gutter).width(420.dp).leaveWithArrows())
+        Row(Modifier.padding(horizontal = Gutter), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            OutlinedTextField(query, { query = it }, singleLine = true, colors = fieldColors(),
+                placeholder = { androidx.compose.material3.Text("Movies and shows") },
+                modifier = Modifier.width(420.dp).leaveWithArrows())
+            if (canListen) Pill("🎙  Speak") { runCatching { listener.launch(speech) } }
+        }
         PosterGrid(results, memory, "search", onCard)
     }
 }
@@ -786,7 +821,7 @@ fun LiveScreen(api: CueApi, playback: Playback, openWeb: (String) -> Unit) {
 fun LiveBanner(api: CueApi, ch: Channel) {
     val shape = RoundedCornerShape(PanelCorner)
     Box(
-        Modifier.padding(horizontal = Gutter).padding(top = 8.dp).fillMaxWidth().height(132.dp)
+        Modifier.padding(horizontal = Gutter).padding(top = 8.dp).fillMaxWidth().height(140.dp)
             .clip(shape).background(Color(0x991B1D22)).border(1.dp, Color(0x14FFFFFF), shape),
     ) {
         AnimatedContent(
@@ -799,8 +834,10 @@ fun LiveBanner(api: CueApi, ch: Channel) {
             label = "live-banner",
         ) { c ->
             Row(Modifier.fillMaxSize().padding(horizontal = 26.dp), verticalAlignment = Alignment.CenterVertically) {
-                Box(Modifier.size(132.dp, 76.dp).clip(RoundedCornerShape(CardCorner)).background(Color(0x14FFFFFF)), contentAlignment = Alignment.Center) {
-                    ChannelLogo(api, c, Modifier.fillMaxSize().padding(10.dp))
+                // The channel's logo, then (once the remote rests) the channel itself, live.
+                Box(Modifier.size(176.dp, 99.dp).clip(RoundedCornerShape(CardCorner)).background(Color(0x14FFFFFF)), contentAlignment = Alignment.Center) {
+                    ChannelLogo(api, c, Modifier.fillMaxSize().padding(14.dp))
+                    LivePreview(api, c, Modifier.fillMaxSize())
                 }
                 HGap(24.dp)
                 Column(Modifier.weight(1f)) {
@@ -922,6 +959,7 @@ fun ProfileScreen(api: CueApi, switchProfile: () -> Unit, changeServer: () -> Un
             Gap(20.dp)
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Pill("Switch profile", primary = true, onClick = switchProfile)
+                Pill("Your year in Cue") { openWeb("/watch/year") }
                 Pill("Web version") { openWeb("/watch") }
                 Pill("Change server", onClick = changeServer)
             }

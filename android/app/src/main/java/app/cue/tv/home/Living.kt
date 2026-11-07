@@ -36,6 +36,7 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
@@ -224,5 +225,119 @@ fun Screensaver(api: CueApi, slides: List<SaverSlide>) {
         }
         Text("Press any button to come back", fontSize = 11.sp, color = Color(0x80FFFFFF),
             modifier = Modifier.align(Alignment.BottomEnd).padding(end = Gutter + 8.dp, bottom = 52.dp))
+    }
+}
+
+// ---- Live TV: the highlighted channel, live ----
+
+// LivePreview plays the highlighted channel, muted, once the remote has
+// rested on it a moment, fading in at its first picture (the logo shows
+// until then). It stops whenever this screen isn't in front, so the full
+// player never shares the TV's video decoder with it.
+@Composable
+fun LivePreview(api: CueApi, ch: Channel, modifier: Modifier = Modifier) {
+    val ctx = LocalContext.current
+    if (!trailersFit(ctx)) return
+    var url by remember(ch.id) { mutableStateOf<String?>(null) }
+    var shown by remember(ch.id) { mutableStateOf(false) }
+    LaunchedEffect(ch.id) {
+        delay(1100)
+        url = runCatching { api.livePlay(ch.id).optString("direct").ifEmpty { null } }.getOrNull()
+    }
+    val u = url ?: return
+    val player = remember(u) {
+        androidx.media3.exoplayer.ExoPlayer.Builder(ctx).build().apply {
+            volume = 0f
+            setMediaItem(androidx.media3.common.MediaItem.fromUri(u))
+            addListener(object : androidx.media3.common.Player.Listener {
+                override fun onRenderedFirstFrame() { shown = true }
+            })
+            prepare()
+            playWhenReady = true
+        }
+    }
+    val owner = androidx.compose.ui.platform.LocalLifecycleOwner.current
+    androidx.compose.runtime.DisposableEffect(player, owner) {
+        val watch = androidx.lifecycle.LifecycleEventObserver { _, e ->
+            when (e) {
+                androidx.lifecycle.Lifecycle.Event.ON_PAUSE -> { player.stop(); shown = false }
+                androidx.lifecycle.Lifecycle.Event.ON_RESUME -> { player.prepare(); player.playWhenReady = true }
+                else -> {}
+            }
+        }
+        owner.lifecycle.addObserver(watch)
+        onDispose {
+            owner.lifecycle.removeObserver(watch)
+            player.release()
+        }
+    }
+    val alpha by animateFloatAsState(if (shown) 1f else 0f, tween(500), label = "live-preview")
+    AndroidView(
+        factory = { c ->
+            androidx.media3.ui.PlayerView(c).apply {
+                useController = false
+                isFocusable = false
+                resizeMode = androidx.media3.ui.AspectRatioFrameLayout.RESIZE_MODE_ZOOM
+                setShutterBackgroundColor(android.graphics.Color.TRANSPARENT)
+                this.player = player
+            }
+        },
+        modifier = modifier.graphicsLayer { this.alpha = alpha },
+    )
+}
+
+// ---- Up next ----
+
+private const val UP_NEXT_SECONDS = 10
+
+// UpNextScreen: an episode has ended. The next one fills the screen (its
+// still, the show's logo, its name and story) and plays after a countdown
+// that runs round the Play button; Back stays where you were.
+@Composable
+fun UpNextScreen(api: CueApi, next: Playback.UpNext, play: () -> Unit, dismiss: () -> Unit) {
+    androidx.activity.compose.BackHandler { dismiss() }
+    val ring = remember(next) { Animatable(0f) }
+    LaunchedEffect(next) {
+        ring.animateTo(1f, tween(UP_NEXT_SECONDS * 1000, easing = LinearEasing))
+        play()
+    }
+    val ex = rememberExtras(api, "tv", next.showId)
+    val ep = next.episode
+    val focus = remember { androidx.compose.ui.focus.FocusRequester() }
+    LaunchedEffect(Unit) { runCatching { focus.requestFocus() } }
+    Box(Modifier.fillMaxSize().background(Color.Black)) {
+        AsyncImage(
+            model = ep.still?.replace("/w300/", "/w780/") ?: next.backdrop,
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.fillMaxSize().settleIn(1.08f),
+        )
+        Box(Modifier.fillMaxSize().background(Brush.horizontalGradient(0f to Color(0xF20C0D10), 0.5f to Color(0x990C0D10), 0.85f to Color.Transparent)))
+        Box(Modifier.fillMaxSize().background(Brush.verticalGradient(0.55f to Color.Transparent, 1f to Color(0xE60C0D10))))
+        Column(Modifier.align(Alignment.CenterStart).padding(start = Gutter + 8.dp).fillMaxSize(0.5f), verticalArrangement = Arrangement.Center) {
+            Text("UP NEXT", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = tint(), letterSpacing = 2.sp, modifier = Modifier.rise(0))
+            androidx.compose.foundation.layout.Spacer(Modifier.size(12.dp))
+            Box(Modifier.rise(80)) { TitleMark(next.show, ex?.logo, maxWidth = 360.dp, maxHeight = 110.dp, fontSize = 36.sp) }
+            androidx.compose.foundation.layout.Spacer(Modifier.size(16.dp))
+            Text("S${ep.season} · E${ep.episode}  ${ep.title}", fontSize = 18.sp, fontWeight = FontWeight.SemiBold, color = Color.White, modifier = Modifier.rise(160))
+            ep.runtime?.takeIf { it > 0 }?.let { Text("$it min", fontSize = 12.sp, color = Dim, modifier = Modifier.padding(top = 4.dp).rise(200)) }
+            ep.overview?.let {
+                Text(it, fontSize = 13.sp, color = Color(0xD9FFFFFF), maxLines = 3, lineHeight = 19.sp,
+                    modifier = Modifier.padding(top = 10.dp).rise(240))
+            }
+            androidx.compose.foundation.layout.Spacer(Modifier.size(22.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically, modifier = Modifier.rise(300)) {
+                Box(contentAlignment = Alignment.Center) {
+                    // The countdown, running round the button.
+                    androidx.compose.foundation.Canvas(Modifier.size(58.dp)) {
+                        drawArc(Color(0x33FFFFFF), 0f, 360f, false, style = androidx.compose.ui.graphics.drawscope.Stroke(4.dp.toPx()))
+                        drawArc(Color.White, -90f, 360f * ring.value, false,
+                            style = androidx.compose.ui.graphics.drawscope.Stroke(4.dp.toPx(), cap = androidx.compose.ui.graphics.StrokeCap.Round))
+                    }
+                }
+                Pill("▶  Play now", primary = true, modifier = Modifier.focusRequester(focus), onClick = play)
+                Pill("Back", onClick = dismiss)
+            }
+        }
     }
 }

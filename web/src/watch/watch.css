@@ -4041,3 +4041,207 @@ html.tv-mode .wx-card:focus .wx-card-sub {
     animation: none;
   }
 }
+
+/* ==== Your year in Cue ==== */
+.wx-yr {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: radial-gradient(80% 70% at 15% 10%, rgba(var(--wx-tint), 0.35), transparent 70%), #0b0c0f;
+  overflow: hidden;
+  user-select: none;
+  transition: background 1s;
+}
+.wx-yr-pic {
+  position: absolute;
+  inset: -4%;
+  background-size: cover;
+  background-position: center;
+  opacity: 0;
+  transition: opacity 1.2s ease;
+}
+.wx-yr-pic.show {
+  opacity: 0.55;
+  animation: wx-kenburns 9s linear both;
+}
+.wx-yr-shade {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(to top, rgba(11, 12, 15, 0.92), rgba(11, 12, 15, 0.2) 60%),
+    linear-gradient(to right, rgba(11, 12, 15, 0.75), transparent 70%);
+}
+.wx-yr-bars {
+  position: absolute;
+  top: calc(16px + env(safe-area-inset-top, 0px));
+  left: max(20px, env(safe-area-inset-left, 0px));
+  right: calc(max(20px, env(safe-area-inset-right, 0px)) + 52px);
+  display: flex;
+  gap: 6px;
+  z-index: 2;
+}
+.wx-yr-bars span {
+  flex: 1;
+  height: 3px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.25);
+  overflow: hidden;
+}
+.wx-yr-bars i {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: #fff;
+}
+.wx-yr-bars i.done {
+  width: 100%;
+}
+.wx-yr-bars i.now {
+  animation: wx-yr-fill linear forwards;
+}
+.wx-yr-bars i.paused {
+  animation-play-state: paused;
+}
+@keyframes wx-yr-fill {
+  to {
+    width: 100%;
+  }
+}
+.wx-yr-close {
+  position: absolute;
+  top: calc(6px + env(safe-area-inset-top, 0px));
+  right: max(12px, env(safe-area-inset-right, 0px));
+  z-index: 3;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: rgba(0, 0, 0, 0.35);
+  color: #fff;
+  cursor: pointer;
+}
+.wx-yr-body {
+  position: absolute;
+  left: max(24px, env(safe-area-inset-left, 0px));
+  right: max(24px, env(safe-area-inset-right, 0px));
+  bottom: calc(clamp(48px, 10vh, 120px) + env(safe-area-inset-bottom, 0px));
+  max-width: 820px;
+  display: grid;
+  gap: 14px;
+}
+@media (min-width: 900px) {
+  .wx-yr-body {
+    left: clamp(48px, 7vw, 120px);
+  }
+}
+.wx-yr-body > * {
+  margin: 0;
+  animation: wx-rise 0.8s var(--wx-settle) both;
+}
+.wx-yr-body > :nth-child(2) {
+  animation-delay: 0.15s;
+}
+.wx-yr-body > :nth-child(3) {
+  animation-delay: 0.3s;
+}
+.wx-yr-body > :nth-child(4) {
+  animation-delay: 0.45s;
+}
+.wx-yr-kicker {
+  font-size: clamp(0.95rem, 1.6vw, 1.2rem);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgb(var(--wx-tint));
+  filter: brightness(1.25);
+}
+.wx-yr-huge {
+  font-size: clamp(5rem, 18vw, 13rem);
+  line-height: 0.85;
+  letter-spacing: -0.04em;
+  font-weight: 800;
+}
+.wx-yr-huge span {
+  display: block;
+  font-size: 0.32em;
+  letter-spacing: -0.01em;
+  font-weight: 600;
+  margin-top: 0.25em;
+  color: rgba(255, 255, 255, 0.85);
+}
+.wx-yr-number {
+  font-size: clamp(3.4rem, 11vw, 8rem);
+  line-height: 0.95;
+  letter-spacing: -0.03em;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+.wx-yr-big {
+  font-size: clamp(2rem, 6vw, 4.2rem);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+.wx-yr-line {
+  font-size: clamp(1.05rem, 2vw, 1.45rem);
+  line-height: 1.45;
+  color: rgba(255, 255, 255, 0.88);
+  max-width: 34ch;
+}
+.wx-yr-small {
+  color: var(--wx-dim);
+}
+.wx-yr-body .wx-logo {
+  max-height: clamp(90px, 16vw, 200px);
+  max-width: min(560px, 80vw);
+  margin: 0;
+}
+.wx-yr-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+}
+.wx-yr-list li {
+  display: grid;
+  grid-template-columns: 2.2ch 112px minmax(0, 1fr);
+  align-items: center;
+  gap: 16px;
+  animation: wx-rise 0.7s var(--wx-settle) both;
+}
+.wx-yr-list b {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: rgba(255, 255, 255, 0.55);
+  font-variant-numeric: tabular-nums;
+}
+.wx-yr-list img,
+.wx-yr-blank {
+  width: 112px;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  border-radius: 10px;
+  background: var(--wx-panel);
+}
+.wx-yr-list span {
+  min-width: 0;
+  font-size: 1.15rem;
+  font-weight: 650;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.wx-yr-list small {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 400;
+  color: var(--wx-dim);
+}
+@media (prefers-reduced-motion: reduce) {
+  .wx-yr-pic.show {
+    animation: none;
+  }
+}
