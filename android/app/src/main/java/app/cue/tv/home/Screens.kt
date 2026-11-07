@@ -125,6 +125,11 @@ fun CueRoot(api: CueApi, playback: Playback, openWeb: (String) -> Unit, changeSe
             }
         }
     }
+    // A newer build of this app: offered on opening and on coming back to it.
+    val ctx = androidx.compose.ui.platform.LocalContext.current
+    LaunchedEffect(stage, inFront) {
+        if (stage == Stage.Ready && inFront) AppUpdate.check(ctx, api.server)
+    }
     LaunchedEffect(stage) {
         if (stage != Stage.Checking) return@LaunchedEffect
         problem = ""
@@ -165,6 +170,9 @@ fun CueRoot(api: CueApi, playback: Playback, openWeb: (String) -> Unit, changeSe
                 }
             }
             playback.upNext?.let { u -> UpNextScreen(api, u, play = { playback.playUpNext() }, dismiss = { playback.dismissUpNext() }) }
+            AppUpdate.offer?.takeIf { AppUpdate.showing && playback.upNext == null && stage == Stage.Ready }?.let { o ->
+                UpdateCard(api, o, later = { AppUpdate.later() })
+            }
             saver?.let { Screensaver(api, it) }
             if (playback.note.isNotEmpty()) {
                 Text(playback.note, fontSize = 14.sp, color = Color.White,
@@ -972,7 +980,8 @@ fun ProfileScreen(api: CueApi, switchProfile: () -> Unit, changeServer: () -> Un
             Text(api.server, fontSize = 12.sp, color = Dim)
             Gap(20.dp)
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                Pill("Switch profile", primary = true, onClick = switchProfile)
+                if (AppUpdate.offer != null) Pill("Update Cue", primary = true) { AppUpdate.showing = true }
+                Pill("Switch profile", primary = AppUpdate.offer == null, onClick = switchProfile)
                 Pill("Your year in Cue") { openWeb("/watch/year") }
                 Pill("Web version") { openWeb("/watch") }
                 Pill("Change server", onClick = changeServer)

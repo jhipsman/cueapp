@@ -12,6 +12,7 @@ under [Unreleased]. How releases are cut: [docs/RELEASING.md](docs/RELEASING.md)
 - Releases are signed with a new update key, held only by the project owner. **Update now** installs only releases signed with it.
 
 ### Added
+- **The TV app updates itself** (Fire TV, Google TV): when a new build is out, Cue says so on opening and on Profile; Update downloads it and Android installs it over the old one, signed in and on your profile. `GET /tv.version` forwards to the newest build's number, published beside the APK.
 - **Live TV, channel surfing** (Fire TV, Google TV): rest on a channel and its live picture plays, muted, in the banner at the top of Live TV; in the player, up and down (or channel up and down) change channel in place with a banner of the channel's number, name and what's on, tuning only the channel you stop on.
 - **Up next** (Fire TV, Google TV): when an episode ends, the next one fills the screen (its still, the show's logo, its name and story) and plays after a countdown round the Play button; Back stays where you were.
 - **Your year in Cue** (web, and from Profile on the TV): the profile's year told in full-screen slides: hours watched, titles and days, the show of the year, the top five shows, the movie of the year and the busiest day and month. `GET /api/watch/year`.

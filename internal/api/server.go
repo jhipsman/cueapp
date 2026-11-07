@@ -317,6 +317,7 @@ func (s *Server) Routes() http.Handler {
 	// The TV app, for the Downloader app on a Fire TV: a short address that
 	// forwards to the latest build (watch_tv.go). Outside /api/, so here.
 	root.HandleFunc("GET /tv.apk", s.handleTVApp)
+	root.HandleFunc("GET /tv.version", s.handleTVAppVersion)
 	root.Handle("/", frontendHandler())
 	return s.harden(root)
 }
