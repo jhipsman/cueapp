@@ -234,6 +234,7 @@ fun Screensaver(api: CueApi, slides: List<SaverSlide>) {
 // rested on it a moment, fading in at its first picture (the logo shows
 // until then). It stops whenever this screen isn't in front, so the full
 // player never shares the TV's video decoder with it.
+@androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
 @Composable
 fun LivePreview(api: CueApi, ch: Channel, modifier: Modifier = Modifier) {
     val ctx = LocalContext.current
