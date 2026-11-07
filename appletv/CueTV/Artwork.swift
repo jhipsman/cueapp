@@ -188,3 +188,20 @@ struct ScoresLine: View {
         }
     }
 }
+
+// TintGlow: the main colour of a title's picture, glowing softly from the
+// lower left of a banner, so every title brings its own mood.
+struct TintGlow: View {
+    @EnvironmentObject var cue: Cue
+    let kind: String
+    let tmdbId: Int
+    @State private var colour: Color?
+
+    var body: some View {
+        RadialGradient(colors: [(colour ?? .clear).opacity(0.45), .clear], center: .bottomLeading, startRadius: 0, endRadius: 1100)
+            .blendMode(.screen)
+            .allowsHitTesting(false)
+            .animation(.easeInOut(duration: 0.8), value: colour)
+            .task(id: "\(kind)-\(tmdbId)") { colour = await cue.colour(kind, tmdbId) }
+    }
+}

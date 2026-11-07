@@ -1,6 +1,6 @@
-import { createContext, useContext, useEffect, useRef, useState } from 'react'
+import { createContext, useContext, useEffect, useRef, useState, type PointerEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { api, type WatchCard, type WatchRatings } from '../api'
+import { api, type WatchCard, type WatchExtras, type WatchRatings } from '../api'
 import Icon from '../components/Icon'
 import { onTV } from './tv'
 
@@ -50,19 +50,43 @@ export function Card({ card, wide }: { card: WatchCard; wide?: boolean }) {
   // (or Play) is there, with the episodes, so nothing starts by surprise.
   const open = () => navigate(titleHref(card))
   const code = card.episode ? epCode(card.season, card.episode) : ''
+  // Pointed at, a wide card's logo floats in front of its picture.
+  const [hot, setHot] = useState(false)
+  const ex = useExtras(hot && wide ? card : null)
+  // The picture tilts toward the pointer, its glare following it (a mouse
+  // only: touch screens have no pointer resting on a card).
+  const tilt = (e: PointerEvent<HTMLButtonElement>) => {
+    if (e.pointerType !== 'mouse') return
+    const r = e.currentTarget.querySelector('.wx-card-art')?.getBoundingClientRect()
+    if (!r) return
+    const x = (e.clientX - r.left) / r.width - 0.5
+    const y = (e.clientY - r.top) / r.height - 0.5
+    e.currentTarget.style.setProperty('--px', x.toFixed(3))
+    e.currentTarget.style.setProperty('--py', y.toFixed(3))
+  }
   return (
     <button
       className={`wx-card${wide ? ' wide' : ''}`}
       onClick={open}
       title={card.title}
-      onMouseEnter={() => warm(card)}
+      onMouseEnter={() => {
+        warm(card)
+        setHot(true)
+      }}
+      onPointerMove={tilt}
+      onPointerLeave={(e) => {
+        e.currentTarget.style.removeProperty('--px')
+        e.currentTarget.style.removeProperty('--py')
+      }}
       onFocus={() => {
         warm(card)
+        setHot(true)
         spotlight?.(card)
       }}
     >
       <span className="wx-card-art">
         {img ? <img src={img} alt="" loading="lazy" /> : <span className="wx-card-fallback">{card.title}</span>}
+        {wide && ex?.logo && <img className="wx-card-logo" src={ex.logo} alt="" />}
         {wide && code && <span className="wx-chip">{code}</span>}
         {card.new && <span className="wx-card-new">New episode</span>}
         {card.progress !== undefined && card.progress > 0 && (
@@ -89,30 +113,60 @@ export function Ambient({ url }: { url: string }) {
   )
 }
 
-// Logo artwork per title, looked up once ("" is none: the name is drawn).
-const logos = new Map<string, string>()
+// A title's logo, colour and trailer (WatchExtras), looked up once per title
+// and shared by every page.
+const extrasCache = new Map<string, WatchExtras | null>()
+const extrasWaiting = new Map<string, Promise<WatchExtras | null>>()
 
-export function useLogo(card: { kind: WatchCard['kind']; tmdbId: number; logoUrl?: string } | null | undefined): string | undefined {
+function loadExtras(kind: WatchCard['kind'], tmdbId: number): Promise<WatchExtras | null> {
+  const key = `${kind}-${tmdbId}`
+  const had = extrasWaiting.get(key)
+  if (had) return had
+  const p = api
+    .watchExtras(kind, tmdbId)
+    .then((x) => x)
+    .catch(() => null)
+    .then((x) => {
+      extrasCache.set(key, x)
+      return x
+    })
+  extrasWaiting.set(key, p)
+  return p
+}
+
+// useExtras gives a title's extras once they're known (undefined until
+// then, null when they couldn't be had). Pass null to ask for nothing.
+export function useExtras(card: { kind: WatchCard['kind']; tmdbId: number } | null | undefined): WatchExtras | null | undefined {
   const key = card ? `${card.kind}-${card.tmdbId}` : ''
-  const known = card?.logoUrl
   const [, bump] = useState(0)
   useEffect(() => {
-    if (!card || known !== undefined || logos.has(key)) return
+    if (!card || extrasCache.has(key)) return
     let live = true
-    api
-      .watchLogo(card.kind, card.tmdbId)
-      .then((r) => {
-        logos.set(key, r.url)
-        if (live) bump((n) => n + 1)
-      })
-      .catch(() => logos.set(key, ''))
+    void loadExtras(card.kind, card.tmdbId).then(() => live && bump((n) => n + 1))
     return () => {
       live = false
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [key, known])
+  }, [key])
+  return card ? extrasCache.get(key) : undefined
+}
+
+export function useLogo(card: { kind: WatchCard['kind']; tmdbId: number; logoUrl?: string } | null | undefined): string | undefined {
+  const known = card?.logoUrl
+  const ex = useExtras(known !== undefined ? null : card)
   if (!card) return undefined
-  return known ?? logos.get(key)
+  if (known !== undefined) return known
+  return ex === undefined ? undefined : (ex?.logo ?? '')
+}
+
+// useTint colours Watch after a picture: the glow behind the page, the
+// highlight's halo and the progress bars take its main colour.
+export function useTint(colour: string | undefined) {
+  useEffect(() => {
+    if (!colour) return
+    const root = document.querySelector<HTMLElement>('.wx')
+    root?.style.setProperty('--wx-tint', colour)
+  }, [colour])
 }
 
 // TitleMark is a title's name as its logo artwork, or in big letters when

@@ -4,7 +4,7 @@ import { api, type WatchEpisode, type WatchKind, type WatchTitle } from '../api'
 import Icon from '../components/Icon'
 import { useDocumentTitle } from '../documentTitle'
 import FreeElsewhere from './FreeElsewhere'
-import { Ambient, Card, epCode, minutes, playHref, Row, Scores, TitleMark } from './parts'
+import { Ambient, Card, epCode, minutes, playHref, Row, Scores, TitleMark, useExtras, useTint } from './parts'
 import { onTV } from './tv'
 
 // A movie's or a show's page: the banner with ratings and Play, then for a
@@ -17,6 +17,8 @@ export default function TitlePage({ kind }: { kind: WatchKind }) {
   const [inList, setInList] = useState(false)
   const [season, setSeason] = useState<number | null>(null)
   useDocumentTitle(title?.title ?? 'Watch')
+  // The page takes the colour of the title's picture.
+  useTint(useExtras(title ? { kind, tmdbId } : null)?.colour)
 
   useEffect(() => {
     let live = true

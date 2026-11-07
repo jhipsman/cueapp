@@ -3761,3 +3761,283 @@ html.tv-mode .wx-card:focus .wx-card-sub {
   letter-spacing: 0.05em;
   box-shadow: none;
 }
+
+/* ==== Bringing the artwork alive ==== */
+
+/* The colour of the picture in view ("r, g, b", set by useTint), Cue's own
+   colour until one is known. */
+.wx {
+  --wx-tint: var(--wx-accent-rgb);
+}
+.wx-ambient::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(70% 55% at 20% 0%, rgba(var(--wx-tint), 0.2), transparent 70%);
+  transition: background 0.8s;
+}
+.wx-card-progress > span {
+  background: rgb(var(--wx-tint));
+  transition: background 0.8s;
+}
+.wx-hero.inset {
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.07),
+    0 30px 60px rgba(0, 0, 0, 0.45),
+    0 0 90px rgba(var(--wx-tint), 0.16);
+  transition: box-shadow 0.8s;
+}
+
+/* The living banner: the trailer under the banner's shade, out of sight
+   until YouTube's own overlays have gone, then fading in. The words step
+   aside: the story folds away and the logo settles smaller. */
+.wx-hero-trailer {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  container-type: size;
+  opacity: 0;
+  transition: opacity 1s var(--wx-settle);
+  pointer-events: none;
+}
+.wx-hero.playing .wx-hero-trailer {
+  opacity: 1;
+}
+.wx-hero-trailer iframe {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: max(100cqw, 177.78cqh);
+  height: max(100cqh, 56.25cqw);
+  border: 0;
+  /* a little larger than the box, so YouTube's corners never show */
+  transform: translate(-50%, -50%) scale(1.18);
+}
+.wx-hero.playing .wx-hero-pic {
+  opacity: 0;
+  transition: opacity 1s var(--wx-settle);
+}
+.wx-hero .wx-overview,
+.wx-hero .wx-logo,
+.wx-hero h1 {
+  transition:
+    opacity 0.6s,
+    max-height 0.7s var(--wx-settle),
+    transform 0.8s var(--wx-settle);
+}
+.wx-hero.playing .wx-overview {
+  opacity: 0;
+  max-height: 0;
+  margin-bottom: 0;
+}
+.wx-hero.playing .wx-logo,
+.wx-hero.playing h1 {
+  transform: scale(0.84);
+  transform-origin: left bottom;
+}
+.wx-hero-body .wx-overview {
+  max-height: 6em;
+}
+/* While it waits to start: a ring fills in the corner. */
+.wx-trailer-wait {
+  position: absolute;
+  top: 18px;
+  right: 20px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: conic-gradient(rgba(255, 255, 255, 0.85) var(--wx-wait, 0%), rgba(255, 255, 255, 0.18) 0);
+  -webkit-mask: radial-gradient(circle, transparent 7px, #000 8px);
+  mask: radial-gradient(circle, transparent 7px, #000 8px);
+  animation: wx-wait 2.5s linear forwards;
+}
+@property --wx-wait {
+  syntax: '<percentage>';
+  inherits: false;
+  initial-value: 0%;
+}
+@keyframes wx-wait {
+  to {
+    --wx-wait: 100%;
+  }
+}
+.wx-trailer-sound {
+  position: absolute;
+  top: 14px;
+  right: 16px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(0, 0, 0, 0.5);
+  color: #fff;
+  cursor: pointer;
+  animation: wx-fade-in 0.6s var(--wx-settle) both;
+}
+.wx-trailer-sound:hover {
+  background: rgba(0, 0, 0, 0.7);
+}
+
+/* Cards tilt toward the pointer in 3D, the glare following it; a wide
+   card's logo floats in front of its picture, moving further. */
+@media (hover: hover) {
+  .wx-card {
+    perspective: 900px;
+  }
+  .wx-card:hover .wx-card-art,
+  .wx-card:focus-visible .wx-card-art {
+    transform: translateY(-6px) scale(1.07) rotateX(calc(var(--py, 0) * -9deg)) rotateY(calc(var(--px, 0) * 11deg));
+  }
+  .wx-card:hover .wx-card-art::before {
+    background: radial-gradient(90% 70% at calc(50% + var(--px, 0) * 100%) calc(30% + var(--py, 0) * 100%), rgba(255, 255, 255, 0.22), transparent 60%);
+  }
+  .wx-card:hover .wx-card-art,
+  .wx-card:focus-visible .wx-card-art {
+    box-shadow:
+      0 0 0 1px rgba(255, 255, 255, 0.28),
+      0 22px 44px rgba(0, 0, 0, 0.6),
+      0 0 36px rgba(var(--wx-tint), 0.3);
+  }
+}
+.wx-card-logo {
+  position: absolute;
+  left: 10px;
+  bottom: 22px;
+  max-width: 60%;
+  max-height: 34%;
+  width: auto !important;
+  height: auto;
+  aspect-ratio: auto !important;
+  object-fit: contain;
+  object-position: left bottom;
+  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.7));
+  animation: wx-rise 0.5s var(--wx-settle) both;
+  transition: transform 0.35s var(--wx-settle);
+}
+.wx-card:hover .wx-card-logo {
+  transform: translate(calc(var(--px, 0) * 10px), calc(var(--py, 0) * 8px));
+}
+.wx-card.wide .wx-card-logo ~ .wx-chip {
+  display: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .wx-hero-trailer {
+    display: none;
+  }
+  .wx-card:hover .wx-card-art {
+    transform: none;
+  }
+}
+
+/* ==== Screensaver ==== */
+.wx-saver {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: #000;
+  overflow: hidden;
+  cursor: none;
+  animation: wx-fade-in 1.4s var(--wx-settle) both;
+}
+.wx-saver-pic {
+  position: absolute;
+  inset: -4%;
+  background-size: cover;
+  background-position: center;
+  opacity: 0;
+  transition: opacity 2.2s ease;
+}
+.wx-saver-pic.show {
+  opacity: 1;
+  animation: wx-kenburns 12s linear both;
+}
+@keyframes wx-kenburns {
+  from {
+    transform: scale(1.02) translate(1%, 0);
+  }
+  to {
+    transform: scale(1.12) translate(-2%, -1%);
+  }
+}
+.wx-saver-shade {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(to top, rgba(0, 0, 0, 0.78), transparent 48%),
+    linear-gradient(to right, rgba(0, 0, 0, 0.5), transparent 55%);
+}
+.wx-saver-clock {
+  position: absolute;
+  top: max(40px, env(safe-area-inset-top, 0px));
+  right: max(56px, env(safe-area-inset-right, 0px));
+  text-align: right;
+  display: grid;
+  gap: 4px;
+  text-shadow: 0 2px 16px rgba(0, 0, 0, 0.5);
+}
+.wx-saver-clock b {
+  font-family: 'Sora', var(--font-display, system-ui), sans-serif;
+  font-size: clamp(2.6rem, 5vw, 4.4rem);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.wx-saver-clock span {
+  color: rgba(255, 255, 255, 0.72);
+}
+.wx-saver-caption {
+  position: absolute;
+  left: max(64px, env(safe-area-inset-left, 0px));
+  bottom: 64px;
+  max-width: min(640px, 80vw);
+  display: grid;
+  gap: 14px;
+}
+.wx-saver-caption > * {
+  animation: wx-rise 1s var(--wx-settle) both;
+}
+.wx-saver-caption > :nth-child(2) {
+  animation-delay: 0.25s;
+}
+.wx-saver-caption .wx-logo {
+  max-height: clamp(80px, 13vw, 170px);
+  max-width: min(520px, 70vw);
+  margin: 0;
+}
+.wx-saver-caption h1 {
+  margin: 0;
+  font-size: clamp(2.4rem, 5vw, 4rem);
+}
+.wx-saver-caption p {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  font-size: 1.05rem;
+  color: rgba(255, 255, 255, 0.86);
+}
+.wx-saver-caption i {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: rgb(var(--wx-tint));
+  box-shadow: 0 0 14px rgb(var(--wx-tint));
+}
+.wx-saver-hint {
+  position: absolute;
+  right: max(56px, env(safe-area-inset-right, 0px));
+  bottom: 64px;
+  margin: 0;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.5);
+}
+@media (prefers-reduced-motion: reduce) {
+  .wx-saver-pic.show {
+    animation: none;
+  }
+}

@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import { Link, NavLink, Route, Routes, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import CueWordmark from '../components/CueWordmark'
+import Screensaver from './Screensaver'
 import Icon from '../components/Icon'
 import Home from './Home'
 import MyList from './MyList'
@@ -42,6 +43,7 @@ export default function WatchApp() {
       <ProfilesProvider>
         <RemindersProvider>
         <ProfileGate />
+        <Screensaver />
         <Routes>
         <Route path="who" element={<WhoIsWatching />} />
         <Route path="profiles" element={<ManageProfiles />} />

@@ -7,6 +7,9 @@
 package app.cue.tv.home
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.fadeIn
@@ -96,6 +99,31 @@ fun CueRoot(api: CueApi, playback: Playback, openWeb: (String) -> Unit, changeSe
     var stage by remember { mutableStateOf(Stage.Checking) }
     var problem by remember { mutableStateOf("") }
     var accent by remember { mutableStateOf(accentOf(api.accent)) }
+    val tintState = remember { mutableStateOf<Color?>(null) }
+    // The screensaver: after a few minutes without a button pressed (and
+    // only while this screen is in front, not while something plays).
+    var saver by remember { mutableStateOf<List<SaverSlide>?>(null) }
+    var lastInput by remember { mutableStateOf(System.currentTimeMillis()) }
+    var inFront by remember { mutableStateOf(true) }
+    val owner = androidx.compose.ui.platform.LocalLifecycleOwner.current
+    androidx.compose.runtime.DisposableEffect(owner) {
+        val watch = androidx.lifecycle.LifecycleEventObserver { _, e ->
+            if (e == androidx.lifecycle.Lifecycle.Event.ON_RESUME) { inFront = true; lastInput = System.currentTimeMillis() }
+            if (e == androidx.lifecycle.Lifecycle.Event.ON_PAUSE) { inFront = false; saver = null }
+        }
+        owner.lifecycle.addObserver(watch)
+        onDispose { owner.lifecycle.removeObserver(watch) }
+    }
+    LaunchedEffect(stage) {
+        if (stage != Stage.Ready) return@LaunchedEffect
+        while (true) {
+            delay(10_000)
+            if (saver == null && inFront && System.currentTimeMillis() - lastInput > SAVER_IDLE_MS) {
+                val s = runCatching { saverSlides(api.home()) }.getOrDefault(emptyList())
+                if (s.size >= 2 && System.currentTimeMillis() - lastInput > SAVER_IDLE_MS) saver = s
+            }
+        }
+    }
     LaunchedEffect(stage) {
         if (stage != Stage.Checking) return@LaunchedEffect
         problem = ""
@@ -112,8 +140,17 @@ fun CueRoot(api: CueApi, playback: Playback, openWeb: (String) -> Unit, changeSe
     }
     androidx.tv.material3.MaterialTheme(
         colorScheme = androidx.tv.material3.darkColorScheme(primary = accent, onPrimary = Color.Black, surface = Panel, background = Background),
-    ) { CompositionLocalProvider(LocalAccent provides accent) { androidx.tv.material3.ProvideTextStyle(androidx.compose.ui.text.TextStyle(fontFamily = Type.text())) {
-        Box(Modifier.fillMaxSize().background(Background)) {
+    ) { CompositionLocalProvider(LocalAccent provides accent, LocalTint provides tintState, LocalApi provides api) { androidx.tv.material3.ProvideTextStyle(androidx.compose.ui.text.TextStyle(fontFamily = Type.text())) {
+        Box(Modifier.fillMaxSize().background(Background).onPreviewKeyEvent {
+            // Any button wakes the screen; the first one only ends the screensaver.
+            lastInput = System.currentTimeMillis()
+            if (saver != null) {
+                if (it.type == KeyEventType.KeyUp) saver = null
+                true
+            } else {
+                false
+            }
+        }) {
             when (stage) {
                 Stage.Checking -> Centered { Text("Cue", fontSize = 48.sp, fontWeight = FontWeight.Black, color = Teal) }
                 Stage.SignIn -> SignInScreen(api, problem, changeServer) { stage = Stage.Profiles }
@@ -126,6 +163,7 @@ fun CueRoot(api: CueApi, playback: Playback, openWeb: (String) -> Unit, changeSe
                     stage = Stage.Profiles
                 }
             }
+            saver?.let { Screensaver(api, it) }
             if (playback.note.isNotEmpty()) {
                 Text(playback.note, fontSize = 14.sp, color = Color.White,
                     modifier = Modifier.align(Alignment.BottomCenter).padding(28.dp).clip(RoundedCornerShape(10.dp))
@@ -405,6 +443,10 @@ fun HomeScreen(api: CueApi, only: String?, memory: FocusMemory, takeFocus: Boole
         settled = shown
     }
     LaunchedEffect(settled?.backdrop) { setAmbient(settled?.backdrop) }
+    // The page takes the colour of the picture in the banner.
+    val settledExtras = rememberExtras(api, settled?.kind ?: "movie", settled?.tmdbId ?: 0, ask = settled != null)
+    val tintState = LocalTint.current
+    LaunchedEffect(settledExtras?.colour) { settledExtras?.colour?.let { tintState.value = it } }
     LaunchedEffect(rows.size, takeFocus) {
         if (!takeFocus || rows.isEmpty()) return@LaunchedEffect
         delay(80)
@@ -438,6 +480,11 @@ fun Banner(api: CueApi, c: Tile) {
             modifier = Modifier.fillMaxHeight().fillMaxWidth(0.8f).align(Alignment.TopEnd)) { u ->
             if (u != null) AsyncImage(model = u, contentDescription = null, contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxSize().drift())
+        }
+        // Rest on a title and its trailer fades in, muted, over the picture.
+        val ex = rememberExtras(api, c.kind, c.tmdbId)
+        key(c.kind, c.tmdbId) {
+            TrailerLayer(api.server, ex?.trailer, Modifier.fillMaxHeight().fillMaxWidth(0.8f).align(Alignment.TopEnd))
         }
         Box(Modifier.fillMaxSize().background(Brush.horizontalGradient(0.18f to Color(0xF516171B), 0.48f to Color(0x9916171B), 0.75f to Color.Transparent)))
         Box(Modifier.fillMaxSize().background(Brush.verticalGradient(0.5f to Color.Transparent, 1f to Color(0xCC16171B))))
@@ -501,6 +548,10 @@ fun TitleScreen(api: CueApi, playback: Playback, card: Tile, memory: FocusMemory
     }
     val c = t.card
     val logo = rememberLogo(api, c.kind, c.tmdbId, c.logo)
+    // The page takes the colour of the title's picture.
+    val titleExtras = rememberExtras(api, c.kind, c.tmdbId)
+    val pageTint = LocalTint.current
+    LaunchedEffect(titleExtras?.colour) { titleExtras?.colour?.let { pageTint.value = it } }
     Box(Modifier.fillMaxSize().background(Background).rise(0, 0.dp)) {
         // The picture fills the screen; the words sit on its darker left.
         AsyncImage(model = c.backdrop, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize().settleIn())

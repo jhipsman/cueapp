@@ -632,6 +632,7 @@ Every route the server exposes. Routes marked **public** need no sign-in; all ot
 
 | Method | Path | Access | What it does |
 |---|---|---|---|
+| GET | `/api/watch/extras/{kind}/{tmdbId}` | signed in | GET /api/watch/extras/{kind}/{tmdbId}: a title's logo, the main colour of its picture (for the glow and highlights) and its trailer (for the living banner), ... |
 | GET | `/api/watch/home` | signed in | GET /api/watch/home: Continue Watching, My List and the shelves. |
 | DELETE | `/api/watch/list/{kind}/{tmdbId}` | signed in | DELETE /api/watch/list/{kind}/{tmdbId} |
 | PUT | `/api/watch/list/{kind}/{tmdbId}` | signed in | PUT /api/watch/list/{kind}/{tmdbId} |
@@ -660,4 +661,4 @@ Every route the server exposes. Routes marked **public** need no sign-in; all ot
 | PUT | `/api/watched/settings` | admin | PUT /api/watched/settings {"sync": true, "cleanup": {...}} |
 | POST | `/api/watched/sync` | admin | POST /api/watched/sync: read what's been watched now. |
 
-360 routes.
+361 routes.

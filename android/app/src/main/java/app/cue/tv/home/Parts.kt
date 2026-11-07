@@ -29,6 +29,10 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -112,6 +116,22 @@ fun PosterCard(card: Tile, memory: FocusMemory, memKey: String, wide: Boolean = 
     val h: Dp = if (wide) 126.dp else 168.dp
     var focused by remember { mutableStateOf(false) }
     val shape = RoundedCornerShape(CardCorner)
+    // Highlighted, the card sways gently in depth, and a wide card's logo
+    // floats in front of its picture, moving the other way.
+    val sway = remember { androidx.compose.animation.core.Animatable(0f) }
+    LaunchedEffect(focused) {
+        if (focused) {
+            while (true) {
+                sway.animateTo(1f, tween(2800, easing = androidx.compose.animation.core.FastOutSlowInEasing))
+                sway.animateTo(-1f, tween(2800, easing = androidx.compose.animation.core.FastOutSlowInEasing))
+            }
+        } else {
+            sway.animateTo(0f, tween(350))
+        }
+    }
+    val api = LocalApi.current
+    val ex = if (wide && api != null) rememberExtras(api, card.kind, card.tmdbId, ask = focused) else null
+    val showLogo = focused && !ex?.logo.isNullOrEmpty()
     // Drawn above its neighbours while it's lifted.
     Column(Modifier.width(w).zIndex(if (focused) 1f else 0f)) {
         Card(
@@ -119,6 +139,10 @@ fun PosterCard(card: Tile, memory: FocusMemory, memKey: String, wide: Boolean = 
             modifier = Modifier
                 .size(w, h)
                 .lift(focused, if (wide) 1.09f else 1.11f, shape)
+                .graphicsLayer {
+                    rotationY = sway.value * 3f
+                    cameraDistance = 14f * density
+                }
                 .focusRequester(memory.requester(memKey))
                 .onFocusChanged {
                     focused = it.isFocused
@@ -132,12 +156,20 @@ fun PosterCard(card: Tile, memory: FocusMemory, memKey: String, wide: Boolean = 
                 Art(small(if (wide) card.backdrop ?: card.poster else card.poster), Modifier.fillMaxSize(), card.title)
                 if (wide) {
                     Box(Modifier.fillMaxSize().background(Brush.verticalGradient(0.55f to Color.Transparent, 1f to Color(0x99000000))))
-                    epCode(card.season, card.episode)?.let { Chip(it, Modifier.align(Alignment.BottomStart).padding(start = 8.dp, bottom = 10.dp)) }
+                    if (!showLogo) epCode(card.season, card.episode)?.let { Chip(it, Modifier.align(Alignment.BottomStart).padding(start = 8.dp, bottom = 10.dp)) }
+                    if (showLogo) {
+                        AsyncImage(
+                            model = ex?.logo, contentDescription = null, contentScale = ContentScale.Fit, alignment = Alignment.BottomStart,
+                            modifier = Modifier.align(Alignment.BottomStart).padding(start = 10.dp, bottom = 14.dp)
+                                .widthIn(max = 130.dp).heightIn(max = 40.dp)
+                                .graphicsLayer { translationX = -sway.value * 5.dp.toPx() },
+                        )
+                    }
                 }
                 card.progress?.takeIf { it > 0 }?.let { p ->
                     Box(Modifier.align(Alignment.BottomStart).padding(horizontal = 8.dp, vertical = 5.dp).fillMaxWidth().height(3.dp)
                         .clip(RoundedCornerShape(2.dp)).background(Color(0x40FFFFFF))) {
-                        Box(Modifier.fillMaxWidth(p.toFloat().coerceIn(0f, 1f)).fillMaxHeight().background(accent))
+                        Box(Modifier.fillMaxWidth(p.toFloat().coerceIn(0f, 1f)).fillMaxHeight().background(tint()))
                     }
                 }
                 if (card.isNew) Chip("NEW", Modifier.align(Alignment.TopStart).padding(7.dp), bg = accent, fg = Color.Black)

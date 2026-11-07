@@ -53,6 +53,7 @@ struct TitleView: View {
             LinearGradient(colors: [Color.cueBackground.opacity(0.97), Color.cueBackground.opacity(0.6), .clear],
                            startPoint: .leading, endPoint: .init(x: 0.75, y: 0.5))
             LinearGradient(colors: [Color.cueBackground, .clear], startPoint: .bottom, endPoint: .init(x: 0.5, y: 0.5))
+            TintGlow(kind: t.kind, tmdbId: t.tmdbId)
             VStack(alignment: .leading, spacing: 20) {
                 TitleLogo(kind: t.kind, tmdbId: t.tmdbId, title: t.title, known: t.logoUrl ?? "", size: 80, maxWidth: 820, maxHeight: 260)
                 ScoresLine(ratings: t.ratings)

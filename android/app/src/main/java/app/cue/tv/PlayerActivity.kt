@@ -1121,12 +1121,32 @@ class PlayerActivity : Activity() {
     }
 
     // updateSkip shows Skip recap / Skip intro while in one.
+    // Skip intro / recap shows for a few seconds as one starts, then gets out
+    // of the way (it comes back with the controls while the intro lasts).
+    // A segment longer than 3 minutes is taken for bad timings and ignored.
+    private var skipShownAt = 0L
+    private var skipDismissed = ""
+
     private fun updateSkip(pos: Long) {
         if (live || catchup) return
+        fun sane(start: Long, end: Long) = end > 0 && end - start in 5_000..180_000
         val (label, to) = when {
-            recapEnd > 0 && pos >= recapStart && pos < recapEnd - 2000 -> "Skip recap" to recapEnd
-            introEnd > 0 && pos >= introStart && pos < introEnd - 2000 -> "Skip intro" to introEnd
+            sane(recapStart, recapEnd) && pos >= recapStart && pos < recapEnd - 2000 -> "Skip recap" to recapEnd
+            sane(introStart, introEnd) && pos >= introStart && pos < introEnd - 2000 -> "Skip intro" to introEnd
             else -> "" to 0L
+        }
+        val key = "$label@$to"
+        val now = android.os.SystemClock.elapsedRealtime()
+        if (label.isNotEmpty() && !controlsShowing()) {
+            if (key == skipDismissed) {
+                hideSkip()
+                return
+            }
+            if (skipButton.visibility == View.VISIBLE && now - skipShownAt > 8_000) {
+                skipDismissed = key
+                hideSkip()
+                return
+            }
         }
         if (label.isEmpty()) {
             if (skipButton.visibility == View.VISIBLE) {
@@ -1140,8 +1160,16 @@ class PlayerActivity : Activity() {
         skipButton.text = "$label  ›"
         if (skipButton.visibility != View.VISIBLE) {
             skipButton.visibility = View.VISIBLE
+            skipShownAt = now
             if (!controlsShowing()) skipButton.requestFocus()
         }
+    }
+
+    private fun hideSkip() {
+        if (skipButton.visibility != View.VISIBLE) return
+        val hadFocus = skipButton.isFocused
+        skipButton.visibility = View.GONE
+        if (hadFocus && controlsShowing()) playPause.requestFocus()
     }
 
     private fun skip() {

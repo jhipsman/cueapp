@@ -60,10 +60,16 @@ function OpenIn({ url, onOpen }: { url: string; onOpen: () => void }) {
 // intro (not in its last two seconds).
 function skipButton(skips: WatchSkips | null, pos: number): { label: string; to: number } | null {
   if (!skips) return null
-  if (skips.recap && pos >= skips.recap.start && pos < skips.recap.end - 2) return { label: 'Skip recap', to: skips.recap.end }
-  if (skips.intro && pos >= skips.intro.start && pos < skips.intro.end - 2) return { label: 'Skip intro', to: skips.intro.end }
+  // A segment longer than 3 minutes is taken for bad timings and ignored.
+  const sane = (s: { start: number; end: number }) => s.end - s.start >= 5 && s.end - s.start <= 180
+  if (skips.recap && sane(skips.recap) && pos >= skips.recap.start && pos < skips.recap.end - 2) return { label: 'Skip recap', to: skips.recap.end }
+  if (skips.intro && sane(skips.intro) && pos >= skips.intro.start && pos < skips.intro.end - 2) return { label: 'Skip intro', to: skips.intro.end }
   return null
 }
+
+// SKIP_SHOWN is how long Skip intro shows as the intro starts; after that it
+// comes back only while the mouse or a key wakes the controls.
+const SKIP_SHOWN = 8000
 
 // CopyLink copies the video's address, to open in VLC on a computer (Media
 // > Open Network Stream), which plays every format.
@@ -130,6 +136,23 @@ export default function PlayerPage() {
   // The next episode's card, offered at the credits; it only counts down
   // (and plays by itself) once this episode has really ended.
   const [offerNext, setOfferNext] = useState(false)
+  const skipSeen = useRef({ key: '', at: 0 })
+  const [wokeAt, setWokeAt] = useState(0)
+  useEffect(() => {
+    let last = 0
+    const wake = () => {
+      const now = Date.now()
+      if (now - last < 1000) return
+      last = now
+      setWokeAt(now)
+    }
+    window.addEventListener('pointermove', wake)
+    window.addEventListener('keydown', wake)
+    return () => {
+      window.removeEventListener('pointermove', wake)
+      window.removeEventListener('keydown', wake)
+    }
+  }, [])
   const resumeAt = useRef(0)
   // How many times this title moved on by itself because a version had no
   // sound; it stops after a couple, so it never runs through every version.
@@ -647,6 +670,13 @@ export default function PlayerPage() {
       .then((n) => navigate(playHref('tv', tmdbId, n.season, n.episode), { replace: true }))
       .catch(() => setNote('That was the latest episode.'))
 
+  // Skip intro: shown as the intro starts, gone after a few seconds, back
+  // while the viewer moves the mouse or presses a key.
+  const skipNow = skipButton(skips, pos)
+  const skipKey = skipNow ? `${skipNow.label}@${skipNow.to}` : ''
+  if (skipKey && skipSeen.current.key !== skipKey) skipSeen.current = { key: skipKey, at: Date.now() }
+  const shownSkip = skipNow && (Date.now() - skipSeen.current.at < SKIP_SHOWN || Date.now() - wokeAt < 3000) ? skipNow : null
+
   const yt = answer && !error ? answer.youtube : undefined
   const playing = answer && !error && !onTV() && !yt
   return (
@@ -875,15 +905,9 @@ export default function PlayerPage() {
         </>
       )}
 
-      {playing && skipButton(skips, pos) && (
-        <button
-          className="wx-skip"
-          onClick={() => {
-            const b = skipButton(skips, pos)
-            if (b) seekAbs(b.to)
-          }}
-        >
-          {skipButton(skips, pos)?.label} <Icon name="skip-forward" size={18} fill="currentColor" />
+      {playing && shownSkip && (
+        <button className="wx-skip" onClick={() => seekAbs(shownSkip.to)}>
+          {shownSkip.label} <Icon name="skip-forward" size={18} fill="currentColor" />
         </button>
       )}
 

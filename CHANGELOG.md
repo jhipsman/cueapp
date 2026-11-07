@@ -9,6 +9,12 @@ under [Unreleased]. How releases are cut: [docs/RELEASING.md](docs/RELEASING.md)
 ## [Unreleased]
 
 ### Added
+- **The artwork comes alive**:
+  - **Living banner** (web on a computer, Fire TV, Google TV): rest on Home's banner and, after a ring fills, the title's trailer fades in muted behind its logo while the story steps aside; on the web a button turns the sound on. It stops when you move on, scroll away or switch tabs.
+  - **Cards with depth**: on the web a card tilts toward the mouse with a glare that follows it; on the TV the highlighted card sways gently in depth. Continue Watching cards float the title's logo in front of the picture.
+  - **Colour from the picture** (all apps): Cue reads the main colour of the artwork in view and tints the glow behind the page, the highlight's halo and the progress bars with it.
+  - **Screensaver** (web on a computer, Fire TV, Google TV): after three minutes untouched, Cue drifts through your own titles full screen (new episodes, where you stopped, your list, what's trending) with a clock; any button brings you back.
+  - The server answers `GET /api/watch/extras/{kind}/{tmdbId}` with a title's logo, main colour and trailer.
 - **Streaming quality, per profile**: the profile menu has Streaming quality, as in apps like Nuvio: the picture to aim for (4K, 1080p, 720p), how big a file may be (Smart: the size streaming services use; up to 10-50 GB for a two-hour film; or any size), Dolby Vision (prefer, allow, avoid), and whether to prefer HDR, skip Remux, prefer HEVC and AV1, and prefer Dolby Digital Plus or Atmos. By default Cue picks a 4K version at a streaming size instead of the biggest file an add-on lists first.
 - **TV players**: the Fire TV and Google TV player has a rounded control panel with the time, speeds (0.5x to 2x) and icon buttons; on Apple TV, Apple's own player gets Skip Intro, Next Episode, speeds and Other Version.
 - **A frame of the video while scrubbing**: moving along the time bar shows the picture at that point, in the browser (hover or drag) and in the TV app (holding left or right), recordings included. Cue takes the frames from the file itself, every 10 seconds, and keeps them a while.
@@ -59,6 +65,7 @@ under [Unreleased]. How releases are cut: [docs/RELEASING.md](docs/RELEASING.md)
 ## [2.1.9] - 2026-10-07
 
 ### Fixed
+- **Skip intro no longer gets stuck**: it shows for a few seconds as the intro starts and then gets out of the way (it comes back with the controls, or when the mouse moves), so OK pauses again; intro and recap times over three minutes long are treated as wrong and ignored.
 - **The next episode no longer starts early**: at the credits (whose times from TheIntroDB or learned skips can be minutes off) the player now only offers the next episode, as a button (Fire TV / Google TV) or an Up next card (web); it plays by itself only once the episode has really ended.
 - **OK pauses and plays on Fire TV and Google TV** with the controls showing too: the highlight rests on the time bar, where OK used to do nothing, so pausing meant moving over to the pause button.
 - **Phone rows**: on Continue Watching a movie (no episode line under it) sat lower than the shows beside it, and on touch screens the rows' scroll arrows stayed showing as dark strips over the cards once a row was touched. Cards now keep their own height with the picture at the top, and the arrows are left to mice. The New episode badge is a small chip like the episode's code.
