@@ -5,25 +5,41 @@ import SwiftUI
 // they are long, with a line at now. The show on now says LIVE and fills
 // in as it goes. A channel's tile or its show on now plays it full screen;
 // press and hold a tile to add it to (or take it off) Favorites.
+//
+// The guide is one list of rows (a channel's tile and its shows), built
+// only as they come on screen, so a provider with thousands of channels
+// opens at once. The timeline shows what fits across the screen and moves
+// on an hour when focus reaches its right edge (back an hour at its left).
 
 @MainActor
 struct LiveView: View {
     @EnvironmentObject var cue: Cue
     @State private var channels: [Channel] = []
     @State private var categories: [Category] = []
+    @State private var groups: [ChannelGroup] = []
+    @State private var rows: [Channel] = []
     @State private var group = ""
     @State private var problem = ""
     @State private var loading = true
     @State private var playing: Channel?
     @State private var guide: [String: [Programme]] = [:]
+    // What the guide covers (from half an hour back), and the part of it
+    // on screen, from viewStart, spanMinutes wide.
     @State private var windowStart = LiveView.startOfWindow()
+    @State private var viewStart = LiveView.startOfWindow()
+    @State private var spanMinutes: Double = 120
+    @State private var now = Date()
     @FocusState private var focusedGroup: String?
+    @FocusState private var focusedShow: ShowKey?
 
     static let favorites = "★"
     static let all = "*"
     static let perMinute: CGFloat = 9 // points of timeline a minute
     static let rowHeight: CGFloat = 112
+    static let tileWidth: CGFloat = 330
+    static let gap: CGFloat = 14 // between a channel's tile and its shows
     static let hours = 5
+    static let maxRows = 300
 
     var body: some View {
         HStack(spacing: 0) {
@@ -44,26 +60,38 @@ struct LiveView: View {
         .background(Color.cueBackground.ignoresSafeArea())
         .task { await load() }
         .task(id: group) { await loadGuide() }
+        .task { await keepCurrent() }
+        // Moving down the groups shows each in turn, once focus rests on
+        // one: holding down on the remote doesn't redraw every group passed.
+        .task(id: focusedGroup) {
+            guard let g = focusedGroup, g != group else { return }
+            try? await Task.sleep(for: .milliseconds(350))
+            if !Task.isCancelled, focusedGroup == g { group = g }
+        }
+        .onChange(of: group) { _, _ in rows = shown }
+        .onChange(of: focusedShow) { _, key in
+            if let key { follow(key) }
+        }
         .fullScreenCover(item: $playing) { ch in
             PlayerScreen(channel: ch).environmentObject(cue)
         }
     }
 
-    static func startOfWindow() -> Date {
+    static func startOfWindow(at date: Date = Date()) -> Date {
         // Half an hour back, on the half hour: what just ended shows too.
-        let t = Date().addingTimeInterval(-30 * 60).timeIntervalSince1970
+        let t = date.addingTimeInterval(-30 * 60).timeIntervalSince1970
         return Date(timeIntervalSince1970: (t / 1800).rounded(.down) * 1800)
     }
 
     // ---- The groups ----
 
-    private struct ChannelGroup: Hashable {
+    fileprivate struct ChannelGroup: Hashable {
         let id: String
         let name: String
         let count: Int
     }
 
-    private var groups: [ChannelGroup] {
+    private func makeGroups() -> [ChannelGroup] {
         var out: [ChannelGroup] = []
         let favs = channels.filter(\.favorite).count
         if favs > 0 { out.append(ChannelGroup(id: LiveView.favorites, name: "Favorites", count: favs)) }
@@ -104,86 +132,110 @@ struct LiveView: View {
         .padding(.leading, 50)
         .padding(.trailing, 16)
         .padding(.top, 30)
-        .onChange(of: focusedGroup) { _, now in
-            if let now { group = now }
-        }
     }
 
     // ---- The guide ----
 
     private var shown: [Channel] {
+        let list: [Channel]
         switch group {
-        case LiveView.favorites: return channels.filter(\.favorite)
-        case LiveView.all, "": return channels
-        default: return channels.filter { $0.category == group }
+        case LiveView.favorites: list = channels.filter(\.favorite)
+        case LiveView.all, "": list = channels
+        default: list = channels.filter { $0.category == group }
         }
+        return Array(list.prefix(LiveView.maxRows))
     }
+
+    private var viewEnd: Date { viewStart.addingTimeInterval(spanMinutes * 60) }
 
     private var grid: some View {
-        let list = Array(shown.prefix(300))
-        let width = CGFloat(LiveView.hours * 60) * LiveView.perMinute
-        return ScrollView(.vertical) {
-            HStack(alignment: .top, spacing: 14) {
-                // Channel tiles.
-                LazyVStack(spacing: 10) {
-                    Text(dayLabel).font(.callout.weight(.semibold)).foregroundStyle(.secondary)
-                        .frame(height: 50)
-                    ForEach(list) { ch in
-                        ChannelTile(channel: ch) { playing = ch } onFavorite: { Task { await toggleFavorite(ch) } }
-                            .frame(width: 330, height: LiveView.rowHeight)
+        GeometryReader { geo in
+            let timeline = max(geo.size.width - LiveView.tileWidth - LiveView.gap - 20, 300)
+            ScrollView(.vertical) {
+                LazyVStack(alignment: .leading, spacing: 10) {
+                    HStack(spacing: LiveView.gap) {
+                        Text(dayLabel).font(.callout.weight(.semibold)).foregroundStyle(.secondary)
+                            .frame(width: LiveView.tileWidth)
+                        ruler.frame(width: timeline, alignment: .leading).clipped()
                     }
-                }
-                .frame(width: 330)
-                // Shows across the timeline.
-                ScrollView(.horizontal, showsIndicators: false) {
-                    ZStack(alignment: .topLeading) {
-                        LazyVStack(alignment: .leading, spacing: 10) {
-                            ruler.frame(width: width, height: 50, alignment: .leading)
-                            ForEach(list) { ch in
-                                GuideRow(channel: ch, shows: guide[ch.id] ?? [], start: windowStart, width: width) { playing = ch }
-                                    .frame(width: width, height: LiveView.rowHeight, alignment: .leading)
-                            }
+                    .frame(height: 50)
+                    ForEach(rows) { ch in
+                        HStack(spacing: LiveView.gap) {
+                            ChannelTile(channel: ch) { playing = ch } onFavorite: { Task { await toggleFavorite(ch) } }
+                                .frame(width: LiveView.tileWidth, height: LiveView.rowHeight)
+                            GuideRow(channel: ch, shows: guide[ch.id] ?? [], start: viewStart, end: viewEnd, now: now,
+                                     focus: $focusedShow) { playing = ch }
+                                .frame(width: timeline, height: LiveView.rowHeight, alignment: .leading)
                         }
-                        nowLine(height: CGFloat(list.count) * (LiveView.rowHeight + 10) + 60)
                     }
-                    .padding(.trailing, 60)
                 }
-                .scrollClipDisabled()
+                .padding(.vertical, 30)
+                .padding(.trailing, 20)
             }
-            .padding(.vertical, 30)
-            .padding(.trailing, 20)
+            .overlay(alignment: .topLeading) { nowLine(height: geo.size.height) }
+            .onAppear { spanMinutes = Double(timeline / LiveView.perMinute) }
+            .onChange(of: timeline) { _, w in spanMinutes = Double(w / LiveView.perMinute) }
         }
     }
 
-    private var dayLabel: String {
+    private static let dayFormat: DateFormatter = {
         let f = DateFormatter()
         f.dateFormat = "EEE d"
-        return f.string(from: Date())
-    }
+        return f
+    }()
 
-    // Times along the top, every half hour.
+    private var dayLabel: String { LiveView.dayFormat.string(from: viewStart) }
+
+    // Times along the top, every half hour (viewStart is always on one).
     private var ruler: some View {
         HStack(spacing: 0) {
-            ForEach(0..<(LiveView.hours * 2), id: \.self) { i in
-                let t = windowStart.addingTimeInterval(Double(i) * 1800)
+            ForEach(0..<(Int(spanMinutes / 30) + 1), id: \.self) { i in
+                let t = viewStart.addingTimeInterval(Double(i) * 1800)
+                let onHour = Calendar.current.component(.minute, from: t) == 0
                 Text(Programme.clock.string(from: t))
-                    .font(.caption.weight(i % 2 == 0 ? .bold : .regular))
-                    .foregroundStyle(i % 2 == 0 ? .primary : .secondary)
+                    .font(.caption.weight(onHour ? .bold : .regular))
+                    .foregroundStyle(onHour ? .primary : .secondary)
                     .frame(width: 30 * LiveView.perMinute, alignment: .leading)
+                    .fixedSize()
             }
         }
     }
 
+    @ViewBuilder
     private func nowLine(height: CGFloat) -> some View {
-        TimelineView(.periodic(from: .now, by: 30)) { ctx in
-            let x = CGFloat(ctx.date.timeIntervalSince(windowStart) / 60) * LiveView.perMinute
+        let minutes = now.timeIntervalSince(viewStart) / 60
+        if minutes >= 0 && minutes <= spanMinutes {
+            let x = LiveView.tileWidth + LiveView.gap + CGFloat(minutes) * LiveView.perMinute
             VStack(spacing: 0) {
                 Image(systemName: "arrowtriangle.down.fill").font(.caption).foregroundStyle(.red)
                 Rectangle().fill(Color.red).frame(width: 3)
             }
-            .frame(height: height)
-            .offset(x: x - 8, y: 20)
+            .frame(height: height - 50)
+            .offset(x: x - 8, y: 50)
             .allowsHitTesting(false)
+        }
+    }
+
+    // Moves the timeline an hour on when the focused show reaches into the
+    // last half hour on screen, and back an hour when it starts in the
+    // first, so the next show over is always there to move to.
+    private func follow(_ key: ShowKey) {
+        guard let a = key.start, let b = key.stop else { return }
+        let hour: TimeInterval = 3600, half: TimeInterval = 1800
+        let span = spanMinutes * 60
+        let covered = Double(LiveView.hours) * hour
+        let latest = windowStart.addingTimeInterval(max(0, ((covered - span) / half).rounded(.up) * half))
+        var s = viewStart
+        while b > s.addingTimeInterval(span - half), s < latest, s.addingTimeInterval(hour) <= b.addingTimeInterval(-half) {
+            s = min(s.addingTimeInterval(hour), latest)
+        }
+        if s == viewStart {
+            while a < s.addingTimeInterval(half), s > windowStart {
+                s = max(s.addingTimeInterval(-hour), windowStart)
+            }
+        }
+        if s != viewStart {
+            withAnimation(.easeInOut(duration: 0.25)) { viewStart = s }
         }
     }
 
@@ -201,41 +253,80 @@ struct LiveView: View {
             }
             channels = live.channels ?? []
             categories = live.categories ?? []
+            groups = makeGroups()
+            let before = group
             if group.isEmpty {
                 group = channels.contains(where: \.favorite) ? LiveView.favorites : LiveView.all
             }
-            await loadGuide()
+            rows = shown
+            // A new group loads its guide by itself (the task on group).
+            if group == before { await loadGuide() }
         } catch {
+            if Task.isCancelled { return }
             problem = error.localizedDescription
         }
     }
 
     private func loadGuide() async {
-        let ids = shown.prefix(300).map(\.id)
+        let ids = shown.map(\.id)
         guard !ids.isEmpty else { return }
-        windowStart = LiveView.startOfWindow()
-        var all = guide
+        let start = LiveView.startOfWindow()
+        // A new window starts the guide afresh; the same one keeps what
+        // other groups loaded, so going back to them draws at once.
+        var all = start == windowStart ? guide : [:]
         for chunk in stride(from: 0, to: ids.count, by: 150) {
             let part = Array(ids[chunk..<min(chunk + 150, ids.count)])
-            if let g = try? await cue.guide(ids: part, from: windowStart, hours: LiveView.hours) {
+            // An hour past the window, so the last screenful is filled.
+            if let g = try? await cue.guide(ids: part, from: start, hours: LiveView.hours + 1) {
                 all.merge(g.programmes) { _, new in new }
             }
+            if Task.isCancelled { return }
+        }
+        if start != windowStart {
+            windowStart = start
+            if viewStart < start { viewStart = start }
         }
         guide = all
+    }
+
+    // Keeps LIVE, the line at now and the guide's window up to date while
+    // the guide stays open.
+    private func keepCurrent() async {
+        while !Task.isCancelled {
+            try? await Task.sleep(for: .seconds(30))
+            if Task.isCancelled { return }
+            now = Date()
+            if LiveView.startOfWindow(at: now) != windowStart { await loadGuide() }
+        }
     }
 
     private func toggleFavorite(_ ch: Channel) async {
         let on = !ch.favorite
         if (try? await cue.setFavorite(ch.id, on)) != nil, let i = channels.firstIndex(where: { $0.id == ch.id }) {
             channels[i].favorite = on
+            groups = makeGroups()
+            rows = shown
         }
     }
+}
+
+// A show in the guide, for following focus along the timeline.
+struct ShowKey: Hashable {
+    let channel: String
+    let index: Int
+    let start: Date?
+    let stop: Date?
 }
 
 // A colour for each channel, so its shows stand apart in the guide.
 func channelColor(_ id: String) -> Color {
     var h: UInt32 = 5381
     for b in id.utf8 { h = (h &* 33) &+ UInt32(b) }
+    // Stirred, so channels numbered one after another (as providers number
+    // them) get colours far apart, not shades of one.
+    h ^= h >> 15
+    h = h &* 0x2C1B3C6D
+    h ^= h >> 12
     return Color(hue: Double(h % 360) / 360, saturation: 0.55, brightness: 0.36)
 }
 
@@ -271,32 +362,33 @@ struct ChannelTile: View {
     }
 }
 
-// One channel's shows across the timeline.
+// One channel's shows across the part of the timeline on screen.
 @MainActor
 struct GuideRow: View {
     let channel: Channel
     let shows: [Programme]
     let start: Date
-    let width: CGFloat
+    let end: Date
+    let now: Date
+    var focus: FocusState<ShowKey?>.Binding
     var onPlay: () -> Void
 
     var body: some View {
-        let end = start.addingTimeInterval(Double(LiveView.hours) * 3600)
         let tint = channelColor(channel.id)
         HStack(spacing: 0) {
-            if shows.isEmpty {
+            let cells = layout()
+            if cells.isEmpty {
                 ShowCell(title: channel.now?.title ?? "No guide for this channel", times: "", tint: tint, live: true, progress: 0, onPlay: onPlay)
-                    .frame(width: width - 8)
+                    .focused(focus, equals: ShowKey(channel: channel.id, index: -1, start: nil, stop: nil))
             } else {
-                let cells = layout(end: end)
                 ForEach(cells, id: \.index) { c in
                     if c.gap > 0 { Color.clear.frame(width: c.gap) }
-                    let now = Date()
                     let live = (c.show.startDate ?? .distantFuture) <= now && now < (c.show.stopDate ?? .distantPast)
                     ShowCell(title: c.show.title, times: Programme.clock.string(from: c.show.startDate ?? start), tint: tint,
                              live: live, progress: live ? c.show.progress(at: now) : 0, onPlay: live ? onPlay : nil)
                         .frame(width: max(c.width - 8, 30))
                         .padding(.trailing, 8)
+                        .focused(focus, equals: ShowKey(channel: channel.id, index: c.index, start: c.show.startDate, stop: c.show.stopDate))
                 }
             }
             Spacer(minLength: 0)
@@ -310,7 +402,7 @@ struct GuideRow: View {
         let width: CGFloat
     }
 
-    private func layout(end: Date) -> [Cell] {
+    private func layout() -> [Cell] {
         var out: [Cell] = []
         var x: CGFloat = 0
         for (i, p) in shows.enumerated() {
@@ -339,9 +431,7 @@ struct ShowCell: View {
             ZStack(alignment: .leading) {
                 tint.opacity(live ? 1 : 0.6)
                 if live && progress > 0 {
-                    GeometryReader { g in
-                        Color.white.opacity(0.12).frame(width: g.size.width * progress)
-                    }
+                    Color.white.opacity(0.12).scaleEffect(x: progress, y: 1, anchor: .leading)
                 }
                 VStack(alignment: .leading, spacing: 6) {
                     Text(title).font(.callout.weight(.semibold)).lineLimit(2)
@@ -391,8 +481,10 @@ struct Logo: View {
         var req = URLRequest(url: u)
         cue.headers.forEach { req.setValue($1, forHTTPHeaderField: $0) }
         guard let got = try? await URLSession.shared.data(for: req),
-              (got.1 as? HTTPURLResponse)?.statusCode == 200,
-              let img = UIImage(data: got.0) else { return }
+              (got.1 as? HTTPURLResponse)?.statusCode == 200 else { return }
+        // Decoded away from the main thread, so scrolling stays smooth.
+        let data = got.0
+        guard let img = await Task.detached(operation: { UIImage(data: data)?.preparingForDisplay() }).value else { return }
         Logo.cache.setObject(img, forKey: u as NSURL)
         image = img
     }

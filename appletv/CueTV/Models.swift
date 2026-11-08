@@ -25,9 +25,22 @@ struct Programme: Decodable, Hashable {
     let desc: String?
     let start: String
     let stop: String
+    // Read once, when the guide arrives: the guide asks for these many
+    // times a draw, and reading a date from text is slow.
+    let startDate: Date?
+    let stopDate: Date?
 
-    var startDate: Date? { Programme.date(start) }
-    var stopDate: Date? { Programme.date(stop) }
+    private enum CodingKeys: String, CodingKey { case title, desc, start, stop }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        title = try c.decode(String.self, forKey: .title)
+        desc = try c.decodeIfPresent(String.self, forKey: .desc)
+        start = try c.decode(String.self, forKey: .start)
+        stop = try c.decode(String.self, forKey: .stop)
+        startDate = Programme.date(start)
+        stopDate = Programme.date(stop)
+    }
 
     // How far through it is, 0 to 1.
     func progress(at now: Date = Date()) -> Double {
