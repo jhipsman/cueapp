@@ -108,6 +108,7 @@ fun CueRoot(api: CueApi, playback: Playback, openWeb: (String) -> Unit, changeSe
     // The screensaver: after a few minutes without a button pressed (and
     // only while this screen is in front, not while something plays).
     var saver by remember { mutableStateOf<List<SaverSlide>?>(null) }
+    var saverSpent by remember { mutableStateOf(false) } // ran its hour: not again until a button
     var lastInput by remember { mutableStateOf(System.currentTimeMillis()) }
     var inFront by remember { mutableStateOf(true) }
     val owner = androidx.compose.ui.platform.LocalLifecycleOwner.current
@@ -123,7 +124,7 @@ fun CueRoot(api: CueApi, playback: Playback, openWeb: (String) -> Unit, changeSe
         if (stage != Stage.Ready) return@LaunchedEffect
         while (true) {
             delay(10_000)
-            if (saver == null && inFront && System.currentTimeMillis() - lastInput > SAVER_IDLE_MS) {
+            if (saver == null && !saverSpent && inFront && System.currentTimeMillis() - lastInput > SAVER_IDLE_MS) {
                 val s = runCatching { saverSlides(api.home()) }.getOrDefault(emptyList())
                 if (s.size >= 2 && System.currentTimeMillis() - lastInput > SAVER_IDLE_MS) saver = s
             }
@@ -154,6 +155,7 @@ fun CueRoot(api: CueApi, playback: Playback, openWeb: (String) -> Unit, changeSe
         Box(Modifier.fillMaxSize().background(Background).onPreviewKeyEvent {
             // Any button wakes the screen; the first one only ends the screensaver.
             lastInput = System.currentTimeMillis()
+            saverSpent = false
             if (saver != null) {
                 if (it.type == KeyEventType.KeyUp) saver = null
                 true
@@ -178,6 +180,21 @@ fun CueRoot(api: CueApi, playback: Playback, openWeb: (String) -> Unit, changeSe
                 UpdateCard(api, o, later = { AppUpdate.later() })
             }
             saver?.let { Screensaver(api, it) }
+            // While Cue's screensaver shows, the TV stays awake (otherwise the
+            // Fire TV's own screensaver takes over a minute or two later). After
+            // an hour of it, Cue lets go, so the TV can still sleep.
+            val view = androidx.compose.ui.platform.LocalView.current
+            androidx.compose.runtime.DisposableEffect(saver != null) {
+                view.keepScreenOn = saver != null
+                onDispose { view.keepScreenOn = false }
+            }
+            LaunchedEffect(saver) {
+                if (saver != null) {
+                    delay(60 * 60_000L)
+                    saverSpent = true
+                    saver = null
+                }
+            }
             if (playback.note.isNotEmpty()) {
                 Text(playback.note, fontSize = 14.sp, color = Color.White,
                     modifier = Modifier.align(Alignment.BottomCenter).padding(28.dp).clip(RoundedCornerShape(10.dp))
@@ -604,7 +621,7 @@ fun TitleScreen(api: CueApi, playback: Playback, card: Tile, memory: FocusMemory
             modifier = Modifier.fillMaxSize().graphicsLayer { alpha = still }.settleIn())
         Box(Modifier.fillMaxSize().background(Brush.horizontalGradient(0f to Color(0xF20C0D10), 0.42f to Color(0xA60C0D10), 0.75f to Color(0x1A0C0D10))))
         Box(Modifier.fillMaxSize().background(Brush.verticalGradient(0.45f to Color.Transparent, 1f to Color(0xF20C0D10))))
-        CompositionLocalProvider(LocalBringIntoViewSpec provides PivotSpec) {
+        CompositionLocalProvider(LocalBringIntoViewSpec provides GentleSpec) {
         LazyColumn(contentPadding = PaddingValues(bottom = 120.dp)) {
             item {
                 Column(Modifier.padding(start = Gutter, top = 150.dp, bottom = 20.dp).width(520.dp)) {

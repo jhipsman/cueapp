@@ -214,6 +214,24 @@ val PivotSpec = object : BringIntoViewSpec {
         offset - containerSize * 0.04f
 }
 
+// A title's page scrolls only as far as the highlight needs: opening it with
+// Play highlighted leaves the logo, scores and story in view, and going down
+// to More Like This lifts the page just enough to show the row.
+val GentleSpec = object : BringIntoViewSpec {
+    override val scrollAnimationSpec: androidx.compose.animation.core.AnimationSpec<Float> =
+        androidx.compose.animation.core.tween(420, easing = Settle)
+
+    override fun calculateScrollDistance(offset: Float, size: Float, containerSize: Float): Float {
+        val top = containerSize * 0.08f
+        val bottom = containerSize * 0.94f
+        return when {
+            offset >= top && offset + size <= bottom -> 0f
+            offset < top || size > bottom - top -> offset - top
+            else -> offset + size - bottom
+        }
+    }
+}
+
 // On a TV a text box would keep the highlight (up and down move its
 // cursor): up and down leave it instead.
 @Composable
