@@ -132,7 +132,7 @@ class PlayerActivity : Activity() {
     // checked yet (a version whose sound this TV can't play moves on).
     private var hasOther = false
     private var soundChecked = false
-    private var nextOffered = false
+    private var nearEnd = false
 
     // Skip intro / recap and the credits, in ms (0 = not known), from
     // TheIntroDB or learned from what the household skips.
@@ -883,22 +883,17 @@ class PlayerActivity : Activity() {
         timeBar.update(pos, dur, if (catchup) cuOffset + player.bufferedPosition else player.bufferedPosition)
         timeNow.text = clock(pos)
         timeLeft.text = if (dur > 0) "-" + clock(dur - pos) else ""
-        updateSkip(pos)
-        // When the credits start (or near the end), offer the next episode:
-        // the controls show with Next episode in them. Nothing starts by
-        // itself before the episode ends (credits times can be minutes off);
-        // at the end the next one plays.
-        val next = nextButton
+        // From the credits (or the last 30 seconds) the corner offers the
+        // next episode, as Skip intro does: the controls stay away, and
+        // nothing starts by itself before the episode ends (credits times
+        // can be minutes off); at the end the next one plays.
         val credits = when {
             creditsStart > 0 -> creditsStart
             creditsFromEnd > 0 && dur > 0 -> dur - creditsFromEnd
             else -> 0L
         }
-        val atCredits = credits > 0 && pos >= credits
-        if (next != null && !nextOffered && dur > 0 && (atCredits || dur - pos < 45_000) && player.isPlaying) {
-            nextOffered = true
-            showControls(playPause)
-        }
+        nearEnd = nextButton != null && dur > 0 && pos < dur - 1000 && ((credits > 0 && pos >= credits) || dur - pos < 30_000)
+        updateSkip(pos)
     }
 
     private fun clock(ms: Long): String {
@@ -1125,6 +1120,7 @@ class PlayerActivity : Activity() {
     // of the way (it comes back with the controls while the intro lasts).
     // A segment longer than 3 minutes is taken for bad timings and ignored.
     private var skipShownAt = 0L
+    private val NEXT = -2L // the corner button's target when it offers the next episode
     private var skipDismissed = ""
 
     private fun updateSkip(pos: Long) {
@@ -1133,6 +1129,7 @@ class PlayerActivity : Activity() {
         val (label, to) = when {
             sane(recapStart, recapEnd) && pos >= recapStart && pos < recapEnd - 2000 -> "Skip recap" to recapEnd
             sane(introStart, introEnd) && pos >= introStart && pos < introEnd - 2000 -> "Skip intro" to introEnd
+            nearEnd -> "Next episode" to NEXT
             else -> "" to 0L
         }
         val key = "$label@$to"
@@ -1173,6 +1170,12 @@ class PlayerActivity : Activity() {
     }
 
     private fun skip() {
+        if (skipTo == NEXT) {
+            skipButton.visibility = View.GONE
+            learnCredits()
+            end("next")
+            return
+        }
         if (skipTo <= 0) return
         player.seekTo(skipTo)
         skipButton.visibility = View.GONE
