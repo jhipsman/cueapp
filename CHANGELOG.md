@@ -72,6 +72,8 @@ under [Unreleased]. How releases are cut: [docs/RELEASING.md](docs/RELEASING.md)
 - **Premiumize.me as a downloader.** Add your Premiumize API key in Settings > Downloading > Usenet and torrents, under Cloud downloader, and torrents (or Usenet, or both, your choice) are downloaded by Premiumize on its own servers instead of by the built-in client. Releases Premiumize already has are ready at once. Cue then fetches the finished files over HTTPS, picks up where it stopped after a pause, and removes the transfer and its files from your Premiumize cloud once they are home. Torrents fetched this way need no VPN and don't seed. See [docs/downloads.md](docs/downloads.md#premiumize).
 
 ### Fixed
+- **Fire TV, Google TV**: the controls no longer pop up by themselves near the end of an episode. From the credits (or the last 30 seconds) a small **Next episode** button shows in the corner for a few seconds instead, like Skip intro; OK plays the next episode, and it stays in the controls.
+- **Next episode offered too early** (all apps): an episode's credits are now taken to be four minutes at most. A credits time further back (Next once pressed with 9 minutes to go, or TheIntroDB's time for another cut) is no longer learned or used, and one already saved is ignored, so the offer no longer comes up mid-scene.
 - **Fire TV, Google TV**: the banner's preview is smooth (the picture fades away over it instead of the video fading in), shows the whole frame in a 16:9 window instead of a cropped strip, and a title page's preview is no longer cut off. The no-trailer clip no longer shows through the app as a hole while it loads.
 
 ## [2.1.9] - 2026-10-07

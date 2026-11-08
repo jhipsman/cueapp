@@ -55,4 +55,18 @@ func TestSkipsLearnedFromTheHousehold(t *testing.T) {
 	if a.Intro == nil || a.Intro.End != 112 || a.CreditsFromEnd != 90 {
 		t.Fatalf("other season: %+v", a)
 	}
+	// Next pressed with 9 minutes to go isn't the credits: not learned, and
+	// a mark that far back saved before is ignored.
+	if w := do("POST", "/api/watch/skips/learn", `{"kind":"tv","tmdbId":43,"season":1,"segment":"credits","start":960,"duration":1500}`); w.Code != http.StatusNoContent {
+		t.Fatalf("learn far: %d", w.Code)
+	}
+	if a = get("/api/watch/skips/tv/43?season=1&episode=1&duration=1500"); a.CreditsStart != 0 || a.CreditsFromEnd != 0 {
+		t.Fatalf("9 minutes before the end was learned as the credits: %+v", a)
+	}
+	if err := s.WatchRepo.SetSkipMark("tv", 44, 1, "credits", 0, 540); err != nil {
+		t.Fatal(err)
+	}
+	if a = get("/api/watch/skips/tv/44?season=1&episode=1"); a.CreditsFromEnd != 0 {
+		t.Fatalf("an old 9-minute mark is still used: %+v", a)
+	}
 }

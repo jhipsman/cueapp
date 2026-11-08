@@ -516,7 +516,10 @@ export default function PlayerPage() {
       // The credits: the next episode's card, to press if wanted. Nothing
       // starts by itself until the episode ends (credits times can be off).
       const creditsAt = skips?.creditsStart || (skips?.creditsFromEnd && length ? length - skips.creditsFromEnd : 0)
-      if (kind === 'tv' && creditsAt > 0 && at >= creditsAt && !creditsDone.current) {
+      // An episode's credits are a few minutes at most: a time further back
+      // is a guess that would offer the next episode mid-scene.
+      const creditsOk = creditsAt > 0 && (!length || length - creditsAt <= 240)
+      if (kind === 'tv' && creditsOk && at >= creditsAt && !creditsDone.current) {
         creditsDone.current = true
         api
           .watchNext(tmdbId, season, episode)
