@@ -6,8 +6,7 @@
 
 package app.cue.tv.home
 
-import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.offset
@@ -33,6 +32,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -116,19 +116,6 @@ fun PosterCard(card: Tile, memory: FocusMemory, memKey: String, wide: Boolean = 
     val h: Dp = if (wide) 126.dp else 168.dp
     var focused by remember { mutableStateOf(false) }
     val shape = RoundedCornerShape(CardCorner)
-    // Highlighted, the card sways gently in depth, and a wide card's logo
-    // floats in front of its picture, moving the other way.
-    val sway = remember { androidx.compose.animation.core.Animatable(0f) }
-    LaunchedEffect(focused) {
-        if (focused) {
-            while (true) {
-                sway.animateTo(1f, tween(2800, easing = androidx.compose.animation.core.FastOutSlowInEasing))
-                sway.animateTo(-1f, tween(2800, easing = androidx.compose.animation.core.FastOutSlowInEasing))
-            }
-        } else {
-            sway.animateTo(0f, tween(350))
-        }
-    }
     val api = LocalApi.current
     val ex = if (wide && api != null) rememberExtras(api, card.kind, card.tmdbId, ask = focused) else null
     val showLogo = focused && !ex?.logo.isNullOrEmpty()
@@ -139,10 +126,6 @@ fun PosterCard(card: Tile, memory: FocusMemory, memKey: String, wide: Boolean = 
             modifier = Modifier
                 .size(w, h)
                 .lift(focused, if (wide) 1.09f else 1.11f, shape)
-                .graphicsLayer {
-                    rotationY = sway.value * 3f
-                    cameraDistance = 14f * density
-                }
                 .focusRequester(memory.requester(memKey))
                 .onFocusChanged {
                     focused = it.isFocused
@@ -161,27 +144,29 @@ fun PosterCard(card: Tile, memory: FocusMemory, memKey: String, wide: Boolean = 
                         AsyncImage(
                             model = ex?.logo, contentDescription = null, contentScale = ContentScale.Fit, alignment = Alignment.BottomStart,
                             modifier = Modifier.align(Alignment.BottomStart).padding(start = 10.dp, bottom = 14.dp)
-                                .widthIn(max = 130.dp).heightIn(max = 40.dp)
-                                .graphicsLayer { translationX = -sway.value * 5.dp.toPx() },
+                                .widthIn(max = 130.dp).heightIn(max = 40.dp),
                         )
                     }
                 }
+                val tintState = LocalTint.current
                 card.progress?.takeIf { it > 0 }?.let { p ->
                     Box(Modifier.align(Alignment.BottomStart).padding(horizontal = 8.dp, vertical = 5.dp).fillMaxWidth().height(3.dp)
                         .clip(RoundedCornerShape(2.dp)).background(Color(0x40FFFFFF))) {
-                        Box(Modifier.fillMaxWidth(p.toFloat().coerceIn(0f, 1f)).fillMaxHeight().background(tint()))
+                        Box(Modifier.fillMaxWidth(p.toFloat().coerceIn(0f, 1f)).fillMaxHeight().drawBehind { drawRect(tintState.value ?: accent) })
                     }
                 }
                 if (card.isNew) Chip("NEW", Modifier.align(Alignment.TopStart).padding(7.dp), bg = accent, fg = Color.Black)
                 Sheen(focused)
             }
         }
-        val nameColor by animateColorAsState(if (focused) Color.White else Color(0xB3FFFFFF), tween(250), label = "name")
-        val drop by animateDpAsState(if (focused) 8.dp else 0.dp, tween(380, easing = Settle), label = "drop")
-        Text(card.title, fontSize = if (wide) 12.sp else 11.sp, fontWeight = FontWeight.Medium, color = nameColor, maxLines = 1,
-            overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 9.dp, start = 2.dp).offset(y = drop))
+        // The name brightens and steps down with the lift: drawn, not laid out
+        // again, each frame.
+        val on by animateFloatAsState(if (focused) 1f else 0f, tween(190, easing = Settle), label = "name")
+        val under = Modifier.graphicsLayer { alpha = 0.7f + 0.3f * on; translationY = 8.dp.toPx() * on }
+        Text(card.title, fontSize = if (wide) 12.sp else 11.sp, fontWeight = FontWeight.Medium, color = Color.White, maxLines = 1,
+            overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 9.dp, start = 2.dp).then(under))
         if (wide) card.episodeTitle?.let {
-            Text(it, fontSize = 10.sp, color = Dim, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(start = 2.dp, top = 1.dp).offset(y = drop))
+            Text(it, fontSize = 10.sp, color = Dim, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(start = 2.dp, top = 1.dp).then(under))
         }
     }
 }
@@ -227,6 +212,24 @@ val PivotSpec = object : BringIntoViewSpec {
 
     override fun calculateScrollDistance(offset: Float, size: Float, containerSize: Float): Float =
         offset - containerSize * 0.04f
+}
+
+// A title's page scrolls only as far as the highlight needs: opening it with
+// Play highlighted leaves the logo, scores and story in view, and going down
+// to More Like This lifts the page just enough to show the row.
+val GentleSpec = object : BringIntoViewSpec {
+    override val scrollAnimationSpec: androidx.compose.animation.core.AnimationSpec<Float> =
+        androidx.compose.animation.core.tween(420, easing = Settle)
+
+    override fun calculateScrollDistance(offset: Float, size: Float, containerSize: Float): Float {
+        val top = containerSize * 0.08f
+        val bottom = containerSize * 0.94f
+        return when {
+            offset >= top && offset + size <= bottom -> 0f
+            offset < top || size > bottom - top -> offset - top
+            else -> offset + size - bottom
+        }
+    }
 }
 
 // On a TV a text box would keep the highlight (up and down move its

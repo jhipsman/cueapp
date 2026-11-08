@@ -4312,3 +4312,28 @@ html.tv-mode .wx-card:focus .wx-card-sub {
 .wx-card:has(.wx-card-trailer.on) .wx-card-progress {
   opacity: 0;
 }
+
+/* Searching the TV from a phone (RemoteSearch) */
+.wx-remote {
+  min-height: 100dvh;
+  display: grid;
+  align-content: start;
+  gap: 18px;
+  padding: max(56px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right)) 40px max(20px, env(safe-area-inset-left));
+  background: radial-gradient(500px 360px at 80% 0%, color-mix(in srgb, var(--wx-accent, #34d1bf) 22%, transparent), transparent 70%), rgb(var(--wx-bg-rgb, 16, 17, 20));
+}
+.wx-remote > * { min-width: 0 }
+.wx-remote-kicker { display: flex; align-items: center; gap: 8px; margin: 0; color: var(--wx-accent, #34d1bf); font-size: 13px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase }
+.wx-remote h1 { margin: 0 0 6px; font-size: clamp(30px, 8vw, 44px); line-height: 1.05; letter-spacing: -0.03em; text-wrap: balance }
+.wx-remote-field { display: flex; align-items: center; gap: 12px; padding: 0 14px 0 18px; height: 64px; border-radius: 18px; background: rgba(255, 255, 255, 0.07); border: 1px solid rgba(255, 255, 255, 0.12); color: rgba(255, 255, 255, 0.6) }
+.wx-remote-field:focus-within { border-color: var(--wx-accent, #34d1bf); box-shadow: 0 0 0 4px color-mix(in srgb, var(--wx-accent, #34d1bf) 22%, transparent) }
+.wx-remote-field { width: 100%; box-sizing: border-box }
+.wx-remote .wx-remote-field input { flex: 1; min-width: 0; width: auto; height: 100%; margin: 0; padding: 0; border: 0; border-radius: 0; outline: 0; box-shadow: none; background: none; color: #fff; font-size: 20px; -webkit-appearance: none; appearance: none }
+.wx-remote-clear { border: 0; background: rgba(255, 255, 255, 0.1); color: #fff; width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center }
+.wx-remote-mic { justify-self: start; display: flex; align-items: center; gap: 12px; border: 0; border-radius: 999px; padding: 14px 22px 14px 16px; background: var(--wx-accent, #34d1bf); color: #04201c; font-size: 16px; font-weight: 700 }
+.wx-remote-mic-dot { width: 14px; height: 14px; border-radius: 50%; background: #04201c }
+.wx-remote-mic.on { background: #ff5a6e; color: #fff }
+.wx-remote-mic.on .wx-remote-mic-dot { background: #fff; animation: wx-remote-pulse 1s ease-in-out infinite }
+@keyframes wx-remote-pulse { 50% { transform: scale(1.5); opacity: 0.6 } }
+.wx-remote-note { margin: 0; color: rgba(255, 255, 255, 0.6); font-size: 15px }
+@media (prefers-reduced-motion: reduce) { .wx-remote-mic.on .wx-remote-mic-dot { animation: none } }

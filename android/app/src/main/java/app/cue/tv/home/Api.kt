@@ -111,6 +111,8 @@ class CueApi(ctx: Context, val server: String) {
 
     suspend fun home(): Home = Home.from(obj("/api/watch/home"))
     suspend fun search(q: String): List<Tile> = arr("/api/watch/search?q=${q(q)}").cards()
+    /** What a phone has typed for this TV's search (code from the QR), and its count. */
+    suspend fun remoteSearch(code: String): Pair<String, Int> = obj("/api/watch/remote/$code").let { it.optString("q") to it.optInt("seq") }
     suspend fun title(kind: String, id: Int): Title = Title.from(obj("/api/watch/$kind/$id"))
     suspend fun season(id: Int, n: Int): List<Episode> {
         val a = arr("/api/watch/tv/$id/season/$n")

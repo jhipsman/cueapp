@@ -77,6 +77,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.tv.material3.Border
@@ -107,6 +108,7 @@ fun CueRoot(api: CueApi, playback: Playback, openWeb: (String) -> Unit, changeSe
     // The screensaver: after a few minutes without a button pressed (and
     // only while this screen is in front, not while something plays).
     var saver by remember { mutableStateOf<List<SaverSlide>?>(null) }
+    var saverSpent by remember { mutableStateOf(false) } // ran its hour: not again until a button
     var lastInput by remember { mutableStateOf(System.currentTimeMillis()) }
     var inFront by remember { mutableStateOf(true) }
     val owner = androidx.compose.ui.platform.LocalLifecycleOwner.current
@@ -122,7 +124,7 @@ fun CueRoot(api: CueApi, playback: Playback, openWeb: (String) -> Unit, changeSe
         if (stage != Stage.Ready) return@LaunchedEffect
         while (true) {
             delay(10_000)
-            if (saver == null && inFront && System.currentTimeMillis() - lastInput > SAVER_IDLE_MS) {
+            if (saver == null && !saverSpent && inFront && System.currentTimeMillis() - lastInput > SAVER_IDLE_MS) {
                 val s = runCatching { saverSlides(api.home()) }.getOrDefault(emptyList())
                 if (s.size >= 2 && System.currentTimeMillis() - lastInput > SAVER_IDLE_MS) saver = s
             }
@@ -153,6 +155,7 @@ fun CueRoot(api: CueApi, playback: Playback, openWeb: (String) -> Unit, changeSe
         Box(Modifier.fillMaxSize().background(Background).onPreviewKeyEvent {
             // Any button wakes the screen; the first one only ends the screensaver.
             lastInput = System.currentTimeMillis()
+            saverSpent = false
             if (saver != null) {
                 if (it.type == KeyEventType.KeyUp) saver = null
                 true
@@ -177,6 +180,21 @@ fun CueRoot(api: CueApi, playback: Playback, openWeb: (String) -> Unit, changeSe
                 UpdateCard(api, o, later = { AppUpdate.later() })
             }
             saver?.let { Screensaver(api, it) }
+            // While Cue's screensaver shows, the TV stays awake (otherwise the
+            // Fire TV's own screensaver takes over a minute or two later). After
+            // an hour of it, Cue lets go, so the TV can still sleep.
+            val view = androidx.compose.ui.platform.LocalView.current
+            androidx.compose.runtime.DisposableEffect(saver != null) {
+                view.keepScreenOn = saver != null
+                onDispose { view.keepScreenOn = false }
+            }
+            LaunchedEffect(saver) {
+                if (saver != null) {
+                    delay(60 * 60_000L)
+                    saverSpent = true
+                    saver = null
+                }
+            }
             if (playback.note.isNotEmpty()) {
                 Text(playback.note, fontSize = 14.sp, color = Color.White,
                     modifier = Modifier.align(Alignment.BottomCenter).padding(28.dp).clip(RoundedCornerShape(10.dp))
@@ -365,6 +383,13 @@ fun MainScreen(api: CueApi, playback: Playback, openWeb: (String) -> Unit, chang
     var ambient by remember { mutableStateOf<String?>(null) }
     val setAmbient: (String?) -> Unit = { ambient = it }
 
+    var page by remember { mutableIntStateOf(0) }
+    LaunchedEffect(tab) {
+        if (page == tab) return@LaunchedEffect
+        if (tabsFocused) delay(240)
+        page = tab
+    }
+
     if (open.isNotEmpty()) {
         val t = open.last()
         TitleScreen(api, playback, t, titleMemory) { c -> open.add(c) }
@@ -379,7 +404,7 @@ fun MainScreen(api: CueApi, playback: Playback, openWeb: (String) -> Unit, chang
             false
         }
     }) {
-        AmbientBackground(if (tab <= 2) ambient else null)
+        AmbientBackground(if (page <= 2) ambient else null)
         Column(Modifier.fillMaxSize()) {
             Row(Modifier.fillMaxWidth().padding(start = Gutter, end = Gutter, top = 12.dp, bottom = 2.dp), verticalAlignment = Alignment.CenterVertically) {
                 Text("cue", fontFamily = Type.display(), fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color.White)
@@ -409,9 +434,16 @@ fun MainScreen(api: CueApi, playback: Playback, openWeb: (String) -> Unit, chang
                     }
                 }
             }
-            // Pages cross-fade as the highlight moves along the tabs.
-            Crossfade(targetState = tab, animationSpec = tween(280, easing = Settle), label = "tab", modifier = Modifier.fillMaxSize()) { page ->
-                when (page) {
+            // The page follows the highlight once it rests on a tab (passing
+            // over one doesn't build its page), and the old page has faded
+            // before the new one shows, so two pages never overlap.
+            AnimatedContent(
+                targetState = page,
+                transitionSpec = { fadeIn(tween(220, delayMillis = 90, easing = Settle)) togetherWith fadeOut(tween(90)) },
+                label = "tab",
+                modifier = Modifier.fillMaxSize(),
+            ) { showing ->
+                when (showing) {
                     0 -> HomeScreen(api, null, memories[0], pageTakesFocus, tookFocus, setAmbient, onCard)
                     1 -> HomeScreen(api, "tv", memories[1], pageTakesFocus, tookFocus, setAmbient, onCard)
                     2 -> HomeScreen(api, "movie", memories[2], pageTakesFocus, tookFocus, setAmbient, onCard)
@@ -462,7 +494,7 @@ fun HomeScreen(api: CueApi, only: String?, memory: FocusMemory, takeFocus: Boole
     // along a row doesn't redraw it for every poster passed.
     var settled by remember { mutableStateOf(shown) }
     LaunchedEffect(shown?.key) {
-        delay(160)
+        delay(300)
         settled = shown
     }
     LaunchedEffect(settled?.backdrop) { setAmbient(settled?.backdrop) }
@@ -498,28 +530,12 @@ fun Banner(api: CueApi, c: Tile) {
         Modifier.padding(horizontal = Gutter).padding(top = 8.dp).fillMaxWidth().height(226.dp)
             .clip(shape).background(Color(0xFF16171B)).border(1.dp, Color(0x14FFFFFF), shape),
     ) {
-        // Rest on a title and its trailer (or, without one, a moment of the
-        // title itself) plays, muted, in a 16:9 frame at the right, so the
-        // whole picture shows; its left edge fades into the card. It sits
-        // under the still picture, which fades away once it's really playing.
-        val ex = rememberExtras(api, c.kind, c.tmdbId)
-        var live by remember(c.key) { mutableStateOf(false) }
-        val still by animateFloatAsState(if (live) 0f else 1f, tween(900, easing = Settle), label = "banner-still")
-        Box(Modifier.fillMaxHeight().aspectRatio(16f / 9f).align(Alignment.TopEnd)) {
-            key(c.kind, c.tmdbId, c.season, c.episode) {
-                if (ex != null && ex.trailer.isEmpty()) {
-                    ClipLayer(api, c, Modifier.fillMaxSize()) { live = it }
-                } else {
-                    TrailerLayer(api.server, ex?.trailer, Modifier.fillMaxSize()) { live = it }
-                }
-            }
-            Box(Modifier.fillMaxSize().background(Brush.horizontalGradient(0f to Color(0xFF16171B), 0.35f to Color.Transparent)))
-        }
-        // The picture changes with a slow cross-fade and drifts gently.
-        Crossfade(targetState = small(c.backdrop), animationSpec = tween(700, easing = Settle), label = "banner",
-            modifier = Modifier.fillMaxHeight().fillMaxWidth(0.8f).align(Alignment.TopEnd).graphicsLayer { alpha = still }) { u ->
-            if (u != null) AsyncImage(model = u, contentDescription = null, contentScale = ContentScale.Crop,
-                modifier = Modifier.fillMaxSize().drift())
+        // The picture changes with a slow cross-fade. It stays still (a
+        // picture always moving, or a video, keeps a TV's processor busy and
+        // the rows below stutter); the title's page is where it comes alive.
+        Crossfade(targetState = small(c.backdrop), animationSpec = tween(450, easing = Settle), label = "banner",
+            modifier = Modifier.fillMaxHeight().fillMaxWidth(0.8f).align(Alignment.TopEnd)) { u ->
+            if (u != null) AsyncImage(model = u, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
         }
         Box(Modifier.fillMaxSize().background(Brush.horizontalGradient(0.18f to Color(0xF516171B), 0.48f to Color(0x9916171B), 0.75f to Color.Transparent)))
         Box(Modifier.fillMaxSize().background(Brush.verticalGradient(0.5f to Color.Transparent, 1f to Color(0xCC16171B))))
@@ -527,9 +543,11 @@ fun Banner(api: CueApi, c: Tile) {
         AnimatedContent(
             targetState = c,
             contentKey = { it.key },
+            // The old words are gone before the new ones arrive, so two titles
+            // never show at once however fast the remote moves.
             transitionSpec = {
-                (fadeIn(tween(420, delayMillis = 120, easing = Settle)) + slideInVertically(tween(520, delayMillis = 120, easing = Settle)) { it / 8 }) togetherWith
-                    fadeOut(tween(160))
+                (fadeIn(tween(300, delayMillis = 130, easing = Settle)) + slideInVertically(tween(380, delayMillis = 130, easing = Settle)) { it / 10 }) togetherWith
+                    fadeOut(tween(110))
             },
             label = "banner-words",
             modifier = Modifier.align(Alignment.BottomStart),
@@ -588,24 +606,22 @@ fun TitleScreen(api: CueApi, playback: Playback, card: Tile, memory: FocusMemory
     val pageTint = LocalTint.current
     LaunchedEffect(titleExtras?.colour) { titleExtras?.colour?.let { pageTint.value = it } }
     Box(Modifier.fillMaxSize().background(Background).rise(0, 0.dp)) {
-        // Rest here a moment and the picture comes alive: the trailer, or a
-        // moment of the episode or film Play would start. It plays under the
+        // Rest here a moment and the picture comes alive. It plays under the
         // picture, which fades away once it's really playing.
         var live by remember(card.key) { mutableStateOf(false) }
         val still by animateFloatAsState(if (live) 0f else 1f, tween(900, easing = Settle), label = "title-still")
+        // A muted moment of the episode or film itself, from the stream Play
+        // will use (so Play then starts at once). The TV's own player draws it,
+        // so it's smooth, and there's no YouTube page in the way.
         key(c.kind, c.tmdbId) {
-            if (titleExtras != null && titleExtras.trailer.isEmpty()) {
-                ClipLayer(api, c.copy(season = t.resumeSeason, episode = t.resumeEpisode, progress = null), Modifier.fillMaxSize()) { live = it }
-            } else {
-                TrailerLayer(api.server, titleExtras?.trailer, Modifier.fillMaxSize()) { live = it }
-            }
+            ClipLayer(api, c.copy(season = t.resumeSeason, episode = t.resumeEpisode, progress = null), Modifier.fillMaxSize()) { live = it }
         }
         // The picture fills the screen; the words sit on its darker left.
         AsyncImage(model = c.backdrop, contentDescription = null, contentScale = ContentScale.Crop,
             modifier = Modifier.fillMaxSize().graphicsLayer { alpha = still }.settleIn())
         Box(Modifier.fillMaxSize().background(Brush.horizontalGradient(0f to Color(0xF20C0D10), 0.42f to Color(0xA60C0D10), 0.75f to Color(0x1A0C0D10))))
         Box(Modifier.fillMaxSize().background(Brush.verticalGradient(0.45f to Color.Transparent, 1f to Color(0xF20C0D10))))
-        CompositionLocalProvider(LocalBringIntoViewSpec provides PivotSpec) {
+        CompositionLocalProvider(LocalBringIntoViewSpec provides GentleSpec) {
         LazyColumn(contentPadding = PaddingValues(bottom = 120.dp)) {
             item {
                 Column(Modifier.padding(start = Gutter, top = 150.dp, bottom = 20.dp).width(520.dp)) {
@@ -716,47 +732,6 @@ fun EpisodeCard(e: Episode, onClick: () -> Unit) {
 // ---- Search and My List ----
 
 @Composable
-fun SearchScreen(api: CueApi, memory: FocusMemory, listen: Boolean = false, listened: () -> Unit = {}, onCard: (Tile) -> Unit) {
-    var query by remember { mutableStateOf("") }
-    // Voice search, where the TV lets apps listen (Google TV, Android TV;
-    // on Fire TV Alexa usually keeps the microphone to itself).
-    val ctx = androidx.compose.ui.platform.LocalContext.current
-    val speech = remember {
-        android.content.Intent(android.speech.RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
-            .putExtra(android.speech.RecognizerIntent.EXTRA_LANGUAGE_MODEL, android.speech.RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-            .putExtra(android.speech.RecognizerIntent.EXTRA_PROMPT, "Say a movie or show")
-    }
-    val canListen = remember { speech.resolveActivity(ctx.packageManager) != null }
-    val listener = androidx.activity.compose.rememberLauncherForActivityResult(
-        androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult(),
-    ) { r ->
-        r.data?.getStringArrayListExtra(android.speech.RecognizerIntent.EXTRA_RESULTS)?.firstOrNull()?.let { query = it }
-    }
-    LaunchedEffect(listen) {
-        if (listen) {
-            listened()
-            if (canListen) runCatching { listener.launch(speech) }
-        }
-    }
-    var results by remember { mutableStateOf<List<Tile>>(emptyList()) }
-    LaunchedEffect(query) {
-        val q = query.trim()
-        if (q.length < 2) { results = emptyList(); return@LaunchedEffect }
-        delay(400)
-        results = runCatching { api.search(q) }.getOrDefault(results)
-    }
-    Column(Modifier.fillMaxSize().padding(top = 16.dp)) {
-        Row(Modifier.padding(horizontal = Gutter), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            OutlinedTextField(query, { query = it }, singleLine = true, colors = fieldColors(),
-                placeholder = { androidx.compose.material3.Text("Movies and shows") },
-                modifier = Modifier.width(420.dp).leaveWithArrows())
-            if (canListen) Pill("🎙  Speak") { runCatching { listener.launch(speech) } }
-        }
-        PosterGrid(results, memory, "search", onCard)
-    }
-}
-
-@Composable
 fun MyListScreen(api: CueApi, memory: FocusMemory, takeFocus: Boolean, tookFocus: () -> Unit, onCard: (Tile) -> Unit) {
     var items by remember { mutableStateOf<List<Tile>?>(null) }
     LaunchedEffect(Unit) {
@@ -773,10 +748,10 @@ fun MyListScreen(api: CueApi, memory: FocusMemory, takeFocus: Boolean, tookFocus
 }
 
 @Composable
-fun PosterGrid(items: List<Tile>, memory: FocusMemory, prefix: String, onCard: (Tile) -> Unit) {
+fun PosterGrid(items: List<Tile>, memory: FocusMemory, prefix: String, onCard: (Tile) -> Unit, sidePadding: Dp = Gutter) {
     LazyVerticalGrid(
         columns = GridCells.Adaptive(118.dp),
-        contentPadding = PaddingValues(horizontal = Gutter, vertical = 20.dp),
+        contentPadding = PaddingValues(start = sidePadding, end = Gutter, top = 20.dp, bottom = 20.dp),
         horizontalArrangement = Arrangement.spacedBy(18.dp),
         verticalArrangement = Arrangement.spacedBy(22.dp),
     ) {

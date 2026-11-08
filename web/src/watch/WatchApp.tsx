@@ -3,6 +3,7 @@ import { Link, NavLink, Route, Routes, useLocation, useNavigate, useSearchParams
 import CueWordmark from '../components/CueWordmark'
 import Screensaver from './Screensaver'
 import YearPage from './YearPage'
+import RemoteSearch from './RemoteSearch'
 import Icon from '../components/Icon'
 import Home from './Home'
 import MyList from './MyList'
@@ -51,6 +52,7 @@ export default function WatchApp() {
         <Route path="theme" element={<ThemePage />} />
         <Route path="quality" element={<StreamingPage />} />
         <Route path="year" element={<YearPage />} />
+        <Route path="remote/:code" element={<RemoteSearch />} />
         <Route path="recording/:id" element={<RecordingPlayer />} />
         <Route path="play/movie/:tmdbId" element={<PlayerPage />} />
         <Route path="play/tv/:tmdbId/:season/:episode" element={<PlayerPage />} />
