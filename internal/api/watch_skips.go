@@ -17,6 +17,12 @@ import (
 // household has skipped before in the same show (a jump over the intro,
 // Next episode pressed during the credits), kept per season.
 
+// maxEpisodeCredits is the longest an episode's end credits are taken to be,
+// in seconds. Anything earlier (Next pressed with 9 minutes to go, a time
+// for another cut) is a guess that offers the next episode mid-scene, so it
+// is neither learned nor used.
+const maxEpisodeCredits = 240
+
 var introDBOnce = sync.OnceValue(func() *introdb.Client { return introdb.New("") })
 
 // skipsAnswer is in seconds. Credits are where they start, or how long
@@ -54,7 +60,7 @@ func (s *Server) handleWatchSkips(w http.ResponseWriter, r *http.Request) {
 			out.Source = "learned"
 		}
 	}
-	if m, ok, err := s.WatchRepo.SkipMarkFor(kind, tmdbID, season, "credits"); err == nil && ok {
+	if m, ok, err := s.WatchRepo.SkipMarkFor(kind, tmdbID, season, "credits"); err == nil && ok && (kind != watch.KindTV || m.End <= maxEpisodeCredits) {
 		if duration > 0 {
 			out.CreditsStart = duration - m.End
 		} else {
@@ -81,7 +87,8 @@ func (s *Server) handleWatchSkips(w http.ResponseWriter, r *http.Request) {
 			out.Recap = &introdb.Segment{Start: max(seg.Recap.Start, 0), End: seg.Recap.End}
 			used = true
 		}
-		if out.CreditsStart == 0 && out.CreditsFromEnd == 0 && seg.Credits != nil && seg.Credits.Start > duration/2 && seg.Credits.Start < duration {
+		if out.CreditsStart == 0 && out.CreditsFromEnd == 0 && seg.Credits != nil && seg.Credits.Start > duration/2 && seg.Credits.Start < duration &&
+			(kind != watch.KindTV || duration-seg.Credits.Start <= maxEpisodeCredits) {
 			out.CreditsStart = seg.Credits.Start
 			used = true
 		}
@@ -123,7 +130,8 @@ func (s *Server) handleLearnSkip(w http.ResponseWriter, r *http.Request) {
 	switch {
 	case req.Segment == "intro" && req.Kind == watch.KindTV && req.Start >= 0 && req.Start < 480 && req.End-req.Start >= 15 && req.End-req.Start <= 200:
 		err = s.WatchRepo.SetSkipMark(req.Kind, req.TMDBID, req.Season, "intro", req.Start, req.End)
-	case req.Segment == "credits" && req.Duration > 0 && req.Duration-req.Start >= 15 && req.Duration-req.Start <= 900:
+	case req.Segment == "credits" && req.Duration > 0 && req.Duration-req.Start >= 15 && req.Duration-req.Start <= 900 &&
+		(req.Kind != watch.KindTV || req.Duration-req.Start <= maxEpisodeCredits):
 		err = s.WatchRepo.SetSkipMark(req.Kind, req.TMDBID, req.Season, "credits", 0, req.Duration-req.Start)
 	default:
 		w.WriteHeader(http.StatusNoContent) // not a skip worth keeping

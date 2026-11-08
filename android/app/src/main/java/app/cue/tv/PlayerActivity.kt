@@ -892,7 +892,10 @@ class PlayerActivity : Activity() {
             creditsFromEnd > 0 && dur > 0 -> dur - creditsFromEnd
             else -> 0L
         }
-        nearEnd = nextButton != null && dur > 0 && pos < dur - 1000 && ((credits > 0 && pos >= credits) || dur - pos < 30_000)
+        // An episode's credits are a few minutes at most: a time further back
+        // (a guess, or one for another cut) isn't trusted.
+        val creditsOk = credits > 0 && dur - credits <= MAX_CREDITS
+        nearEnd = nextButton != null && dur > 0 && pos < dur - 1000 && ((creditsOk && pos >= credits) || dur - pos < 30_000)
         updateSkip(pos)
     }
 
@@ -1121,6 +1124,7 @@ class PlayerActivity : Activity() {
     // A segment longer than 3 minutes is taken for bad timings and ignored.
     private var skipShownAt = 0L
     private val NEXT = -2L // the corner button's target when it offers the next episode
+    private val MAX_CREDITS = 240_000L // the longest an episode's credits are taken to be (as on the server)
     private var skipDismissed = ""
 
     private fun updateSkip(pos: Long) {
@@ -1217,7 +1221,7 @@ class PlayerActivity : Activity() {
         val dur = player.duration.takeIf { it != C.TIME_UNSET } ?: return
         val pos = player.currentPosition
         val left = dur - pos
-        if (left < 15_000 || left > 900_000 || pos < dur * 0.7) return
+        if (left < 15_000 || left > MAX_CREDITS || pos < dur * 0.7) return
         postJson("/api/watch/skips/learn", JSONObject()
             .put("kind", info.optString("kind")).put("tmdbId", info.optInt("tmdbId")).put("season", info.optInt("season"))
             .put("segment", "credits").put("start", pos / 1000.0).put("duration", dur / 1000.0))

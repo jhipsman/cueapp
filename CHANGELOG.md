@@ -73,6 +73,7 @@ under [Unreleased]. How releases are cut: [docs/RELEASING.md](docs/RELEASING.md)
 
 ### Fixed
 - **Fire TV, Google TV**: the controls no longer pop up by themselves near the end of an episode. From the credits (or the last 30 seconds) a small **Next episode** button shows in the corner for a few seconds instead, like Skip intro; OK plays the next episode, and it stays in the controls.
+- **Next episode offered too early** (all apps): an episode's credits are now taken to be four minutes at most. A credits time further back (Next once pressed with 9 minutes to go, or TheIntroDB's time for another cut) is no longer learned or used, and one already saved is ignored, so the offer no longer comes up mid-scene.
 - **Fire TV, Google TV**: the banner's preview is smooth (the picture fades away over it instead of the video fading in), shows the whole frame in a 16:9 window instead of a cropped strip, and a title page's preview is no longer cut off. The no-trailer clip no longer shows through the app as a hole while it loads.
 
 ## [2.1.9] - 2026-10-07
