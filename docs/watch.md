@@ -141,7 +141,7 @@ Things to know:
 
 ## The apps
 
-- **Fire TV, Google TV, Android TV**: a native app with its own player (every format the TV can decode, 4K HDR and Dolby Vision, Dolby and DTS to your speakers, the TV's refresh rate matched to the film). Install it with Downloader from your server's `/tv.apk`. See [the TV app](../android/README.md).
+- **Fire TV, Google TV, Android TV**: a native app with its own player (every format the TV can decode, 4K HDR and Dolby Vision, Dolby and DTS to your speakers, the TV's refresh rate matched to the film). Install it with Downloader from your server's `/tv.apk`. See [the TV app](../android/README.md). Its Search shows a QR code: scan it with a phone to type or say a search for the TV (a Fire TV's remote microphone belongs to Alexa).
 - **Apple TV**: a native app that plays in Apple's own player; files it can't open are converted as they play, keeping 4K, HDR and surround. It's installed from Xcode on a Mac. See [the Apple TV app](../appletv/README.md).
 - **Phones and computers**: Watch in the browser. On an iPhone, Safari's **Share > Add to Home Screen** opens it full screen like an app; on Android, Chrome's **Install app**.
 

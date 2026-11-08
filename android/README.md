@@ -14,6 +14,15 @@ it, Play or Resume and My List, a show's seasons and episodes, and More
 Like This. Live TV lists the groups and channels with what's on now and next;
 the full guide grid opens in the web view (as does Profile > Web version).
 
+**Search**: what's popular until something's typed, then matches as you
+type. Speak where the TV lets apps listen (Google TV, Android TV). On a Fire
+TV, whose remote microphone belongs to Alexa, scan the QR code on Search with
+a phone and type or say it there: the words show up on the TV as you go.
+
+**Previews**: rest on a title's page and a muted moment of the episode or film
+itself plays behind it (from the stream Play will use, so Play then starts
+sooner). Home's banner holds still, so the rows stay quick.
+
 **The remote**: Back in a page goes up to the tabs, then to Home, then out.
 Coming back to a row or a title puts the highlight where it was.
 

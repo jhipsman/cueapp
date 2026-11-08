@@ -2,11 +2,8 @@
 
 package app.cue.tv.home
 
-import android.annotation.SuppressLint
 import android.app.ActivityManager
 import android.content.Context
-import android.webkit.JavascriptInterface
-import android.webkit.WebView
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.Animatable
@@ -58,80 +55,13 @@ val LocalApi = staticCompositionLocalOf<CueApi?> { null }
 
 // ---- The living banner ----
 
-// How long the highlight rests before the trailer starts, and how long it
-// plays before the banner settles back to its picture.
-private const val TRAILER_REST_MS = 2500L
-private const val TRAILER_LENGTH_MS = 60_000L
+// How long a title's page rests before its clip starts.
+private const val TRAILER_REST_MS = 2000L
 
 // Boxes with little memory keep the still picture: a web player on top of
 // the app's own screens is too much for them.
 private fun trailersFit(ctx: Context): Boolean =
     !(ctx.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager).isLowRamDevice
-
-// TrailerLayer plays a title's YouTube trailer, muted, after the highlight
-// has rested on it a moment. It sits under the title's picture: it loads out
-// of sight and says when it's really playing (and YouTube's own title and
-// buttons have gone), and the picture above it fades away then. Fading the
-// picture, not the web player, keeps it smooth on a Fire TV. A trailer that
-// can't play here just never appears.
-@SuppressLint("SetJavaScriptEnabled")
-@Composable
-fun TrailerLayer(server: String, videoId: String?, modifier: Modifier = Modifier, onShown: (Boolean) -> Unit = {}) {
-    val ctx = LocalContext.current
-    if (videoId.isNullOrEmpty() || !trailersFit(ctx)) return
-    var started by remember(videoId) { mutableStateOf(false) }
-    var playing by remember(videoId) { mutableStateOf(false) }
-    LaunchedEffect(videoId) {
-        delay(TRAILER_REST_MS)
-        started = true
-        delay(TRAILER_LENGTH_MS)
-        playing = false
-        delay(900)
-        started = false
-    }
-    LaunchedEffect(playing) { onShown(playing) }
-    if (!started) return
-    AndroidView(
-        factory = { c ->
-            WebView(c).apply {
-                isFocusable = false
-                isFocusableInTouchMode = false
-                setBackgroundColor(android.graphics.Color.BLACK)
-                settings.javaScriptEnabled = true
-                settings.domStorageEnabled = true
-                settings.mediaPlaybackRequiresUserGesture = false
-                addJavascriptInterface(object {
-                    @JavascriptInterface
-                    fun playing() { post { playing = true } }
-
-                    @JavascriptInterface
-                    fun stopped() { post { playing = false } }
-                }, "Cue")
-                loadDataWithBaseURL(server, trailerPage(videoId, server), "text/html", "utf-8", null)
-            }
-        },
-        onRelease = { it.destroy() },
-        modifier = modifier,
-    )
-}
-
-// The page the trailer plays in: YouTube's player, filling the box (cropped
-// like a picture, a little larger so its corners never show), reporting back
-// when it's really playing.
-private fun trailerPage(id: String, origin: String): String {
-    val safe = id.filter { it.isLetterOrDigit() || it == '-' || it == '_' }
-    return """<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1">
-<style>html,body{margin:0;height:100%;background:#000;overflow:hidden}
-#p{position:absolute;top:50%;left:50%;width:max(100vw,177.78vh);height:max(100vh,56.25vw);transform:translate(-50%,-50%) scale(1.1);border:0}</style>
-</head><body><div id="p"></div><script>
-var t=document.createElement('script');t.src='https://www.youtube.com/iframe_api';document.head.appendChild(t);
-function onYouTubeIframeAPIReady(){new YT.Player('p',{videoId:'$safe',host:'https://www.youtube-nocookie.com',
-playerVars:{autoplay:1,mute:1,controls:0,playsinline:1,rel:0,modestbranding:1,iv_load_policy:3,disablekb:1,fs:0,start:4,loop:1,playlist:'$safe',origin:'$origin'},
-events:{onReady:function(e){e.target.mute();e.target.playVideo()},
-onStateChange:function(e){if(e.data==1){setTimeout(function(){Cue.playing()},3000)}else if(e.data==0||e.data==2){Cue.stopped()}},
-onError:function(){Cue.stopped()}}})}
-</script></body></html>"""
-}
 
 // ---- The screensaver ----
 

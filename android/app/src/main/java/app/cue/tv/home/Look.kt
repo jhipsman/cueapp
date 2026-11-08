@@ -248,24 +248,31 @@ val PanelCorner = 20.dp
 // Apple's curve: quick to start, a long gentle settle.
 val Settle = androidx.compose.animation.core.CubicBezierEasing(0.2f, 0.8f, 0.2f, 1f)
 
-private val liftSpring = androidx.compose.animation.core.spring<Float>(dampingRatio = 0.72f, stiffness = 320f)
 
 // The lift a highlighted card gets: drawn above its neighbours, bigger,
 // raised, with a shadow under it.
 @Composable
 fun Modifier.lift(focused: Boolean, scale: Float, shape: androidx.compose.ui.graphics.Shape): Modifier {
-    val s by androidx.compose.animation.core.animateFloatAsState(if (focused) scale else 1f, liftSpring, label = "lift")
-    val e by androidx.compose.animation.core.animateFloatAsState(if (focused) 1f else 0f,
-        androidx.compose.animation.core.tween(380, easing = Settle), label = "shadow")
-    // The highlighted card's shadow glows in the picture's colour.
-    val glowColour = tint()
+    // A short glide, no spring: a TV's processor keeps up with it, and the
+    // highlight lands where the remote put it at once.
+    val s by androidx.compose.animation.core.animateFloatAsState(if (focused) scale else 1f,
+        androidx.compose.animation.core.tween(190, easing = Settle), label = "lift")
+    // The shadow glows in the picture's colour. It's read as the frame is
+    // drawn, so a new colour doesn't rebuild every card on the screen.
+    val tintState = LocalTint.current
+    val accent = LocalAccent.current
     return this.graphicsLayer {
-        spotShadowColor = glowColour
-        ambientShadowColor = glowColour.copy(alpha = 0.6f)
+        val glow = tintState.value ?: accent
+        val k = ((s - 1f) / (scale - 1f)).coerceIn(0f, 1f)
+        spotShadowColor = glow
+        ambientShadowColor = glow.copy(alpha = 0.6f)
         scaleX = s
         scaleY = s
-        translationY = -5.dp.toPx() * e
-        shadowElevation = 22.dp.toPx() * e
+        translationY = -4.dp.toPx() * k
+        // The shadow steps on with the highlight rather than growing frame by
+        // frame (redrawing a big soft shadow every frame is what makes a
+        // Fire TV stutter).
+        shadowElevation = if (focused) 18.dp.toPx() else 0f
         this.shape = shape
         clip = false
     }
@@ -286,7 +293,7 @@ fun Sheen(focused: Boolean, modifier: Modifier = Modifier) {
             sweep.snapTo(-1f)
         }
     }
-    if (glow == 0f && sweep.value <= -1f) return
+    if (!focused && glow == 0f) return
     Box(modifier.fillMaxSize().drawBehind {
         drawRect(Brush.verticalGradient(0f to Color.White.copy(alpha = 0.16f * glow), 0.45f to Color.Transparent))
         val p = sweep.value

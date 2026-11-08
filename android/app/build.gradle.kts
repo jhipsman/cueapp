@@ -76,6 +76,8 @@ dependencies {
     implementation("androidx.activity:activity-compose:1.9.3")
     // FileProvider, to hand a downloaded update to Android's installer.
     implementation("androidx.core:core-ktx:1.13.1")
+    // The QR code on Search that opens search on a phone.
+    implementation("com.google.zxing:core:3.5.3")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.7")
     implementation("androidx.tv:tv-material:1.0.0")
     implementation("io.coil-kt:coil-compose:2.7.0")

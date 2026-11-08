@@ -2361,6 +2361,8 @@ export const api = {
   watchLogo: (kind: 'movie' | 'tv', tmdbId: number) => get<{ url: string }>(`/watch/logo/${kind}/${tmdbId}`),
   watchExtras: (kind: 'movie' | 'tv', tmdbId: number) => get<WatchExtras>(`/watch/extras/${kind}/${tmdbId}`),
   watchYear: (year?: number) => get<WatchYear>(`/watch/year${year ? `?year=${year}` : ''}`),
+  // Searching on the TV from a phone (the TV's Search shows the code).
+  sendRemoteSearch: (code: string, q: string) => put<{ q: string; seq: number }>(`/watch/remote/${encodeURIComponent(code)}`, { q }),
   watchProviders: (kind: 'movie' | 'tv', tmdbId: number) =>
     get<WatchProviders>(`/watch/providers/${kind}/${tmdbId}?region=${userRegion()}`),
   playMovie: (id: number, option = 1, fresh = false) => get<PlayAnswer>(`/play/movies/${id}?option=${option}${fresh ? '&fresh=1' : ''}`),
