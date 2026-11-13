@@ -1726,6 +1726,7 @@ class PlayerActivity : Activity() {
     private fun findSubtitles() {
         if (subsAsking) return
         subsAsking = true
+        val kind = info.optString("kind")
         Toast.makeText(this, "Finding English subtitles…", Toast.LENGTH_SHORT).show()
         val path = "/api/watch/subtitles/$kind/${info.optInt("tmdbId")}?season=${info.optInt("season")}&episode=${info.optInt("episode")}&release=${Uri.encode(info.optString("release"))}"
         val cookie = CookieManager.getInstance().getCookie(server)
