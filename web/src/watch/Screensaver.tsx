@@ -18,25 +18,42 @@ interface Slide {
   detail: string
 }
 
-function slidesFrom(rows: { key: string; items: WatchCard[] }[]): Slide[] {
-  const out: Slide[] = []
+// Yours (where you stopped, new episodes, your list) and ones you haven't
+// watched (trending, "because you watched", the rest of Home), taken in
+// turn, a new one first; the new ones shuffled each time.
+function slidesFrom(rows: { key: string; title: string; items: WatchCard[] }[]): Slide[] {
+  const mine: Slide[] = []
+  const fresh: Slide[] = []
   const seen = new Set<string>()
-  const add = (c: WatchCard, line: string, detail: string) => {
+  const add = (to: Slide[], c: WatchCard, line: string, detail: string) => {
     const k = `${c.kind}-${c.tmdbId}`
     if (!c.backdropUrl || seen.has(k)) return
     seen.add(k)
-    out.push({ card: c, line, detail })
+    to.push({ card: c, line, detail })
   }
-  for (const r of rows) {
+  const yours = new Set(['continue', 'new-episodes', 'my-list'])
+  const facts = (c: WatchCard) => [c.year, c.kind === 'tv' ? 'Series' : 'Movie'].filter(Boolean).join(' · ')
+  for (const r of rows.filter((r) => yours.has(r.key))) {
     for (const c of r.items.slice(0, 8)) {
-      if (r.key === 'new-episodes') add(c, 'New episode', [epCode(c.season, c.episode), c.episodeTitle].filter(Boolean).join(' · '))
+      if (r.key === 'new-episodes') add(mine, c, 'New episode', [epCode(c.season, c.episode), c.episodeTitle].filter(Boolean).join(' · '))
       else if (r.key === 'continue')
-        add(c, 'You stopped here', c.episode ? [epCode(c.season, c.episode), c.episodeTitle].filter(Boolean).join(' · ') : `${Math.round((c.progress ?? 0) * 100)}% watched`)
-      else if (r.key === 'my-list') add(c, 'On your list', [c.year, c.kind === 'tv' ? 'Series' : 'Movie'].filter(Boolean).join(' · '))
-      else if (r.key.startsWith('trending')) add(c, 'Trending this week', [c.year, c.kind === 'tv' ? 'Series' : 'Movie'].filter(Boolean).join(' · '))
+        add(mine, c, 'You stopped here', c.episode ? [epCode(c.season, c.episode), c.episodeTitle].filter(Boolean).join(' · ') : `${Math.round((c.progress ?? 0) * 100)}% watched`)
+      else add(mine, c, 'On your list', facts(c))
     }
   }
-  return out.slice(0, 14)
+  for (const r of rows.filter((r) => !yours.has(r.key))) {
+    for (const c of r.items.slice(0, 10)) add(fresh, c, r.key.startsWith('trending') ? 'Trending this week' : r.title, facts(c))
+  }
+  for (let i = fresh.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[fresh[i], fresh[j]] = [fresh[j], fresh[i]]
+  }
+  const out: Slide[] = []
+  for (let i = 0; out.length < 20 && (i < fresh.length || i < mine.length); i++) {
+    if (i < fresh.length) out.push(fresh[i])
+    if (i < mine.length && out.length < 20) out.push(mine[i])
+  }
+  return out
 }
 
 function allowedHere(path: string): boolean {

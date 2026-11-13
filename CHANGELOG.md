@@ -61,6 +61,7 @@ under [Unreleased]. How releases are cut: [docs/RELEASING.md](docs/RELEASING.md)
 - **Stream add-ons**: paste a Stremio add-on link (Comet on ElfHosted, Torrentio, MediaFusion) in Settings > Downloading, and Play asks it for streams first, with its own scrapers and sorting. Links set up with your Premiumize key play straight away; Cue's own search is the fallback. See [docs/watch.md](docs/watch.md#stream-add-ons-comet-torrentio-mediafusion).
 
 ### Changed
+- **The screensaver shows things you haven't watched too** (TV and web): trending titles, "because you watched", and the rest of Home, mixed in with your own (where you stopped, new episodes, your list) and shuffled each time.
 - **Home on the web, full-bleed**: the banner is no longer a card in the margins; the title's picture runs edge to edge under the header and fades into the page to the left and below, with the first rows sitting over its faded foot, as on a title's page and in the TV app.
 - **The TV app follows your theme** (Fire TV, Google TV): the profile's Colors from Watch (its colour, glow and background: Midnight, Black, Slate or Tinted) now colour the whole app, the backgrounds, panels, fades and highlights too, and a change made on the web shows the next time Cue comes to the front.
 - **Opening the TV app**: the Cue logo grows into place with a soft glow and "cue" slides in beside it (it was the word in plain text), then fades into sign-in or Home; each of sign-in, "Who's watching?" and Home fades into the next.

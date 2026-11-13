@@ -103,23 +103,43 @@ private const val SLIDE_MS = 9000L
 data class SaverSlide(val tile: Tile, val line: String, val detail: String)
 
 fun saverSlides(home: Home): List<SaverSlide> {
-    val out = ArrayList<SaverSlide>()
+    // Yours (where you stopped, new episodes, your list) and ones you
+    // haven't watched (trending, "because you watched", the rest of Home),
+    // taken in turn, a new one first; the new ones shuffled each time.
+    val mine = ArrayList<SaverSlide>()
+    val fresh = ArrayList<SaverSlide>()
     val seen = HashSet<String>()
-    fun add(t: Tile, line: String, detail: String) {
+    fun add(to: MutableList<SaverSlide>, t: Tile, line: String, detail: String) {
         val k = "${t.kind}-${t.tmdbId}"
         if (t.backdrop == null || !seen.add(k)) return
-        out.add(SaverSlide(t, line, detail))
+        to.add(SaverSlide(t, line, detail))
     }
-    for (r in home.rows) for (t in r.items.take(8)) {
+    val yours = setOf("continue", "new-episodes", "my-list")
+    for (r in home.rows.filter { it.key in yours }) for (t in r.items.take(8)) {
         val kind = if (t.kind == "tv") "Series" else "Movie"
-        when {
-            r.key == "new-episodes" -> add(t, "New episode", t.episodeLine)
-            r.key == "continue" -> add(t, "You stopped here", t.episodeLine.ifEmpty { "${((t.progress ?: 0.0) * 100).toInt()}% watched" })
-            r.key == "my-list" -> add(t, "On your list", listOfNotNull(t.year?.toString(), kind).joinToString(" · "))
-            r.key.startsWith("trending") -> add(t, "Trending this week", listOfNotNull(t.year?.toString(), kind).joinToString(" · "))
+        when (r.key) {
+            "new-episodes" -> add(mine, t, "New episode", t.episodeLine)
+            "continue" -> add(mine, t, "You stopped here", t.episodeLine.ifEmpty { "${((t.progress ?: 0.0) * 100).toInt()}% watched" })
+            else -> add(mine, t, "On your list", listOfNotNull(t.year?.toString(), kind).joinToString(" · "))
         }
     }
-    return out.take(14)
+    for (r in home.rows.filter { it.key !in yours }) for (t in r.items.take(10)) {
+        val kind = if (t.kind == "tv") "Series" else "Movie"
+        val line = when {
+            r.key.startsWith("trending") -> "Trending this week"
+            else -> r.title
+        }
+        add(fresh, t, line, listOfNotNull(t.year?.toString(), kind).joinToString(" · "))
+    }
+    fresh.shuffle()
+    val out = ArrayList<SaverSlide>()
+    var i = 0
+    while (out.size < 20 && (i < fresh.size || i < mine.size)) {
+        if (i < fresh.size) out.add(fresh[i])
+        if (i < mine.size && out.size < 20) out.add(mine[i])
+        i++
+    }
+    return out
 }
 
 // Screensaver: the household's own titles full screen, one after another,
