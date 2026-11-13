@@ -83,6 +83,14 @@ Admins manage accounts in **Settings > Accounts** (the profile menu has a shortc
 
 The activity list says who added a title, for example "Night Harbour added to library by Sam".
 
+## Inviting family to make their own accounts
+
+Instead of making each account yourself, send an invite link and let everyone make their own. In **Settings > Accounts**, under **Invite family**, choose **Make an invite link** and copy it (it looks like `https://cue.example.com/join/…`). Whoever opens it picks a name, a username and a password and is signed in straight away.
+
+Accounts made this way are basic users that can watch and find subtitles, and ask for movies and shows (an administrator approves). They play with this Cue's streaming (Premiumize, stream add-ons, live TV) and can't see or change its settings or keys. Change what one may do afterwards like any other account.
+
+One link works at a time, for seven days. **Make a new link** ends the old one; **Turn it off** ends it at once. Wrong links are counted like failed sign-ins.
+
 ## Changing, resetting and removing accounts
 
 An admin can do the following for any other account, using the buttons on its card:

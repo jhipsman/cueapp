@@ -13,6 +13,9 @@ import (
 // Known setting keys. Using constants keeps callers from typo-ing a
 // string key that silently reads back empty.
 const (
+	// The family invite link (handlers_invite.go): its secret and when it ends.
+	KeyInviteToken       = "accounts.invite_token"
+	KeyInviteExpires     = "accounts.invite_expires"
 	KeyMoviesPath        = "library.movies_path"
 	KeyTVPath            = "library.tv_path" // falls back to the TV_DIR env default when unset
 	KeyDownloadsPath     = "library.downloads_path"

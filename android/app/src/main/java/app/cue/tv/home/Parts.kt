@@ -84,7 +84,11 @@ fun accentOf(hex: String): Color = try {
 }
 
 // TMDB pictures a TV needs are smaller than the web's: they load faster.
-fun small(url: String?): String? = url?.replace("/t/p/w500/", "/t/p/w342/")?.replace("/t/p/w1280/", "/t/p/w780/")
+fun small(url: String?): String? = url?.replace("/t/p/w1280/", "/t/p/w780/")
+
+// An episode's still sharp at TV size: TMDB's are 300 px wide by default,
+// stretched to twice that on a TV's tile (which is when pixels show).
+fun sharpStill(url: String?): String? = url?.replace("/t/p/w300/", "/t/p/w780/")
 
 // Which card had the highlight on a screen, so coming back puts it there.
 class FocusMemory {
@@ -133,7 +137,12 @@ fun PosterCard(card: Tile, memory: FocusMemory, memKey: String, wide: Boolean = 
                 },
             shape = CardDefaults.shape(shape),
             scale = CardDefaults.scale(focusedScale = 1f),
-            border = CardDefaults.border(focusedBorder = Border(BorderStroke(1.dp, Color(0x59FFFFFF)), shape = shape)),
+            // A faint edge drawn round every card (lines are drawn smoothed),
+            // so the rounded corners don't show stair-steps as cards scale.
+            border = CardDefaults.border(
+                border = Border(BorderStroke(1.dp, Color(0x14FFFFFF)), shape = shape),
+                focusedBorder = Border(BorderStroke(1.dp, Color(0x59FFFFFF)), shape = shape),
+            ),
         ) {
             Box(Modifier.fillMaxSize()) {
                 Art(small(if (wide) card.backdrop ?: card.poster else card.poster), Modifier.fillMaxSize(), card.title)

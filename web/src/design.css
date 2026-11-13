@@ -1007,7 +1007,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--sec, var(--accen
   text-align: center;
   padding: 32px 28px 28px;
   border-radius: 22px;
-  border: 1px solid color-mix(in srgb, var(--c-dashboard) 30%, var(--border));
+  border: 1px solid color-mix(in srgb, var(--c-dashboard) 14%, var(--border));
   background: var(--surface);
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.38);
   animation: page-in 0.4s cubic-bezier(0.2, 0.7, 0.2, 1) both;
@@ -2865,12 +2865,8 @@ a.bar-label:hover { color: var(--accent); }
 
 /* The Cue wordmark on the sign-in and sign-up cards (its own styles are in
    watch.css, which these pages don't load, so they're repeated here). */
-.auth-wordmark.cue-wordmark { display: inline-flex; align-items: flex-end; line-height: 1; }
-.auth-wordmark .cue-wordmark-c { width: 3.2rem; height: 3.2rem; margin-right: -0.5rem; filter: drop-shadow(0 0 16px rgba(52, 209, 191, 0.5)); }
-.auth-wordmark .cue-wordmark-ue {
-  font-family: 'Sora', var(--font-display, sans-serif); font-weight: 800; font-size: 2.75rem; letter-spacing: -0.05em; line-height: 1.15;
-  color: var(--text); text-shadow: 0 2px 18px rgba(52, 209, 191, 0.25); padding: 0 0.06em 0.1rem 0;
-}
+.auth-wordmark.cue-wordmark { display: inline-flex; align-items: center; line-height: 1; color: var(--text); }
+.auth-wordmark .cue-wordmark-svg { height: 3rem; width: auto; display: block; filter: drop-shadow(0 0 16px rgba(52, 209, 191, 0.4)); }
 
 /* ==== Quiet pass: the manager as calm as Watch ===========================
    One product: no coloured stripe down the edge of a card (its icon and its
@@ -2903,4 +2899,81 @@ a.bar-label:hover { color: var(--accent); }
 .switch-thumb,
 .brand .brand-mark {
   transition-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* Smooth rounded edges. A box's background normally runs under its border
+   too; with a thin, see-through border on a rounded corner that shows as a
+   lighter halo and stair-steps along the curve. These rounded, bordered
+   panels keep their background inside the border, leaving just the soft
+   edge. (Last in the file, so it follows each panel's own background.) */
+.menu-pop,
+.demo-chip,
+fieldset.group,
+fieldset.group > legend,
+.tile,
+.hero-welcome,
+.hero-pill,
+.legal-box,
+.title-hero,
+.title-poster,
+.kind-tag,
+.link-pill,
+.state-tag,
+.wrow,
+.type-tile,
+.target-row,
+.settings-grid > section.card > h2:first-child,
+.ncard,
+.auth-card,
+.quota-note,
+.wizard-added,
+.kind-tab,
+.site-list,
+.choice-card,
+.finish-card,
+.finish-points span,
+.slow-note,
+.dropdown-list,
+.indexer-card,
+.account-card,
+.section-off-notice,
+.search-status,
+.mig-app,
+.mig-card,
+.module-card,
+.module-ico,
+.mi-stat,
+.mi-row,
+.album-card,
+.artist-card,
+.music-profile,
+.chip-tier,
+.legal-card,
+.legal-ico,
+.legal-col,
+.info-card,
+.srv-bars .srv-bar,
+.srv-facts > span,
+.method-list,
+.method-item,
+.method-panel,
+.ntarget,
+.import-banner,
+.import-options,
+.server-row,
+.import-set,
+.pl-card,
+.pl-row,
+.pl-area,
+.version-chip,
+.section-pill,
+.pick-bar,
+.recent-state,
+.book-result,
+.tag-chip,
+.bulk-tags-pop,
+.top-link,
+.cleanup-preview,
+.request-row {
+  background-clip: padding-box;
 }

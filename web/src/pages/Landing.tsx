@@ -17,11 +17,8 @@ const M = '/landing/'
 
 function Mark() {
   return (
-    <svg viewBox="0 0 32 32" aria-hidden="true">
-      <g fill="#34D1BF">
-        <path d="M25.96 7.64A13 13 0 1 0 25.96 24.36L22.51 21.46A8.5 8.5 0 1 1 22.51 10.54Z" />
-        <path d="M13.5 11.2L21 16L13.5 20.8Z" />
-      </g>
+    <svg viewBox="0 0 256 256" aria-hidden="true">
+      <path fill="#34D1BF" d="M206.77,198.93 A106,106 0 1 1 206.77,57.07 A21.0,21.0 0 0 1 175.56,85.18 A64,64 0 1 0 175.56,170.82 A21.0,21.0 0 0 1 206.77,198.93 Z M115.76,106.20 Q115.76,95.00 125.60,100.35 L166.64,122.65 Q176.48,128.00 166.64,133.35 L125.60,155.65 Q115.76,161.00 115.76,149.80 Z" />
     </svg>
   )
 }
@@ -424,7 +421,7 @@ export default function Landing() {
             <div>
               <p className="lp-eyebrow">Signing in</p>
               <h2>Sign in, then pick your profile.</h2>
-              <p>Ask whoever set up Cue for your sign-in. Your profile keeps your own list, your progress and your year in Cue.</p>
+              <p>Got an invite link? Open it to make your own account. Otherwise, ask whoever set up Cue for one. Your profile keeps your own list, your progress and your year in Cue.</p>
               <Link className="lp-btn primary" to="/login">
                 Sign in
               </Link>

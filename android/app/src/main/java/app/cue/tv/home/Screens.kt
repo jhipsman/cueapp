@@ -408,6 +408,11 @@ fun MainScreen(api: CueApi, playback: Playback, openWeb: (String) -> Unit, chang
         AmbientBackground(if (page <= 2) ambient else null)
         Column(Modifier.fillMaxSize()) {
             Row(Modifier.fillMaxWidth().padding(start = Gutter, end = Gutter, top = 12.dp, bottom = 2.dp), verticalAlignment = Alignment.CenterVertically) {
+                androidx.compose.foundation.Image(
+                    androidx.compose.ui.res.painterResource(app.cue.tv.R.drawable.ic_cue_mark), contentDescription = null,
+                    modifier = Modifier.size(22.dp),
+                )
+                HGap(6.dp)
                 Text("cue", fontFamily = Type.display(), fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color.White)
                 HGap(22.dp)
                 // Coming up to the tabs lands on the tab showing, not whichever
@@ -534,7 +539,7 @@ fun Banner(api: CueApi, c: Tile) {
         // The picture changes with a slow cross-fade. It stays still (a
         // picture always moving, or a video, keeps a TV's processor busy and
         // the rows below stutter); the title's page is where it comes alive.
-        Crossfade(targetState = small(c.backdrop), animationSpec = tween(450, easing = Settle), label = "banner",
+        Crossfade(targetState = c.backdrop, animationSpec = tween(450, easing = Settle), label = "banner",
             modifier = Modifier.fillMaxHeight().fillMaxWidth(0.8f).align(Alignment.TopEnd)) { u ->
             if (u != null) AsyncImage(model = u, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
         }
@@ -711,7 +716,7 @@ fun EpisodeCard(e: Episode, onClick: () -> Unit) {
             border = CardDefaults.border(focusedBorder = Border(BorderStroke(1.dp, Color(0x59FFFFFF)), shape = shape)),
         ) {
             Box(Modifier.fillMaxSize()) {
-                Art(small(e.still), Modifier.fillMaxSize(), e.title)
+                Art(sharpStill(e.still), Modifier.fillMaxSize(), e.title)
                 Chip("E${e.episode}", Modifier.align(Alignment.BottomStart).padding(start = 8.dp, bottom = 10.dp))
                 e.progress?.takeIf { it > 0 && !e.finished }?.let { p ->
                     Box(Modifier.align(Alignment.BottomStart).fillMaxWidth().height(3.dp).background(Color(0x55FFFFFF)))

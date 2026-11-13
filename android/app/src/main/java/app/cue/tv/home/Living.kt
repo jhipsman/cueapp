@@ -56,7 +56,7 @@ val LocalApi = staticCompositionLocalOf<CueApi?> { null }
 // ---- The living banner ----
 
 // How long a title's page rests before its clip starts.
-private const val TRAILER_REST_MS = 2000L
+private const val TRAILER_REST_MS = 800L
 
 // Boxes with little memory keep the still picture: a web player on top of
 // the app's own screens is too much for them.

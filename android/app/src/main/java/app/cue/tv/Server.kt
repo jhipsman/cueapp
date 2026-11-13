@@ -10,8 +10,11 @@ object Server {
     private const val PREFS = "cue"
     private const val KEY = "server"
 
+    // The address saved on the TV, or the one the app was built for
+    // (cuetv.me), so a new TV goes straight to signing in.
     fun address(ctx: Context): String? =
         ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString(KEY, null)
+            ?: BuildConfig.DEFAULT_SERVER.takeIf { it.isNotBlank() }
 
     fun save(ctx: Context, address: String) {
         ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putString(KEY, address).apply()
