@@ -59,6 +59,7 @@ under [Unreleased]. How releases are cut: [docs/RELEASING.md](docs/RELEASING.md)
 - **Stream add-ons**: paste a Stremio add-on link (Comet on ElfHosted, Torrentio, MediaFusion) in Settings > Downloading, and Play asks it for streams first, with its own scrapers and sorting. Links set up with your Premiumize key play straight away; Cue's own search is the fallback. See [docs/watch.md](docs/watch.md#stream-add-ons-comet-torrentio-mediafusion).
 
 ### Changed
+- **Home on Fire TV and Google TV, as on a title's page**: the highlighted title's picture fills the screen behind the tabs and rows, fading into the page, with its logo and story on it, instead of a banner in a card. The blurred picture behind Home is gone too (costly on a TV).
 - **A faster TV app**: it's now optimized when built (R8), and installs Compose's ready-made startup profiles itself, which an APK installed outside the app store otherwise goes without, so screens and scrolling are smooth from the first use.
 - **Previews are ready before you open a title**: everything Home shows gets its clip made while nobody is using Cue (no one signed in has done anything for half an hour: overnight, mostly), one after another while the server is quiet. Clips are 12 seconds now (twice as quick to make, about 2–3 MB each), so one not made yet appears sooner.
 - The cloud image built from every change is for Intel/AMD servers only, so it's ready in about half the time; releases still build for ARM too.

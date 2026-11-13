@@ -477,9 +477,10 @@ fun MainScreen(api: CueApi, playback: Playback, openWeb: (String) -> Unit, chang
     val tookFocus = { pageTakesFocus = false }
     // The remote's search (or mic) key: Search, listening straight away.
     var listenNow by remember { mutableStateOf(false) }
-    // The picture glowing behind the tabs and the page (Home's highlight).
-    var ambient by remember { mutableStateOf<String?>(null) }
-    val setAmbient: (String?) -> Unit = { ambient = it }
+    // Home's highlight: its picture fills the screen behind the tabs and the
+    // rows, fading into the page, as on a title's page.
+    var hero by remember { mutableStateOf<Tile?>(null) }
+    val setAmbient: (Tile?) -> Unit = { hero = it }
 
     var page by remember { mutableIntStateOf(0) }
     LaunchedEffect(tab) {
@@ -502,7 +503,7 @@ fun MainScreen(api: CueApi, playback: Playback, openWeb: (String) -> Unit, chang
             false
         }
     }) {
-        AmbientBackground(if (page <= 2) ambient else null)
+        if (page <= 2) HomeBackdrop(api, hero) else AmbientBackground(null)
         Column(Modifier.fillMaxSize()) {
             Row(Modifier.fillMaxWidth().padding(start = Gutter, end = Gutter, top = 12.dp, bottom = 2.dp), verticalAlignment = Alignment.CenterVertically) {
                 androidx.compose.foundation.Image(
@@ -568,7 +569,7 @@ fun MainScreen(api: CueApi, playback: Playback, openWeb: (String) -> Unit, chang
 // rows slide up beneath it.
 @Composable
 fun HomeScreen(api: CueApi, only: String?, memory: FocusMemory, takeFocus: Boolean, tookFocus: () -> Unit,
-               setAmbient: (String?) -> Unit, onCard: (Tile) -> Unit) {
+               setAmbient: (Tile?) -> Unit, onCard: (Tile) -> Unit) {
     var home by remember { mutableStateOf<Home?>(homeCache) }
     var problem by remember { mutableStateOf("") }
     var spot by remember { mutableStateOf<Tile?>(null) }
@@ -600,7 +601,7 @@ fun HomeScreen(api: CueApi, only: String?, memory: FocusMemory, takeFocus: Boole
         delay(300)
         settled = shown
     }
-    LaunchedEffect(settled?.backdrop) { setAmbient(settled?.backdrop) }
+    LaunchedEffect(settled?.key) { setAmbient(settled) }
     // The page takes the colour of the picture in the banner.
     val settledExtras = rememberExtras(api, settled?.kind ?: "movie", settled?.tmdbId ?: 0, ask = settled != null)
     val tintState = LocalTint.current
@@ -624,35 +625,16 @@ fun HomeScreen(api: CueApi, only: String?, memory: FocusMemory, takeFocus: Boole
     }
 }
 
-// The banner card: the picture to the right, fading into the card on the
-// left under the logo, the scores and two lines of the story.
+// The banner: the highlighted title's logo, facts and story, sitting on its
+// picture (HomeBackdrop, behind the whole screen) with no card around it.
 @Composable
 fun Banner(api: CueApi, c: Tile) {
-    val shape = RoundedCornerShape(PanelCorner)
-    Box(
-        Modifier.padding(horizontal = Gutter).padding(top = 8.dp).fillMaxWidth().height(226.dp)
-            .clip(shape).background(Color(0xFF16171B)).border(1.dp, Color(0x14FFFFFF), shape),
-    ) {
-        // The picture changes with a slow cross-fade. Rest on a title and
-        // its preview clip (a small file the server cut, light to decode)
-        // fades in over it, muted; the story steps aside while it plays.
-        var live by remember(c.key) { mutableStateOf(false) }
-        Crossfade(targetState = c.backdrop, animationSpec = tween(450, easing = Settle), label = "banner",
-            modifier = Modifier.fillMaxHeight().fillMaxWidth(0.8f).align(Alignment.TopEnd)) { u ->
-            if (u != null) AsyncImage(model = u, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
-        }
-        key(c.key) {
-            BannerPreview(api, c, Modifier.fillMaxHeight().fillMaxWidth(0.8f).align(Alignment.TopEnd)) { live = it }
-        }
-        val story by animateFloatAsState(if (live) 0f else 1f, tween(600, easing = Settle), label = "banner-story")
-        Box(Modifier.fillMaxSize().background(Brush.horizontalGradient(0.18f to Color(0xF516171B), 0.48f to Color(0x9916171B), 0.75f to Color.Transparent)))
-        Box(Modifier.fillMaxSize().background(Brush.verticalGradient(0.5f to Color.Transparent, 1f to Color(0xCC16171B))))
-        // The words fade out, and the new ones fade in as they rise.
+    Box(Modifier.padding(horizontal = Gutter).padding(top = 8.dp).fillMaxWidth().height(226.dp)) {
+        // The old words are gone before the new ones arrive, so two titles
+        // never show at once however fast the remote moves.
         AnimatedContent(
             targetState = c,
             contentKey = { it.key },
-            // The old words are gone before the new ones arrive, so two titles
-            // never show at once however fast the remote moves.
             transitionSpec = {
                 (fadeIn(tween(300, delayMillis = 130, easing = Settle)) + slideInVertically(tween(380, delayMillis = 130, easing = Settle)) { it / 10 }) togetherWith
                     fadeOut(tween(110))
@@ -661,17 +643,35 @@ fun Banner(api: CueApi, c: Tile) {
             modifier = Modifier.align(Alignment.BottomStart),
         ) { cc ->
             val logo = rememberLogo(api, cc.kind, cc.tmdbId, cc.logo?.takeIf { it.isNotEmpty() })
-            Column(Modifier.padding(start = 32.dp, bottom = 24.dp).width(400.dp)) {
-                TitleMark(cc.title, logo, maxWidth = 280.dp, maxHeight = 78.dp, fontSize = 30.sp)
+            Column(Modifier.padding(start = 2.dp, bottom = 18.dp).width(440.dp)) {
+                TitleMark(cc.title, logo, maxWidth = 300.dp, maxHeight = 90.dp, fontSize = 32.sp)
                 Gap(10.dp)
                 FactsRow(cc, extra = listOfNotNull(if (cc.kind == "tv") "Series" else "Movie", epCode(cc.season, cc.episode)))
                 cc.overview?.let {
                     Gap(6.dp)
-                    Text(it, fontSize = 11.sp, color = Color(0xCCFFFFFF), maxLines = 2, overflow = TextOverflow.Ellipsis, lineHeight = 15.sp,
-                        modifier = Modifier.graphicsLayer { alpha = story })
+                    Text(it, fontSize = 12.sp, color = Color(0xD9FFFFFF), maxLines = 2, overflow = TextOverflow.Ellipsis, lineHeight = 16.sp)
                 }
             }
         }
+    }
+}
+
+// HomeBackdrop: the highlighted title's picture across the top and right of
+// the screen, behind the tabs and the rows, fading into the page to the left
+// and below (no blur, which is costly on a TV). Rest on a title and its
+// preview clip fades in over the picture, muted (not in Light mode).
+@Composable
+fun HomeBackdrop(api: CueApi, c: Tile?) {
+    Box(Modifier.fillMaxSize().background(Background)) {
+        val area = Modifier.align(Alignment.TopEnd).fillMaxWidth(0.82f).fillMaxHeight(0.8f)
+        Crossfade(targetState = c?.backdrop, animationSpec = tween(450, easing = Settle), label = "home-backdrop", modifier = area) { u ->
+            if (u != null) AsyncImage(model = u, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
+        }
+        if (c != null) key(c.key) { BannerPreview(api, c, area) }
+        // Fades: into the page on the left (where the words are), below
+        // (where the rows are), and a little at the top for the tabs.
+        Box(Modifier.fillMaxSize().background(Brush.horizontalGradient(0.16f to Background, 0.45f to Color(0xB30C0D10), 0.72f to Color(0x000C0D10))))
+        Box(Modifier.fillMaxSize().background(Brush.verticalGradient(0f to Color(0x990C0D10), 0.16f to Color(0x000C0D10), 0.42f to Color(0x000C0D10), 0.74f to Color(0xF20C0D10), 0.85f to Background)))
     }
 }
 
