@@ -277,8 +277,8 @@ fun UpNextScreen(api: CueApi, next: Playback.UpNext, play: () -> Unit, dismiss: 
             contentScale = ContentScale.Crop,
             modifier = Modifier.fillMaxSize().settleIn(1.08f),
         )
-        Box(Modifier.fillMaxSize().background(Brush.horizontalGradient(0f to Color(0xF20C0D10), 0.5f to Color(0x990C0D10), 0.85f to Color.Transparent)))
-        Box(Modifier.fillMaxSize().background(Brush.verticalGradient(0.55f to Color.Transparent, 1f to Color(0xE60C0D10))))
+        Box(Modifier.fillMaxSize().background(Brush.horizontalGradient(0f to shade(0.95f), 0.5f to shade(0.60f), 0.85f to Color.Transparent)))
+        Box(Modifier.fillMaxSize().background(Brush.verticalGradient(0.55f to Color.Transparent, 1f to shade(0.90f))))
         Column(Modifier.align(Alignment.CenterStart).padding(start = Gutter + 8.dp).fillMaxSize(0.5f), verticalArrangement = Arrangement.Center) {
             Text("UP NEXT", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = tint(), letterSpacing = 2.sp, modifier = Modifier.rise(0))
             androidx.compose.foundation.layout.Spacer(Modifier.size(12.dp))
@@ -322,8 +322,8 @@ fun StartingScreen(api: CueApi, s: Playback.Starting, note: String, back: () -> 
         Crossfade(targetState = picture, animationSpec = tween(500), label = "starting") { u ->
             if (u != null) AsyncImage(model = u, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
         }
-        Box(Modifier.fillMaxSize().background(Brush.horizontalGradient(0f to Color(0xF20C0D10), 0.5f to Color(0x990C0D10), 0.85f to Color.Transparent)))
-        Box(Modifier.fillMaxSize().background(Brush.verticalGradient(0.55f to Color.Transparent, 1f to Color(0xE60C0D10))))
+        Box(Modifier.fillMaxSize().background(Brush.horizontalGradient(0f to shade(0.95f), 0.5f to shade(0.60f), 0.85f to Color.Transparent)))
+        Box(Modifier.fillMaxSize().background(Brush.verticalGradient(0.55f to Color.Transparent, 1f to shade(0.90f))))
         Column(Modifier.align(Alignment.CenterStart).padding(start = Gutter + 8.dp).fillMaxSize(0.5f), verticalArrangement = Arrangement.Center) {
             Text(if (s.failed) "COULDN'T START" else "STARTING", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = tint(), letterSpacing = 2.sp)
             androidx.compose.foundation.layout.Spacer(Modifier.size(12.dp))

@@ -287,7 +287,7 @@ private fun BoxScope.WelcomeArt() {
     ) {
         listOf(0xFF2A5A55, 0xFF2A3F5E, 0xFF4A2F5E, 0xFF5E2F45, 0xFF5E4A2F).forEachIndexed { i, c ->
             Box(Modifier.width(80.dp).height(50.dp).rise(150 + i * 60).clip(RoundedCornerShape(6.dp))
-                .background(Brush.linearGradient(listOf(Color(c), Color(0xFF101114)))))
+                .background(Brush.linearGradient(listOf(Color(c), Background))))
         }
     }
     Box(Modifier.align(Alignment.Center).size(200.dp).graphicsLayer { scaleX = g; scaleY = g }

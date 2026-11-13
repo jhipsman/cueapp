@@ -109,7 +109,10 @@ fun CueRoot(api: CueApi, playback: Playback, openWeb: (String) -> Unit, changeSe
     var switching by remember { mutableStateOf(false) }
     val rootScope = rememberCoroutineScope()
     var problem by remember { mutableStateOf("") }
-    var accent by remember { mutableStateOf(accentOf(api.accent)) }
+    // The profile's theme colours the whole app; it's read again whenever
+    // Cue comes to the front, so a change made on the web shows here.
+    remember { CueTheme.from(api); true }
+    val accent = CueTheme.accent
     val tintState = remember { mutableStateOf<Color?>(null) }
     // The screensaver: after a few minutes without a button pressed (and
     // only while this screen is in front, not while something plays).
@@ -120,7 +123,11 @@ fun CueRoot(api: CueApi, playback: Playback, openWeb: (String) -> Unit, changeSe
     val owner = androidx.compose.ui.platform.LocalLifecycleOwner.current
     androidx.compose.runtime.DisposableEffect(owner) {
         val watch = androidx.lifecycle.LifecycleEventObserver { _, e ->
-            if (e == androidx.lifecycle.Lifecycle.Event.ON_RESUME) { inFront = true; lastInput = System.currentTimeMillis() }
+            if (e == androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
+                inFront = true
+                lastInput = System.currentTimeMillis()
+                if (api.profileToken.isNotEmpty()) rootScope.launch { runCatching { api.refreshTheme() }.onSuccess { CueTheme.from(api) } }
+            }
             if (e == androidx.lifecycle.Lifecycle.Event.ON_PAUSE) { inFront = false; saver = null }
         }
         owner.lifecycle.addObserver(watch)
@@ -187,7 +194,7 @@ fun CueRoot(api: CueApi, playback: Playback, openWeb: (String) -> Unit, changeSe
                     }
                 }) {
                     switching = false
-                    accent = accentOf(api.accent)
+                    CueTheme.from(api)
                     stage = Stage.Ready
                 }
                 // The tour, once on a new TV (after the update offer), in
@@ -731,8 +738,8 @@ fun HomeBackdrop(api: CueApi, c: Tile?) {
         if (c != null) key(c.key) { BannerPreview(api, c, area) }
         // Fades: into the page on the left (where the words are), below
         // (where the rows are), and a little at the top for the tabs.
-        Box(Modifier.fillMaxSize().background(Brush.horizontalGradient(0.16f to Background, 0.45f to Color(0xB30C0D10), 0.72f to Color(0x000C0D10))))
-        Box(Modifier.fillMaxSize().background(Brush.verticalGradient(0f to Color(0x990C0D10), 0.16f to Color(0x000C0D10), 0.42f to Color(0x000C0D10), 0.74f to Color(0xF20C0D10), 0.85f to Background)))
+        Box(Modifier.fillMaxSize().background(Brush.horizontalGradient(0.16f to Background, 0.45f to shade(0.70f), 0.72f to shade(0.00f))))
+        Box(Modifier.fillMaxSize().background(Brush.verticalGradient(0f to shade(0.60f), 0.16f to shade(0.00f), 0.42f to shade(0.00f), 0.74f to shade(0.95f), 0.85f to Background)))
     }
 }
 
@@ -789,8 +796,8 @@ fun TitleScreen(api: CueApi, playback: Playback, card: Tile, memory: FocusMemory
         // The picture fills the screen; the words sit on its darker left.
         AsyncImage(model = c.backdrop, contentDescription = null, contentScale = ContentScale.Crop,
             modifier = Modifier.fillMaxSize().graphicsLayer { alpha = still }.settleIn())
-        Box(Modifier.fillMaxSize().background(Brush.horizontalGradient(0f to Color(0xF20C0D10), 0.42f to Color(0xA60C0D10), 0.75f to Color(0x1A0C0D10))))
-        Box(Modifier.fillMaxSize().background(Brush.verticalGradient(0.45f to Color.Transparent, 1f to Color(0xF20C0D10))))
+        Box(Modifier.fillMaxSize().background(Brush.horizontalGradient(0f to shade(0.95f), 0.42f to shade(0.65f), 0.75f to shade(0.10f))))
+        Box(Modifier.fillMaxSize().background(Brush.verticalGradient(0.45f to Color.Transparent, 1f to shade(0.95f))))
         CompositionLocalProvider(LocalBringIntoViewSpec provides GentleSpec) {
         LazyColumn(contentPadding = PaddingValues(bottom = 120.dp)) {
             item {

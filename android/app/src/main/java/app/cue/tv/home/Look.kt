@@ -100,7 +100,7 @@ fun AmbientBackground(url: String?) {
                 )
             }
         }
-        Box(Modifier.fillMaxSize().background(Brush.verticalGradient(0f to Color(0x99000000), 0.45f to Color(0xCC0C0D10), 1f to Color(0xF20C0D10))))
+        Box(Modifier.fillMaxSize().background(Brush.verticalGradient(0f to Color(0x99000000), 0.45f to shade(0.80f), 1f to shade(0.95f))))
         // With no picture (Live TV, Search, the profile): a soft glow of the
         // profile's colour from the top left instead.
         val glow by androidx.compose.animation.core.animateFloatAsState(if (url == null) 1f else 0.75f, tween(700), label = "accent-glow")
@@ -108,7 +108,7 @@ fun AmbientBackground(url: String?) {
             val accent = tint()
             Box(Modifier.fillMaxSize().drawBehind {
                 drawRect(Brush.radialGradient(
-                    listOf(accent.copy(alpha = 0.18f * glow), Color.Transparent),
+                    listOf(accent.copy(alpha = (0.18f * glow * GlowAmount).coerceAtMost(1f)), Color.Transparent),
                     center = androidx.compose.ui.geometry.Offset(size.width * 0.12f, 0f),
                     radius = size.width * 0.6f,
                 ))
@@ -325,8 +325,10 @@ fun Modifier.lift(focused: Boolean, scale: Float, shape: androidx.compose.ui.gra
     return this.graphicsLayer {
         val glow = tintState.value ?: accent
         val k = ((s - 1f) / (scale - 1f)).coerceIn(0f, 1f)
-        spotShadowColor = glow
-        ambientShadowColor = glow.copy(alpha = 0.6f)
+        // The theme's glow: none (a plain shadow), soft, or strong.
+        val g = GlowAmount
+        spotShadowColor = if (g == 0f) Color.Black else glow.copy(alpha = (0.55f * g).coerceAtMost(1f))
+        ambientShadowColor = if (g == 0f) Color.Black else glow.copy(alpha = (0.35f * g).coerceAtMost(1f))
         scaleX = s
         scaleY = s
         translationY = -4.dp.toPx() * k
