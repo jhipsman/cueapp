@@ -196,9 +196,7 @@ export default function Landing() {
       <section className="lp-part" id="inside">
         <div className="lp-wrap">
           <div className="lp-head">
-            <h2>
-              It doesn't just list things. <em>It plays them.</em>
-            </h2>
+            <h2>What's in it</h2>
           </div>
           <div className="lp-bento">
             <div className="lp-tile t-title">
@@ -207,7 +205,7 @@ export default function Landing() {
                 <b>●</b> Title pages
               </span>
               <div className="lp-cap">
-                <h3>Open anything and it comes alive</h3>
+                <h3>Title pages</h3>
               </div>
             </div>
             <div className="lp-tile t-phone">
@@ -218,7 +216,7 @@ export default function Landing() {
                 <b>●</b> Phone
               </span>
               <div className="lp-cap">
-                <h3>In your pocket</h3>
+                <h3>On your phone</h3>
               </div>
             </div>
             <div className="lp-tile t-hover">
@@ -227,7 +225,7 @@ export default function Landing() {
                 <b>●</b> Hover
               </span>
               <div className="lp-cap">
-                <h3>Rest on a poster, it plays</h3>
+                <h3>Previews</h3>
               </div>
             </div>
             <div className="lp-tile t-play">
@@ -236,7 +234,7 @@ export default function Landing() {
                 <b>●</b> Player
               </span>
               <div className="lp-cap">
-                <h3>Hit Play. Picks up where you stopped.</h3>
+                <h3>Pick up where you left off</h3>
               </div>
             </div>
             <div className="lp-tile t-live">
@@ -245,7 +243,7 @@ export default function Landing() {
                 <b>●</b> Live
               </span>
               <div className="lp-cap">
-                <h3>Live TV and a full guide</h3>
+                <h3>Live TV</h3>
               </div>
             </div>
             <div className="lp-tile t-year">
@@ -259,7 +257,7 @@ export default function Landing() {
               <h3>Your year in Cue</h3>
             </div>
             <div className="lp-tile t-people">
-              <h3>Everyone gets their own profile</h3>
+              <h3>A profile for everyone</h3>
             </div>
           </div>
         </div>
@@ -268,9 +266,7 @@ export default function Landing() {
       <section className="lp-part" id="ad">
         <div className="lp-wrap">
           <div className="lp-head">
-            <h2>
-              Fifty seconds. <em>Sound on.</em>
-            </h2>
+            <h2>The ad</h2>
           </div>
           <div className="lp-cinema" ref={cinema}>
             {adOn ? (
@@ -293,9 +289,7 @@ export default function Landing() {
       <section className="lp-part" id="get">
         <div className="lp-wrap">
           <div className="lp-head">
-            <h2>
-              On your screens in <em>five minutes.</em>
-            </h2>
+            <h2>Get Cue</h2>
           </div>
           <div className="lp-tabs" role="tablist" aria-label="Your device">
             {tabs.map((t, i) => (
@@ -330,12 +324,12 @@ export default function Landing() {
               </div>
               <div className="lp-step">
                 <span className="n">2</span>
-                <h3>Let it install apps</h3>
+                <h3>Allow installs</h3>
                 <p>Fire TV: Settings &gt; My Fire TV &gt; Developer options &gt; Install unknown apps &gt; Downloader.</p>
               </div>
               <div className="lp-step">
                 <span className="n">3</span>
-                <h3>Type this in Downloader</h3>
+                <h3>Enter this in Downloader</h3>
                 <Copy text={`${host}/tv.apk`} />
               </div>
             </div>
@@ -367,27 +361,19 @@ export default function Landing() {
             <div className="lp-panel" role="tabpanel" id="lp-p-apple" aria-labelledby="lp-tab-apple">
               <div className="lp-step">
                 <span className="n">1</span>
-                <h3>It's set up for you</h3>
+                <h3>Ask whoever runs Cue</h3>
               </div>
               <div className="lp-step">
                 <span className="n">2</span>
-                <h3>Say which TV</h3>
+                <h3>Tell them which Apple TV</h3>
               </div>
               <div className="lp-step">
                 <span className="n">3</span>
-                <h3>Then just open it</h3>
+                <h3>Open Cue</h3>
               </div>
             </div>
           )}
 
-          <div className="lp-signin">
-            <div>
-              <h2>Ready to watch?</h2>
-              <Link className="lp-btn primary" to="/login">
-                Sign in
-              </Link>
-            </div>
-          </div>
         </div>
       </section>
 
