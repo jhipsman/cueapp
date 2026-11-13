@@ -4966,3 +4966,59 @@ html.tv-mode .wx .wx-card:focus .wx-card-art {
   bottom: 22%;
   right: var(--wx-gutter, 48px);
 }
+
+/* Home's banner, full-bleed (as on a title's page and the TV app): the
+   picture runs edge to edge under the header, fades into the page to the
+   left and below, and the first rows sit up over its faded foot. */
+.wx-hero.full {
+  min-height: min(78vh, 52vw);
+  padding: calc(110px + env(safe-area-inset-top)) var(--wx-gutter) clamp(120px, 18vh, 200px);
+}
+.wx-hero.full .wx-hero-pic {
+  left: 22%;
+  -webkit-mask-image: linear-gradient(to bottom, #000 50%, transparent 92%), linear-gradient(to right, transparent, #000 30%);
+  -webkit-mask-composite: source-in;
+  mask-image: linear-gradient(to bottom, #000 50%, transparent 92%), linear-gradient(to right, transparent, #000 30%);
+  mask-composite: intersect;
+}
+.wx-hero.full::before {
+  background:
+    linear-gradient(to top, rgb(var(--wx-bg-rgb)) 0%, rgba(var(--wx-bg-rgb), 0) 32%),
+    linear-gradient(to right, rgba(var(--wx-bg-rgb), 0.85) 0%, rgba(var(--wx-bg-rgb), 0.4) 38%, rgba(var(--wx-bg-rgb), 0) 62%),
+    linear-gradient(to bottom, rgba(var(--wx-bg-rgb), 0.55) 0%, rgba(var(--wx-bg-rgb), 0) 22%);
+}
+.wx-hero.full .wx-hero-trailer {
+  left: 22%;
+  -webkit-mask-image: linear-gradient(to bottom, #000 50%, transparent 92%), linear-gradient(to right, transparent, #000 30%);
+  -webkit-mask-composite: source-in;
+  mask-image: linear-gradient(to bottom, #000 50%, transparent 92%), linear-gradient(to right, transparent, #000 30%);
+  mask-composite: intersect;
+}
+.wx-hero.full .wx-logo {
+  max-height: clamp(60px, 9vw, 130px);
+  max-width: min(380px, 70%);
+}
+.wx-hero.full .wx-overview.clamp {
+  -webkit-line-clamp: 2;
+}
+.wx-home .wx-hero.full + .wx-rows {
+  position: relative;
+  z-index: 1;
+  margin-top: clamp(-150px, -14vh, -80px);
+}
+@media (max-width: 640px) {
+  .wx-hero.full {
+    min-height: 92vw;
+    padding: calc(80px + env(safe-area-inset-top)) 18px 70px;
+  }
+  .wx-hero.full .wx-hero-pic,
+  .wx-hero.full .wx-hero-trailer {
+    left: 0;
+  }
+  .wx-hero.full .wx-overview.clamp {
+    display: none;
+  }
+  .wx-home .wx-hero.full + .wx-rows {
+    margin-top: -40px;
+  }
+}
