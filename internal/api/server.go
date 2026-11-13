@@ -297,6 +297,9 @@ func (s *Server) Routes() http.Handler {
 	public.HandleFunc("POST /api/onboarding/admin", s.handleCreateAdmin)
 	public.HandleFunc("POST /api/auth/login", s.handleLogin)
 	public.HandleFunc("POST /api/auth/logout", s.handleLogout)
+	// Signing a TV in from a signed-in phone (handlers_tvlink.go).
+	public.HandleFunc("POST /api/auth/tv-link", s.handleTVLinkStart)
+	public.HandleFunc("GET /api/auth/tv-link/{token}", s.handleTVLinkPoll)
 	// The family invite link: check it, and make an account from it.
 	public.HandleFunc("GET /api/join/{token}", s.handleCheckJoin)
 	public.HandleFunc("POST /api/join/{token}", s.handleJoin)
@@ -748,6 +751,7 @@ func (s *Server) protectedRoutes() *routeTable {
 	admin.HandleFunc("PUT /api/settings/youtube", s.handlePutYouTube)
 	// Each account manages its own profiles (a family member's too: their
 	// account's, never anyone else's), from its main profile.
+	member.HandleFunc("POST /api/auth/tv-link/approve", s.handleTVLinkApprove)
 	play.HandleFunc("POST /api/profiles", s.handleAddWatchProfile)
 	play.HandleFunc("PUT /api/profiles/{id}", s.handleUpdateWatchProfile)
 	play.HandleFunc("DELETE /api/profiles/{id}", s.handleRemoveWatchProfile)

@@ -12,6 +12,9 @@ under [Unreleased]. How releases are cut: [docs/RELEASING.md](docs/RELEASING.md)
 - Releases are signed with a new update key, held only by the project owner. **Update now** installs only releases signed with it.
 
 ### Added
+- **Manage profiles on the TV** (Fire TV, Google TV): Profile > Manage profiles changes each profile's name, picture and color, adds one or removes one, with the remote (from the main profile; PINs are set on the web).
+- **Light mode** (Fire TV, Google TV): still pictures instead of moving previews, for TVs with a slow processor. On by itself on TVs with little memory (most built-in Google TVs); Profile switches it.
+- **Sign in the TV with your phone** (Fire TV, Google TV): the sign-in screen shows a QR code and a 6-letter code; scan it with a phone that's signed in (or go to cuetv.me/link and type the code), tap **Sign in the TV**, and the TV is signed in to that account. A code lasts ten minutes and works once. `POST /api/auth/tv-link`, `GET /api/auth/tv-link/{token}`, `POST /api/auth/tv-link/approve`.
 - **Profile pictures**: in Manage profiles, each profile can wear a picture on its color (a fox, a unicorn, a game controller, 18 in all) instead of its initial, so everyone finds theirs at a glance: on the web, Fire TV, Google TV and Apple TV. Stored with the color (`"avatar": "teal/fox"`); `GET /api/profiles` lists them as `icons`.
 - **A short tour** (web, Fire TV, Google TV): the first time Watch opens, four slides cover what's worth knowing: **Other version** / **Try another version** when a version is blurry, in the wrong language, out of sync or keeps stopping; **Skip intro** and **Next episode**; subtitles; and searching from your phone. Each has a small drawing of the real control, lit. **How Cue works** in the profile menu (web) or on Profile (TV) shows it again.
 - **A new Cue logo**: the C with a play button, redrawn: an even ring with round ends and a soft play button set in its middle, beside "cue" in Sora Bold. On the web (header, sign-in, front page, favicon and home-screen icons) and the Fire TV and Google TV app (launcher icon, banner and header).
@@ -56,6 +59,8 @@ under [Unreleased]. How releases are cut: [docs/RELEASING.md](docs/RELEASING.md)
 - **Stream add-ons**: paste a Stremio add-on link (Comet on ElfHosted, Torrentio, MediaFusion) in Settings > Downloading, and Play asks it for streams first, with its own scrapers and sorting. Links set up with your Premiumize key play straight away; Cue's own search is the fallback. See [docs/watch.md](docs/watch.md#stream-add-ons-comet-torrentio-mediafusion).
 
 ### Changed
+- **Home on Fire TV and Google TV, as on a title's page**: the highlighted title's picture fills the screen behind the tabs and rows, fading into the page, with its logo and story on it, instead of a banner in a card. The blurred picture behind Home is gone too (costly on a TV).
+- **A faster TV app**: it's now optimized when built (R8), and installs Compose's ready-made startup profiles itself, which an APK installed outside the app store otherwise goes without, so screens and scrolling are smooth from the first use.
 - **Previews are ready before you open a title**: everything Home shows gets its clip made while nobody is using Cue (no one signed in has done anything for half an hour: overnight, mostly), one after another while the server is quiet. Clips are 12 seconds now (twice as quick to make, about 2–3 MB each), so one not made yet appears sooner.
 - The cloud image built from every change is for Intel/AMD servers only, so it's ready in about half the time; releases still build for ARM too.
 - A family member's menu in Watch shows **Your account** (their own name and password) instead of Settings.
@@ -96,6 +101,7 @@ under [Unreleased]. How releases are cut: [docs/RELEASING.md](docs/RELEASING.md)
 - **Premiumize.me as a downloader.** Add your Premiumize API key in Settings > Downloading > Usenet and torrents, under Cloud downloader, and torrents (or Usenet, or both, your choice) are downloaded by Premiumize on its own servers instead of by the built-in client. Releases Premiumize already has are ready at once. Cue then fetches the finished files over HTTPS, picks up where it stopped after a pause, and removes the transfer and its files from your Premiumize cloud once they are home. Torrents fetched this way need no VPN and don't seed. See [docs/downloads.md](docs/downloads.md#premiumize).
 
 ### Fixed
+- Home on Fire TV and Google TV: a highlighted row's title ("Trending movies") no longer slides under the banner, and rows and posters glide for a shorter time, which stutters less on slow TVs.
 - Previews play the **English** sound when a version has several languages (they took whichever came first, sometimes a dub); clips made before are made again. On Fire TV and Google TV a title page's moment prefers English too.
 - Family members (not administrators) can add, change and remove their own account's profiles, pictures included, from its main profile; it said only an administrator could.
 - The tour on Fire TV and Google TV: the remote now moves between its buttons instead of the screen behind it.

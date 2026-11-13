@@ -2377,6 +2377,8 @@ export const api = {
       `/watch/preview/${kind}/${tmdbId}?${new URLSearchParams({ season: String(season ?? 1), episode: String(episode ?? 1), ...(ready ? { ready: '1' } : {}) })}`,
     ),
   // Searching on the TV from a phone (the TV's Search shows the code).
+  // A TV's sign-in code, confirmed from this (signed-in) phone: the TV is signed in as this account.
+  approveTVLink: (code: string) => post<{ ok: boolean }>('/auth/tv-link/approve', { code }),
   sendRemoteSearch: (code: string, q: string) => put<{ q: string; seq: number }>(`/watch/remote/${encodeURIComponent(code)}`, { q }),
   watchProviders: (kind: 'movie' | 'tv', tmdbId: number) =>
     get<WatchProviders>(`/watch/providers/${kind}/${tmdbId}?region=${userRegion()}`),

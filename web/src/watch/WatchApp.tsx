@@ -5,6 +5,7 @@ import Screensaver from './Screensaver'
 import Tour from './Tour'
 import YearPage from './YearPage'
 import RemoteSearch from './RemoteSearch'
+import LinkTV from './LinkTV'
 import Icon from '../components/Icon'
 import Home from './Home'
 import MyList from './MyList'
@@ -57,6 +58,7 @@ export default function WatchApp() {
         <Route path="quality" element={<StreamingPage />} />
         <Route path="year" element={<YearPage />} />
         <Route path="remote/:code" element={<RemoteSearch />} />
+        <Route path="link/:code?" element={<LinkTV />} />
         <Route path="recording/:id" element={<RecordingPlayer />} />
         <Route path="play/movie/:tmdbId" element={<PlayerPage />} />
         <Route path="play/tv/:tmdbId/:season/:episode" element={<PlayerPage />} />

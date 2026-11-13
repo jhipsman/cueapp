@@ -190,7 +190,7 @@ private fun PhoneCard(url: String, code: String, modifier: Modifier = Modifier) 
     }
 }
 
-private fun qrBitmap(text: String, size: Int): Bitmap? = runCatching {
+internal fun qrBitmap(text: String, size: Int): Bitmap? = runCatching {
     val m = QRCodeWriter().encode(text, BarcodeFormat.QR_CODE, size, size, mapOf(EncodeHintType.MARGIN to 0))
     val px = IntArray(m.width * m.height) { i -> if (m.get(i % m.width, i / m.width)) 0xFF0B0C0F.toInt() else 0xFFFFFFFF.toInt() }
     Bitmap.createBitmap(px, m.width, m.height, Bitmap.Config.ARGB_8888)

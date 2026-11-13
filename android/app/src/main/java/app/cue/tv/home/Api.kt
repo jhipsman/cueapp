@@ -23,6 +23,9 @@ class CueApi(ctx: Context, val server: String) {
     var profileName: String
         get() = prefs.getString("profileName", "") ?: ""
         set(v) = prefs.edit().putString("profileName", v).apply()
+    var profileId: Int // the profile this TV is on
+        get() = prefs.getInt("profileId", 0)
+        set(v) = prefs.edit().putInt("profileId", v).apply()
     var profileAvatar: String // "teal" or "teal/fox": its color, then its picture
         get() = prefs.getString("profileAvatar", "") ?: ""
         set(v) = prefs.edit().putString("profileAvatar", v).apply()
@@ -92,6 +95,13 @@ class CueApi(ctx: Context, val server: String) {
         request("POST", "/api/auth/login", JSONObject().put("username", user).put("password", password))
     }
 
+    /** A code for signing this TV in from a phone: (code, token). */
+    suspend fun tvLinkStart(): Pair<String, String> =
+        JSONObject(request("POST", "/api/auth/tv-link")).let { it.optString("code") to it.optString("token") }
+
+    /** True once a phone has confirmed the code: this TV is then signed in. */
+    suspend fun tvLinkDone(token: String): Boolean = obj("/api/auth/tv-link/$token").optBoolean("ok")
+
     suspend fun profiles(): List<Profile> {
         val o = obj("/api/profiles")
         val a = o.optJSONArray("profiles") ?: JSONArray()
@@ -102,9 +112,27 @@ class CueApi(ctx: Context, val server: String) {
         val o = JSONObject(request("POST", "/api/profiles/${p.id}/select", JSONObject().put("pin", pin)))
         profileToken = o.optString("token")
         val prof = o.optJSONObject("profile")
+        profileId = p.id
         profileName = prof?.optString("name") ?: p.name
         profileAvatar = prof?.optString("avatar")?.ifEmpty { null } ?: p.avatar
         accent = prof?.optJSONObject("theme")?.optString("accent") ?: ""
+    }
+
+    // Managing the account's profiles (from its main profile; the server checks).
+    suspend fun addProfile(name: String, avatar: String) {
+        request("POST", "/api/profiles", JSONObject().put("name", name).put("avatar", avatar))
+    }
+
+    suspend fun updateProfile(id: Int, name: String, avatar: String) {
+        request("PUT", "/api/profiles/$id", JSONObject().put("name", name).put("avatar", avatar))
+        if (id == profileId) {
+            profileName = name
+            profileAvatar = avatar
+        }
+    }
+
+    suspend fun removeProfile(id: Int) {
+        request("DELETE", "/api/profiles/$id")
     }
 
     fun forgetProfile() {
@@ -154,10 +182,10 @@ private fun JSONObject.str(k: String): String? = optString(k).takeIf { has(k) &&
 private fun JSONObject.int(k: String): Int? = if (has(k) && !isNull(k)) optInt(k) else null
 private fun JSONObject.dbl(k: String): Double? = if (has(k) && !isNull(k)) optDouble(k) else null
 
-data class Profile(val id: Int, val name: String, val avatar: String, val hasPin: Boolean, val accent: String?) {
+data class Profile(val id: Int, val name: String, val avatar: String, val hasPin: Boolean, val accent: String?, val main: Boolean = false) {
     companion object {
         fun from(o: JSONObject) = Profile(o.optInt("id"), o.optString("name"), o.optString("avatar"), o.optBoolean("hasPin"),
-            o.optJSONObject("theme")?.str("accent"))
+            o.optJSONObject("theme")?.str("accent"), o.optBoolean("main"))
     }
 }
 

@@ -133,6 +133,7 @@ var memberRoutes = []string{
 	"GET /api/play/tmdb/tv/{tmdbId}/{season}/{episode}",
 	"GET /api/profiles",
 	"POST /api/profiles/{id}/select",
+	"POST /api/auth/tv-link/approve",
 	"POST /api/profiles",
 	"PUT /api/profiles/{id}",
 	"DELETE /api/profiles/{id}",
