@@ -235,43 +235,66 @@ export default function Landing() {
           </div>
           <div className="lp-bento">
             <div className="lp-tile t-title">
-              <Loop name="title" className="bg" label="A title's page with its trailer playing behind the title" />
+              <Loop name="title" className="bg" label="A movie's page in Cue, its trailer playing behind the title" />
               <span className="lp-tag">
-                <b>●</b> Title pages
+                <b>●</b> Everything
               </span>
               <div className="lp-cap">
-                <h3>Title pages</h3>
+                <h3>Every movie and show. No subscriptions.</h3>
               </div>
             </div>
             <div className="lp-tile t-phone">
               <div className="lp-mini">
                 <Phone>
-                  <Loop name="phone" label="Swiping through Cue on a phone" />
+                  <div className="lp-remote" aria-hidden="true">
+                    <p>Searching on the TV</p>
+                    <div className="lp-remote-field">
+                      <span className="lp-typed">Dune</span>
+                    </div>
+                    <div className="lp-remote-mic" />
+                    <div className="lp-remote-hits">
+                      <img src={`${M}p1170608.jpg`} alt="" loading="lazy" />
+                    </div>
+                  </div>
                 </Phone>
+                <Suspense fallback={null}>
+                  <PhoneModel model={`${M}iphone.glb`} searchPoster={`${M}p1170608.jpg`} turn={0.22} />
+                </Suspense>
               </div>
               <span className="lp-tag">
-                <b>●</b> Phone
+                <b>●</b> Fire TV
               </span>
               <div className="lp-cap">
-                <h3>On your phone</h3>
+                <h3>Search the TV from your phone</h3>
               </div>
             </div>
-            <div className="lp-tile t-hover">
-              <Loop name="hover" className="bg" label="Resting the pointer on a poster plays its trailer inside it" />
+            <div className="lp-tile t-hover t-versions">
+              <img className="bg" src={`${M}hero.jpg`} alt="" loading="lazy" />
+              <div className="lp-pop" aria-hidden="true">
+                <small>Version 1 of 6</small>
+                <span className="dim">720p</span>
+                <span className="lit">
+                  Try another version
+                  <em>Version 2 of 6 · 4K</em>
+                </span>
+              </div>
               <span className="lp-tag">
-                <b>●</b> Hover
+                <b>●</b> Versions
               </span>
               <div className="lp-cap">
-                <h3>Previews</h3>
+                <h3>Bad copy? Try another version.</h3>
               </div>
             </div>
             <div className="lp-tile t-play">
-              <Loop name="play" className="bg" label="A movie playing full screen in Cue's player" />
+              <Loop name="play" className="bg" label="A show playing in Cue's player" />
+              <span className="lp-skip" aria-hidden="true">
+                Skip intro <b>›</b>
+              </span>
               <span className="lp-tag">
                 <b>●</b> Player
               </span>
               <div className="lp-cap">
-                <h3>Pick up where you left off</h3>
+                <h3>Skips the intro for you</h3>
               </div>
             </div>
             <div className="lp-tile t-live">
@@ -280,7 +303,7 @@ export default function Landing() {
                 <b>●</b> Live
               </span>
               <div className="lp-cap">
-                <h3>Live TV</h3>
+                <h3>Live TV with a full guide</h3>
               </div>
             </div>
             <div className="lp-tile t-year">
@@ -294,7 +317,12 @@ export default function Landing() {
               <h3>Your year in Cue</h3>
             </div>
             <div className="lp-tile t-people">
-              <h3>A profile for everyone</h3>
+              <div className="lp-devices" aria-hidden="true">
+                {['Fire TV', 'Google TV', 'Apple TV', 'iPhone', 'Android', 'Laptop'].map((d) => (
+                  <span key={d}>{d}</span>
+                ))}
+              </div>
+              <h3>On every screen</h3>
             </div>
           </div>
         </div>
