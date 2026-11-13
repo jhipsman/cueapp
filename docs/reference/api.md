@@ -378,9 +378,9 @@ Every route the server exposes. Routes marked **public** need no sign-in; all ot
 | Method | Path | Access | What it does |
 |---|---|---|---|
 | GET | `/api/profiles` | signed in | GET /api/profiles: who can be picked, and which one this device is on. |
-| POST | `/api/profiles` | admin | POST /api/profiles {"name","avatar"} (main profile only) |
-| DELETE | `/api/profiles/{id}` | admin | DELETE /api/profiles/{id} (main profile only; not the main profile) |
-| PUT | `/api/profiles/{id}` | admin | PUT /api/profiles/{id} {"name"?, "avatar"?, "pin"?} (main profile only; "pin": "" removes it) |
+| POST | `/api/profiles` | signed in | POST /api/profiles {"name","avatar"} (main profile only) |
+| DELETE | `/api/profiles/{id}` | signed in | DELETE /api/profiles/{id} (main profile only; not the main profile) |
+| PUT | `/api/profiles/{id}` | signed in | PUT /api/profiles/{id} {"name"?, "avatar"?, "pin"?} (main profile only; "pin": "" removes it) |
 | POST | `/api/profiles/{id}/select` | signed in | POST /api/profiles/{id}/select {"pin": "1234"}: picks a profile on this device and answers with its token. |
 
 ## quality-profiles
