@@ -199,14 +199,14 @@ fun TourScreen(done: () -> Unit) {
 // ---- The drawings: small, calm versions of the real screens ----
 
 @Composable
-private fun BoxScope.Picture(vararg colors: Color) {
+private fun BoxScope.Picture(first: Color, second: Color) {
     val t = rememberInfiniteTransition(label = "drift")
     val z by t.animateFloat(1f, 1.08f, infiniteRepeatable(tween(9000, easing = LinearEasing), RepeatMode.Reverse), label = "z")
     Box(
         Modifier.matchParentSize().graphicsLayer { scaleX = z; scaleY = z }.background(
-            Brush.radialGradient(listOf(colors[0], Color.Transparent), radius = 520f, center = androidx.compose.ui.geometry.Offset(560f, 160f)),
+            Brush.radialGradient(listOf(first, Color.Transparent), radius = 520f, center = androidx.compose.ui.geometry.Offset(560f, 160f)),
         ).background(
-            Brush.radialGradient(listOf(colors[1], Color.Transparent), radius = 420f, center = androidx.compose.ui.geometry.Offset(160f, 300f)),
+            Brush.radialGradient(listOf(second, Color.Transparent), radius = 420f, center = androidx.compose.ui.geometry.Offset(160f, 300f)),
         ),
     )
 }
