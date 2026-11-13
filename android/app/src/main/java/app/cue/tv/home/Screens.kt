@@ -145,7 +145,8 @@ fun CueRoot(api: CueApi, playback: Playback, openWeb: (String) -> Unit, changeSe
     LaunchedEffect(stage) {
         if (stage != Stage.Checking) return@LaunchedEffect
         problem = ""
-        stage = try {
+        val began = System.currentTimeMillis()
+        val next = try {
             when {
                 !api.signedIn() -> Stage.SignIn
                 api.profileToken.isEmpty() -> Stage.Profiles
@@ -155,6 +156,9 @@ fun CueRoot(api: CueApi, playback: Playback, openWeb: (String) -> Unit, changeSe
             problem = e.message ?: "Couldn't reach Cue."
             Stage.SignIn
         }
+        // The logo has its moment, rather than flashing past.
+        delay((1100 - (System.currentTimeMillis() - began)).coerceAtLeast(0))
+        stage = next
     }
     androidx.tv.material3.MaterialTheme(
         colorScheme = androidx.tv.material3.darkColorScheme(primary = accent, onPrimary = Color.Black, surface = Panel, background = Background),
@@ -170,8 +174,10 @@ fun CueRoot(api: CueApi, playback: Playback, openWeb: (String) -> Unit, changeSe
                 false
             }
         }) {
-            when (stage) {
-                Stage.Checking -> Centered { Text("Cue", fontSize = 48.sp, fontWeight = FontWeight.Black, color = Teal) }
+            // Each stage fades into the next (the logo into sign-in or Home).
+            Crossfade(targetState = stage, animationSpec = tween(500, easing = Settle), label = "stage") { shown ->
+            when (shown) {
+                Stage.Checking -> LaunchLogo()
                 Stage.SignIn -> SignInScreen(api, problem, changeServer) { stage = Stage.Profiles }
                 Stage.Profiles -> ProfilesScreen(api, pickAlone = !switching, signOut = {
                     rootScope.launch {
@@ -193,6 +199,7 @@ fun CueRoot(api: CueApi, playback: Playback, openWeb: (String) -> Unit, changeSe
                     switching = true
                     stage = Stage.Profiles
                 }
+            }
             }
             playback.upNext?.let { u -> UpNextScreen(api, u, play = { playback.playUpNext() }, dismiss = { playback.dismissUpNext() }) }
             playback.starting?.let { st -> StartingScreen(api, st, playback.note) { playback.cancelStarting() } }
@@ -226,6 +233,41 @@ fun CueRoot(api: CueApi, playback: Playback, openWeb: (String) -> Unit, changeSe
             }
         }
     } } }
+}
+
+// The logo as Cue opens: the mark grows into place with a soft glow
+// breathing behind it, and "cue" slides in beside it.
+@Composable
+fun LaunchLogo() {
+    val mark = remember { androidx.compose.animation.core.Animatable(0f) }
+    val word = remember { androidx.compose.animation.core.Animatable(0f) }
+    LaunchedEffect(Unit) {
+        launch { mark.animateTo(1f, tween(700, easing = Settle)) }
+        delay(220)
+        word.animateTo(1f, tween(600, easing = Settle))
+    }
+    val breathe = androidx.compose.animation.core.rememberInfiniteTransition(label = "glow")
+    val glow by breathe.animateFloat(0.7f, 1f, androidx.compose.animation.core.infiniteRepeatable(tween(1400), androidx.compose.animation.core.RepeatMode.Reverse), label = "g")
+    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        Box(Modifier.size(360.dp).graphicsLayer { alpha = mark.value * glow; scaleX = 0.8f + 0.2f * glow; scaleY = 0.8f + 0.2f * glow }
+            .background(Brush.radialGradient(listOf(Teal.copy(alpha = 0.32f), Color.Transparent))))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            androidx.compose.foundation.Image(
+                androidx.compose.ui.res.painterResource(app.cue.tv.R.drawable.ic_cue_mark), contentDescription = "Cue",
+                colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(Teal),
+                modifier = Modifier.size(84.dp).graphicsLayer {
+                    alpha = mark.value
+                    val sc = 0.7f + 0.3f * mark.value
+                    scaleX = sc
+                    scaleY = sc
+                    rotationZ = -18f * (1f - mark.value)
+                },
+            )
+            HGap(18.dp)
+            Text("cue", fontFamily = Type.display(), fontSize = 64.sp, fontWeight = FontWeight.Bold, color = Color.White,
+                modifier = Modifier.graphicsLayer { alpha = word.value; translationX = -24.dp.toPx() * (1f - word.value) })
+        }
+    }
 }
 
 // ---- Signing in ----

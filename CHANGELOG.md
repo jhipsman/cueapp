@@ -61,6 +61,7 @@ under [Unreleased]. How releases are cut: [docs/RELEASING.md](docs/RELEASING.md)
 - **Stream add-ons**: paste a Stremio add-on link (Comet on ElfHosted, Torrentio, MediaFusion) in Settings > Downloading, and Play asks it for streams first, with its own scrapers and sorting. Links set up with your Premiumize key play straight away; Cue's own search is the fallback. See [docs/watch.md](docs/watch.md#stream-add-ons-comet-torrentio-mediafusion).
 
 ### Changed
+- **Opening the TV app**: the Cue logo grows into place with a soft glow and "cue" slides in beside it (it was the word in plain text), then fades into sign-in or Home; each of sign-in, "Who's watching?" and Home fades into the next.
 - **Cleaner buttons on Fire TV and Google TV**: every button the same frosted glass with white words; only the one the remote is on turns solid white and grows a touch (no coloured ring). Seasons and channel groups are plain tabs, the chosen one with a short line under it, so the highlight and the choice never look alike.
 - **Smoother everywhere on Fire TV and Google TV**: opening a title zooms it in over Home and Back zooms it away; the player fades in and out; its controls glide up as they appear; pausing dims the picture and the pause mark pops in softly instead of snapping on.
 - **New buttons** (Fire TV, Google TV): frosted glass with a fine edge and real icons (Play, My List); the one the remote is on turns white, lifts and gets a soft ring of light in the profile's colour.
