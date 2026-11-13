@@ -93,6 +93,10 @@ Press **CC** in the player (or **Subtitles** in the TV app) and Cue finds Englis
 
 Episodes show **Skip intro** (and **Skip recap**) for a few seconds as one starts, in the browser and in the TV app (where the remote's OK presses Skip while it shows); after that it steps aside and comes back with the controls (or when the mouse moves). Times over three minutes long are taken for bad data and ignored. When the credits start, the next episode is offered; it plays by itself only once the episode has ended. Cue learns the times from your household: jump over the intro once (with the remote's right button or the time bar), or press **Next episode** during the credits, and every other episode of that show gets the button too. Until then it uses [TheIntroDB](https://theintrodb.org), whose users submit times for each cut of an episode (picked by the video's length). If its times are off for your version, skip the intro yourself once: yours are used from then on.
 
+## The tour
+
+The first time Watch opens on a browser or TV, four short slides show the controls worth knowing: **Try another version** (in **Versions** on the web player's bar) or **Other version** (on the TV's bar) for a version that's blurry, in the wrong language, out of sync or keeps stopping; **Skip intro** and **Next episode**; subtitles; and searching from a phone. **How Cue works** in the profile menu (web) or on **Profile** (TV) shows it again.
+
 ## The artwork, alive
 
 - **Living banner**: on a computer, and on Fire TV and Google TV, resting on Home's banner for a moment fades in a moving preview behind its logo. It stops when you move on.

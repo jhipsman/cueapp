@@ -180,6 +180,12 @@ fun CueRoot(api: CueApi, playback: Playback, openWeb: (String) -> Unit, changeSe
             AppUpdate.offer?.takeIf { AppUpdate.showing && playback.upNext == null && stage == Stage.Ready }?.let { o ->
                 UpdateCard(api, o, later = { AppUpdate.later() })
             }
+            // The tour, once on a new TV (after the update offer, never over
+            // something starting or playing).
+            LaunchedEffect(stage) { if (stage == Stage.Ready) Tour.maybeShow(ctx) }
+            if (Tour.showing && stage == Stage.Ready && !(AppUpdate.showing && AppUpdate.offer != null) && playback.upNext == null && playback.starting == null) {
+                TourScreen { Tour.done(ctx) }
+            }
             saver?.let { Screensaver(api, it) }
             // While Cue's screensaver shows, the TV stays awake (otherwise the
             // Fire TV's own screensaver takes over a minute or two later). After
@@ -978,6 +984,7 @@ fun ProfileScreen(api: CueApi, switchProfile: () -> Unit, changeServer: () -> Un
                 if (AppUpdate.offer != null) Pill("Update Cue", primary = true) { AppUpdate.showing = true }
                 Pill("Switch profile", primary = AppUpdate.offer == null, onClick = switchProfile)
                 Pill("Your year in Cue") { openWeb("/watch/year") }
+                Pill("How Cue works") { Tour.showing = true }
                 Pill("Web version") { openWeb("/watch") }
                 Pill("Change server", onClick = changeServer)
             }

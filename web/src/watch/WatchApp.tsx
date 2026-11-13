@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 're
 import { Link, NavLink, Route, Routes, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import CueWordmark from '../components/CueWordmark'
 import Screensaver from './Screensaver'
+import Tour from './Tour'
 import YearPage from './YearPage'
 import RemoteSearch from './RemoteSearch'
 import Icon from '../components/Icon'
@@ -46,6 +47,7 @@ export default function WatchApp() {
         <RemindersProvider>
         <ProfileGate />
         <Screensaver />
+        <Tour />
         <Routes>
         <Route path="who" element={<WhoIsWatching />} />
         <Route path="profiles" element={<ManageProfiles />} />
@@ -161,6 +163,7 @@ function ProfileMenu() {
           <button onClick={() => navigate('/watch/theme')}>Colors</button>
           <button onClick={() => navigate('/watch/quality')}>Streaming quality</button>
           <button onClick={() => navigate('/watch/year')}>Your year in Cue</button>
+          <button onClick={() => navigate('/watch?tour=1')}>How Cue works</button>
           {owner && <button onClick={() => navigate('/watch/profiles')}>Manage profiles</button>}
           {onTV() && <button onClick={() => window.CueTV?.changeServer()}>Change server</button>}
           {owner && <button onClick={() => navigate(streamingOnly ? '/settings/streaming' : '/')}>{streamingOnly ? 'Settings' : 'Settings and library'}</button>}
