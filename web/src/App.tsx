@@ -16,6 +16,7 @@ import DiscoverAll from './pages/DiscoverAll'
 import Splash from './components/Splash'
 import Library from './pages/Library'
 import Login from './pages/Login'
+import Landing from './pages/Landing'
 import MovieDetail from './pages/MovieDetail'
 import Onboarding from './pages/Onboarding'
 import Welcome from './pages/Welcome'
@@ -71,6 +72,7 @@ function Front() {
 
 function Gate() {
   const { loading, offline, slow, firstRunNeeded, user, needsWizard, streamingOnly, refresh } = useAuth()
+  const location = useLocation()
   const admin = isAdmin(user)
 
   if (loading) {
@@ -89,7 +91,10 @@ function Gate() {
     return streamingOnly ? <Welcome /> : <Onboarding />
   }
   if (!user) {
-    return <Login />
+    // Signed out at Cue's own address: the front page (what Cue is, the app
+    // playing, how to get it), with Sign in a button away. Any other address
+    // (a link to a title, the phone-search code) signs in first, then opens it.
+    return location.pathname === '/' ? <Landing /> : <Login />
   }
   if (needsWizard) {
     return <Onboarding startStep={1} />
@@ -163,6 +168,8 @@ function Gate() {
         </Route>
         <Route path="/profile" element={<Navigate to="/settings/profile" replace />} />
         <Route path="/about" element={<Navigate to="/settings/about" replace />} />
+        {/* Signed in from the front page's Sign in: on to Cue's start. */}
+        <Route path="/login" element={<Navigate to="/" replace />} />
         <Route path="*" element={<NotFound />} />
       </Route>
     </Routes>

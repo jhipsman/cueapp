@@ -27,9 +27,24 @@ class Playback(
     var upNext by mutableStateOf<UpNext?>(null)
         private set
 
+    // The next episode while its version is found: its picture and name fill
+    // the screen (instead of the menus showing) until the player opens.
+    // episode is null for the moment it's still being looked up.
+    data class Starting(val showId: Int, val show: String, val backdrop: String?, val episode: Episode?, val failed: Boolean = false)
+    var starting by mutableStateOf<Starting?>(null)
+        private set
+    private var startJob: kotlinx.coroutines.Job? = null
+
+    fun cancelStarting() {
+        startJob?.cancel()
+        starting = null
+        note = ""
+    }
+
     fun playUpNext() {
         val u = upNext ?: return
         upNext = null
+        starting = Starting(u.showId, u.show, u.backdrop, u.episode)
         playTitle("tv", u.showId, u.episode.season, u.episode.episode, 0.0)
     }
 
@@ -49,7 +64,7 @@ class Playback(
         val v = Vod(kind, id, if (kind == "tv") season else 0, if (kind == "tv") episode else 0)
         vod = v
         live = null
-        scope.launch { openVod(v, startSec) }
+        startJob = scope.launch { openVod(v, startSec) }
     }
 
     fun clearNote() {
@@ -104,9 +119,13 @@ class Playback(
                 .put("thumbs", a.optString("thumbs"))
                 .put("release", a.optString("release"))
             note = ""
+            starting = null
             open(json.toString())
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
         } catch (e: Exception) {
             note = e.message ?: "That didn't play."
+            starting = starting?.copy(failed = true)
         }
     }
 
@@ -115,6 +134,7 @@ class Playback(
         live = ch
         liveList = list
         vod = null
+        starting = null
         scope.launch {
             note = "Tuning in…"
             try {
@@ -164,21 +184,36 @@ class Playback(
         when (reason) {
             // Next pressed: straight on. The episode ended by itself: the Up
             // next screen, which counts down and plays it (or Back stays).
-            "next" -> if (v.kind == "tv") scope.launch {
-                try {
-                    val n = api.next(v.id, v.season, v.episode)
-                    playTitle("tv", v.id, n.season, n.episode, 0.0)
-                } catch (e: Exception) {
-                    // the last episode
+            "next" -> if (v.kind == "tv") {
+                starting = Starting(v.id, "", null, null)
+                startJob = scope.launch {
+                    try {
+                        val n = api.next(v.id, v.season, v.episode)
+                        val show = runCatching { api.title("tv", v.id).card }.getOrNull()
+                        starting = Starting(v.id, show?.title ?: "", show?.backdrop, n)
+                        playTitle("tv", v.id, n.season, n.episode, 0.0)
+                    } catch (e: kotlinx.coroutines.CancellationException) {
+                        throw e
+                    } catch (e: Exception) {
+                        starting = null // the last episode
+                    }
                 }
             }
-            "ended" -> if (v.kind == "tv") scope.launch {
-                try {
-                    val n = api.next(v.id, v.season, v.episode)
-                    val show = runCatching { api.title("tv", v.id).card }.getOrNull()
-                    upNext = UpNext(v.id, show?.title ?: "", show?.backdrop, n)
-                } catch (e: Exception) {
-                    // the last episode
+            "ended" -> if (v.kind == "tv") {
+                // Covered while the next one is looked up, then the Up next screen.
+                starting = Starting(v.id, "", null, null)
+                startJob = scope.launch {
+                    try {
+                        val n = api.next(v.id, v.season, v.episode)
+                        val show = runCatching { api.title("tv", v.id).card }.getOrNull()
+                        upNext = UpNext(v.id, show?.title ?: "", show?.backdrop, n)
+                    } catch (e: kotlinx.coroutines.CancellationException) {
+                        throw e
+                    } catch (e: Exception) {
+                        // the last episode
+                    } finally {
+                        starting = null
+                    }
                 }
             }
             "other" -> nextVersion(v, position.toDouble(), "")
@@ -195,12 +230,13 @@ class Playback(
     private fun nextVersion(v: Vod, position: Double, why: String) {
         if (v.option < v.options) {
             v.option++
-            scope.launch {
+            startJob = scope.launch {
                 if (why.isNotEmpty()) note = why
                 openVod(v, position)
             }
         } else {
             note = "None of the versions found would play."
+            starting = starting?.copy(failed = true)
         }
     }
 

@@ -12,6 +12,8 @@ under [Unreleased]. How releases are cut: [docs/RELEASING.md](docs/RELEASING.md)
 - Releases are signed with a new update key, held only by the project owner. **Update now** installs only releases signed with it.
 
 ### Added
+- **A front page for the web** (signed out): Cue's address shows what Cue is, clips of the app playing, the commercial with sound, and how to get it on a Fire TV, a phone or an Apple TV, with Sign in at the top. Signed in, Cue opens straight to Watch as before; a link to anywhere else (a title, the phone-search code) still goes to sign-in and then there.
+- **Next episode, starting** (Fire TV, Google TV): when an episode ends or Next episode is pressed, the next episode's picture, name and story fill the screen with "Finding a version…" until it plays, instead of going back to the menus; Back stops it.
 - **Search from your phone** (Fire TV, Google TV): Search shows a QR code; scan it and type or say what you want on the phone (its keyboard's mic, or Tap and say it), and the TV searches as you go. This is voice search on a Fire TV, which keeps its remote's microphone for Alexa. `GET`/`PUT /api/watch/remote/{code}`.
 - **The TV app updates itself** (Fire TV, Google TV): when a new build is out, Cue says so on opening and on Profile; Update downloads it and Android installs it over the old one, signed in and on your profile. `GET /tv.version` forwards to the newest build's number, published beside the APK.
 - **Live TV, channel surfing** (Fire TV, Google TV): rest on a channel and its live picture plays, muted, in the banner at the top of Live TV; in the player, up and down (or channel up and down) change channel in place with a banner of the channel's number, name and what's on, tuning only the channel you stop on.
@@ -73,6 +75,7 @@ under [Unreleased]. How releases are cut: [docs/RELEASING.md](docs/RELEASING.md)
 - **Premiumize.me as a downloader.** Add your Premiumize API key in Settings > Downloading > Usenet and torrents, under Cloud downloader, and torrents (or Usenet, or both, your choice) are downloaded by Premiumize on its own servers instead of by the built-in client. Releases Premiumize already has are ready at once. Cue then fetches the finished files over HTTPS, picks up where it stopped after a pause, and removes the transfer and its files from your Premiumize cloud once they are home. Torrents fetched this way need no VPN and don't seed. See [docs/downloads.md](docs/downloads.md#premiumize).
 
 ### Fixed
+- **Subtitles on the TV can be turned off**: Subtitles now opens a list straight away (Off, the video's own subtitles, Find English subtitles), chosen with one press, and the choice carries on to the next episode. Before, pressing it went off to find English subtitles, so subtitles already showing couldn't be switched off, and a video's "default" subtitles switched themselves on every episode (forced ones, for lines in another language, still show).
 - **Fire TV, Google TV feel smoother**:
   - A highlighted card glides up instead of bouncing, no longer sways, and its shadow doesn't redraw every frame. A change of colour no longer rebuilds every card on screen.
   - Home's banner holds still and changes only once the highlight rests, and its old title has faded before the new one shows, so two titles never overlap.
