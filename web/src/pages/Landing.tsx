@@ -80,13 +80,6 @@ function Copy({ text }: { text: string }) {
   )
 }
 
-const FACES = [
-  ['L', 'Living Room', '#34d1bf'],
-  ['M', 'Mom', '#f0718f'],
-  ['D', 'Dad', '#f2b84b'],
-  ['K', 'Kids', '#9b8cff'],
-]
-
 export default function Landing() {
   useDarkPage(true)
   useEffect(() => {
@@ -162,10 +155,6 @@ export default function Landing() {
       <header className="lp-hero" id="top">
         <div className="lp-wrap lp-hero-grid">
           <div>
-            <p className="lp-eyebrow">
-              <i />
-              Now streaming at home
-            </p>
             <h1>
               Every movie.
               <br />
@@ -173,7 +162,6 @@ export default function Landing() {
               <br />
               <span className="lp-sheen">One app.</span>
             </h1>
-            <p className="lp-lead">Cue is this household's own streaming app. Movies, shows and live TV, on the TV, your phone and your laptop.</p>
             <div className="lp-ctas">
               <Link className="lp-btn primary" to="/login">
                 Sign in
@@ -208,11 +196,9 @@ export default function Landing() {
       <section className="lp-part" id="inside">
         <div className="lp-wrap">
           <div className="lp-head">
-            <p className="lp-eyebrow">What's inside</p>
             <h2>
               It doesn't just list things. <em>It plays them.</em>
             </h2>
-            <p>Every clip below is the real app, recorded as it runs.</p>
           </div>
           <div className="lp-bento">
             <div className="lp-tile t-title">
@@ -222,7 +208,6 @@ export default function Landing() {
               </span>
               <div className="lp-cap">
                 <h3>Open anything and it comes alive</h3>
-                <p>The trailer plays behind the title, with ratings from IMDb and Rotten Tomatoes, every episode, and more like it.</p>
               </div>
             </div>
             <div className="lp-tile t-phone">
@@ -234,7 +219,6 @@ export default function Landing() {
               </span>
               <div className="lp-cap">
                 <h3>In your pocket</h3>
-                <p>Swipe through rows, tap to dive in.</p>
               </div>
             </div>
             <div className="lp-tile t-hover">
@@ -273,18 +257,9 @@ export default function Landing() {
                 <small>hours</small>
               </div>
               <h3>Your year in Cue</h3>
-              <p>Your top shows, your movie of the year, your biggest day on the couch.</p>
             </div>
             <div className="lp-tile t-people">
-              <div className="lp-faces" aria-hidden="true">
-                {FACES.map(([l, , c]) => (
-                  <span key={l} style={{ background: c }}>
-                    {l}
-                  </span>
-                ))}
-              </div>
               <h3>Everyone gets their own profile</h3>
-              <p className="lp-dim">Your list, your progress, your recommendations.</p>
             </div>
           </div>
         </div>
@@ -293,7 +268,6 @@ export default function Landing() {
       <section className="lp-part" id="ad">
         <div className="lp-wrap">
           <div className="lp-head">
-            <p className="lp-eyebrow">The ad</p>
             <h2>
               Fifty seconds. <em>Sound on.</em>
             </h2>
@@ -313,18 +287,12 @@ export default function Landing() {
               </>
             )}
           </div>
-          <div className="lp-meta">
-            <span>0:50</span>
-            <span>Original soundtrack</span>
-            <span>Every screen is the real app</span>
-          </div>
         </div>
       </section>
 
       <section className="lp-part" id="get">
         <div className="lp-wrap">
           <div className="lp-head">
-            <p className="lp-eyebrow">Get it</p>
             <h2>
               On your screens in <em>five minutes.</em>
             </h2>
@@ -357,7 +325,7 @@ export default function Landing() {
                 <span className="n">1</span>
                 <h3>Get Downloader</h3>
                 <p>
-                  Install <b>Downloader</b> from the Amazon Appstore, or the Play Store on a Google TV.
+                  From the Amazon Appstore or Play Store.
                 </p>
               </div>
               <div className="lp-step">
@@ -369,7 +337,6 @@ export default function Landing() {
                 <span className="n">3</span>
                 <h3>Type this in Downloader</h3>
                 <Copy text={`${host}/tv.apk`} />
-                <p>After that, Cue updates itself.</p>
               </div>
             </div>
           )}
@@ -379,20 +346,19 @@ export default function Landing() {
                 <span className="n">1</span>
                 <h3>Open Cue</h3>
                 <Copy text={host} />
-                <p>In Safari, Chrome or any browser.</p>
               </div>
               <div className="lp-step">
                 <span className="n">2</span>
                 <h3>iPhone or iPad</h3>
                 <p>
-                  Tap Share, then <b>Add to Home Screen</b>. It opens full screen, like an app.
+                  Share &gt; <b>Add to Home Screen</b>
                 </p>
               </div>
               <div className="lp-step">
                 <span className="n">3</span>
                 <h3>Android</h3>
                 <p>
-                  Chrome offers <b>Install app</b>. Tap it and Cue sits with your other apps.
+                  Chrome &gt; <b>Install app</b>
                 </p>
               </div>
             </div>
@@ -402,44 +368,30 @@ export default function Landing() {
               <div className="lp-step">
                 <span className="n">1</span>
                 <h3>It's set up for you</h3>
-                <p>The Apple TV app goes on from a Mac, so whoever runs this Cue puts it on.</p>
               </div>
               <div className="lp-step">
                 <span className="n">2</span>
                 <h3>Say which TV</h3>
-                <p>Let them know which Apple TV you'd like it on.</p>
               </div>
               <div className="lp-step">
                 <span className="n">3</span>
                 <h3>Then just open it</h3>
-                <p>Same profiles, same Continue Watching, on the big screen.</p>
               </div>
             </div>
           )}
 
           <div className="lp-signin">
             <div>
-              <p className="lp-eyebrow">Signing in</p>
-              <h2>Sign in, then pick your profile.</h2>
-              <p>Got an invite link? Open it to make your own account. Otherwise, ask whoever set up Cue for one. Your profile keeps your own list, your progress and your year in Cue.</p>
+              <h2>Ready to watch?</h2>
               <Link className="lp-btn primary" to="/login">
                 Sign in
               </Link>
-            </div>
-            <div className="lp-who" aria-hidden="true">
-              {FACES.map(([l, name, c]) => (
-                <div key={l}>
-                  <span style={{ background: c }}>{l}</span>
-                  {name}
-                </div>
-              ))}
             </div>
           </div>
         </div>
       </section>
 
       <footer className="lp-wrap lp-foot">
-        <span>Cue, a household's own streaming app.</span>
         <span>Posters and artwork from TMDB.</span>
       </footer>
     </div>
