@@ -34,19 +34,33 @@ const (
 	previewMaxFiles  = 400
 	previewMaxBytes  = 1500 << 20
 	previewRetry     = 30 * time.Minute // after a failed try, how long before another
-	previewMaxQueued = 6                // clips being made or waiting their turn
+	previewMaxQueued = 12               // clips waiting their turn
+	previewForgotten = 75 * time.Second // a clip nobody has asked about for this long isn't wanted any more
 )
 
 var (
 	previewName  = regexp.MustCompile(`^(movie-\d+|tv-\d+-\d+-\d+)\.mp4$`)
-	previewSlots = make(chan struct{}, 1) // one clip made at a time: it's ffmpeg work
+	previewWake  = make(chan struct{}, 1) // a new clip is waiting
+	previewOnce  sync.Once
 	previewState = struct {
 		sync.Mutex
-		making  map[string]bool
+		making  map[string]bool      // waiting or being made
+		asked   map[string]time.Time // when someone last asked for each
+		queue   []*previewJob        // waiting, in no order (the worker picks)
 		failed  map[string]time.Time
-		started []time.Time // when each clip of the last hour was started
-	}{making: map[string]bool{}, failed: map[string]time.Time{}}
+		started []time.Time // when each ahead-of-time clip of the last hour was started
+	}{making: map[string]bool{}, asked: map[string]time.Time{}, failed: map[string]time.Time{}}
 )
+
+// previewJob is a clip waiting its turn. Ahead-of-time ones (ahead: Home's
+// banner and Continue Watching) wait for a quiet server; one someone is
+// looking at goes first, newest first, and is dropped once they've moved on.
+type previewJob struct {
+	want   previewWant
+	ctx    context.Context
+	header http.Header
+	ahead  bool
+}
 
 type previewWant struct {
 	kind                    string
@@ -112,16 +126,9 @@ func (s *Server) handleWatchPreview(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusOK, map[string]any{"none": !making, "pending": making})
 		return
 	}
-	// A TV makes one for whatever its highlight rests on: past a few
-	// waiting, the rest are left for another time (not marked failed).
-	previewState.Lock()
-	queued := len(previewState.making)
-	previewState.Unlock()
-	if !making && (queued >= previewMaxQueued || !previewRoom()) {
-		writeJSON(w, http.StatusOK, map[string]any{"none": true, "busy": true})
-		return
-	}
-	s.startPreview(r, want)
+	// Asked for by someone looking at it: made next (or kept at the front
+	// while it waits, as long as they keep asking).
+	s.startPreview(r, want, false)
 	writeJSON(w, http.StatusAccepted, map[string]any{"pending": true})
 }
 
@@ -137,10 +144,12 @@ func (s *Server) handleWatchPreviewFile(w http.ResponseWriter, r *http.Request) 
 	http.ServeFile(w, r, filepath.Join(s.previewDir(), name))
 }
 
-// previewRoom says whether a new clip may start: the server isn't busy
-// (its load, averaged over the last minute, is under 70% of its cores) and
-// it hasn't made its hour's share (12 an hour for each core). Clips are a
-// nicety: on a one-core server they wait for quiet moments.
+// previewRoom says whether an ahead-of-time clip may start: the server isn't
+// busy (its load, averaged over the last minute, is under 70% of its cores)
+// and it hasn't made its hour's share of them (12 an hour for each core).
+// They're a nicety: on a one-core server they wait for quiet moments. (A
+// clip someone is looking at doesn't wait: it runs at the lowest priority,
+// so it never slows anyone's film.)
 func previewRoom() bool {
 	cores := runtime.NumCPU()
 	if b, err := os.ReadFile("/proc/loadavg"); err == nil {
@@ -163,38 +172,113 @@ func previewRoom() bool {
 	return len(recent) < 12*cores
 }
 
-// startPreview makes a clip in the background (once at a time per title),
-// as the profile asking would play it.
-func (s *Server) startPreview(r *http.Request, want previewWant) {
+// startPreview puts a clip in line (once per title), to be made as the
+// profile asking would play it. ahead marks one nobody is looking at yet.
+func (s *Server) startPreview(r *http.Request, want previewWant, ahead bool) {
+	key := want.key()
 	previewState.Lock()
-	if previewState.making[want.key()] {
+	if !ahead {
+		previewState.asked[key] = time.Now()
+	}
+	if previewState.making[key] {
+		if !ahead { // someone's looking at it now: it's no longer just ahead of time
+			for _, j := range previewState.queue {
+				if j.want.key() == key {
+					j.ahead = false
+				}
+			}
+		}
 		previewState.Unlock()
 		return
 	}
-	previewState.making[want.key()] = true
-	previewState.started = append(previewState.started, time.Now())
-	previewState.Unlock()
+	if len(previewState.queue) >= previewMaxQueued {
+		// Full: the oldest waiting clip gives way.
+		old := previewState.queue[0]
+		delete(previewState.making, old.want.key())
+		previewState.queue = previewState.queue[1:]
+	}
+	previewState.making[key] = true
 	// Who's asking (account and profile) stays with the work; the request
 	// itself may be long finished by then.
-	ctx := context.WithoutCancel(r.Context())
-	header := r.Header.Clone()
-	go func() {
-		defer func() {
-			previewState.Lock()
-			delete(previewState.making, want.key())
-			previewState.Unlock()
-		}()
-		previewSlots <- struct{}{}
-		defer func() { <-previewSlots }()
-		ctx, cancel := context.WithTimeout(ctx, 4*time.Minute)
-		defer cancel()
-		if err := s.makePreview(ctx, header, want); err != nil {
-			slog.Info("preview: couldn't make one", "title", want.key(), "err", err)
-			previewState.Lock()
-			previewState.failed[want.key()] = time.Now()
-			previewState.Unlock()
+	previewState.queue = append(previewState.queue, &previewJob{want: want, ctx: context.WithoutCancel(r.Context()), header: r.Header.Clone(), ahead: ahead})
+	previewState.Unlock()
+	previewOnce.Do(func() { go s.previewWorker() })
+	select {
+	case previewWake <- struct{}{}:
+	default:
+	}
+}
+
+// nextPreview takes the clip to make now: the one someone asked about most
+// recently, or (with none of those) an ahead-of-time one if the server has
+// room. Clips nobody has asked about for a while are dropped.
+func nextPreview() *previewJob {
+	room := previewRoom() // asked first: it takes the lock itself
+	previewState.Lock()
+	defer previewState.Unlock()
+	best := -1
+	var bestAt time.Time
+	kept := previewState.queue[:0]
+	for _, j := range previewState.queue {
+		key := j.want.key()
+		at := previewState.asked[key]
+		if !j.ahead && time.Since(at) > previewForgotten {
+			delete(previewState.making, key) // they've moved on
+			continue
 		}
-	}()
+		kept = append(kept, j)
+		if !j.ahead && (best < 0 || at.After(bestAt)) {
+			best, bestAt = len(kept)-1, at
+		}
+	}
+	previewState.queue = kept
+	if best < 0 {
+		for i, j := range kept {
+			if j.ahead {
+				best = i
+				break
+			}
+		}
+		if best < 0 || !room {
+			return nil
+		}
+		previewState.started = append(previewState.started, time.Now())
+	}
+	j := previewState.queue[best]
+	previewState.queue = append(previewState.queue[:best], previewState.queue[best+1:]...)
+	return j
+}
+
+// previewWorker makes clips one at a time (it's ffmpeg work), for as long
+// as Cue runs, checking back every few seconds while ahead-of-time ones
+// wait for a quiet server.
+func (s *Server) previewWorker() {
+	tick := time.NewTicker(10 * time.Second)
+	defer tick.Stop()
+	for {
+		j := nextPreview()
+		if j == nil {
+			select {
+			case <-previewWake:
+			case <-tick.C:
+			}
+			continue
+		}
+		key := j.want.key()
+		ctx, cancel := context.WithTimeout(j.ctx, 4*time.Minute)
+		err := s.makePreview(ctx, j.header, j.want)
+		cancel()
+		previewState.Lock()
+		delete(previewState.making, key)
+		delete(previewState.asked, key)
+		if err != nil {
+			previewState.failed[key] = time.Now()
+		}
+		previewState.Unlock()
+		if err != nil {
+			slog.Info("preview: couldn't make one", "title", key, "err", err)
+		}
+	}
 }
 
 // previewSource is the address Play would use for the title: the same
@@ -347,9 +431,6 @@ func (s *Server) prewarmPreviews(r *http.Request, wants []previewWant) {
 		if failed && time.Since(failedAt) < previewRetry {
 			continue
 		}
-		if !previewRoom() {
-			return // busy, or this hour's share made: another time
-		}
-		s.startPreview(r, want)
+		s.startPreview(r, want, true)
 	}
 }
