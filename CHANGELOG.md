@@ -12,6 +12,8 @@ under [Unreleased]. How releases are cut: [docs/RELEASING.md](docs/RELEASING.md)
 - Releases are signed with a new update key, held only by the project owner. **Update now** installs only releases signed with it.
 
 ### Added
+- **Manage profiles on the TV** (Fire TV, Google TV): Profile > Manage profiles changes each profile's name, picture and color, adds one or removes one, with the remote (from the main profile; PINs are set on the web).
+- **Light mode** (Fire TV, Google TV): still pictures instead of moving previews, for TVs with a slow processor. On by itself on TVs with little memory (most built-in Google TVs); Profile switches it.
 - **Sign in the TV with your phone** (Fire TV, Google TV): the sign-in screen shows a QR code and a 6-letter code; scan it with a phone that's signed in (or go to cuetv.me/link and type the code), tap **Sign in the TV**, and the TV is signed in to that account. A code lasts ten minutes and works once. `POST /api/auth/tv-link`, `GET /api/auth/tv-link/{token}`, `POST /api/auth/tv-link/approve`.
 - **Profile pictures**: in Manage profiles, each profile can wear a picture on its color (a fox, a unicorn, a game controller, 18 in all) instead of its initial, so everyone finds theirs at a glance: on the web, Fire TV, Google TV and Apple TV. Stored with the color (`"avatar": "teal/fox"`); `GET /api/profiles` lists them as `icons`.
 - **A short tour** (web, Fire TV, Google TV): the first time Watch opens, four slides cover what's worth knowing: **Other version** / **Try another version** when a version is blurry, in the wrong language, out of sync or keeps stopping; **Skip intro** and **Next episode**; subtitles; and searching from your phone. Each has a small drawing of the real control, lit. **How Cue works** in the profile menu (web) or on Profile (TV) shows it again.
@@ -57,6 +59,7 @@ under [Unreleased]. How releases are cut: [docs/RELEASING.md](docs/RELEASING.md)
 - **Stream add-ons**: paste a Stremio add-on link (Comet on ElfHosted, Torrentio, MediaFusion) in Settings > Downloading, and Play asks it for streams first, with its own scrapers and sorting. Links set up with your Premiumize key play straight away; Cue's own search is the fallback. See [docs/watch.md](docs/watch.md#stream-add-ons-comet-torrentio-mediafusion).
 
 ### Changed
+- **A faster TV app**: it's now optimized when built (R8), and installs Compose's ready-made startup profiles itself, which an APK installed outside the app store otherwise goes without, so screens and scrolling are smooth from the first use.
 - **Previews are ready before you open a title**: everything Home shows gets its clip made while nobody is using Cue (no one signed in has done anything for half an hour: overnight, mostly), one after another while the server is quiet. Clips are 12 seconds now (twice as quick to make, about 2–3 MB each), so one not made yet appears sooner.
 - The cloud image built from every change is for Intel/AMD servers only, so it's ready in about half the time; releases still build for ARM too.
 - A family member's menu in Watch shows **Your account** (their own name and password) instead of Settings.

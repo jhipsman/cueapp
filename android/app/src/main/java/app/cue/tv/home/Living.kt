@@ -58,10 +58,30 @@ val LocalApi = staticCompositionLocalOf<CueApi?> { null }
 // How long a title's page rests before its clip starts.
 private const val TRAILER_REST_MS = 800L
 
-// Boxes with little memory keep the still picture: a web player on top of
-// the app's own screens is too much for them.
-private fun trailersFit(ctx: Context): Boolean =
-    !(ctx.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager).isLowRamDevice
+// In Light mode (slow TVs) the pictures stay still.
+private fun trailersFit(ctx: Context): Boolean = !LightMode.on(ctx)
+
+// Light mode: no moving previews (Home's banner, a title's page, live TV's
+// banner), for TVs with a slow processor. On by itself on a TV with little
+// memory (most built-in Google TVs); Profile switches it either way.
+object LightMode {
+    private const val KEY = "lightMode"
+    var changed by androidx.compose.runtime.mutableIntStateOf(0) // redraws what reads it
+
+    fun on(ctx: Context): Boolean {
+        if (changed < 0) return false // read, so a switch on Profile takes effect at once
+        val prefs = ctx.getSharedPreferences("cue", Context.MODE_PRIVATE)
+        if (prefs.contains(KEY)) return prefs.getBoolean(KEY, false)
+        val am = ctx.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+        val mem = ActivityManager.MemoryInfo().also { am.getMemoryInfo(it) }
+        return am.isLowRamDevice || mem.totalMem < 2_600_000_000L
+    }
+
+    fun set(ctx: Context, on: Boolean) {
+        ctx.getSharedPreferences("cue", Context.MODE_PRIVATE).edit().putBoolean(KEY, on).apply()
+        changed++
+    }
+}
 
 // ---- The screensaver ----
 

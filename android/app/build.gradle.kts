@@ -36,7 +36,11 @@ android {
     }
     buildTypes {
         getByName("release") {
-            isMinifyEnabled = false
+            // R8 optimises the app and Compose (much smoother on a TV's slow
+            // processor); names are kept (proguard-rules.pro) so crash reports
+            // and anything looked up by name still work.
+            isMinifyEnabled = true
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
             signingConfig = signingConfigs.getByName("cue")
         }
         getByName("debug") {
@@ -85,6 +89,10 @@ dependencies {
     implementation("com.google.zxing:core:3.5.3")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.7")
     implementation("androidx.tv:tv-material:1.0.0")
+    // Installs Compose's ready-made startup profiles on a sideloaded APK (the
+    // Play Store would do this itself): screens are compiled ahead, not on
+    // first use, so scrolling is smooth from the start.
+    implementation("androidx.profileinstaller:profileinstaller:1.4.1")
     implementation("io.coil-kt:coil-compose:2.7.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
 }

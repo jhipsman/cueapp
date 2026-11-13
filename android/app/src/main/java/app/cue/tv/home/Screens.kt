@@ -417,7 +417,7 @@ fun ProfilesScreen(api: CueApi, pickAlone: Boolean = true, signOut: () -> Unit =
 
 // The pictures a profile can wear on its color (the server's AvatarIcons),
 // as emoji. An avatar is "teal" or "teal/fox".
-private val avatarEmoji = mapOf(
+internal val avatarEmoji = mapOf(
     "fox" to "🦊", "cat" to "🐱", "dog" to "🐶", "panda" to "🐼", "koala" to "🐨", "lion" to "🦁", "frog" to "🐸", "monkey" to "🐵",
     "unicorn" to "🦄", "octopus" to "🐙", "penguin" to "🐧", "owl" to "🦉", "rocket" to "🚀", "star" to "⭐", "game" to "🎮",
     "ball" to "⚽", "pizza" to "🍕", "alien" to "👾",
@@ -1068,6 +1068,13 @@ fun ChannelCard(api: CueApi, ch: Channel, onFocus: () -> Unit = {}, onClick: () 
 
 @Composable
 fun ProfileScreen(api: CueApi, switchProfile: () -> Unit, changeServer: () -> Unit, openWeb: (String) -> Unit) {
+    var managing by remember { mutableStateOf(false) }
+    if (managing) {
+        ManageProfilesScreen(api) { managing = false }
+        return
+    }
+    val ctx = androidx.compose.ui.platform.LocalContext.current
+    val light = LightMode.on(ctx)
     Centered {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Box(Modifier.size(96.dp).clip(CircleShape).background(LocalAccent.current), contentAlignment = Alignment.Center) {
@@ -1085,6 +1092,14 @@ fun ProfileScreen(api: CueApi, switchProfile: () -> Unit, changeServer: () -> Un
                 Pill("Web version") { openWeb("/watch") }
                 Pill("Change server", onClick = changeServer)
             }
+            Gap(12.dp)
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Pill("Manage profiles") { managing = true }
+                Pill(if (light) "Light mode: on" else "Light mode: off") { LightMode.set(ctx, !light) }
+            }
+            Gap(10.dp)
+            Text(if (light) "Still pictures instead of moving previews, for a smoother TV." else "Moving previews on. Turn Light mode on if this TV feels slow.",
+                fontSize = 11.sp, color = Dim)
         }
     }
 }
