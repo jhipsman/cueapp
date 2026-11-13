@@ -55,6 +55,7 @@ under [Unreleased]. How releases are cut: [docs/RELEASING.md](docs/RELEASING.md)
 - **Stream add-ons**: paste a Stremio add-on link (Comet on ElfHosted, Torrentio, MediaFusion) in Settings > Downloading, and Play asks it for streams first, with its own scrapers and sorting. Links set up with your Premiumize key play straight away; Cue's own search is the fallback. See [docs/watch.md](docs/watch.md#stream-add-ons-comet-torrentio-mediafusion).
 
 ### Changed
+- **Downloader code 3575368** (cuetv.me/tv.apk) on the front page's Fire TV steps, so the app installs by typing a short number.
 - **Front page, what's in it**: the parts that make Cue different: every movie and show with no subscriptions, searching the TV from your phone (the 3D phone typing "Dune"), trying another version of a bad copy, skipping the intro, live TV with a guide, your year, and every screen it runs on.
 - **Sign out** is in Watch's profile menu (it was only in the library manager's).
 - **A 3D phone on the front page**: a real 3D model of a phone with Cue playing on its screen, turning gently toward the pointer (three.js, loaded only on that page; a drawn phone shows until it's ready, or where there's no WebGL or less motion is asked for). The security policy now lets a page read its own `blob:` data (`connect-src 'self' blob:`), which the model's packed pictures need.

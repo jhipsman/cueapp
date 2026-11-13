@@ -204,6 +204,7 @@
 .lp-step .n { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; font: 700 15px var(--display); color: #03211d; background: var(--teal) }
 .lp-step h3 { font-size: 19px; letter-spacing: -0.02em }
 .lp-step p { margin: 0; color: var(--dim); font-size: 15px }
+.lp-step .lp-code { margin: 4px 0 8px; font: 800 44px/1 var(--display); letter-spacing: 0.06em; color: var(--teal); font-variant-numeric: tabular-nums }
 .lp-copy { display: flex; align-items: center; gap: 8px; background: #000; border: 1px solid var(--line); border-radius: 12px; padding: 8px 8px 8px 14px; min-width: 0 }
 .lp-copy code { font: 500 16px var(--mono); color: var(--teal); flex: 1; min-width: 0; overflow-wrap: anywhere }
 .lp-copy button { flex: none; border: 1px solid var(--line); background: var(--glass); color: var(--fg); border-radius: 9px; padding: 7px 11px; font: 600 12px var(--body); cursor: pointer }
