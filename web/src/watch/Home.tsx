@@ -5,7 +5,7 @@ import Icon from '../components/Icon'
 import SetupCard from './SetupCard'
 import { useDocumentTitle } from '../documentTitle'
 import { Ambient, epCode, playHref, Row, SpotlightContext, TitleMark, titleHref, useExtras, useTint } from './parts'
-import { Frames, useFrames, useTrailer } from './living'
+import { Frames, PreviewVideo, useFrames, usePreview } from './living'
 import { onTV } from './tv'
 
 // Home: a banner, then rows to scroll. With only set, just movies or just
@@ -98,8 +98,8 @@ export default function Home({ only }: { only?: WatchKind }) {
 // pick; otherwise it's the poster highlighted on a TV.
 //
 // The banner comes alive: its picture's colour tints the page, and once the
-// viewer rests on it for a moment its trailer fades in, muted, behind the
-// logo (on a computer, not a phone: no surprise data use, no sound).
+// viewer rests on it for a moment its preview fades in, silent, behind the
+// logo (on a computer, not a phone: no surprise data use).
 function Banner({ card, featured }: { card: WatchCard; featured: boolean }) {
   const navigate = useNavigate()
   // A title being watched carries on where it was; anything else starts at
@@ -109,35 +109,16 @@ function Banner({ card, featured }: { card: WatchCard; featured: boolean }) {
   const ex = useExtras(card)
   const logo = card.logoUrl !== undefined ? card.logoUrl : ex === undefined ? undefined : (ex?.logo ?? '')
   useTint(ex?.colour)
-  const trailer = useTrailer(ex?.trailer, `${card.kind}-${card.tmdbId}`)
-  // No trailer: real frames from the title itself, moving gently.
-  const frames = useFrames(card, ex !== undefined && !ex?.trailer)
+  // Its own preview clip (cut from the title on the server); when there
+  // can't be one, real frames from the title itself, moving gently.
+  const preview = usePreview(card, `${card.kind}-${card.tmdbId}-${card.season ?? 0}-${card.episode ?? 0}`)
+  const frames = useFrames(card, preview.none)
   return (
-    <header className={`wx-hero${onTV() ? '' : ' inset'}${trailer.playing ? ' playing' : ''}${frames.length > 1 ? ' framing' : ''}`} ref={trailer.box}>
+    <header className={`wx-hero${onTV() ? '' : ' inset'}${preview.playing ? ' playing' : ''}${frames.length > 1 ? ' framing' : ''}`}>
       {card.backdropUrl && <div className="wx-hero-pic drift" key={card.backdropUrl} style={{ backgroundImage: `url(${card.backdropUrl})` }} />}
-      {trailer.src && (
-        <div className="wx-hero-trailer" aria-hidden="true">
-          <iframe
-            ref={trailer.frame}
-            key={trailer.src}
-            src={trailer.src}
-            title="Trailer"
-            tabIndex={-1}
-            allow="autoplay; encrypted-media"
-            // The site sends no referrer, and YouTube's player refuses to
-            // start without one (its error 153): send the site's address only.
-            referrerPolicy="strict-origin-when-cross-origin"
-            onLoad={trailer.loaded}
-          />
-        </div>
-      )}
+      {preview.src && <PreviewVideo key={preview.src} src={preview.src} onPlaying={preview.onPlaying} />}
       {frames.length > 1 && <Frames urls={frames} />}
-      {trailer.waiting && <span className="wx-trailer-wait" aria-hidden="true" />}
-      {trailer.playing && (
-        <button className="wx-trailer-sound" onClick={trailer.toggleSound} aria-label={trailer.sound ? 'Mute the trailer' : 'Play the trailer with sound'}>
-          <Icon name={trailer.sound ? 'volume' : 'volume-x'} size={18} />
-        </button>
-      )}
+      {preview.waiting && !preview.playing && <span className="wx-trailer-wait" aria-hidden="true" />}
       <div className="wx-hero-body rise" key={`${card.kind}-${card.tmdbId}-${card.episode ?? 0}`}>
         <TitleMark title={card.title} logo={logo} />
         <div className="wx-meta">

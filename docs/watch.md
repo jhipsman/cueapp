@@ -95,7 +95,8 @@ Episodes show **Skip intro** (and **Skip recap**) for a few seconds as one start
 
 ## The artwork, alive
 
-- **Living banner**: on a computer, and on Fire TV and Google TV, resting on Home's banner for a moment fades in the title's trailer, muted, behind its logo (the web has a button for sound). It stops when you move on.
+- **Living banner**: on a computer, and on Fire TV and Google TV, resting on Home's banner for a moment fades in a moving preview behind its logo. It stops when you move on.
+- **Previews** (web): like the streaming services, Cue makes its own: a silent 22-second clip from early in the film or episode (720p, a few megabytes), cut once by your server from the version Play would use and kept in its cache (up to 400 clips or 1.5 GB, the least recently watched going first). It plays in a plain video player, so no YouTube buttons or titles ever show. Home's banner and the start of Continue Watching are made ahead of time; a card the mouse rests on plays one already made. Where a clip can't be made (no version found, or the server can't convert video), real frames from the title show instead. `GET /api/watch/preview/{kind}/{tmdbId}`, `GET /api/watch/preview-file/{name}`.
 - **Colour from the picture**: the glow behind the page, the highlight's halo and the progress bars take the main colour of the artwork in view.
 - **Cards with depth**: a card tilts toward the mouse (or sways gently on a TV), and Continue Watching cards float the title's logo in front of the picture.
 - **Screensaver**: after three minutes untouched on a computer or TV, Cue shows your own titles full screen with a clock: new episodes, where you stopped, your list. Any button brings you back.

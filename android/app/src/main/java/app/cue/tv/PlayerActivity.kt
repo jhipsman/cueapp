@@ -53,7 +53,6 @@ import androidx.media3.exoplayer.Renderer
 import androidx.media3.exoplayer.mediacodec.MediaCodecSelector
 import androidx.media3.exoplayer.video.VideoFrameMetadataListener
 import androidx.media3.exoplayer.video.VideoRendererEventListener
-import androidx.media3.exoplayer.analytics.AnalyticsListener
 import androidx.media3.exoplayer.trackselection.DefaultTrackSelector
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.ui.AspectRatioFrameLayout
@@ -87,11 +86,6 @@ class PlayerActivity : Activity() {
     private var rateMatched = false
     private var measuredFps = 0f // from the frames' own times, when the file doesn't say
     private var pictureLabel = ""
-    private var softwarePicture = false // decoded by the processor, not the box's video chip
-    private var decoderName = ""
-    private var droppedFrames = 0
-    private var soundOut = "" // how the sound leaves the TV: as it is (Dolby, DTS) or decoded, and channels
-    private var stats: TextView? = null
     private lateinit var info: JSONObject
     private var server = ""
     private val main = Handler(Looper.getMainLooper())
@@ -177,7 +171,6 @@ class PlayerActivity : Activity() {
     private val ticker = object : Runnable {
         override fun run() {
             refreshTime()
-            if (controls.visibility == View.VISIBLE) stats?.text = statsText()
             main.postDelayed(this, 300)
         }
     }
@@ -286,8 +279,9 @@ class PlayerActivity : Activity() {
                     started = true
                     hideStartScreen()
                 }
-                playPause.setCompoundDrawablesRelativeWithIntrinsicBounds(
-                    if (isPlaying) R.drawable.ic_cue_pause else R.drawable.ic_cue_play, 0, 0, 0,
+                playPause.setCompoundDrawablesRelative(
+                    getDrawable(if (isPlaying) R.drawable.ic_cue_pause else R.drawable.ic_cue_play)?.apply { setBounds(0, 0, px(14), px(14)) },
+                    null, null, null,
                 )
                 val paused = !isPlaying && player.playbackState == Player.STATE_READY
                 pauseBadge.visibility = if (paused) View.VISIBLE else View.GONE
@@ -322,7 +316,7 @@ class PlayerActivity : Activity() {
                     w >= 3200 -> "4K"
                     w >= 1800 -> "1080p"
                     w >= 1200 -> "720p"
-                    else -> "SD (${videoSize.height}p)"
+                    else -> "SD"
                 }
                 pictureLabel = label
                 showPictureLabel()
@@ -391,7 +385,7 @@ class PlayerActivity : Activity() {
         val title = TextView(this).also { titleText = it }.apply {
             text = info.optString("title")
             setTextColor(Color.WHITE)
-            size(22f)
+            size(19f)
             typeface = Fonts.display(this@PlayerActivity)
             setShadowLayer(8f, 0f, 2f, Color.BLACK)
         }
@@ -405,16 +399,10 @@ class PlayerActivity : Activity() {
         }
         val top = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(px(48), px(32), px(48), px(56))
+            setPadding(px(56), px(26), px(56), px(44))
             background = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(0xB3000000.toInt(), 0x00000000))
             addView(title)
             addView(sub)
-            addView(TextView(this@PlayerActivity).also { stats = it }.apply {
-                setTextColor(0xFF8E9096.toInt())
-                size(11f)
-                typeface = Fonts.mono(this@PlayerActivity)
-                setPadding(0, px(6), 0, 0)
-            })
         }
 
         timeBar = TimeBar(this).apply {
@@ -460,7 +448,7 @@ class PlayerActivity : Activity() {
         val buttons = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
-            setPadding(0, px(14), 0, 0)
+            setPadding(0, px(8), 0, 0)
             addView(playPause)
             if (!live) {
                 addView(pill("", R.drawable.ic_cue_replay) { seekBy(-10_000) })
@@ -483,9 +471,9 @@ class PlayerActivity : Activity() {
         }
         val panel = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(px(26), px(20), px(18), px(16))
+            setPadding(px(18), px(13), px(12), px(10))
             background = GradientDrawable().apply {
-                cornerRadius = px(22).toFloat()
+                cornerRadius = px(18).toFloat()
                 setColor(0xC2141519.toInt())
                 setStroke(px(1), 0x1FFFFFFF)
             }
@@ -499,9 +487,9 @@ class PlayerActivity : Activity() {
 
         return FrameLayout(this).apply {
             addView(top, FrameLayout.LayoutParams(MATCH, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.TOP))
-            addView(shade, FrameLayout.LayoutParams(MATCH, px(260), Gravity.BOTTOM))
+            addView(shade, FrameLayout.LayoutParams(MATCH, px(200), Gravity.BOTTOM))
             addView(panel, FrameLayout.LayoutParams(MATCH, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.BOTTOM).apply {
-                setMargins(px(48), 0, px(48), px(34))
+                setMargins(px(96), 0, px(96), px(26))
             })
         }
     }
@@ -520,10 +508,10 @@ class PlayerActivity : Activity() {
         for (sp in listOf(0.5f, 1f, 1.5f, 2f)) {
             val chip = TextView(this@PlayerActivity).apply {
                 text = (if (sp % 1f == 0f) "${sp.toInt()}" else "$sp") + "x"
-                size(13f)
+                size(12f)
                 typeface = Fonts.text(this@PlayerActivity, 600)
                 gravity = Gravity.CENTER
-                setPadding(px(14), 0, px(14), 0)
+                setPadding(px(11), 0, px(11), 0)
                 setTextColor(ColorStateList(
                     arrayOf(intArrayOf(android.R.attr.state_focused), intArrayOf(android.R.attr.state_selected), intArrayOf()),
                     intArrayOf(0xFF0B0C0F.toInt(), 0xFF0B0C0F.toInt(), 0xFFC7C8CC.toInt()),
@@ -553,7 +541,7 @@ class PlayerActivity : Activity() {
                 }
             }
             chips += chip
-            addView(chip, LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, px(34)))
+            addView(chip, LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, px(28)))
         }
         layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { marginEnd = px(10) }
     }
@@ -565,8 +553,8 @@ class PlayerActivity : Activity() {
         setOnFocusChangeListener { v, has ->
             val t = v as TextView
             t.text = if (has) (t.tag as? String).orEmpty() else ""
-            t.compoundDrawablePadding = if (has) px(8) else 0
-            t.setPadding(px(16), px(10), px(if (has) 20 else 16), px(10))
+            t.compoundDrawablePadding = if (has) px(6) else 0
+            t.setPadding(px(11), px(6), px(if (has) 15 else 11), px(6))
         }
     }
 
@@ -588,7 +576,7 @@ class PlayerActivity : Activity() {
     // a white pill with dark text when the remote is on it.
     private fun pill(label: String, icon: Int, onClick: () -> Unit): TextView = TextView(this).apply {
         text = label
-        size(14f)
+        size(12f)
         typeface = Fonts.text(this@PlayerActivity, 500)
         val colors = ColorStateList(
             arrayOf(intArrayOf(android.R.attr.state_focused), intArrayOf()),
@@ -596,24 +584,26 @@ class PlayerActivity : Activity() {
         )
         setTextColor(colors)
         compoundDrawableTintList = colors
-        setCompoundDrawablesRelativeWithIntrinsicBounds(icon, 0, 0, 0)
-        compoundDrawablePadding = if (label.isEmpty()) 0 else px(8)
+        // Icons sized by the screen like the rest (a Fire TV's density
+        // would draw them half again as big as a Google TV's).
+        setCompoundDrawablesRelative(getDrawable(icon)?.apply { setBounds(0, 0, px(14), px(14)) }, null, null, null)
+        compoundDrawablePadding = if (label.isEmpty()) 0 else px(6)
         gravity = Gravity.CENTER
-        setPadding(px(16), px(10), px(if (label.isEmpty()) 16 else 20), px(10))
+        setPadding(px(11), px(6), px(if (label.isEmpty()) 11 else 15), px(6))
         background = StateListDrawable().apply {
             addState(intArrayOf(android.R.attr.state_focused), GradientDrawable().apply {
-                cornerRadius = px(24).toFloat()
+                cornerRadius = px(17).toFloat()
                 setColor(Color.WHITE)
             })
             addState(intArrayOf(), GradientDrawable().apply {
-                cornerRadius = px(24).toFloat()
+                cornerRadius = px(17).toFloat()
                 setColor(Color.TRANSPARENT)
             })
         }
         isFocusable = true
         isFocusableInTouchMode = true
         setOnClickListener { onClick() }
-        layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, px(42)).apply { marginEnd = px(8) }
+        layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, px(34)).apply { marginEnd = px(6) }
     }
 
     // Sound: the box's own decoders first, the app's FFmpeg ones only for
@@ -718,74 +708,17 @@ class PlayerActivity : Activity() {
             }
         })
         if (speed != 1f) p.setPlaybackSpeed(speed) // kept when the player is made again (Surround)
-        p.addAnalyticsListener(object : AnalyticsListener {
-            override fun onVideoDecoderInitialized(eventTime: AnalyticsListener.EventTime, decoderName: String, initializedTimestampMs: Long, initializationDurationMs: Long) {
-                this@PlayerActivity.decoderName = decoderName
-                val n = decoderName.lowercase()
-                softwarePicture = n.contains("ffmpeg") || n.startsWith("c2.android.") || n.startsWith("omx.google.")
-                showPictureLabel()
-            }
-
-            override fun onDroppedVideoFrames(eventTime: AnalyticsListener.EventTime, droppedFrames: Int, elapsedMs: Long) {
-                this@PlayerActivity.droppedFrames += droppedFrames
-            }
-
-            override fun onAudioTrackInitialized(eventTime: AnalyticsListener.EventTime, audioTrackConfig: AudioSink.AudioTrackConfig) {
-                soundOut = when (audioTrackConfig.encoding) {
-                    C.ENCODING_AC3 -> "sent as Dolby Digital"
-                    C.ENCODING_E_AC3 -> "sent as Dolby Digital Plus"
-                    C.ENCODING_E_AC3_JOC -> "sent as Dolby Atmos"
-                    C.ENCODING_DOLBY_TRUEHD -> "sent as Dolby TrueHD"
-                    C.ENCODING_DTS, C.ENCODING_DTS_HD -> "sent as DTS"
-                    else -> "decoded to ${Integer.bitCount(audioTrackConfig.channelConfig)} channels"
-                }
-            }
-        })
         return p
     }
 
-    // The line under the title: what's on, the picture's size, and whether
-    // the box's video chip is decoding it (when it isn't, the picture is
-    // softer and live TV can't be deinterlaced).
+    // The line under the title: what's on and, quietly, the picture's size.
     private fun showPictureLabel() {
         if (pictureLabel.isEmpty()) return
-        val picture = "Picture $pictureLabel" + if (softwarePicture) " (software decoding)" else ""
+        val picture = pictureLabel
         subtitle?.apply {
             text = listOf(info.optString("subtitle"), picture).filter { it.isNotEmpty() }.joinToString("  ·  ")
             visibility = View.VISIBLE
         }
-    }
-
-    // What's playing and how, under the title while the controls show: to
-    // tell a stream that's too much for the network or the TV from a
-    // picture problem. Dropped frames climbing means the TV can't keep up.
-    private fun statsText(): String {
-        val f = player.videoFormat ?: return ""
-        val out = mutableListOf("${f.width}x${f.height}")
-        f.sampleMimeType?.substringAfter('/')?.uppercase()?.let { out += it.replace("AVC", "H.264").replace("HEVC", "H.265") }
-        frameRate()?.let { out += String.format(java.util.Locale.US, "%.3f fps", it) }
-        window.decorView.display?.let { out += String.format(java.util.Locale.US, "TV %.2f Hz", it.refreshRate) }
-        refreshRates().takeIf { it.isNotEmpty() }?.let { rates ->
-            out += "TV offers " + rates.joinToString("/") { String.format(java.util.Locale.US, "%.0f", it) } + " Hz"
-        }
-        if (f.bitrate > 0) out += "${f.bitrate / 1_000_000} Mbps"
-        val ahead = (player.bufferedPosition - player.currentPosition) / 1000
-        out += "${ahead}s loaded ahead"
-        out += "$droppedFrames dropped frames"
-        if (decoderName.isNotEmpty()) out += decoderName
-        player.audioFormat?.let { a ->
-            val codec = (a.sampleMimeType ?: "").substringAfter('/').uppercase()
-                .replace("EAC3-JOC", "E-AC3 Atmos").replace("EAC3", "E-AC3").replace("MP4A-LATM", "AAC").replace("VND.DTS", "DTS")
-            val ch = when (a.channelCount) {
-                1 -> "mono"
-                2 -> "stereo"
-                6 -> "5.1"
-                8 -> "7.1"
-                else -> if (a.channelCount > 0) "${a.channelCount} ch" else ""
-            }
-            out += listOf("Sound $codec $ch".trim(), soundOut).filter { it.isNotEmpty() }.joinToString(", ")
-        }
-        return out.joinToString("  ·  ")
     }
 
     private fun soundLabel() = if (surround) "Surround on" else "Surround off"

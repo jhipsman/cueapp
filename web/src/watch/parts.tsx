@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useRef, useState, type PointerEve
 import { useNavigate } from 'react-router-dom'
 import { api, type WatchCard, type WatchExtras, type WatchRatings } from '../api'
 import Icon from '../components/Icon'
-import { CardTrailer, trailersAllowed } from './living'
+import { CardPreview } from './living'
 import { onTV } from './tv'
 
 // Building blocks shared by the Watch pages.
@@ -95,7 +95,7 @@ export function Card({ card, wide }: { card: WatchCard; wide?: boolean }) {
     >
       <span className="wx-card-art">
         {img ? <img src={img} alt="" loading="lazy" /> : <span className="wx-card-fallback">{card.title}</span>}
-        {resting && ex?.trailer && trailersAllowed() && <CardTrailer id={ex.trailer} />}
+        {resting && <CardPreview of={card} />}
         {wide && ex?.logo && <img className="wx-card-logo" src={ex.logo} alt="" />}
         {wide && code && <span className="wx-chip">{code}</span>}
         {card.new && <span className="wx-card-new">New episode</span>}

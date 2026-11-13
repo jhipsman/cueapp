@@ -240,7 +240,33 @@ func (s *Server) handleWatchHome(w http.ResponseWriter, r *http.Request) {
 	if home.Rows == nil {
 		home.Rows = []watchRow{}
 	}
+	// Previews made ahead of time for what's seen first: the banner and the
+	// start of Continue Watching (the episode each stopped in).
+	var warm []previewWant
+	if home.Hero != nil {
+		warm = append(warm, cardPreview(*home.Hero))
+	}
+	for i, c := range cont {
+		if i == 3 {
+			break
+		}
+		warm = append(warm, cardPreview(c))
+	}
+	s.prewarmPreviews(r, warm)
 	writeJSON(w, http.StatusOK, home)
+}
+
+// cardPreview is the preview a card shows: a film's, or a show's episode
+// (the one in progress, or the first).
+func cardPreview(c watchCard) previewWant {
+	if c.Kind == "movie" {
+		return previewWant{kind: "movie", tmdbID: c.TMDBID}
+	}
+	season, episode := c.Season, c.Episode
+	if episode < 1 {
+		season, episode = 1, 1
+	}
+	return previewWant{kind: "tv", tmdbID: c.TMDBID, season: season, episode: episode}
 }
 
 // continueWatching is userID's titles in progress: a movie or episode
