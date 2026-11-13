@@ -2369,6 +2369,12 @@ export const api = {
   watchLogo: (kind: 'movie' | 'tv', tmdbId: number) => get<{ url: string }>(`/watch/logo/${kind}/${tmdbId}`),
   watchExtras: (kind: 'movie' | 'tv', tmdbId: number) => get<WatchExtras>(`/watch/extras/${kind}/${tmdbId}`),
   watchYear: (year?: number) => get<WatchYear>(`/watch/year${year ? `?year=${year}` : ''}`),
+  // A title's preview clip: its address once made, or pending (ask again
+  // shortly), or none. ready=true only looks (nothing is made).
+  watchPreview: (kind: WatchKind, tmdbId: number, season?: number, episode?: number, ready?: boolean) =>
+    get<{ url?: string; pending?: boolean; none?: boolean }>(
+      `/watch/preview/${kind}/${tmdbId}?${new URLSearchParams({ season: String(season ?? 1), episode: String(episode ?? 1), ...(ready ? { ready: '1' } : {}) })}`,
+    ),
   // Searching on the TV from a phone (the TV's Search shows the code).
   sendRemoteSearch: (code: string, q: string) => put<{ q: string; seq: number }>(`/watch/remote/${encodeURIComponent(code)}`, { q }),
   watchProviders: (kind: 'movie' | 'tv', tmdbId: number) =>

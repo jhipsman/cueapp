@@ -3778,8 +3778,8 @@ html.tv-mode .wx-card:focus .wx-card-sub {
   transition: box-shadow 0.8s;
 }
 
-/* The living banner: the trailer under the banner's shade, out of sight
-   until YouTube's own overlays have gone, then fading in. The words step
+/* The living banner: the title's own preview clip under the banner's
+   shade, fading in once it plays. The words step
    aside: the story folds away and the logo settles smaller. */
 .wx-hero-trailer {
   position: absolute;
@@ -3794,15 +3794,12 @@ html.tv-mode .wx-card:focus .wx-card-sub {
 .wx-hero.playing .wx-hero-trailer {
   opacity: 1;
 }
-.wx-hero-trailer iframe {
+.wx-hero-trailer video {
   position: absolute;
-  top: 50%;
-  left: 50%;
-  width: max(100cqw, 177.78cqh);
-  height: max(100cqh, 56.25cqw);
-  border: 0;
-  /* a little larger than the box, so YouTube's corners never show */
-  transform: translate(-50%, -50%) scale(1.3); /* past YouTube's title bar and its buttons at the edges */
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 .wx-hero.playing .wx-hero-pic {
   opacity: 0;
@@ -3852,25 +3849,6 @@ html.tv-mode .wx-card:focus .wx-card-sub {
     --wx-wait: 100%;
   }
 }
-.wx-trailer-sound {
-  position: absolute;
-  top: 14px;
-  right: 16px;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  border: 0;
-  display: grid;
-  place-items: center;
-  background: rgba(0, 0, 0, 0.5);
-  color: #fff;
-  cursor: pointer;
-  animation: wx-fade-in 0.6s var(--wx-settle) both;
-}
-.wx-trailer-sound:hover {
-  background: rgba(0, 0, 0, 0.7);
-}
-
 /* Cards tilt toward the pointer in 3D, the glare following it; a wide
    card's logo floats in front of its picture, moving further. */
 @media (hover: hover) {
@@ -4267,15 +4245,14 @@ html.tv-mode .wx-card:focus .wx-card-sub {
   }
 }
 
-/* A title's page: its trailer and frames fade into the page like its picture. */
+/* A title's page: its preview and frames fade into the page like its picture. */
 .wx-titlepage .wx-hero-trailer,
 .wx-titlepage .wx-hero-frames {
   -webkit-mask-image: linear-gradient(to bottom, #000 55%, transparent);
   mask-image: linear-gradient(to bottom, #000 55%, transparent);
 }
 
-/* A card's own trailer, once the mouse rests on it: it fills the card at
-   twice the size drawn at half (YouTube won't play under 200 pixels),
+/* A card's own preview, once the mouse rests on it, filling the card and
    fading in once it plays. */
 .wx-card-trailer {
   position: absolute;
@@ -4289,14 +4266,12 @@ html.tv-mode .wx-card:focus .wx-card-sub {
 .wx-card-trailer.on {
   opacity: 1;
 }
-.wx-card-trailer iframe {
+.wx-card-trailer video {
   position: absolute;
-  top: 50%;
-  left: 50%;
-  width: calc(2 * max(100cqw, 177.78cqh));
-  height: calc(2 * max(100cqh, 56.25cqw));
-  border: 0;
-  transform: translate(-50%, -50%) scale(0.62);
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 .wx-card:has(.wx-card-trailer.on) .wx-chip,
 .wx-card:has(.wx-card-trailer.on) .wx-card-progress {
@@ -4363,4 +4338,594 @@ html.tv-mode .wx .wx-card:focus .wx-card-art {
   box-shadow: 0 30px 60px rgba(0, 0, 0, 0.45);
   outline: 1px solid rgba(255, 255, 255, 0.06);
   outline-offset: -1px;
+}
+
+/* ==== The tour (first visit to Watch; "How Cue works" in the profile menu) ==== */
+.wx-tour {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgba(4, 5, 8, 0.62);
+  -webkit-backdrop-filter: blur(14px) saturate(1.1);
+  backdrop-filter: blur(14px) saturate(1.1);
+  animation: wx-fade-in 0.35s var(--wx-settle) both;
+}
+.wx-tour-card {
+  position: relative;
+  width: min(560px, 100%);
+  max-height: calc(100dvh - 32px);
+  overflow: auto;
+  border-radius: 24px;
+  padding: 14px 14px 22px;
+  background: linear-gradient(180deg, rgba(30, 32, 38, 0.96), rgba(18, 19, 23, 0.98));
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.08),
+    0 30px 80px -20px rgba(0, 0, 0, 0.7),
+    0 0 120px -40px rgba(var(--wx-accent-rgb, 52, 209, 191), 0.35);
+  background-clip: padding-box;
+  animation: wx-tour-in 0.5s var(--wx-settle) both;
+}
+@keyframes wx-tour-in {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.97);
+  }
+}
+.wx-tour-close {
+  position: absolute;
+  top: 24px;
+  right: 24px;
+  z-index: 3;
+  width: 34px;
+  height: 34px;
+  border: 0;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.45);
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.wx-tour-close:hover {
+  background: rgba(0, 0, 0, 0.7);
+}
+.wx-tour-art.fwd,
+.wx-tour-text.fwd {
+  animation: wx-tour-fwd 0.45s var(--wx-settle) both;
+}
+.wx-tour-art.back,
+.wx-tour-text.back {
+  animation: wx-tour-back 0.45s var(--wx-settle) both;
+}
+.wx-tour-text {
+  animation-delay: 0.05s !important;
+  padding: 22px 12px 0;
+}
+@keyframes wx-tour-fwd {
+  from {
+    opacity: 0;
+    transform: translateX(22px);
+  }
+}
+@keyframes wx-tour-back {
+  from {
+    opacity: 0;
+    transform: translateX(-22px);
+  }
+}
+.wx-tour-kicker {
+  margin: 0 0 6px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--wx-accent);
+}
+.wx-tour h2 {
+  margin: 0 0 10px;
+  font-family: 'Sora', var(--font-display, system-ui), sans-serif;
+  font-size: clamp(1.35rem, 3.6vw, 1.7rem);
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  color: #fff;
+}
+.wx-tour-body {
+  margin: 0;
+  font-size: 0.98rem;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.72);
+  min-height: 4.8em;
+}
+.wx-tour-body b {
+  color: #fff;
+  font-weight: 600;
+}
+.wx-tour-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 22px 12px 0;
+}
+.wx-tour-dots {
+  display: flex;
+  gap: 6px;
+}
+.wx-tour-dots button {
+  width: 8px;
+  height: 8px;
+  min-width: 0;
+  min-height: 0;
+  flex: none;
+  padding: 0;
+  border: 0;
+  border-radius: 99px;
+  background: rgba(255, 255, 255, 0.22);
+  cursor: pointer;
+  transition:
+    width 0.35s var(--wx-settle),
+    background 0.35s;
+}
+.wx-tour-dots button.on {
+  width: 22px;
+  background: var(--wx-accent);
+}
+.wx-tour-buttons {
+  display: flex;
+  gap: 8px;
+}
+.wx-tour-back,
+.wx-tour-next {
+  height: 42px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 99px;
+  font: inherit;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition:
+    background 0.2s,
+    transform 0.2s var(--wx-settle);
+}
+.wx-tour-back {
+  background: transparent;
+  color: rgba(255, 255, 255, 0.7);
+}
+.wx-tour-back:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.08);
+}
+.wx-tour-next {
+  background: #fff;
+  color: #0b0c0f;
+}
+.wx-tour-next:hover {
+  transform: translateY(-1px);
+}
+.wx-tour-next:focus-visible,
+.wx-tour-back:focus-visible,
+.wx-tour-close:focus-visible {
+  outline: 2px solid var(--wx-accent);
+  outline-offset: 3px;
+}
+
+/* The drawings */
+.wx-tour-screen {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  border-radius: 14px;
+  overflow: hidden;
+  background: #07080b;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+  isolation: isolate;
+}
+.wx-tour-pic {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+}
+.wx-tour-pic.blurry {
+  background:
+    radial-gradient(60% 70% at 30% 40%, #3d5a73, transparent 70%),
+    radial-gradient(50% 60% at 75% 55%, #6b4a3a, transparent 70%),
+    #141820;
+  filter: blur(6px) saturate(0.8);
+  transform: scale(1.1);
+}
+.wx-tour-pic.blurry::after {
+  /* blocky, like a bad copy */
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-conic-gradient(rgba(255, 255, 255, 0.035) 0 25%, transparent 0 50%) 0 0 / 14px 14px;
+}
+.wx-tour-pic.warm {
+  background:
+    radial-gradient(55% 75% at 70% 35%, #9a5b2e, transparent 70%),
+    radial-gradient(45% 55% at 20% 70%, #3b2a4f, transparent 70%),
+    #120f14;
+  animation: wx-tour-drift 9s ease-in-out infinite alternate;
+}
+.wx-tour-pic.cool {
+  background:
+    radial-gradient(55% 70% at 30% 40%, #1f5c63, transparent 70%),
+    radial-gradient(40% 60% at 80% 70%, #26324f, transparent 70%),
+    #0b1014;
+  animation: wx-tour-drift 9s ease-in-out infinite alternate;
+}
+@keyframes wx-tour-drift {
+  to {
+    transform: scale(1.08) translate(-2%, 1%);
+  }
+}
+.wx-tour-bar {
+  position: absolute;
+  left: 4%;
+  right: 4%;
+  bottom: 5%;
+  padding: 7px 9px 7px;
+  border-radius: 10px;
+  background: rgba(20, 21, 25, 0.82);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  font-size: 9px;
+  color: #e6e7ea;
+}
+.wx-tour-time {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-variant-numeric: tabular-nums;
+}
+.wx-tour-time i {
+  flex: 1;
+  height: 3px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.2);
+  overflow: hidden;
+}
+.wx-tour-time b {
+  display: block;
+  height: 100%;
+  background: var(--wx-accent);
+}
+.wx-tour-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 6px;
+}
+.wx-tour-gap {
+  flex: 1;
+}
+.wx-tour-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 22px;
+  padding: 0 7px;
+  border-radius: 99px;
+  color: #fff;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.wx-tour-btn.lit {
+  background: #fff;
+  color: #0b0c0f;
+  padding: 0 10px 0 8px;
+}
+/* The control to press: a soft ring breathing round it. */
+.ring {
+  position: relative;
+}
+.ring::after {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: inherit;
+  box-shadow: 0 0 0 2px var(--wx-accent);
+  animation: wx-tour-ring 1.8s ease-out infinite;
+  pointer-events: none;
+}
+@keyframes wx-tour-ring {
+  0% {
+    opacity: 0.9;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.18);
+  }
+}
+.wx-tour-pop {
+  position: absolute;
+  right: 6%;
+  bottom: 31%;
+  width: 46%;
+  padding: 6px;
+  border-radius: 10px;
+  background: rgba(24, 25, 30, 0.95);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.08),
+    0 10px 30px rgba(0, 0, 0, 0.5);
+  font-size: 9.5px;
+  color: #fff;
+  animation: wx-tour-pop 0.5s 0.35s var(--wx-settle) both;
+  transform-origin: 85% 110%;
+}
+@keyframes wx-tour-pop {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.94);
+  }
+}
+.wx-tour-pop-head {
+  padding: 4px 7px 6px;
+  font-size: 8px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.5);
+}
+.wx-tour-pop-item {
+  padding: 6px 7px;
+  border-radius: 6px;
+}
+.wx-tour-pop-item.dim {
+  color: rgba(255, 255, 255, 0.45);
+}
+.wx-tour-pop-item.lit {
+  background: rgba(var(--wx-accent-rgb, 52, 209, 191), 0.18);
+  box-shadow: inset 0 0 0 1px rgba(var(--wx-accent-rgb, 52, 209, 191), 0.55);
+  font-weight: 600;
+}
+.wx-tour-pop-item small {
+  display: block;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 8px;
+  margin-top: 1px;
+}
+.wx-tour-ep {
+  position: absolute;
+  top: 7%;
+  left: 5%;
+  font-size: 10px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.8);
+  letter-spacing: 0.04em;
+}
+.wx-tour-skip {
+  position: absolute;
+  right: 5%;
+  bottom: 38%;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 26px;
+  padding: 0 12px;
+  border-radius: 99px;
+  background: rgba(255, 255, 255, 0.95);
+  color: #0b0c0f;
+  font-size: 10.5px;
+  font-weight: 700;
+  animation: wx-tour-pop 0.5s 0.4s var(--wx-settle) both;
+}
+.wx-tour-tvsearch {
+  position: absolute;
+  left: 6%;
+  top: 10%;
+  bottom: 12%;
+  width: 52%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+.wx-tour-btn.cc {
+  height: 24px;
+  font-size: 10px;
+}
+.wx-tour-qr {
+  width: 34%;
+  aspect-ratio: 1;
+  border-radius: 6px;
+  background:
+    linear-gradient(#fff, #fff) 6% 6% / 26% 26% no-repeat,
+    linear-gradient(#fff, #fff) 94% 6% / 26% 26% no-repeat,
+    linear-gradient(#fff, #fff) 6% 94% / 26% 26% no-repeat,
+    repeating-conic-gradient(#fff 0 25%, #0b0c0f 0 50%) 0 0 / 18% 18%;
+  box-shadow: 0 0 0 5px #fff;
+}
+.wx-tour-handset {
+  position: absolute;
+  right: 9%;
+  top: 12%;
+  bottom: -14%;
+  width: 27%;
+  border-radius: 14px;
+  background: #15161b;
+  box-shadow:
+    inset 0 0 0 2px rgba(255, 255, 255, 0.14),
+    0 12px 30px rgba(0, 0, 0, 0.6);
+  padding: 18% 8% 0;
+  animation: wx-tour-lift 0.6s 0.25s var(--wx-settle) both;
+}
+@keyframes wx-tour-lift {
+  from {
+    opacity: 0;
+    transform: translateY(16%);
+  }
+}
+.wx-tour-handset-field {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 9px;
+  overflow: hidden;
+}
+.wx-tour-typing {
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  width: 0;
+  border-right: 1px solid var(--wx-accent);
+  animation:
+    wx-tour-type 1s 0.9s steps(4) forwards,
+    wx-tour-caret 0.8s step-end infinite;
+}
+@keyframes wx-tour-type {
+  to {
+    width: 4.2ch;
+  }
+}
+@keyframes wx-tour-caret {
+  50% {
+    border-color: transparent;
+  }
+}
+.wx-tour-handset-mic {
+  width: 26px;
+  height: 26px;
+  margin: 22% auto 0;
+  border-radius: 50%;
+  background: var(--wx-accent);
+  box-shadow: 0 0 0 6px rgba(var(--wx-accent-rgb, 52, 209, 191), 0.2);
+}
+.wx-tour-handset-hits {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6%;
+  margin-top: 20%;
+}
+.wx-tour-handset-hits span {
+  aspect-ratio: 2 / 3;
+  border-radius: 4px;
+  background: linear-gradient(160deg, #c08a3e, #4a2f1a);
+  animation: wx-tour-pop 0.5s 2s var(--wx-settle) both;
+}
+.wx-tour-handset-hits span + span {
+  background: linear-gradient(160deg, #3d6a8a, #182634);
+  animation-delay: 2.1s;
+}
+.wx-tour-screen.welcome {
+  display: grid;
+  place-items: center;
+  background: radial-gradient(80% 90% at 50% 100%, rgba(var(--wx-accent-rgb, 52, 209, 191), 0.16), transparent 70%), #07080b;
+}
+.wx-tour-glow {
+  position: absolute;
+  width: 46%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(rgba(var(--wx-accent-rgb, 52, 209, 191), 0.45), transparent 65%);
+  filter: blur(10px);
+  animation: wx-tour-breathe 3.6s ease-in-out infinite alternate;
+}
+@keyframes wx-tour-breathe {
+  to {
+    transform: scale(1.15);
+    opacity: 0.7;
+  }
+}
+.wx-tour-mark {
+  position: relative;
+  width: 22%;
+  height: auto;
+  color: var(--wx-accent);
+  filter: drop-shadow(0 0 18px rgba(var(--wx-accent-rgb, 52, 209, 191), 0.5));
+  animation: wx-tour-pop 0.7s 0.1s var(--wx-settle) both;
+}
+.wx-tour-tiles {
+  position: absolute;
+  inset: auto -4% 8% -4%;
+  display: flex;
+  gap: 3%;
+  justify-content: center;
+  opacity: 0.55;
+}
+.wx-tour-tiles span {
+  width: 17%;
+  aspect-ratio: 16 / 10;
+  border-radius: 6px;
+  background: linear-gradient(135deg, hsl(calc(170 + var(--i) * 40) 45% 32%), hsl(calc(200 + var(--i) * 40) 40% 16%));
+  transform: translateY(calc(abs(var(--i) - 2) * 10%)) rotate(calc((var(--i) - 2) * 3deg));
+  animation: wx-tour-lift 0.7s calc(0.15s + var(--i) * 0.06s) var(--wx-settle) both;
+}
+.wx-tour-screen.welcome::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: linear-gradient(to top, #07080b 4%, transparent 40%);
+}
+@media (max-width: 520px) {
+  .wx-tour-card {
+    border-radius: 20px;
+  }
+  .wx-tour-foot {
+    flex-direction: column-reverse;
+    align-items: stretch;
+  }
+  .wx-tour-dots {
+    justify-content: center;
+  }
+  .wx-tour-buttons > * {
+    flex: 1;
+    justify-content: center;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .wx-tour *,
+  .wx-tour *::before,
+  .wx-tour *::after,
+  .wx-tour {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+  .wx-tour-typing {
+    width: 4.2ch;
+  }
+}
+
+/* The preview's sound, in the banner's corner. */
+.wx-trailer-sound {
+  position: absolute;
+  top: 16px;
+  right: 18px;
+  z-index: 2;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  border: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(0, 0, 0, 0.5);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.25);
+  color: #fff;
+  cursor: pointer;
+  animation: wx-fade-in 0.6s var(--wx-settle) both;
+  transition: background 0.2s;
+}
+.wx-trailer-sound:hover {
+  background: rgba(0, 0, 0, 0.75);
+}
+.wx-titlepage .wx-trailer-sound {
+  top: auto;
+  bottom: 22%;
+  right: var(--wx-gutter, 48px);
 }

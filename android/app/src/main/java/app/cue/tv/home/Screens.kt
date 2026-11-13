@@ -180,6 +180,12 @@ fun CueRoot(api: CueApi, playback: Playback, openWeb: (String) -> Unit, changeSe
             AppUpdate.offer?.takeIf { AppUpdate.showing && playback.upNext == null && stage == Stage.Ready }?.let { o ->
                 UpdateCard(api, o, later = { AppUpdate.later() })
             }
+            // The tour, once on a new TV (after the update offer, never over
+            // something starting or playing).
+            LaunchedEffect(stage) { if (stage == Stage.Ready) Tour.maybeShow(ctx) }
+            if (Tour.showing && stage == Stage.Ready && !(AppUpdate.showing && AppUpdate.offer != null) && playback.upNext == null && playback.starting == null) {
+                TourScreen { Tour.done(ctx) }
+            }
             saver?.let { Screensaver(api, it) }
             // While Cue's screensaver shows, the TV stays awake (otherwise the
             // Fire TV's own screensaver takes over a minute or two later). After
@@ -616,11 +622,11 @@ fun TitleScreen(api: CueApi, playback: Playback, card: Tile, memory: FocusMemory
         // picture, which fades away once it's really playing.
         var live by remember(card.key) { mutableStateOf(false) }
         val still by animateFloatAsState(if (live) 0f else 1f, tween(900, easing = Settle), label = "title-still")
-        // A muted moment of the episode or film itself, from the stream Play
+        // A moment of the episode or film itself, with its sound, from the stream Play
         // will use (so Play then starts at once). The TV's own player draws it,
         // so it's smooth, and there's no YouTube page in the way.
         key(c.kind, c.tmdbId) {
-            ClipLayer(api, c.copy(season = t.resumeSeason, episode = t.resumeEpisode, progress = null), Modifier.fillMaxSize()) { live = it }
+            ClipLayer(api, c.copy(season = t.resumeSeason, episode = t.resumeEpisode, progress = null), Modifier.fillMaxSize(), sound = true) { live = it }
         }
         // The picture fills the screen; the words sit on its darker left.
         AsyncImage(model = c.backdrop, contentDescription = null, contentScale = ContentScale.Crop,
@@ -978,6 +984,7 @@ fun ProfileScreen(api: CueApi, switchProfile: () -> Unit, changeServer: () -> Un
                 if (AppUpdate.offer != null) Pill("Update Cue", primary = true) { AppUpdate.showing = true }
                 Pill("Switch profile", primary = AppUpdate.offer == null, onClick = switchProfile)
                 Pill("Your year in Cue") { openWeb("/watch/year") }
+                Pill("How Cue works") { Tour.showing = true }
                 Pill("Web version") { openWeb("/watch") }
                 Pill("Change server", onClick = changeServer)
             }

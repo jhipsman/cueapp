@@ -1,17 +1,15 @@
 import { useEffect, useRef, useState } from 'react'
+import Icon from '../components/Icon'
 import { api, type WatchCard } from '../api'
 import { onTV } from './tv'
 
 // Bringing a title's artwork alive, on Home's banner, a title's page and a
-// card the mouse rests on: its YouTube trailer, muted, once the viewer has
+// card the mouse rests on: its own preview clip, silent, once the viewer has
 // rested a moment; without one, real frames from the title itself.
 
-// How long the banner rests before its trailer starts, how long it stays out
-// of sight after YouTube says it's playing (so YouTube's own title and
-// buttons are gone), and how long a trailer plays before the banner settles
-// back to its picture.
+// How long the banner rests before its preview is asked for, and how long a
+// preview plays before the banner settles back to its picture.
 const TRAILER_REST = 500
-const TRAILER_HIDDEN = 1500
 const TRAILER_LENGTH = 60_000
 
 // When a title has no trailer, the banner shows real moments from it: a few
@@ -87,179 +85,134 @@ export function trailersAllowed(): boolean {
   return matchMedia('(hover: hover) and (min-width: 900px)').matches && !matchMedia('(prefers-reduced-motion: reduce)').matches && !onTV()
 }
 
-export function useTrailer(id: string | undefined, forKey: string) {
-  const box = useRef<HTMLElement>(null)
-  const frame = useRef<HTMLIFrameElement>(null)
-  const [state, setState] = useState<{ key: string; src: string; playing: boolean; waiting: boolean; sound: boolean }>({
-    key: '',
-    src: '',
-    playing: false,
-    waiting: false,
-    sound: false,
-  })
+// usePreview: a title's own preview clip (cut on the server, kept),
+// as the streaming services do it: asked for once the viewer has rested a
+// moment, played in an ordinary video element, and shown only once it's
+// playing, so nothing but the picture ever appears. While the server is
+// still making it the page asks again every couple of seconds. none says
+// there won't be one (the page shows real frames instead). ready asks only
+// for a clip already made (a card the mouse passes over).
+type PreviewOf = { kind: WatchCard['kind']; tmdbId: number; season?: number; episode?: number }
+export function usePreview(of: PreviewOf | null, forKey: string, ready = false) {
+  const [state, setState] = useState({ key: '', src: '', playing: false, waiting: false, none: false, over: false })
   useEffect(() => {
-    setState({ key: forKey, src: '', playing: false, waiting: false, sound: false })
-    if (!id || !trailersAllowed()) return
-    let rest = 0
-    let stopAt = 0
-    let visible = true
-    const arm = () => {
-      window.clearTimeout(rest)
-      if (!visible || document.hidden) return
-      setState((s) => ({ ...s, waiting: true }))
-      rest = window.setTimeout(() => {
-        const q = new URLSearchParams({
-          autoplay: '1', mute: '1', controls: '0', playsinline: '1', rel: '0', modestbranding: '1',
-          iv_load_policy: '3', disablekb: '1', enablejsapi: '1', loop: '1', playlist: id, start: '4',
-          origin: location.origin,
-        })
-        setState((s) => ({ ...s, waiting: false, src: `https://www.youtube-nocookie.com/embed/${id}?${q}` }))
-        stopAt = window.setTimeout(stop, TRAILER_LENGTH)
-      }, TRAILER_REST)
-    }
-    const stop = () => {
-      window.clearTimeout(rest)
-      window.clearTimeout(stopAt)
-      setState((s) => ({ ...s, src: '', playing: false, waiting: false, sound: false }))
-    }
-    const seen = new IntersectionObserver(
-      ([e]) => {
-        visible = e.intersectionRatio > 0.5
-        if (visible) arm()
-        else stop()
-      },
-      { threshold: [0, 0.5, 1] },
-    )
-    if (box.current) seen.observe(box.current)
-    const onHide = () => (document.hidden ? stop() : arm())
-    document.addEventListener('visibilitychange', onHide)
-    arm()
-    return () => {
-      stop()
-      seen.disconnect()
-      document.removeEventListener('visibilitychange', onHide)
-    }
-  }, [id, forKey])
-  const command = (func: string) =>
-    frame.current?.contentWindow?.postMessage(JSON.stringify({ event: 'command', func, args: [] }), 'https://www.youtube-nocookie.com')
-  // The trailer shows only once YouTube says it's playing; if it can't play
-  // (an error, or not allowed outside YouTube) the banner keeps its picture.
-  useEffect(() => {
-    let reveal = 0
-    const onMsg = (e: MessageEvent) => {
-      if (e.origin !== 'https://www.youtube-nocookie.com' || e.source !== frame.current?.contentWindow || typeof e.data !== 'string') return
-      let m: { event?: string; info?: unknown }
+    setState({ key: forKey, src: '', playing: false, waiting: false, none: false, over: false })
+    if (!of || !trailersAllowed()) return
+    let stop = false
+    let timer = 0
+    let tries = 0
+    const ask = async () => {
+      if (stop) return
       try {
-        m = JSON.parse(e.data)
+        const a = await api.watchPreview(of.kind, of.tmdbId, of.season, of.episode, ready)
+        if (stop) return
+        if (a.url) setState((s) => ({ ...s, src: a.url ?? '', waiting: true }))
+        else if (a.pending && !ready && tries++ < 25) {
+          setState((s) => ({ ...s, waiting: true }))
+          timer = window.setTimeout(ask, 2000)
+        } else setState((s) => ({ ...s, waiting: false, none: true }))
       } catch {
-        return
-      }
-      const state =
-        m.event === 'onStateChange' ? m.info : m.event === 'infoDelivery' && m.info && typeof m.info === 'object' ? (m.info as { playerState?: number }).playerState : undefined
-      if (m.event === 'onError') {
-        window.clearTimeout(reveal)
-        reveal = 0
-        setState((s) => ({ ...s, src: '', playing: false }))
-      } else if (state === 1) {
-        // Playing: shown once YouTube's own title has faded (once, not
-        // put off by every report that it's still playing).
-        if (!reveal) reveal = window.setTimeout(() => setState((s) => (s.src ? { ...s, playing: true } : s)), TRAILER_HIDDEN)
-      } else if (state === 0 || state === 2 || state === -1 || state === 5) {
-        // Ended, paused, not started or cued: YouTube shows its big play
-        // button now, so the picture covers it until it plays again.
-        window.clearTimeout(reveal)
-        reveal = 0
-        setState((s) => (s.playing ? { ...s, playing: false } : s))
+        if (!stop) setState((s) => ({ ...s, waiting: false, none: true }))
       }
     }
-    window.addEventListener('message', onMsg)
+    timer = window.setTimeout(ask, ready ? 300 : TRAILER_REST)
+    const end = window.setTimeout(() => setState((s) => ({ ...s, playing: false, over: true })), TRAILER_LENGTH)
     return () => {
-      window.clearTimeout(reveal)
-      window.removeEventListener('message', onMsg)
+      stop = true
+      window.clearTimeout(timer)
+      window.clearTimeout(end)
     }
-  }, [])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [forKey, ready])
+  const current = state.key === forKey ? state : { key: forKey, src: '', playing: false, waiting: false, none: false, over: false }
   return {
-    box,
-    frame,
-    src: state.key === forKey ? state.src : '',
-    playing: state.key === forKey && state.playing,
-    waiting: state.key === forKey && state.waiting,
-    sound: state.sound,
-    // The player loads out of sight; it's asked to say how it's doing (a
-    // few times: it may not be ready at the first).
-    loaded: () => {
-      for (const ms of [0, 500, 1500, 3000]) {
-        window.setTimeout(
-          () => frame.current?.contentWindow?.postMessage(JSON.stringify({ event: 'listening', id: 1, channel: 'widget' }), 'https://www.youtube-nocookie.com'),
-          ms,
-        )
-      }
-    },
-    toggleSound: () =>
-      setState((s) => {
-        command(s.sound ? 'mute' : 'unMute')
-        return { ...s, sound: !s.sound }
-      }),
+    ...current,
+    onPlaying: () => setState((s) => (s.src ? { ...s, playing: true, waiting: false } : s)),
   }
 }
 
-// CardTrailer plays a title's trailer inside a card the mouse rests on, as
-// Netflix does: muted, filling the card, shown only once YouTube says it's
-// playing (YouTube won't play in a player under 200 pixels, so it runs at
-// twice the card's size and is drawn at half).
-export function CardTrailer({ id }: { id: string }) {
-  const frame = useRef<HTMLIFrameElement>(null)
-  const [playing, setPlaying] = useState(false)
+// The clip itself, looping and filling its box like a picture. With sound
+// (a title's page, as on Netflix) it starts with sound when the browser
+// allows it (it does once you've clicked on the site), otherwise muted; a
+// button in the corner turns the sound on and off. Once the preview is over
+// it fades away and stops.
+export function PreviewVideo({ src, onPlaying, playing, over, sound = false }: { src: string; onPlaying: () => void; playing: boolean; over: boolean; sound?: boolean }) {
+  const video = useRef<HTMLVideoElement>(null)
+  const [muted, setMuted] = useState(true)
+  const [hasSound, setHasSound] = useState(false)
   useEffect(() => {
-    let reveal = 0
-    const onMsg = (e: MessageEvent) => {
-      if (e.origin !== YT || e.source !== frame.current?.contentWindow || typeof e.data !== 'string') return
-      let m: { event?: string; info?: unknown }
-      try {
-        m = JSON.parse(e.data)
-      } catch {
-        return
+    const v = video.current
+    if (!v) return
+    v.muted = true
+    v.volume = 0.8
+    if (!sound) {
+      void v.play().catch(() => undefined)
+      return
+    }
+    v.muted = false
+    v.play()
+      .then(() => setMuted(false))
+      .catch(() => {
+        v.muted = true
+        setMuted(true)
+        void v.play().catch(() => undefined)
+      })
+  }, [sound])
+  // Fades the sound out with the picture, then stops.
+  useEffect(() => {
+    const v = video.current
+    if (!v || !over) return
+    let left = 10
+    const t = window.setInterval(() => {
+      v.volume = Math.max(0, v.volume - 0.08)
+      if (--left <= 0) {
+        window.clearInterval(t)
+        v.pause()
       }
-      const state =
-        m.event === 'onStateChange' ? m.info : m.event === 'infoDelivery' && m.info && typeof m.info === 'object' ? (m.info as { playerState?: number }).playerState : undefined
-      if (state === 1) {
-        if (!reveal) reveal = window.setTimeout(() => setPlaying(true), 900)
-      } else if (state === 0 || state === 2 || state === -1 || state === 5) {
-        // YouTube's play button shows in these: hidden until it plays again.
-        window.clearTimeout(reveal)
-        reveal = 0
-        setPlaying(false)
-      }
-    }
-    window.addEventListener('message', onMsg)
-    return () => {
-      window.clearTimeout(reveal)
-      window.removeEventListener('message', onMsg)
-    }
-  }, [])
-  const q = new URLSearchParams({
-    autoplay: '1', mute: '1', controls: '0', playsinline: '1', rel: '0', modestbranding: '1',
-    iv_load_policy: '3', disablekb: '1', enablejsapi: '1', loop: '1', playlist: id, start: '6',
-    origin: location.origin,
-  })
-  const listen = () => {
-    for (const ms of [0, 500, 1500, 3000]) {
-      window.setTimeout(() => frame.current?.contentWindow?.postMessage(JSON.stringify({ event: 'listening', id: 1, channel: 'widget' }), YT), ms)
-    }
+    }, 100)
+    return () => window.clearInterval(t)
+  }, [over])
+  const toggle = () => {
+    const v = video.current
+    if (!v) return
+    v.muted = !v.muted
+    setMuted(v.muted)
+    if (!v.muted && v.paused) void v.play().catch(() => undefined)
   }
   return (
-    <span className={`wx-card-trailer${playing ? ' on' : ''}`} aria-hidden="true">
-      <iframe
-        ref={frame}
-        src={`${YT}/embed/${encodeURIComponent(id)}?${q}`}
-        title="Trailer"
-        tabIndex={-1}
-        allow="autoplay; encrypted-media"
-        referrerPolicy="strict-origin-when-cross-origin"
-        onLoad={listen}
-      />
-    </span>
+    <>
+      <div className="wx-hero-trailer" aria-hidden="true">
+        <video
+          ref={video}
+          src={src}
+          muted
+          loop
+          playsInline
+          preload="auto"
+          onPlaying={onPlaying}
+          // Whether the clip has sound at all (some versions have none).
+          onLoadedData={(e) => {
+            const v = e.currentTarget as HTMLVideoElement & { mozHasAudio?: boolean; webkitAudioDecodedByteCount?: number; audioTracks?: { length: number } }
+            setHasSound(v.mozHasAudio ?? (v.audioTracks ? v.audioTracks.length > 0 : true))
+          }}
+        />
+      </div>
+      {playing && !over && hasSound && (
+        <button className="wx-trailer-sound" onClick={toggle} aria-label={muted ? 'Turn the sound on' : 'Mute'}>
+          <Icon name={muted ? 'volume-x' : 'volume'} size={18} />
+        </button>
+      )}
+    </>
   )
 }
 
-const YT = 'https://www.youtube-nocookie.com'
+// A card's preview, while the mouse rests on it: only a clip already made.
+export function CardPreview({ of }: { of: PreviewOf }) {
+  const p = usePreview(of, `${of.kind}-${of.tmdbId}-${of.season ?? 0}-${of.episode ?? 0}`, true)
+  if (!p.src) return null
+  return (
+    <span className={`wx-card-trailer${p.playing ? ' on' : ''}`} aria-hidden="true">
+      <video src={p.src} muted autoPlay loop playsInline onPlaying={p.onPlaying} />
+    </span>
+  )
+}

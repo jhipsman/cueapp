@@ -4,7 +4,7 @@ import { api, type WatchEpisode, type WatchKind, type WatchTitle } from '../api'
 import Icon from '../components/Icon'
 import { useDocumentTitle } from '../documentTitle'
 import FreeElsewhere from './FreeElsewhere'
-import { Frames, useFrames, useTrailer } from './living'
+import { Frames, PreviewVideo, useFrames, usePreview } from './living'
 import { Ambient, Card, epCode, minutes, playHref, Row, Scores, TitleMark, useExtras, useTint } from './parts'
 import { onTV } from './tv'
 
@@ -22,12 +22,11 @@ export default function TitlePage({ kind }: { kind: WatchKind }) {
   const pageExtras = useExtras(title ? { kind, tmdbId } : null)
   useTint(pageExtras?.colour)
   // The big picture comes alive once the viewer rests here a moment: the
-  // trailer, muted, or real frames from the episode or film Play would start.
-  const trailer = useTrailer(pageExtras?.trailer, `${kind}-${tmdbId}`)
-  const frames = useFrames(
-    { kind, tmdbId, title: title?.title ?? '', season: title?.resumeSeason, episode: title?.resumeEpisode },
-    !!title && pageExtras !== undefined && !pageExtras?.trailer,
-  )
+  // title's own preview clip, silent, or (when there can't be one) real
+  // frames from the episode or film Play would start.
+  const previewOf = title ? { kind, tmdbId, season: title.resumeSeason, episode: title.resumeEpisode } : null
+  const preview = usePreview(previewOf, previewOf ? `${kind}-${tmdbId}-${title?.resumeSeason ?? 0}-${title?.resumeEpisode ?? 0}` : '')
+  const frames = useFrames({ kind, tmdbId, title: title?.title ?? '', season: title?.resumeSeason, episode: title?.resumeEpisode }, !!title && preview.none)
 
   useEffect(() => {
     let live = true
@@ -77,29 +76,11 @@ export default function TitlePage({ kind }: { kind: WatchKind }) {
   return (
     <div className="wx-titlepage">
       {title.backdropUrl && <Ambient url={title.backdropUrl} />}
-      <header className={`wx-hero${trailer.playing ? ' playing' : ''}${frames.length > 1 ? ' framing' : ''}`} ref={trailer.box}>
+      <header className={`wx-hero${preview.playing && !preview.over ? ' playing' : ''}${frames.length > 1 ? ' framing' : ''}`}>
         {title.backdropUrl && <div className="wx-hero-pic settle" style={{ backgroundImage: `url(${title.backdropUrl})` }} />}
-        {trailer.src && (
-          <div className="wx-hero-trailer" aria-hidden="true">
-            <iframe
-              ref={trailer.frame}
-              key={trailer.src}
-              src={trailer.src}
-              title="Trailer"
-              tabIndex={-1}
-              allow="autoplay; encrypted-media"
-              referrerPolicy="strict-origin-when-cross-origin"
-              onLoad={trailer.loaded}
-            />
-          </div>
-        )}
+        {preview.src && <PreviewVideo key={preview.src} src={preview.src} onPlaying={preview.onPlaying} playing={preview.playing} over={preview.over} sound />}
         {frames.length > 1 && <Frames urls={frames} />}
-        {trailer.waiting && <span className="wx-trailer-wait" aria-hidden="true" />}
-        {trailer.playing && (
-          <button className="wx-trailer-sound" onClick={trailer.toggleSound} aria-label={trailer.sound ? 'Mute the trailer' : 'Play the trailer with sound'}>
-            <Icon name={trailer.sound ? 'volume' : 'volume-x'} size={18} />
-          </button>
-        )}
+        {preview.waiting && !preview.playing && <span className="wx-trailer-wait" aria-hidden="true" />}
         <div className="wx-hero-body rise">
           <TitleMark title={title.title} logo={title.logoUrl ?? ''} />
           <div className="wx-meta">

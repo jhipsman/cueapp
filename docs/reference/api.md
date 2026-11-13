@@ -648,6 +648,8 @@ Every route the server exposes. Routes marked **public** need no sign-in; all ot
 | PUT | `/api/watch/list/{kind}/{tmdbId}` | signed in | PUT /api/watch/list/{kind}/{tmdbId} |
 | GET | `/api/watch/logo/{kind}/{tmdbId}` | signed in | GET /api/watch/logo/{kind}/{tmdbId}: a title's logo artwork, for the TV apps' banner as the highlight moves along a row. |
 | GET | `/api/watch/movie/{tmdbId}` | signed in | GET /api/watch/movie/{tmdbId} |
+| GET | `/api/watch/preview-file/{name}` | signed in | GET /api/watch/preview-file/{name}: a made clip. |
+| GET | `/api/watch/preview/{kind}/{tmdbId}` | signed in | GET /api/watch/preview/{kind}/{tmdbId}?season=&episode=[&ready=1]: the clip's address when it's made ({"url"}); otherwise it's started and the answer is {"pe... |
 | PUT | `/api/watch/progress` | signed in | PUT /api/watch/progress {"kind","tmdbId","season","episode","position","duration"}: the player saves where it is every few seconds. |
 | DELETE | `/api/watch/progress/{kind}/{tmdbId}` | signed in | DELETE /api/watch/progress/{kind}/{tmdbId}: take it off Continue Watching. |
 | GET | `/api/watch/progress/{kind}/{tmdbId}` | signed in | GET /api/watch/progress/{kind}/{tmdbId}?season=&episode=: where to resume. |
@@ -674,4 +676,4 @@ Every route the server exposes. Routes marked **public** need no sign-in; all ot
 | PUT | `/api/watched/settings` | admin | PUT /api/watched/settings {"sync": true, "cleanup": {...}} |
 | POST | `/api/watched/sync` | admin | POST /api/watched/sync: read what's been watched now. |
 
-369 routes.
+371 routes.

@@ -321,7 +321,8 @@ fun StartingScreen(api: CueApi, s: Playback.Starting, note: String, back: () -> 
 
 // ---- A real clip, when there's no trailer ----
 
-// ClipLayer plays a moment of the title itself, muted, when it has no
+// ClipLayer plays a moment of the title itself (muted, or with its sound
+// rising gently on a title's page, as on Netflix), when it has no
 // trailer: the stream Play would use (looked up now, so Play then starts at
 // once), from a little before where you stopped (a mini "previously") or,
 // for a title not started, from early on, too early to spoil much. Like the
@@ -332,19 +333,22 @@ fun StartingScreen(api: CueApi, s: Playback.Starting, note: String, back: () -> 
 // screen (a SurfaceView would cut a hole through the app instead), cropped
 // to fill its box whatever the video's shape.
 @Composable
-fun ClipLayer(api: CueApi, tile: Tile, modifier: Modifier = Modifier, onShown: (Boolean) -> Unit = {}) {
+fun ClipLayer(api: CueApi, tile: Tile, modifier: Modifier = Modifier, sound: Boolean = false, onShown: (Boolean) -> Unit = {}) {
     val ctx = LocalContext.current
     if (!trailersFit(ctx)) return
     val key = "${tile.kind}-${tile.tmdbId}-${tile.season ?: 0}-${tile.episode ?: 0}"
     var url by remember(key) { mutableStateOf<String?>(null) }
     var shown by remember(key) { mutableStateOf(false) }
     var ended by remember(key) { mutableStateOf(false) }
+    var fading by remember(key) { mutableStateOf(false) }
     LaunchedEffect(key) {
         delay(TRAILER_REST_MS)
         val path = if (tile.kind == "tv") "/api/play/tmdb/tv/${tile.tmdbId}/${tile.season ?: 1}/${tile.episode ?: 1}" else "/api/play/tmdb/movie/${tile.tmdbId}"
         url = runCatching { api.obj(path).optString("url").ifEmpty { null } }.getOrNull()
         if (url == null) return@LaunchedEffect
         delay(45_000)
+        fading = true
+        delay(900)
         shown = false
         delay(900)
         ended = true
@@ -374,6 +378,16 @@ fun ClipLayer(api: CueApi, tile: Tile, modifier: Modifier = Modifier, onShown: (
             })
             prepare()
             playWhenReady = true
+        }
+    }
+    // The sound rises once the picture shows, and falls before it goes.
+    LaunchedEffect(player, shown, fading) {
+        if (!sound) return@LaunchedEffect
+        val to = if (shown && !fading) 0.7f else 0f
+        val from = player.volume
+        for (i in 1..12) {
+            player.volume = from + (to - from) * i / 12f
+            delay(if (to > from) 120 else 70)
         }
     }
     val owner = androidx.compose.ui.platform.LocalLifecycleOwner.current
