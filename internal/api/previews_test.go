@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -95,6 +96,8 @@ func TestNextPreviewOrder(t *testing.T) {
 	defer func() {
 		previewState.Lock()
 		previewState.queue = saved
+		previewState.making = map[string]bool{}
+		previewState.asked = map[string]time.Time{}
 		previewState.Unlock()
 	}()
 
@@ -109,5 +112,43 @@ func TestNextPreviewOrder(t *testing.T) {
 	previewState.Unlock()
 	if !gone {
 		t.Error("a clip nobody asked about for minutes is still waiting")
+	}
+}
+
+// Overnight, titles Home showed are made one by one, skipping ones that
+// already have a clip.
+func TestNextTonightSkipsMadeClips(t *testing.T) {
+	s := newBareServer(t)
+	dir := s.previewDir()
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "movie-1.mp4"), []byte("clip"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	previewState.Lock()
+	previewState.making = map[string]bool{}
+	previewState.failed = map[string]time.Time{}
+	previewState.Unlock()
+	tonight.Lock()
+	tonight.byUser = map[int64]tonightList{7: {ctx: context.Background(), header: http.Header{}, wants: []previewWant{
+		{kind: "movie", tmdbID: 1}, {kind: "movie", tmdbID: 2}, {kind: "tv", tmdbID: 3, season: 1, episode: 1},
+	}}}
+	tonight.Unlock()
+	defer func() {
+		previewState.Lock()
+		delete(previewState.making, "movie-2")
+		delete(previewState.making, "tv-3-1-1")
+		previewState.Unlock()
+	}()
+
+	if j := s.nextTonight(); j == nil || j.want.key() != "movie-2" || !j.ahead {
+		t.Fatalf("first = %+v, want movie-2 (movie-1 is made)", j)
+	}
+	if j := s.nextTonight(); j == nil || j.want.key() != "tv-3-1-1" {
+		t.Fatalf("second = %+v, want tv-3-1-1", j)
+	}
+	if j := s.nextTonight(); j != nil {
+		t.Fatalf("third = %+v, want nothing left", j)
 	}
 }

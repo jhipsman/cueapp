@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/jhipsman/cueapp/internal/auth"
 )
@@ -87,6 +88,9 @@ func (t *routeTable) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if pattern != "" {
 		level, ok := t.access[pattern]
 		user := auth.UserFromContext(r.Context())
+		if user != nil {
+			lastUsed.Store(time.Now().Unix()) // someone's using Cue (previews.go waits for quiet)
+		}
 		switch {
 		case user == nil:
 			writeError(w, http.StatusUnauthorized, "You need to sign in first.")

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/jhipsman/cueapp/internal/auth"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
@@ -16,11 +17,12 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 )
 
 // Previews, made the way the streaming services make theirs: a short clip
-// of the title itself (about 22 seconds from early on, 720p H.264 with
+// of the title itself (12 seconds from early on, 720p H.264 with
 // stereo AAC sound that fades in and out, a few megabytes), cut once on this
 // server from the same version Play would use and kept in a cache. Pages
 // then play it in an ordinary video element: it starts at once, and nothing
@@ -30,7 +32,7 @@ import (
 // on them.
 
 const (
-	previewSeconds   = 22
+	previewSeconds   = 12
 	previewMaxFiles  = 400
 	previewMaxBytes  = 1500 << 20
 	previewRetry     = 30 * time.Minute // after a failed try, how long before another
@@ -169,7 +171,80 @@ func previewRoom() bool {
 		}
 	}
 	previewState.started = recent
-	return len(recent) < 12*cores
+	perHour := 12
+	if quietTime() {
+		perHour = 40 // nobody's using Cue: one after another
+	}
+	return len(recent) < perHour*cores
+}
+
+// ---- While nobody's watching ----
+
+// tonight is what each account's Home last showed: made while nobody is
+// using Cue (quietTime: overnight, mostly), one after another, so most
+// titles have a clip before anyone opens them, as the streaming services
+// prepare theirs ahead.
+var tonight = struct {
+	sync.Mutex
+	byUser map[int64]tonightList
+}{byUser: map[int64]tonightList{}}
+
+type tonightList struct {
+	ctx    context.Context
+	header http.Header
+	wants  []previewWant
+}
+
+// rememberForTonight keeps a Home's titles (with who asked, so they're
+// made as that profile would play them) for the night.
+func rememberForTonight(r *http.Request, wants []previewWant) {
+	u := auth.UserFromContext(r.Context())
+	if u == nil || len(wants) == 0 || !canConvert() {
+		return
+	}
+	tonight.Lock()
+	tonight.byUser[u.ID] = tonightList{ctx: context.WithoutCancel(r.Context()), header: r.Header.Clone(), wants: wants}
+	tonight.Unlock()
+}
+
+// lastUsed is when a signed-in request last came in (access.go), in Unix
+// seconds.
+var lastUsed atomic.Int64
+
+// quietTime is when nobody has used Cue for half an hour: overnight, mostly,
+// whatever the server's time zone.
+func quietTime() bool {
+	return time.Since(time.Unix(lastUsed.Load(), 0)) > 30*time.Minute
+}
+
+// nextTonight is the next title remembered for the night that has no clip
+// yet (nor a recent failed try), taken off its list.
+func (s *Server) nextTonight() *previewJob {
+	tonight.Lock()
+	defer tonight.Unlock()
+	for id, l := range tonight.byUser {
+		for len(l.wants) > 0 {
+			want := l.wants[0]
+			l.wants = l.wants[1:]
+			key := want.key()
+			if fi, err := os.Stat(filepath.Join(s.previewDir(), key+".mp4")); err == nil && fi.Size() > 0 {
+				continue
+			}
+			previewState.Lock()
+			failedAt, failed := previewState.failed[key]
+			busy := previewState.making[key]
+			if !busy && !(failed && time.Since(failedAt) < previewRetry) {
+				previewState.making[key] = true
+				previewState.started = append(previewState.started, time.Now())
+				previewState.Unlock()
+				tonight.byUser[id] = l
+				return &previewJob{want: want, ctx: l.ctx, header: l.header, ahead: true}
+			}
+			previewState.Unlock()
+		}
+		delete(tonight.byUser, id)
+	}
+	return nil
 }
 
 // startPreview puts a clip in line (once per title), to be made as the
@@ -257,6 +332,9 @@ func (s *Server) previewWorker() {
 	defer tick.Stop()
 	for {
 		j := nextPreview()
+		if j == nil && quietTime() && previewRoom() {
+			j = s.nextTonight()
+		}
 		if j == nil {
 			select {
 			case <-previewWake:

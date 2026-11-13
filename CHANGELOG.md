@@ -56,6 +56,7 @@ under [Unreleased]. How releases are cut: [docs/RELEASING.md](docs/RELEASING.md)
 - **Stream add-ons**: paste a Stremio add-on link (Comet on ElfHosted, Torrentio, MediaFusion) in Settings > Downloading, and Play asks it for streams first, with its own scrapers and sorting. Links set up with your Premiumize key play straight away; Cue's own search is the fallback. See [docs/watch.md](docs/watch.md#stream-add-ons-comet-torrentio-mediafusion).
 
 ### Changed
+- **Previews are ready before you open a title**: everything Home shows gets its clip made while nobody is using Cue (no one signed in has done anything for half an hour: overnight, mostly), one after another while the server is quiet. Clips are 12 seconds now (twice as quick to make, about 2–3 MB each), so one not made yet appears sooner.
 - The cloud image built from every change is for Intel/AMD servers only, so it's ready in about half the time; releases still build for ARM too.
 - A family member's menu in Watch shows **Your account** (their own name and password) instead of Settings.
 - **Downloader code 3575368** (cuetv.me/tv.apk) on the front page's Fire TV steps, so the app installs by typing a short number.
