@@ -11,8 +11,10 @@ import (
 	"os/exec"
 	"path/filepath"
 	"regexp"
+	"runtime"
 	"sort"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 )
@@ -40,8 +42,9 @@ var (
 	previewSlots = make(chan struct{}, 1) // one clip made at a time: it's ffmpeg work
 	previewState = struct {
 		sync.Mutex
-		making map[string]bool
-		failed map[string]time.Time
+		making  map[string]bool
+		failed  map[string]time.Time
+		started []time.Time // when each clip of the last hour was started
 	}{making: map[string]bool{}, failed: map[string]time.Time{}}
 )
 
@@ -114,7 +117,7 @@ func (s *Server) handleWatchPreview(w http.ResponseWriter, r *http.Request) {
 	previewState.Lock()
 	queued := len(previewState.making)
 	previewState.Unlock()
-	if !making && queued >= previewMaxQueued {
+	if !making && (queued >= previewMaxQueued || !previewRoom()) {
 		writeJSON(w, http.StatusOK, map[string]any{"none": true, "busy": true})
 		return
 	}
@@ -134,6 +137,32 @@ func (s *Server) handleWatchPreviewFile(w http.ResponseWriter, r *http.Request) 
 	http.ServeFile(w, r, filepath.Join(s.previewDir(), name))
 }
 
+// previewRoom says whether a new clip may start: the server isn't busy
+// (its load, averaged over the last minute, is under 70% of its cores) and
+// it hasn't made its hour's share (12 an hour for each core). Clips are a
+// nicety: on a one-core server they wait for quiet moments.
+func previewRoom() bool {
+	cores := runtime.NumCPU()
+	if b, err := os.ReadFile("/proc/loadavg"); err == nil {
+		if f := strings.Fields(string(b)); len(f) > 0 {
+			if load, err := strconv.ParseFloat(f[0], 64); err == nil && load > 0.7*float64(cores) {
+				return false
+			}
+		}
+	}
+	previewState.Lock()
+	defer previewState.Unlock()
+	cut := time.Now().Add(-time.Hour)
+	recent := previewState.started[:0]
+	for _, t := range previewState.started {
+		if t.After(cut) {
+			recent = append(recent, t)
+		}
+	}
+	previewState.started = recent
+	return len(recent) < 12*cores
+}
+
 // startPreview makes a clip in the background (once at a time per title),
 // as the profile asking would play it.
 func (s *Server) startPreview(r *http.Request, want previewWant) {
@@ -143,6 +172,7 @@ func (s *Server) startPreview(r *http.Request, want previewWant) {
 		return
 	}
 	previewState.making[want.key()] = true
+	previewState.started = append(previewState.started, time.Now())
 	previewState.Unlock()
 	// Who's asking (account and profile) stays with the work; the request
 	// itself may be long finished by then.
@@ -244,15 +274,23 @@ func cutPreview(ctx context.Context, link string, want previewWant, dir string) 
 		"-ss", strconv.FormatFloat(at, 'f', 1, 64), "-i", link,
 		"-t", strconv.Itoa(previewSeconds), "-map", "0:v:0", "-map", "0:a:0?", "-sn", "-dn",
 		"-vf", "scale=-2:'min(720,ih)',fps=30,format=yuv420p",
-		"-c:v", "libx264", "-preset", "superfast", "-crf", "27", "-profile:v", "high",
+		// The cheapest encoding there is: the work is in reading the source,
+		// and on a small server every second of processor counts.
+		"-c:v", "libx264", "-preset", "ultrafast", "-tune", "fastdecode", "-crf", "28", "-threads", "1",
 		// The sound in stereo, fading in and out so the loop doesn't jump.
 		"-af", fmt.Sprintf("afade=t=in:d=1.2,afade=t=out:st=%d:d=1.8", previewSeconds-2),
 		"-c:a", "aac", "-b:a", "128k", "-ac", "2",
 		"-movflags", "+faststart", "-f", "mp4", tmp)
 	cmd := exec.CommandContext(ctx, ffmpeg, args...)
-	if out, err := cmd.CombinedOutput(); err != nil {
+	var out strings.Builder
+	cmd.Stdout, cmd.Stderr = &out, &out
+	if err := cmd.Start(); err != nil {
+		return err
+	}
+	backgroundPriority(cmd.Process) // never in the way of someone watching
+	if err := cmd.Wait(); err != nil {
 		_ = os.Remove(tmp)
-		return fmt.Errorf("ffmpeg: %v: %s", err, redactURLText(firstLine(string(out)), link))
+		return fmt.Errorf("ffmpeg: %v: %s", err, redactURLText(firstLine(out.String()), link))
 	}
 	if err := os.Rename(tmp, final); err != nil {
 		return err
@@ -308,6 +346,9 @@ func (s *Server) prewarmPreviews(r *http.Request, wants []previewWant) {
 		previewState.Unlock()
 		if failed && time.Since(failedAt) < previewRetry {
 			continue
+		}
+		if !previewRoom() {
+			return // busy, or this hour's share made: another time
 		}
 		s.startPreview(r, want)
 	}

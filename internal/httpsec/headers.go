@@ -15,7 +15,9 @@ const contentSecurityPolicy = "default-src 'self'; " +
 	// https: lets the player stream straight from Premiumize, whose files
 	// are served from changing CDN hosts.
 	"media-src 'self' blob: https:; " +
-	"connect-src 'self'; " +
+	// blob: is the 3D phone on the front page reading the pictures packed
+	// inside its own model file (only this page's own blobs can be read).
+	"connect-src 'self' blob:; " +
 	// The live TV players (hls.js, mpegts.js) work in a background worker
 	// made from a blob; it runs only their own code, as the page does.
 	"worker-src 'self' blob:; " +

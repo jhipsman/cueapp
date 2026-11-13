@@ -22,6 +22,8 @@ import WhoIsWatching from './WhoIsWatching'
 import { Avatar, ProfilesProvider, useProfiles } from './profiles'
 import { RemindersProvider } from './reminders'
 import { useModules } from '../ModulesContext'
+import { useAuth } from '../AuthContext'
+import { api } from '../api'
 import { installTVNavigation, onTV, refocusSoon } from './tv'
 import './watch.css'
 
@@ -124,6 +126,7 @@ function ProfileGate() {
 // profiles and settings (the main profile only).
 function ProfileMenu() {
   const { active, data } = useProfiles()
+  const { setUser } = useAuth()
   const { streamingOnly } = useModules()
   const navigate = useNavigate()
   const [open, setOpen] = useState(false)
@@ -146,6 +149,16 @@ function ProfileMenu() {
       document.removeEventListener('pointerdown', onDown)
     }
   }, [open])
+  // Signs this browser out of the account (back to the front page).
+  const signOut = async () => {
+    try {
+      await api.logout()
+      setUser(null)
+      navigate('/', { replace: true })
+    } catch (e) {
+      window.alert(e instanceof Error ? e.message : String(e))
+    }
+  }
   if (!active) return null
   const owner = active.main
   const multi = (data?.profiles.length ?? 0) > 1
@@ -167,6 +180,7 @@ function ProfileMenu() {
           {owner && <button onClick={() => navigate('/watch/profiles')}>Manage profiles</button>}
           {onTV() && <button onClick={() => window.CueTV?.changeServer()}>Change server</button>}
           {owner && <button onClick={() => navigate(streamingOnly ? '/settings/streaming' : '/')}>{streamingOnly ? 'Settings' : 'Settings and library'}</button>}
+          <button onClick={() => void signOut()}>Sign out</button>
         </div>
       )}
     </div>

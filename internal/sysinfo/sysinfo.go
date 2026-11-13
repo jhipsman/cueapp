@@ -289,7 +289,53 @@ func (s *Sampler) readSelfTicks() (uint64, bool) {
 	if err1 != nil || err2 != nil {
 		return 0, false
 	}
-	return utime + stime, true
+	// The work Cue hands to other programs counts as Cue's too (ffmpeg
+	// converting a film or cutting a preview): what finished children used
+	// (fields 16 and 17), and what the ones still running have used so far.
+	cutime, _ := strconv.ParseUint(f[13], 10, 64)
+	cstime, _ := strconv.ParseUint(f[14], 10, 64)
+	return utime + stime + cutime + cstime + s.childTicks(os.Getpid()), true
+}
+
+// childTicks is the CPU time, in clock ticks, of the processes now running
+// that pid started (and theirs, one level down).
+func (s *Sampler) childTicks(pid int) uint64 {
+	entries, err := os.ReadDir(s.path("/proc"))
+	if err != nil {
+		return 0
+	}
+	parent := map[int]int{}
+	ticks := map[int]uint64{}
+	for _, e := range entries {
+		n, err := strconv.Atoi(e.Name())
+		if err != nil {
+			continue
+		}
+		b, err := os.ReadFile(s.path("/proc/" + e.Name() + "/stat"))
+		if err != nil {
+			continue
+		}
+		str := string(b)
+		i := strings.LastIndexByte(str, ')')
+		if i < 0 {
+			continue
+		}
+		f := strings.Fields(str[i+1:])
+		if len(f) < 13 {
+			continue
+		}
+		pp, _ := strconv.Atoi(f[1])
+		u, _ := strconv.ParseUint(f[11], 10, 64)
+		st, _ := strconv.ParseUint(f[12], 10, 64)
+		parent[n], ticks[n] = pp, u+st
+	}
+	var total uint64
+	for n, pp := range parent {
+		if pp == pid || parent[pp] == pid { // a child, or a child's child
+			total += ticks[n]
+		}
+	}
+	return total
 }
 
 // readCPU sums the first "cpu" line of /proc/stat: busy = everything but

@@ -55,6 +55,12 @@ under [Unreleased]. How releases are cut: [docs/RELEASING.md](docs/RELEASING.md)
 - **Stream add-ons**: paste a Stremio add-on link (Comet on ElfHosted, Torrentio, MediaFusion) in Settings > Downloading, and Play asks it for streams first, with its own scrapers and sorting. Links set up with your Premiumize key play straight away; Cue's own search is the fallback. See [docs/watch.md](docs/watch.md#stream-add-ons-comet-torrentio-mediafusion).
 
 ### Changed
+- **Front page, what's in it**: the parts that make Cue different: every movie and show with no subscriptions, searching the TV from your phone (the 3D phone typing "Dune"), trying another version of a bad copy, skipping the intro, live TV with a guide, your year, and every screen it runs on.
+- **Sign out** is in Watch's profile menu (it was only in the library manager's).
+- **A 3D phone on the front page**: a real 3D model of a phone with Cue playing on its screen, turning gently toward the pointer (three.js, loaded only on that page; a drawn phone shows until it's ready, or where there's no WebGL or less motion is asked for). The security policy now lets a page read its own `blob:` data (`connect-src 'self' blob:`), which the model's packed pictures need.
+- **Preview clips stay out of the way** on small servers: they're made at the lowest priority, with the cheapest encoding, only while the server is quiet (load under 70% of its cores) and at most 12 an hour per core; the rest wait for another time.
+- **Cue's CPU** on the server page now includes the programs Cue runs (ffmpeg converting or cutting previews), so it shows what Cue really uses.
+- Posters (the tall movie and show cards) no longer play a preview when the mouse rests on them; the wide Continue Watching cards still do.
 - **A simpler front page** (web): just the headlines, the clips, the ad and how to get it: no explaining lines under each part, and no example family profiles.
 - **Home's banner comes alive on the TV** (Fire TV, Google TV): rest on a title and its preview clip (the small one your server cuts) fades in, muted, while the story steps aside. A TV asks only for the title it rests on, and the server makes at most a few at once.
 - **Switch profile** (Fire TV, Google TV) always shows "Who's watching?", even with one profile, and it now has **Sign out**, so someone else can sign in with their own account on that TV.

@@ -95,7 +95,7 @@ export function Card({ card, wide }: { card: WatchCard; wide?: boolean }) {
     >
       <span className="wx-card-art">
         {img ? <img src={img} alt="" loading="lazy" /> : <span className="wx-card-fallback">{card.title}</span>}
-        {resting && <CardPreview of={card} />}
+        {resting && wide && <CardPreview of={card} />}
         {wide && ex?.logo && <img className="wx-card-logo" src={ex.logo} alt="" />}
         {wide && code && <span className="wx-chip">{code}</span>}
         {card.new && <span className="wx-card-new">New episode</span>}
