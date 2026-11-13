@@ -22,7 +22,7 @@ The library manager (downloading to this computer, Usenet, the torrent client an
 Cue works like Netflix for a household: one sign-in, then **Who's watching?** and a profile per person. Each profile has its own Continue Watching, My List and progress, so one person's show doesn't move another's along.
 
 - **The main profile** is the account owner's (made from your account when you first open Watch). Only it can change settings, open the library manager, or add, edit and remove profiles. Cue checks this itself, so another profile can't get round it from the browser.
-- **Add profiles** under your avatar (top right) > **Manage profiles**: a name and a color, up to 6.
+- **Add profiles** under your avatar (top right) > **Manage profiles**: a name, a picture (a fox, a unicorn, a game controller... or just the initial) and a color, up to 6.
 - **Lock a profile with a PIN** (4 digits) in the same place. Put one on the main profile so nobody else can open settings. Changing a PIN signs every device out of that profile.
 - **Switch profile** from the avatar menu. Each browser or TV remembers its own profile.
 - A household with only one profile and no PIN skips the picker.
