@@ -284,8 +284,10 @@ class PlayerActivity : Activity() {
                     null, null, null,
                 )
                 val paused = !isPlaying && player.playbackState == Player.STATE_READY
-                pauseBadge.visibility = if (paused) View.VISIBLE else View.GONE
-                pauseDim?.visibility = if (paused) View.VISIBLE else View.GONE
+                // Paused: the picture dims and the pause mark pops in, softly;
+                // playing again, both fade away.
+                showSoftly(pauseBadge, paused, pop = true)
+                pauseDim?.let { showSoftly(it, paused) }
                 if (!isPlaying) cancelCountdown()
                 if (paused) showControls() else scheduleHide()
             }
@@ -853,11 +855,32 @@ class PlayerActivity : Activity() {
 
     private fun controlsShowing() = controls.visibility == View.VISIBLE
 
+    // Shows or hides a view with a short fade (and, with pop, a slight grow
+    // from smaller), instead of it snapping on and off.
+    private fun showSoftly(v: View, show: Boolean, pop: Boolean = false) {
+        val ease = android.view.animation.DecelerateInterpolator(2f)
+        v.animate().cancel()
+        if (show) {
+            if (v.visibility != View.VISIBLE) {
+                v.alpha = 0f
+                if (pop) { v.scaleX = 0.8f; v.scaleY = 0.8f }
+                v.visibility = View.VISIBLE
+            }
+            v.animate().alpha(1f).scaleX(1f).scaleY(1f).setDuration(220).setInterpolator(ease).start()
+        } else if (v.visibility == View.VISIBLE) {
+            v.animate().alpha(0f).apply { if (pop) scaleX(1.1f).scaleY(1.1f) }.setDuration(200).setInterpolator(ease)
+                .withEndAction { v.visibility = View.GONE; v.scaleX = 1f; v.scaleY = 1f }.start()
+        }
+    }
+
     private fun showControls(focus: View? = null) {
         if (!controlsShowing()) {
+            // The bar glides up into place as it fades in.
             controls.alpha = 0f
+            controls.translationY = px(14).toFloat()
             controls.visibility = View.VISIBLE
-            controls.animate().alpha(1f).setDuration(180).start()
+            controls.animate().alpha(1f).translationY(0f).setDuration(240)
+                .setInterpolator(android.view.animation.DecelerateInterpolator(2f)).start()
         }
         val target = focus ?: currentFocus?.takeIf { it.isShown } ?: (if (live) playPause else timeBar)
         if (!target.isFocused) target.requestFocus()
@@ -866,7 +889,9 @@ class PlayerActivity : Activity() {
 
     private fun hideControls() {
         main.removeCallbacks(hider)
-        controls.animate().alpha(0f).setDuration(250).withEndAction { controls.visibility = View.GONE }.start()
+        controls.animate().alpha(0f).translationY(px(10).toFloat()).setDuration(260)
+            .setInterpolator(android.view.animation.AccelerateInterpolator(1.5f))
+            .withEndAction { controls.visibility = View.GONE; controls.translationY = 0f }.start()
     }
 
     private fun scheduleHide() {
@@ -1818,6 +1843,13 @@ class PlayerActivity : Activity() {
                 .putExtra(RESULT_MESSAGE, message),
         )
         finish()
+    }
+
+    // Leaving the player fades back to the app.
+    @Suppress("DEPRECATION")
+    override fun finish() {
+        super.finish()
+        overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
     }
 
     override fun onStop() {

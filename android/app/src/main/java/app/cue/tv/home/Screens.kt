@@ -15,6 +15,8 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.scaleIn
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.ui.zIndex
@@ -489,12 +491,28 @@ fun MainScreen(api: CueApi, playback: Playback, openWeb: (String) -> Unit, chang
         page = tab
     }
 
-    if (open.isNotEmpty()) {
-        val t = open.last()
-        TitleScreen(api, playback, t, titleMemory) { c -> open.add(c) }
-        return
-    }
-    Box(Modifier.fillMaxSize().onPreviewKeyEvent {
+    // Opening a title zooms it in over Home; Back zooms it away again, Home
+    // settling back into place. (Short, so a slow TV keeps up.)
+    AnimatedContent(
+        targetState = open.lastOrNull(),
+        contentKey = { it?.key ?: "home" },
+        transitionSpec = {
+            val opening = targetState != null && initialState == null
+            val closing = targetState == null
+            when {
+                opening -> (fadeIn(tween(240, easing = Settle)) + scaleIn(tween(320, easing = Settle), initialScale = 1.05f)) togetherWith
+                    (fadeOut(tween(160)) + scaleOut(tween(320, easing = Settle), targetScale = 0.96f))
+                closing -> (fadeIn(tween(240, easing = Settle)) + scaleIn(tween(320, easing = Settle), initialScale = 0.96f)) togetherWith
+                    (fadeOut(tween(160)) + scaleOut(tween(320, easing = Settle), targetScale = 1.05f))
+                else -> fadeIn(tween(260, delayMillis = 60)) togetherWith fadeOut(tween(140))
+            }
+        },
+        label = "screen",
+    ) { t ->
+    // A title opened from a title (More Like This) takes its place, so Back
+    // always goes straight back to where you were.
+    if (t != null) TitleScreen(api, playback, t, titleMemory) { c -> open[open.lastIndex] = c }
+    else Box(Modifier.fillMaxSize().onPreviewKeyEvent {
         if (it.type == KeyEventType.KeyDown && (it.key == androidx.compose.ui.input.key.Key.Search || it.key == androidx.compose.ui.input.key.Key.VoiceAssist)) {
             tab = 4
             listenNow = true
@@ -558,6 +576,7 @@ fun MainScreen(api: CueApi, playback: Playback, openWeb: (String) -> Unit, chang
                 }
             }
         }
+    }
     }
 }
 
@@ -758,9 +777,10 @@ fun TitleScreen(api: CueApi, playback: Playback, card: Tile, memory: FocusMemory
                         val resumeTv = c.kind == "tv" && t.resumeSeason != null && t.resumeEpisode != null
                         val started = (t.resumePosition ?: 0.0) > 0
                         Pill(
-                            if (started) "▶  Resume" else "▶  Play",
+                            if (started) "Resume" else "Play",
                             primary = true,
                             small = if (resumeTv) epCode(t.resumeSeason, t.resumeEpisode) else null,
+                            icon = app.cue.tv.R.drawable.ic_cue_play,
                             modifier = Modifier.focusRequester(playFocus),
                         ) {
                             if (c.kind == "tv") {
@@ -770,7 +790,7 @@ fun TitleScreen(api: CueApi, playback: Playback, card: Tile, memory: FocusMemory
                                 playback.playTitle("movie", c.tmdbId, 0, 0)
                             }
                         }
-                        Pill(if (inList) "✓  My List" else "+  My List") {
+                        Pill("My List", icon = if (inList) app.cue.tv.R.drawable.ic_cue_check else app.cue.tv.R.drawable.ic_cue_add) {
                             scope.launch {
                                 val on = !inList
                                 if (runCatching { api.setInList(c.kind, c.tmdbId, on) }.isSuccess) inList = on

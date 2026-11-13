@@ -17,6 +17,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.tv.material3.Border
+import androidx.compose.foundation.BorderStroke
+import androidx.tv.material3.LocalContentColor
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.compositionLocalOf
@@ -181,25 +188,42 @@ fun TitleMark(title: String, logo: String?, maxWidth: Dp, maxHeight: Dp, fontSiz
     }
 }
 
-// A pill button: white with dark words when it's the main one or
-// highlighted, see-through otherwise.
+// A pill button. The main one is solid white with dark words; others are
+// frosted glass with a fine edge. With the remote on it, any pill turns
+// white, lifts a little and gets a soft ring of light round it. An icon
+// (a drawable) sits before the words.
 @Composable
-fun Pill(text: String, primary: Boolean = false, modifier: Modifier = Modifier, small: String? = null, onClick: () -> Unit) {
+fun Pill(text: String, primary: Boolean = false, modifier: Modifier = Modifier, small: String? = null, icon: Int? = null, onClick: () -> Unit) {
+    val shape = RoundedCornerShape(50)
     Button(
         onClick = onClick,
-        modifier = modifier,
-        shape = ButtonDefaults.shape(RoundedCornerShape(50)),
-        scale = ButtonDefaults.scale(focusedScale = 1.08f),
+        modifier = modifier.height(38.dp),
+        shape = ButtonDefaults.shape(shape),
+        scale = ButtonDefaults.scale(focusedScale = 1.06f, pressedScale = 0.97f),
         colors = ButtonDefaults.colors(
-            containerColor = if (primary) Color(0xF2FFFFFF) else Color(0x29FFFFFF),
-            contentColor = if (primary) Color(0xFF101114) else Color.White,
+            containerColor = if (primary) Color(0xF2FFFFFF) else Color(0x1FFFFFFF),
+            contentColor = if (primary) Color(0xFF0B0C0F) else Color(0xF2FFFFFF),
             focusedContainerColor = Color.White,
-            focusedContentColor = Color(0xFF101114),
+            focusedContentColor = Color(0xFF0B0C0F),
+            pressedContainerColor = Color(0xFFE6E7EA),
+            pressedContentColor = Color(0xFF0B0C0F),
         ),
-        contentPadding = PaddingValues(horizontal = 18.dp, vertical = 8.dp),
+        border = ButtonDefaults.border(
+            border = Border(BorderStroke(1.dp, if (primary) Color.Transparent else Color(0x29FFFFFF)), shape = shape),
+            // A halo just outside the pill, in the profile's colour.
+            focusedBorder = Border(BorderStroke(2.dp, tint().copy(alpha = 0.75f)), inset = (-4).dp, shape = shape),
+        ),
+        contentPadding = PaddingValues(start = if (icon != null) 16.dp else 20.dp, end = 20.dp, top = 0.dp, bottom = 0.dp),
     ) {
-        Text(text, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-        small?.let { Text("  $it", fontSize = 10.sp, fontWeight = FontWeight.Medium, color = Color(0x99101114)) }
+        if (icon != null) {
+            androidx.tv.material3.Icon(
+                androidx.compose.ui.res.painterResource(icon), contentDescription = null,
+                modifier = Modifier.size(16.dp),
+            )
+            Spacer(Modifier.width(8.dp))
+        }
+        Text(text, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 0.2.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        small?.let { Text("  $it", fontSize = 11.sp, fontWeight = FontWeight.Medium, color = LocalContentColor.current.copy(alpha = 0.6f)) }
     }
 }
 
@@ -261,6 +285,7 @@ fun Modifier.lift(focused: Boolean, scale: Float, shape: androidx.compose.ui.gra
     // drawn, so a new colour doesn't rebuild every card on the screen.
     val tintState = LocalTint.current
     val accent = LocalAccent.current
+    val light = lightMode() // a slow TV: no soft shadow (costly to draw)
     return this.graphicsLayer {
         val glow = tintState.value ?: accent
         val k = ((s - 1f) / (scale - 1f)).coerceIn(0f, 1f)
@@ -272,7 +297,7 @@ fun Modifier.lift(focused: Boolean, scale: Float, shape: androidx.compose.ui.gra
         // The shadow steps on with the highlight rather than growing frame by
         // frame (redrawing a big soft shadow every frame is what makes a
         // Fire TV stutter).
-        shadowElevation = if (focused) 18.dp.toPx() else 0f
+        shadowElevation = if (focused && !light) 18.dp.toPx() else 0f
         this.shape = shape
         clip = false
     }
@@ -282,11 +307,12 @@ fun Modifier.lift(focused: Boolean, scale: Float, shape: androidx.compose.ui.gra
 // light that sweeps across it once as the highlight arrives.
 @Composable
 fun Sheen(focused: Boolean, modifier: Modifier = Modifier) {
+    val light = lightMode() // a slow TV: the shine, without the moving band
     val sweep = remember { androidx.compose.animation.core.Animatable(-1f) }
     val glow by androidx.compose.animation.core.animateFloatAsState(if (focused) 1f else 0f,
         androidx.compose.animation.core.tween(300), label = "glow")
     LaunchedEffect(focused) {
-        if (focused) {
+        if (focused && !light) {
             sweep.snapTo(-0.5f)
             sweep.animateTo(1.5f, androidx.compose.animation.core.tween(1100, easing = Settle))
         } else {
