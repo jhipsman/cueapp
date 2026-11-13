@@ -64,6 +64,7 @@ under [Unreleased]. How releases are cut: [docs/RELEASING.md](docs/RELEASING.md)
 - **Stream add-ons**: paste a Stremio add-on link (Comet on ElfHosted, Torrentio, MediaFusion) in Settings > Downloading, and Play asks it for streams first, with its own scrapers and sorting. Links set up with your Premiumize key play straight away; Cue's own search is the fallback. See [docs/watch.md](docs/watch.md#stream-add-ons-comet-torrentio-mediafusion).
 
 ### Changed
+- **Smoother web app, like the TV**: opening a title grows it into place, Back slides the page you came from in from the left, and switching sections rises softly. The player fades up from black and fades back out when you leave; its controls glide in and out, play and pause bloom softly, its menus open from their button, and buttons dip when pressed. Reduced-motion settings get plain fades.
 - **Previews play once**, then the title's picture comes back (web and TV), instead of looping.
 - **The screensaver shows things you haven't watched too** (TV and web): trending titles, "because you watched", and the rest of Home, mixed in with your own (where you stopped, new episodes, your list) and shuffled each time.
 - **Home on the web, full-bleed**: the banner is no longer a card in the margins; the title's picture runs edge to edge under the header and fades into the page to the left and below, with the first rows sitting over its faded foot, as on a title's page and in the TV app.

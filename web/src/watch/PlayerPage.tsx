@@ -96,6 +96,16 @@ function CopyLink({ url }: { url: string }) {
 export default function PlayerPage() {
   const params = useParams()
   const navigate = useNavigate()
+  // Leaving fades the picture to black first, then the page you came from
+  // slides back in (as on the TV).
+  const shell = useRef<HTMLDivElement>(null)
+  const leave = useCallback(() => {
+    const el = shell.current
+    if (el?.classList.contains('leaving')) return // already on its way out
+    if (!el || matchMedia('(prefers-reduced-motion: reduce)').matches) return navigate(-1)
+    el.classList.add('leaving')
+    window.setTimeout(() => navigate(-1), 220)
+  }, [navigate])
   const kind = params.season !== undefined ? 'tv' : 'movie'
   const tmdbId = Number(params.tmdbId)
   const season = Number(params.season ?? 0)
@@ -351,11 +361,11 @@ export default function PlayerPage() {
   // Escape leaves the player.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && !document.fullscreenElement) navigate(-1)
+      if (e.key === 'Escape' && !document.fullscreenElement) leave()
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [navigate])
+  }, [leave])
 
   // The next-episode countdown.
   useEffect(() => {
@@ -690,10 +700,10 @@ export default function PlayerPage() {
   const yt = answer && !error ? answer.youtube : undefined
   const playing = answer && !error && !onTV() && !yt
   return (
-    <div className="wx-player">
+    <div className="wx-player" ref={shell}>
       {!playing && !yt && (
         <div className="wx-player-top">
-          <button className="wx-round" onClick={() => navigate(-1)} aria-label="Back">
+          <button className="wx-round" onClick={() => leave()} aria-label="Back">
             <Icon name="x" size={20} />
           </button>
           <div className="wx-player-title">
@@ -714,7 +724,7 @@ export default function PlayerPage() {
             <button className="wx-btn" onClick={() => void load(1, true)}>
               Search again
             </button>
-            <button className="wx-btn" onClick={() => navigate(-1)}>
+            <button className="wx-btn" onClick={() => leave()}>
               Go back
             </button>
           </div>
@@ -728,7 +738,7 @@ export default function PlayerPage() {
           title={answer.title}
           note={note || `From YouTube · ${answer.release}`}
           startSec={resumeAt.current}
-          onBack={() => navigate(-1)}
+          onBack={() => leave()}
           onEnded={() => {
             if (kind === 'tv') void nextEpisode()
           }}
@@ -793,7 +803,7 @@ export default function PlayerPage() {
                   }
                 : undefined
             }
-            onBack={() => navigate(-1)}
+            onBack={() => leave()}
             note={note || subsNote}
             thumbs={answer.thumbs ? (sec) => `/api/thumb?u=${encodeURIComponent(answer.thumbs!)}&t=${Math.floor(sec / 10) * 10}` : undefined}
             captions={{

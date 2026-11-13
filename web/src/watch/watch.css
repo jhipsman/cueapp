@@ -3601,9 +3601,123 @@ html.tv-mode .wx-card:focus .wx-card-sub {
   }
 }
 
+/* Opening a title: it grows into place from a touch smaller. */
+.wx-view-open {
+  animation: wx-view-open 0.5s var(--wx-settle) backwards;
+}
+@keyframes wx-view-open {
+  from {
+    opacity: 0;
+    transform: scale(0.965);
+  }
+}
+/* Back: the page you came from slides in from the left. */
+.wx-view-back {
+  animation: wx-view-back 0.42s var(--wx-settle) backwards;
+}
+@keyframes wx-view-back {
+  from {
+    opacity: 0;
+    transform: translateX(-18px);
+  }
+}
+
+/* The player: the picture fades up from black, the controls glide in, and
+   leaving fades it back to black before the page returns. */
+.wx-player {
+  animation: wx-player-in 0.45s ease-out backwards;
+}
+.wx-player > * {
+  transition: opacity 0.22s ease-in;
+}
+.wx-player.leaving > * {
+  opacity: 0;
+}
+@keyframes wx-player-in {
+  from {
+    opacity: 0;
+  }
+}
+.vx-top,
+.vx-bottom {
+  transition:
+    opacity 0.35s ease,
+    transform 0.45s var(--wx-settle);
+}
+.vx.vx-hidden .vx-top {
+  transform: translateY(-14px);
+}
+.vx.vx-hidden .vx-bottom {
+  transform: translateY(14px);
+}
+.vx:not(.vx-hidden) .vx-top {
+  animation: wx-controls-top 0.5s var(--wx-settle) backwards;
+}
+.vx:not(.vx-hidden) .vx-bottom {
+  animation: wx-controls-bottom 0.5s var(--wx-settle) backwards;
+}
+@keyframes wx-controls-top {
+  from {
+    opacity: 0;
+    transform: translateY(-14px);
+  }
+}
+@keyframes wx-controls-bottom {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+}
+/* Play and pause: the icon blooms softly instead of snapping. */
+.vx-flash > * {
+  animation: vx-flash 0.7s var(--wx-settle) forwards;
+}
+/* The player's menus (Versions, subtitles, speed) open from the button. */
+.vx-pop {
+  transform-origin: bottom right;
+  animation: wx-menu-in 0.28s var(--wx-settle) backwards;
+}
+@keyframes wx-menu-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.96);
+  }
+}
+/* Pressing a button: a quick dip, then it springs back. */
+.wx-btn,
+.wx-round,
+.vx-icon {
+  -webkit-tap-highlight-color: transparent;
+}
+.wx-round,
+.vx-icon {
+  transition:
+    transform 0.3s var(--wx-settle),
+    background 0.25s,
+    color 0.25s;
+}
+.wx-btn:active,
+.wx-round:active,
+.vx-icon:active {
+  transform: scale(0.94);
+  transition-duration: 0.08s;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .wx-view-in {
+  .wx-view-in,
+  .wx-view-open,
+  .wx-view-back {
     animation: wx-fade-in 0.25s backwards;
+  }
+  .wx-player,
+  .vx:not(.vx-hidden) .vx-top,
+  .vx:not(.vx-hidden) .vx-bottom,
+  .vx-pop {
+    animation: none;
+  }
+  .vx.vx-hidden .vx-top,
+  .vx.vx-hidden .vx-bottom {
+    transform: none;
   }
   .wx-tabs a.active svg {
     animation: none;
