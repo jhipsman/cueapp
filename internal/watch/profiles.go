@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
+	"slices"
 	"strings"
 	"time"
 
@@ -18,7 +19,7 @@ type Profile struct {
 	ID     int64
 	UserID int64
 	Name   string
-	Avatar string // a color name from AvatarColors
+	Avatar string // a color from AvatarColors, then optionally "/" and a picture from AvatarIcons ("teal/fox")
 	HasPIN bool
 	Main   bool // the account owner's: the only one that may change settings
 	Theme  Theme
@@ -32,8 +33,16 @@ type Profile struct {
 // before stops working.
 func (p Profile) Secret() string { return p.secret }
 
-// AvatarColors are the avatars to choose from.
+// AvatarColors are the avatars' colors to choose from.
 var AvatarColors = []string{"teal", "red", "blue", "purple", "orange", "green", "pink", "yellow"}
+
+// AvatarIcons are the pictures a profile can wear on its color, so people
+// tell their profiles apart at a glance; without one it shows its initial.
+// The apps draw each as its emoji.
+var AvatarIcons = []string{
+	"fox", "cat", "dog", "panda", "koala", "lion", "frog", "monkey", "unicorn",
+	"octopus", "penguin", "owl", "rocket", "star", "game", "ball", "pizza", "alien",
+}
 
 // MaxProfiles is how many profiles one account can have (as on Netflix).
 const MaxProfiles = 6
@@ -63,13 +72,16 @@ func cleanName(name string) (string, error) {
 	return name, nil
 }
 
+// cleanAvatar keeps a known color (teal otherwise) and a known picture.
 func cleanAvatar(a string) string {
-	for _, c := range AvatarColors {
-		if a == c {
-			return a
-		}
+	color, icon, _ := strings.Cut(a, "/")
+	if !slices.Contains(AvatarColors, color) {
+		color = AvatarColors[0]
 	}
-	return AvatarColors[0]
+	if slices.Contains(AvatarIcons, icon) {
+		return color + "/" + icon
+	}
+	return color
 }
 
 const profileCols = `id, user_id, name, avatar, pin_hash, secret, is_main, theme, stream_prefs`

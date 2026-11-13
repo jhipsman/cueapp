@@ -23,6 +23,9 @@ class CueApi(ctx: Context, val server: String) {
     var profileName: String
         get() = prefs.getString("profileName", "") ?: ""
         set(v) = prefs.edit().putString("profileName", v).apply()
+    var profileAvatar: String // "teal" or "teal/fox": its color, then its picture
+        get() = prefs.getString("profileAvatar", "") ?: ""
+        set(v) = prefs.edit().putString("profileAvatar", v).apply()
     var accent: String
         get() = prefs.getString("accent", "") ?: ""
         set(v) = prefs.edit().putString("accent", v).apply()
@@ -100,6 +103,7 @@ class CueApi(ctx: Context, val server: String) {
         profileToken = o.optString("token")
         val prof = o.optJSONObject("profile")
         profileName = prof?.optString("name") ?: p.name
+        profileAvatar = prof?.optString("avatar")?.ifEmpty { null } ?: p.avatar
         accent = prof?.optJSONObject("theme")?.optString("accent") ?: ""
     }
 

@@ -29,7 +29,7 @@ struct ProfilesView: View {
                             Circle()
                                 .fill(Color(hex: p.theme?.accent ?? "") ?? avatarColor(p.avatar))
                                 .frame(width: 180, height: 180)
-                                .overlay(Text(String(p.name.prefix(1))).font(.system(size: 80, weight: .bold)).foregroundStyle(.white))
+                                .overlay(face(p))
                             Text(p.name).font(.title3)
                         }
                         .padding(20)
@@ -80,8 +80,25 @@ struct ProfilesView: View {
         }
     }
 
-    private func avatarColor(_ name: String) -> Color {
-        switch name {
+    // A profile's picture (an avatar is "teal" or "teal/fox"), or its initial.
+    private static let pictures: [String: String] = [
+        "fox": "🦊", "cat": "🐱", "dog": "🐶", "panda": "🐼", "koala": "🐨", "lion": "🦁", "frog": "🐸", "monkey": "🐵",
+        "unicorn": "🦄", "octopus": "🐙", "penguin": "🐧", "owl": "🦉", "rocket": "🚀", "star": "⭐", "game": "🎮",
+        "ball": "⚽", "pizza": "🍕", "alien": "👾",
+    ]
+
+    @ViewBuilder
+    private func face(_ p: Profile) -> some View {
+        let parts = p.avatar.split(separator: "/", maxSplits: 1).map(String.init)
+        if parts.count == 2, let pic = Self.pictures[parts[1]] {
+            Text(pic).font(.system(size: 96))
+        } else {
+            Text(String(p.name.prefix(1))).font(.system(size: 80, weight: .bold)).foregroundStyle(.white)
+        }
+    }
+
+    private func avatarColor(_ avatar: String) -> Color {
+        switch avatar.split(separator: "/").first.map(String.init) ?? "" {
         case "red": return .red
         case "orange": return .orange
         case "yellow": return .yellow

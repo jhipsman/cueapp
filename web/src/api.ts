@@ -217,6 +217,7 @@ export interface WatchProfiles {
   profiles: WatchProfile[]
   active?: number // the profile this device is on
   avatars: string[]
+  icons?: string[] // pictures a profile can wear on its color (avatar "teal/fox")
   max: number
   liveTV?: boolean // an IPTV provider is set up: Watch shows Live TV
 }

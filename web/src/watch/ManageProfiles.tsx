@@ -3,7 +3,7 @@ import { Navigate, useNavigate } from 'react-router-dom'
 import { api, setProfileToken, type WatchProfile } from '../api'
 import Icon from '../components/Icon'
 import { useDocumentTitle } from '../documentTitle'
-import { AVATAR_COLORS, Avatar, useProfiles } from './profiles'
+import { AVATAR_COLORS, AVATAR_ICONS, Avatar, avatarParts, useProfiles } from './profiles'
 
 // Manage profiles: add, rename, recolor, lock with a PIN, remove. Only the
 // main profile can (the server checks too), so anyone else is sent to open it.
@@ -24,6 +24,7 @@ export default function ManageProfiles() {
         <ProfileEditor
           profile={editing === 'new' ? null : editing}
           colors={data.avatars}
+          icons={data.icons ?? []}
           onDone={async () => {
             setEditing(null)
             await refresh()
@@ -63,9 +64,11 @@ export default function ManageProfiles() {
   )
 }
 
-function ProfileEditor({ profile, colors, onDone }: { profile: WatchProfile | null; colors: string[]; onDone: () => Promise<void> }) {
+function ProfileEditor({ profile, colors, icons, onDone }: { profile: WatchProfile | null; colors: string[]; icons: string[]; onDone: () => Promise<void> }) {
   const [name, setName] = useState(profile?.name ?? '')
   const [avatar, setAvatar] = useState(profile?.avatar ?? colors[1] ?? 'red')
+  const { color, icon } = avatarParts(avatar)
+  const join = (c: string, i: string) => (i ? `${c}/${i}` : c)
   const [pin, setPin] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
@@ -107,6 +110,25 @@ function ProfileEditor({ profile, colors, onDone }: { profile: WatchProfile | nu
         Name
         <input value={name} maxLength={30} onChange={(e) => setName(e.target.value)} autoFocus placeholder="Name" />
       </label>
+      {icons.length > 0 && (
+        <div>
+          <div className="wx-dim" style={{ marginBottom: 8 }}>
+            Picture
+          </div>
+          <div className="wx-icons">
+            <button className={icon === '' ? 'on' : ''} onClick={() => setAvatar(join(color, ''))} aria-label="The first letter of the name" aria-pressed={icon === ''}>
+              <span className="wx-icons-letter">{(name.trim()[0] ?? 'A').toUpperCase()}</span>
+            </button>
+            {icons
+              .filter((i) => AVATAR_ICONS[i])
+              .map((i) => (
+                <button key={i} className={i === icon ? 'on' : ''} onClick={() => setAvatar(join(color, i))} aria-label={i} aria-pressed={i === icon}>
+                  {AVATAR_ICONS[i]}
+                </button>
+              ))}
+          </div>
+        </div>
+      )}
       <div>
         <div className="wx-dim" style={{ marginBottom: 8 }}>
           Color
@@ -115,11 +137,11 @@ function ProfileEditor({ profile, colors, onDone }: { profile: WatchProfile | nu
           {colors.map((c) => (
             <button
               key={c}
-              className={c === avatar ? 'on' : ''}
+              className={c === color ? 'on' : ''}
               style={{ background: AVATAR_COLORS[c] }}
-              onClick={() => setAvatar(c)}
+              onClick={() => setAvatar(join(c, icon))}
               aria-label={c}
-              aria-pressed={c === avatar}
+              aria-pressed={c === color}
             />
           ))}
         </div>

@@ -815,6 +815,43 @@ html.watch-mode body {
   padding: 10px 12px;
   font-size: 1.05rem;
 }
+.wx-avatar.pic {
+  line-height: 1;
+  font-family: 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif;
+  font-weight: 400;
+}
+.wx-icons {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(48px, 1fr));
+  gap: 8px;
+  max-width: 440px;
+}
+.wx-icons button {
+  aspect-ratio: 1;
+  border-radius: 12px;
+  border: 2px solid transparent;
+  background: rgba(255, 255, 255, 0.06);
+  background-clip: padding-box;
+  font-size: 26px;
+  line-height: 1;
+  cursor: pointer;
+  font-family: 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif;
+  transition:
+    transform 0.15s,
+    background 0.15s;
+}
+.wx-icons button:hover {
+  transform: scale(1.08);
+  background: rgba(255, 255, 255, 0.12);
+}
+.wx-icons button.on {
+  border-color: #fff;
+  background: rgba(255, 255, 255, 0.14);
+}
+.wx-icons-letter {
+  font: 800 20px var(--font-display, system-ui), sans-serif;
+  color: #fff;
+}
 .wx-colors {
   display: flex;
   flex-wrap: wrap;
