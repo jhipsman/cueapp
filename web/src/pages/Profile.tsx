@@ -560,6 +560,19 @@ function InviteCard({ onChanged }: { onChanged: () => void }) {
       .catch(() => setInvite({}))
   }, [])
   const link = invite?.token ? `${window.location.origin}/join/${invite.token}` : ''
+  // The invite as a message to send from a phone: the link, then how to get
+  // Cue on the TV (Downloader's short code on cuetv.me, the address otherwise).
+  const tvStep = window.location.hostname.endsWith('cuetv.me')
+    ? 'type 3575368 and press Go'
+    : `type ${window.location.host}/tv.apk and press Go`
+  const message = [
+    "You're invited to Cue, the family's streaming app.",
+    `1. Make your account: ${link}`,
+    `2. On a Fire TV or Google TV: install the free Downloader app, open it, ${tvStep}, then Install.`,
+    "3. Open Cue on the TV and scan the code with your phone to sign in.",
+    `On a phone or laptop, just go to ${window.location.host}.`,
+  ].join('\n\n')
+  const canShare = typeof navigator !== 'undefined' && 'share' in navigator
   async function make() {
     setBusy(true)
     try {
@@ -606,6 +619,33 @@ function InviteCard({ onChanged }: { onChanged: () => void }) {
             <input id="invite-link" readOnly value={link} onFocus={(e) => e.currentTarget.select()} style={{ flex: '1 1 320px', minWidth: 0 }} aria-label="Invite link" />
             <button type="button" className="primary" onClick={() => void copy()}>
               Copy link
+            </button>
+          </div>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 10 }}>
+            {/* On a phone: Messages opens with the invite written out. */}
+            <a className="btn-link" href={`sms:?&body=${encodeURIComponent(message)}`}>
+              <Icon name="chat" size={14} /> Text it
+            </a>
+            {canShare && (
+              <button
+                type="button"
+                className="btn-sm"
+                onClick={() => void navigator.share({ title: 'Cue invite', text: message }).catch(() => undefined)}
+              >
+                <Icon name="external" size={14} /> Share
+              </button>
+            )}
+            <button
+              type="button"
+              className="btn-sm"
+              onClick={() =>
+                void navigator.clipboard
+                  .writeText(message)
+                  .then(() => toast.success('Invite message copied. Paste it into a text or email.'))
+                  .catch(() => toast.error("Couldn't copy it."))
+              }
+            >
+              Copy the whole message
             </button>
           </div>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', marginTop: 10 }}>

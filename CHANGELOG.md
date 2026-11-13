@@ -12,6 +12,7 @@ under [Unreleased]. How releases are cut: [docs/RELEASING.md](docs/RELEASING.md)
 - Releases are signed with a new update key, held only by the project owner. **Update now** installs only releases signed with it.
 
 ### Added
+- **Text the invite**: Settings > Accounts > Invite family has **Text it** (opens Messages on a phone with the invite written out: the link, then how to get Cue on a Fire TV or Google TV with Downloader's code), **Share**, and **Copy the whole message**.
 - **Manage profiles on the TV** (Fire TV, Google TV): Profile > Manage profiles changes each profile's name, picture and color, adds one or removes one, with the remote (from the main profile; PINs are set on the web).
 - **Light mode** (Fire TV, Google TV): still pictures instead of moving previews, and highlighted cards without their soft shadow and sweeping shine (the parts that redraw every frame), for TVs with a slow processor. On by itself on TVs with little memory (most built-in Google TVs); Profile switches it.
 - **Sign in the TV with your phone** (Fire TV, Google TV): the sign-in screen shows a QR code and a 6-letter code; scan it with a phone that's signed in (or go to cuetv.me/link and type the code), tap **Sign in the TV**, and the TV is signed in to that account. A code lasts ten minutes and works once. `POST /api/auth/tv-link`, `GET /api/auth/tv-link/{token}`, `POST /api/auth/tv-link/approve`.
