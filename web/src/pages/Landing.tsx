@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { lazy, Suspense, useEffect, useRef, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { useDarkPage } from '../useDarkPage'
 import { titleFor } from '../documentTitle'
@@ -14,6 +14,9 @@ const POSTERS = [
   1290418, 1084244, 1153576, 1380417, 1377237, 247718, 225385, 213375, 258989, 120911, 153312, 314271, 81723, 84773, 248830,
 ]
 const M = '/landing/'
+
+// The 3D phone (three.js), fetched only for this page and only after it shows.
+const PhoneModel = lazy(() => import('./PhoneModel'))
 
 function Mark() {
   return (
@@ -207,6 +210,9 @@ export default function Landing() {
               <Phone>
                 <Loop name="phone" label="Cue on a phone, swiping through rows of shows" />
               </Phone>
+              <Suspense fallback={null}>
+                <PhoneModel model={`${M}iphone.glb`} clip={`${M}phone.mp4`} poster={`${M}phone.jpg`} />
+              </Suspense>
             </div>
           </div>
         </div>

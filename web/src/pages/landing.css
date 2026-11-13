@@ -78,6 +78,13 @@
 /* A modern phone, drawn: titanium edge and buttons, a thin black border,
    the camera's pill and a status bar. Sizes follow the phone's width. */
 .lp-phone, .t-phone .lp-mini { container-type: inline-size }
+/* The 3D phone, over the drawn one, which steps aside once it's loaded. */
+.lp-phone3d { position: absolute; inset: -10% -18%; opacity: 0; transition: opacity 0.9s ease; pointer-events: none }
+.lp-phone3d.on { opacity: 1 }
+.lp-phone3d canvas { width: 100%; height: 100%; display: block }
+.lp-phone .lp-device { transition: opacity 0.6s ease }
+.lp-phone:has(.lp-phone3d.on) .lp-device { opacity: 0 }
+.lp-phone:has(.lp-phone3d.on) { transform: none }
 .lp-device { position: relative; aspect-ratio: 0.5; padding: 1.4cqw; border-radius: 16cqw;
   background: linear-gradient(120deg, #f1f2f4 0%, #a3a7ad 14%, #e3e5e8 32%, #8c9097 52%, #d3d5d9 74%, #9a9ea5 90%, #e8e9ec 100%);
   box-shadow: inset 0 0 0 0.35cqw rgba(255, 255, 255, 0.55), inset 0 0 0 0.7cqw rgba(0, 0, 0, 0.18) }
