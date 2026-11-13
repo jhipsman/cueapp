@@ -360,6 +360,8 @@ fun ClipLayer(api: CueApi, tile: Tile, modifier: Modifier = Modifier, sound: Boo
     val player = remember(u) {
         androidx.media3.exoplayer.ExoPlayer.Builder(ctx).build().apply {
             volume = 0f
+            // The English sound, where the file has several.
+            trackSelectionParameters = trackSelectionParameters.buildUpon().setPreferredAudioLanguage("en").build()
             setMediaItem(androidx.media3.common.MediaItem.fromUri(u))
             var placed = false
             addListener(object : androidx.media3.common.Player.Listener {
