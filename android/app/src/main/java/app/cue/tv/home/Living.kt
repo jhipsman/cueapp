@@ -275,6 +275,50 @@ fun UpNextScreen(api: CueApi, next: Playback.UpNext, play: () -> Unit, dismiss: 
     }
 }
 
+// StartingScreen: the next episode while its version is found, so the end
+// of an episode leads straight into the next one's picture and name instead
+// of back to the menus. Back stops it.
+@Composable
+fun StartingScreen(api: CueApi, s: Playback.Starting, note: String, back: () -> Unit) {
+    androidx.activity.compose.BackHandler { back() }
+    val ex = rememberExtras(api, "tv", s.showId)
+    val ep = s.episode
+    val focus = remember { androidx.compose.ui.focus.FocusRequester() }
+    LaunchedEffect(s.failed) { if (s.failed) runCatching { focus.requestFocus() } }
+    Box(Modifier.fillMaxSize().background(Color.Black)) {
+        val picture = ep?.still?.replace("/w300/", "/w780/") ?: s.backdrop
+        Crossfade(targetState = picture, animationSpec = tween(500), label = "starting") { u ->
+            if (u != null) AsyncImage(model = u, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
+        }
+        Box(Modifier.fillMaxSize().background(Brush.horizontalGradient(0f to Color(0xF20C0D10), 0.5f to Color(0x990C0D10), 0.85f to Color.Transparent)))
+        Box(Modifier.fillMaxSize().background(Brush.verticalGradient(0.55f to Color.Transparent, 1f to Color(0xE60C0D10))))
+        Column(Modifier.align(Alignment.CenterStart).padding(start = Gutter + 8.dp).fillMaxSize(0.5f), verticalArrangement = Arrangement.Center) {
+            Text(if (s.failed) "COULDN'T START" else "STARTING", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = tint(), letterSpacing = 2.sp)
+            androidx.compose.foundation.layout.Spacer(Modifier.size(12.dp))
+            if (s.show.isNotEmpty() || ex?.logo != null) {
+                TitleMark(s.show, ex?.logo, maxWidth = 360.dp, maxHeight = 110.dp, fontSize = 36.sp)
+                androidx.compose.foundation.layout.Spacer(Modifier.size(16.dp))
+            }
+            if (ep != null) {
+                Text("S${ep.season} · E${ep.episode}  ${ep.title}", fontSize = 18.sp, fontWeight = FontWeight.SemiBold, color = Color.White, modifier = Modifier.rise(0))
+                ep.overview?.let {
+                    Text(it, fontSize = 13.sp, color = Color(0xD9FFFFFF), maxLines = 3, lineHeight = 19.sp, modifier = Modifier.padding(top = 10.dp).rise(80))
+                }
+            }
+            androidx.compose.foundation.layout.Spacer(Modifier.size(24.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(14.dp), verticalAlignment = Alignment.CenterVertically) {
+                if (!s.failed) {
+                    androidx.compose.material3.CircularProgressIndicator(modifier = Modifier.size(26.dp), color = Color.White, strokeWidth = 3.dp, trackColor = Color(0x33FFFFFF))
+                    Text(note.ifEmpty { "Finding a version…" }, fontSize = 14.sp, color = Color(0xCCFFFFFF))
+                } else {
+                    Pill("Back", primary = true, modifier = Modifier.focusRequester(focus), onClick = back)
+                    Text(note.ifEmpty { "This episode wouldn't start." }, fontSize = 13.sp, color = Color(0xCCFFFFFF), maxLines = 2)
+                }
+            }
+        }
+    }
+}
+
 // ---- A real clip, when there's no trailer ----
 
 // ClipLayer plays a moment of the title itself, muted, when it has no

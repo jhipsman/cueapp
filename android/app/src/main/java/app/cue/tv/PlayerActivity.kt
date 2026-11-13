@@ -677,10 +677,21 @@ class PlayerActivity : Activity() {
             .setSeekBackIncrementMs(10_000)
             .setSeekForwardIncrementMs(10_000)
             .build()
+        // Subtitles follow the last choice on this TV (Off stays off for the
+        // next episode); with none made, they show when on in Watch. A file's
+        // own "default" subtitle doesn't switch them on by itself; forced ones
+        // (lines in another language) still show.
+        val subsPref = getSharedPreferences("player", MODE_PRIVATE).getString("subs", "") ?: ""
         p.trackSelectionParameters = p.trackSelectionParameters.buildUpon()
             .setPreferredAudioLanguage("en")
-            // Subtitles show from the start when they're on in Watch.
-            .setPreferredTextLanguage(if (info.optBoolean("subsOn") && info.optString("subtitleUrl").isNotEmpty()) "en" else null)
+            .setIgnoredTextSelectionFlags(C.SELECTION_FLAG_DEFAULT)
+            .setPreferredTextLanguage(when {
+                subsPref == "off" -> null
+                subsPref.isNotEmpty() -> subsPref
+                info.optBoolean("subsOn") && info.optString("subtitleUrl").isNotEmpty() -> "en"
+                else -> null
+            })
+            .setTrackTypeDisabled(C.TRACK_TYPE_TEXT, subsPref == "off")
             .build()
         // The frame rate is asked for in matchRefreshRate, in a way the TV
         // follows even when switching isn't seamless.
@@ -1650,15 +1661,69 @@ class PlayerActivity : Activity() {
         ))
     }
 
-    // subtitlesPressed: the first time, without a subtitle from Watch, Cue is
-    // asked for an English one (it's added and shown); after that, the list
-    // of subtitles to choose from.
+    // subtitlesPressed: the list, one press to choose: Off, the subtitles in
+    // the video, and (when Cue hasn't added one yet) finding English ones.
+    // The choice is remembered on this TV for what plays next.
     private fun subtitlesPressed() {
+        main.removeCallbacks(hider)
         val kind = info.optString("kind")
-        if (externalSubs || live || catchup || server.isEmpty() || (kind != "movie" && kind != "tv")) {
-            chooseTrack(C.TRACK_TYPE_TEXT, "Subtitles")
-            return
+        val canFind = !externalSubs && !live && !catchup && server.isNotEmpty() && (kind == "movie" || kind == "tv")
+        val off = player.trackSelectionParameters.disabledTrackTypes.contains(C.TRACK_TYPE_TEXT)
+        val labels = ArrayList<String>()
+        val picks = ArrayList<() -> Unit>()
+        var current = 0
+        labels += "Off"
+        picks += { setSubtitles(null, 0) }
+        for (g in player.currentTracks.groups) {
+            if (g.type != C.TRACK_TYPE_TEXT) continue
+            for (i in 0 until g.length) {
+                if (!g.isTrackSupported(i)) continue
+                if (g.isTrackSelected(i) && !off) current = labels.size
+                labels += subtitleName(g.getTrackFormat(i))
+                picks += { setSubtitles(g, i) }
+            }
         }
+        if (canFind) {
+            labels += "Find English subtitles…"
+            picks += { findSubtitles() }
+        }
+        android.app.AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert)
+            .setTitle("Subtitles")
+            .setSingleChoiceItems(labels.toTypedArray(), current) { d, which ->
+                d.dismiss()
+                picks[which]()
+            }
+            .setOnDismissListener { scheduleHide() }
+            .show()
+    }
+
+    private fun setSubtitles(group: Tracks.Group?, index: Int) {
+        val b = player.trackSelectionParameters.buildUpon().clearOverridesOfType(C.TRACK_TYPE_TEXT)
+        val choice = if (group == null) {
+            b.setTrackTypeDisabled(C.TRACK_TYPE_TEXT, true)
+            "off"
+        } else {
+            b.setTrackTypeDisabled(C.TRACK_TYPE_TEXT, false)
+                .setOverrideForType(androidx.media3.common.TrackSelectionOverride(group.mediaTrackGroup, index))
+            group.getTrackFormat(index).language?.takeIf { it.isNotEmpty() && it != "und" } ?: "en"
+        }
+        player.trackSelectionParameters = b.build()
+        getSharedPreferences("player", MODE_PRIVATE).edit().putString("subs", choice).apply()
+    }
+
+    private fun subtitleName(f: Format): String {
+        val lang = f.language?.takeIf { it.isNotEmpty() && it != "und" }?.let { java.util.Locale.forLanguageTag(it).displayLanguage } ?: ""
+        val name = f.label?.takeIf { it.isNotEmpty() } ?: lang.ifEmpty { "Subtitles" }
+        val extra = listOfNotNull(
+            lang.takeIf { it.isNotEmpty() && !name.contains(it, ignoreCase = true) },
+            "forced".takeIf { f.selectionFlags and C.SELECTION_FLAG_FORCED != 0 },
+        )
+        return if (extra.isEmpty()) name else "$name (${extra.joinToString(", ")})"
+    }
+
+    // findSubtitles asks Cue for an English subtitle (from OpenSubtitles),
+    // adds it to the video and shows it.
+    private fun findSubtitles() {
         if (subsAsking) return
         subsAsking = true
         Toast.makeText(this, "Finding English subtitles…", Toast.LENGTH_SHORT).show()
@@ -1691,8 +1756,11 @@ class PlayerActivity : Activity() {
                 val pos = player.currentPosition
                 val playing = player.playWhenReady
                 player.trackSelectionParameters = player.trackSelectionParameters.buildUpon()
+                    .setTrackTypeDisabled(C.TRACK_TYPE_TEXT, false)
+                    .clearOverridesOfType(C.TRACK_TYPE_TEXT)
                     .setPreferredTextLanguage("en")
                     .build()
+                getSharedPreferences("player", MODE_PRIVATE).edit().putString("subs", "en").apply()
                 player.setMediaItem(mediaItem(url), pos)
                 player.prepare()
                 player.playWhenReady = playing

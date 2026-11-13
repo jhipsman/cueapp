@@ -176,6 +176,7 @@ fun CueRoot(api: CueApi, playback: Playback, openWeb: (String) -> Unit, changeSe
                 }
             }
             playback.upNext?.let { u -> UpNextScreen(api, u, play = { playback.playUpNext() }, dismiss = { playback.dismissUpNext() }) }
+            playback.starting?.let { st -> StartingScreen(api, st, playback.note) { playback.cancelStarting() } }
             AppUpdate.offer?.takeIf { AppUpdate.showing && playback.upNext == null && stage == Stage.Ready }?.let { o ->
                 UpdateCard(api, o, later = { AppUpdate.later() })
             }
@@ -195,7 +196,7 @@ fun CueRoot(api: CueApi, playback: Playback, openWeb: (String) -> Unit, changeSe
                     saver = null
                 }
             }
-            if (playback.note.isNotEmpty()) {
+            if (playback.note.isNotEmpty() && playback.starting == null) {
                 Text(playback.note, fontSize = 14.sp, color = Color.White,
                     modifier = Modifier.align(Alignment.BottomCenter).padding(28.dp).clip(RoundedCornerShape(10.dp))
                         .background(Color(0xE6202228)).padding(horizontal = 20.dp, vertical = 12.dp))

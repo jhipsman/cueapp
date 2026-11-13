@@ -4,6 +4,8 @@ Watch is the streaming side of Cue. Open it with **Watch** at the top of any pag
 
 It needs something to play from: a [stream add-on](#stream-add-ons-comet-torrentio-mediafusion) such as Comet, or [Premiumize](downloads.md#premiumize), or both. The player streams straight from them; nothing is downloaded to your server. For IMDb ratings, add an optional OMDb key. Watch it in a browser, or in the [TV and Apple TV apps](#the-apps).
 
+Someone not signed in who opens Cue's address sees its front page first: what Cue is, clips of the app playing, a short commercial, and how to put Cue on a Fire TV, a phone or an Apple TV, with **Sign in** at the top. Signed in, Cue opens straight to Watch. A link to anywhere else in Cue goes to sign-in and then there.
+
 ## Streaming only
 
 Cue starts as a streaming app: opening it goes to **Who's watching?** and then Watch, and Settings shows only what streaming needs:
