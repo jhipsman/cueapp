@@ -4901,3 +4901,31 @@ html.tv-mode .wx .wx-card:focus .wx-card-art {
     width: 4.2ch;
   }
 }
+
+/* The preview's sound, in the banner's corner. */
+.wx-trailer-sound {
+  position: absolute;
+  top: 16px;
+  right: 18px;
+  z-index: 2;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  border: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(0, 0, 0, 0.5);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.25);
+  color: #fff;
+  cursor: pointer;
+  animation: wx-fade-in 0.6s var(--wx-settle) both;
+  transition: background 0.2s;
+}
+.wx-trailer-sound:hover {
+  background: rgba(0, 0, 0, 0.75);
+}
+.wx-titlepage .wx-trailer-sound {
+  top: auto;
+  bottom: 22%;
+  right: var(--wx-gutter, 48px);
+}

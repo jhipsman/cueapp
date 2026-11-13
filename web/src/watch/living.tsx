@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import Icon from '../components/Icon'
 import { api, type WatchCard } from '../api'
 import { onTV } from './tv'
 
@@ -84,7 +85,7 @@ export function trailersAllowed(): boolean {
   return matchMedia('(hover: hover) and (min-width: 900px)').matches && !matchMedia('(prefers-reduced-motion: reduce)').matches && !onTV()
 }
 
-// usePreview: a title's own preview clip (cut on the server, kept, silent),
+// usePreview: a title's own preview clip (cut on the server, kept),
 // as the streaming services do it: asked for once the viewer has rested a
 // moment, played in an ordinary video element, and shown only once it's
 // playing, so nothing but the picture ever appears. While the server is
@@ -93,9 +94,9 @@ export function trailersAllowed(): boolean {
 // for a clip already made (a card the mouse passes over).
 type PreviewOf = { kind: WatchCard['kind']; tmdbId: number; season?: number; episode?: number }
 export function usePreview(of: PreviewOf | null, forKey: string, ready = false) {
-  const [state, setState] = useState({ key: '', src: '', playing: false, waiting: false, none: false })
+  const [state, setState] = useState({ key: '', src: '', playing: false, waiting: false, none: false, over: false })
   useEffect(() => {
-    setState({ key: forKey, src: '', playing: false, waiting: false, none: false })
+    setState({ key: forKey, src: '', playing: false, waiting: false, none: false, over: false })
     if (!of || !trailersAllowed()) return
     let stop = false
     let timer = 0
@@ -115,7 +116,7 @@ export function usePreview(of: PreviewOf | null, forKey: string, ready = false) 
       }
     }
     timer = window.setTimeout(ask, ready ? 300 : TRAILER_REST)
-    const end = window.setTimeout(() => setState((s) => ({ ...s, playing: false })), TRAILER_LENGTH)
+    const end = window.setTimeout(() => setState((s) => ({ ...s, playing: false, over: true })), TRAILER_LENGTH)
     return () => {
       stop = true
       window.clearTimeout(timer)
@@ -123,19 +124,85 @@ export function usePreview(of: PreviewOf | null, forKey: string, ready = false) 
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [forKey, ready])
-  const current = state.key === forKey ? state : { key: forKey, src: '', playing: false, waiting: false, none: false }
+  const current = state.key === forKey ? state : { key: forKey, src: '', playing: false, waiting: false, none: false, over: false }
   return {
     ...current,
     onPlaying: () => setState((s) => (s.src ? { ...s, playing: true, waiting: false } : s)),
   }
 }
 
-// The clip itself: muted, looping, filling its box like a picture.
-export function PreviewVideo({ src, onPlaying, className }: { src: string; onPlaying: () => void; className?: string }) {
+// The clip itself, looping and filling its box like a picture. With sound
+// (a title's page, as on Netflix) it starts with sound when the browser
+// allows it (it does once you've clicked on the site), otherwise muted; a
+// button in the corner turns the sound on and off. Once the preview is over
+// it fades away and stops.
+export function PreviewVideo({ src, onPlaying, playing, over, sound = false }: { src: string; onPlaying: () => void; playing: boolean; over: boolean; sound?: boolean }) {
+  const video = useRef<HTMLVideoElement>(null)
+  const [muted, setMuted] = useState(true)
+  const [hasSound, setHasSound] = useState(false)
+  useEffect(() => {
+    const v = video.current
+    if (!v) return
+    v.muted = true
+    v.volume = 0.8
+    if (!sound) {
+      void v.play().catch(() => undefined)
+      return
+    }
+    v.muted = false
+    v.play()
+      .then(() => setMuted(false))
+      .catch(() => {
+        v.muted = true
+        setMuted(true)
+        void v.play().catch(() => undefined)
+      })
+  }, [sound])
+  // Fades the sound out with the picture, then stops.
+  useEffect(() => {
+    const v = video.current
+    if (!v || !over) return
+    let left = 10
+    const t = window.setInterval(() => {
+      v.volume = Math.max(0, v.volume - 0.08)
+      if (--left <= 0) {
+        window.clearInterval(t)
+        v.pause()
+      }
+    }, 100)
+    return () => window.clearInterval(t)
+  }, [over])
+  const toggle = () => {
+    const v = video.current
+    if (!v) return
+    v.muted = !v.muted
+    setMuted(v.muted)
+    if (!v.muted && v.paused) void v.play().catch(() => undefined)
+  }
   return (
-    <div className={className ?? 'wx-hero-trailer'} aria-hidden="true">
-      <video src={src} muted autoPlay loop playsInline preload="auto" onPlaying={onPlaying} />
-    </div>
+    <>
+      <div className="wx-hero-trailer" aria-hidden="true">
+        <video
+          ref={video}
+          src={src}
+          muted
+          loop
+          playsInline
+          preload="auto"
+          onPlaying={onPlaying}
+          // Whether the clip has sound at all (some versions have none).
+          onLoadedData={(e) => {
+            const v = e.currentTarget as HTMLVideoElement & { mozHasAudio?: boolean; webkitAudioDecodedByteCount?: number; audioTracks?: { length: number } }
+            setHasSound(v.mozHasAudio ?? (v.audioTracks ? v.audioTracks.length > 0 : true))
+          }}
+        />
+      </div>
+      {playing && !over && hasSound && (
+        <button className="wx-trailer-sound" onClick={toggle} aria-label={muted ? 'Turn the sound on' : 'Mute'}>
+          <Icon name={muted ? 'volume-x' : 'volume'} size={18} />
+        </button>
+      )}
+    </>
   )
 }
 

@@ -41,8 +41,8 @@ func TestCutPreview(t *testing.T) {
 			t.Errorf("clip: want %s in:\n%s", w, got)
 		}
 	}
-	if strings.Contains(got, "codec_type=audio") {
-		t.Errorf("clip has sound:\n%s", got)
+	if !strings.Contains(got, "codec_name=aac") {
+		t.Errorf("clip has no AAC sound:\n%s", got)
 	}
 	if _, err := os.Stat(clip + ".part"); err == nil {
 		t.Error("the part file was left behind")

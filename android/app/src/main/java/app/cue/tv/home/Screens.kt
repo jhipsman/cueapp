@@ -622,11 +622,11 @@ fun TitleScreen(api: CueApi, playback: Playback, card: Tile, memory: FocusMemory
         // picture, which fades away once it's really playing.
         var live by remember(card.key) { mutableStateOf(false) }
         val still by animateFloatAsState(if (live) 0f else 1f, tween(900, easing = Settle), label = "title-still")
-        // A muted moment of the episode or film itself, from the stream Play
+        // A moment of the episode or film itself, with its sound, from the stream Play
         // will use (so Play then starts at once). The TV's own player draws it,
         // so it's smooth, and there's no YouTube page in the way.
         key(c.kind, c.tmdbId) {
-            ClipLayer(api, c.copy(season = t.resumeSeason, episode = t.resumeEpisode, progress = null), Modifier.fillMaxSize()) { live = it }
+            ClipLayer(api, c.copy(season = t.resumeSeason, episode = t.resumeEpisode, progress = null), Modifier.fillMaxSize(), sound = true) { live = it }
         }
         // The picture fills the screen; the words sit on its darker left.
         AsyncImage(model = c.backdrop, contentDescription = null, contentScale = ContentScale.Crop,

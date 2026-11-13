@@ -17,12 +17,13 @@ import (
 	"time"
 )
 
-// Previews, made the way the streaming services make theirs: a short,
-// silent clip of the title itself (about 22 seconds from early on, 720p
-// H.264, a few megabytes), cut once on this server from the same version
-// Play would use and kept in a cache. Pages then play it in an ordinary
-// video element: it starts at once, and nothing but the picture shows (no
-// YouTube player, no buttons). Home asks for its banner's and the first of
+// Previews, made the way the streaming services make theirs: a short clip
+// of the title itself (about 22 seconds from early on, 720p H.264 with
+// stereo AAC sound that fades in and out, a few megabytes), cut once on this
+// server from the same version Play would use and kept in a cache. Pages
+// then play it in an ordinary video element: it starts at once, and nothing
+// but the picture shows (no YouTube player, no buttons). A title's page
+// plays it with sound, as Netflix does; Home and the cards keep it muted. Home asks for its banner's and the first of
 // Continue Watching's ahead of time, so they're ready before anyone rests
 // on them.
 
@@ -55,7 +56,11 @@ func (p previewWant) key() string {
 	return fmt.Sprintf("tv-%d-%d-%d", p.tmdbID, p.season, p.episode)
 }
 
-func (s *Server) previewDir() string { return filepath.Join(s.cfg.ConfigDir, "cache", "previews") }
+// previewDir holds the clips. (Clips with sound live in previews-v2; the
+// first, silent ones in previews are cleared the first time one is made.)
+func (s *Server) previewDir() string { return filepath.Join(s.cfg.ConfigDir, "cache", "previews-v2") }
+
+var clearSilentPreviews sync.Once
 
 // GET /api/watch/preview/{kind}/{tmdbId}?season=&episode=[&ready=1]: the
 // clip's address when it's made ({"url"}); otherwise it's started and the
@@ -191,6 +196,7 @@ func (s *Server) previewSource(ctx context.Context, header http.Header, want pre
 }
 
 func (s *Server) makePreview(ctx context.Context, header http.Header, want previewWant) error {
+	clearSilentPreviews.Do(func() { _ = os.RemoveAll(filepath.Join(s.cfg.ConfigDir, "cache", "previews")) })
 	link, err := s.previewSource(ctx, header, want)
 	if err != nil {
 		return err
@@ -226,9 +232,12 @@ func cutPreview(ctx context.Context, link string, want previewWant, dir string) 
 	}
 	args = append(args,
 		"-ss", strconv.FormatFloat(at, 'f', 1, 64), "-i", link,
-		"-t", strconv.Itoa(previewSeconds), "-map", "0:v:0", "-an", "-sn",
+		"-t", strconv.Itoa(previewSeconds), "-map", "0:v:0", "-map", "0:a:0?", "-sn", "-dn",
 		"-vf", "scale=-2:'min(720,ih)',fps=30,format=yuv420p",
 		"-c:v", "libx264", "-preset", "superfast", "-crf", "27", "-profile:v", "high",
+		// The sound in stereo, fading in and out so the loop doesn't jump.
+		"-af", fmt.Sprintf("afade=t=in:d=1.2,afade=t=out:st=%d:d=1.8", previewSeconds-2),
+		"-c:a", "aac", "-b:a", "128k", "-ac", "2",
 		"-movflags", "+faststart", "-f", "mp4", tmp)
 	cmd := exec.CommandContext(ctx, ffmpeg, args...)
 	if out, err := cmd.CombinedOutput(); err != nil {
