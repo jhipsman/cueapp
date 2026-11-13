@@ -1,5 +1,5 @@
 import { lazy, Suspense, type ReactNode } from 'react'
-import { Navigate, Route, BrowserRouter as Router, Routes, useLocation } from 'react-router-dom'
+import { Navigate, Route, BrowserRouter as Router, Routes, useLocation, useParams } from 'react-router-dom'
 import { isAdmin } from './api'
 import { AuthProvider, useAuth } from './AuthContext'
 import { ModulesProvider } from './ModulesContext'
@@ -114,6 +114,8 @@ function Gate() {
           </Suspense>
         }
       />
+      {/* cuetv.me/link: what the TV's sign-in says to type on a phone. */}
+      <Route path="/link/:code?" element={<LinkRedirect />} />
       <Route
         path="/watch/*"
         element={
@@ -179,6 +181,11 @@ function Gate() {
       </Route>
     </Routes>
   )
+}
+
+function LinkRedirect() {
+  const { code } = useParams()
+  return <Navigate to={`/watch/link${code ? `/${code}` : ''}`} replace />
 }
 
 // A page that crashes while it draws shows a short message instead of a blank

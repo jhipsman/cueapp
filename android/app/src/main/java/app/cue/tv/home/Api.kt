@@ -92,6 +92,13 @@ class CueApi(ctx: Context, val server: String) {
         request("POST", "/api/auth/login", JSONObject().put("username", user).put("password", password))
     }
 
+    /** A code for signing this TV in from a phone: (code, token). */
+    suspend fun tvLinkStart(): Pair<String, String> =
+        JSONObject(request("POST", "/api/auth/tv-link")).let { it.optString("code") to it.optString("token") }
+
+    /** True once a phone has confirmed the code: this TV is then signed in. */
+    suspend fun tvLinkDone(token: String): Boolean = obj("/api/auth/tv-link/$token").optBoolean("ok")
+
     suspend fun profiles(): List<Profile> {
         val o = obj("/api/profiles")
         val a = o.optJSONArray("profiles") ?: JSONArray()

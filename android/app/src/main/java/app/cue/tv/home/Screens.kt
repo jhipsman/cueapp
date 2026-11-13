@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.runtime.key
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.foundation.BorderStroke
@@ -236,38 +237,93 @@ fun SignInScreen(api: CueApi, startProblem: String, changeServer: () -> Unit, do
     val scope = rememberCoroutineScope()
     val first = remember { FocusRequester() }
     LaunchedEffect(Unit) { runCatching { first.requestFocus() } }
-    Centered {
-        Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.width(420.dp)) {
-            Text("Cue", fontSize = 48.sp, fontWeight = FontWeight.Black, color = Teal)
-            Text("Sign in to ${api.server.removePrefix("https://").removePrefix("http://")}", color = Dim, fontSize = 14.sp)
-            Gap(20.dp)
-            OutlinedTextField(user, { user = it }, label = { androidx.compose.material3.Text("Username") }, singleLine = true,
-                colors = fieldColors(), modifier = Modifier.fillMaxWidth().focusRequester(first).leaveWithArrows())
-            Gap(10.dp)
-            OutlinedTextField(password, { password = it }, label = { androidx.compose.material3.Text("Password") }, singleLine = true,
-                visualTransformation = PasswordVisualTransformation(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                colors = fieldColors(), modifier = Modifier.fillMaxWidth().leaveWithArrows())
-            if (problem.isNotEmpty()) {
-                Gap(10.dp)
-                Text(problem, color = Color(0xFFFF8A80), fontSize = 13.sp)
+    // Signing in from a phone: a code (and its QR code) that a signed-in
+    // phone confirms; this screen asks every couple of seconds, and a new
+    // code comes when one runs out.
+    var link by remember { mutableStateOf<Pair<String, String>?>(null) }
+    LaunchedEffect(Unit) {
+        while (true) {
+            val l = link ?: runCatching { api.tvLinkStart() }.getOrNull()
+            if (l == null) {
+                delay(10_000)
+                continue
             }
-            Gap(16.dp)
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                Button(onClick = {
-                    if (busy || user.isBlank() || password.isEmpty()) return@Button
-                    busy = true
-                    problem = ""
-                    scope.launch {
-                        try {
-                            api.signIn(user.trim(), password)
-                            done()
-                        } catch (e: Exception) {
-                            problem = e.message ?: "Couldn't sign in."
-                        }
-                        busy = false
+            link = l
+            delay(2000)
+            try {
+                if (api.tvLinkDone(l.second)) {
+                    done()
+                    return@LaunchedEffect
+                }
+            } catch (e: CueApi.Problem) {
+                if (e.code == 410) link = null // ran out: a new code
+                else delay(5000)
+            } catch (e: Exception) {
+                delay(5000)
+            }
+        }
+    }
+    val host = api.server.removePrefix("https://").removePrefix("http://").trimEnd('/')
+    Centered {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Text("Cue", fontSize = 48.sp, fontWeight = FontWeight.Black, color = Teal)
+            Text("Sign in to $host", color = Dim, fontSize = 14.sp)
+            Gap(26.dp)
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(40.dp)) {
+                // With a phone that's signed in: scan, tap, done.
+                Column(
+                    Modifier.width(300.dp).clip(RoundedCornerShape(PanelCorner))
+                        .background(Brush.linearGradient(listOf(Color(0x2634D1BF), Color(0x0FFFFFFF))))
+                        .border(1.dp, Color(0x1FFFFFFF), RoundedCornerShape(PanelCorner)).padding(22.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    Text("Sign in with your phone", fontSize = 17.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                    Gap(14.dp)
+                    val l = link
+                    val qr = remember(l?.first) { l?.let { qrBitmap("${api.server.trimEnd('/')}/link/${it.first}", 360) } }
+                    Box(Modifier.size(150.dp).clip(RoundedCornerShape(12.dp)).background(Color.White).padding(8.dp), contentAlignment = Alignment.Center) {
+                        if (qr != null) androidx.compose.foundation.Image(qr.asImageBitmap(), contentDescription = "QR code to sign in from your phone", modifier = Modifier.fillMaxSize())
                     }
-                }) { Text(if (busy) "Signing in…" else "Sign in") }
-                Button(onClick = changeServer, colors = quietButton()) { Text("Change server") }
+                    Gap(14.dp)
+                    Text("Scan it with your phone's camera", fontSize = 12.sp, color = Dim)
+                    Gap(10.dp)
+                    Text("or go to $host/link and enter", fontSize = 12.sp, color = Dim)
+                    Gap(4.dp)
+                    Text(l?.first ?: "······", fontSize = 26.sp, fontWeight = FontWeight.Black, color = Teal, letterSpacing = 4.sp)
+                }
+                // Or the usual way.
+                Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.width(360.dp)) {
+                    Text("Or sign in here", fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
+                    Gap(12.dp)
+                    OutlinedTextField(user, { user = it }, label = { androidx.compose.material3.Text("Username") }, singleLine = true,
+                        colors = fieldColors(), modifier = Modifier.fillMaxWidth().focusRequester(first).leaveWithArrows())
+                    Gap(10.dp)
+                    OutlinedTextField(password, { password = it }, label = { androidx.compose.material3.Text("Password") }, singleLine = true,
+                        visualTransformation = PasswordVisualTransformation(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                        colors = fieldColors(), modifier = Modifier.fillMaxWidth().leaveWithArrows())
+                    if (problem.isNotEmpty()) {
+                        Gap(10.dp)
+                        Text(problem, color = Color(0xFFFF8A80), fontSize = 13.sp)
+                    }
+                    Gap(16.dp)
+                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Button(onClick = {
+                            if (busy || user.isBlank() || password.isEmpty()) return@Button
+                            busy = true
+                            problem = ""
+                            scope.launch {
+                                try {
+                                    api.signIn(user.trim(), password)
+                                    done()
+                                } catch (e: Exception) {
+                                    problem = e.message ?: "Couldn't sign in."
+                                }
+                                busy = false
+                            }
+                        }) { Text(if (busy) "Signing in…" else "Sign in") }
+                        Button(onClick = changeServer, colors = quietButton()) { Text("Change server") }
+                    }
+                }
             }
         }
     }

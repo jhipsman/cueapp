@@ -25,6 +25,9 @@ Every route the server exposes. Routes marked **public** need no sign-in; all ot
 | PUT | `/api/auth/profile` | any account | lets the logged-in user change their username, name and email, returning the updated account. |
 | GET | `/api/auth/proxy-signin` | admin |  |
 | PUT | `/api/auth/proxy-signin` | admin |  |
+| POST | `/api/auth/tv-link` | **public** | POST /api/auth/tv-link: a new code for a TV to show, and the secret token it asks with ({"code","token","expiresIn"}). |
+| POST | `/api/auth/tv-link/approve` | any account | POST /api/auth/tv-link/approve {"code"}: a signed-in phone signs the TV showing this code in to its own account. |
+| GET | `/api/auth/tv-link/{token}` | **public** | GET /api/auth/tv-link/{token}: the TV asking whether a phone has confirmed. |
 
 ## blocklist
 
@@ -676,4 +679,4 @@ Every route the server exposes. Routes marked **public** need no sign-in; all ot
 | PUT | `/api/watched/settings` | admin | PUT /api/watched/settings {"sync": true, "cleanup": {...}} |
 | POST | `/api/watched/sync` | admin | POST /api/watched/sync: read what's been watched now. |
 
-371 routes.
+374 routes.
