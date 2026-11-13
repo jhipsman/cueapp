@@ -187,6 +187,8 @@ fun CardRow(row: Shelf, memory: FocusMemory, onFocus: (Tile) -> Unit = {}, onCli
     Column(Modifier.padding(bottom = 14.dp)) {
         Text(row.title, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = Color(0xF2FFFFFF), modifier = Modifier.padding(start = Gutter + 2.dp, bottom = 2.dp))
         // Coming back to a row puts the highlight on the poster it was on.
+        // Left and right, the highlight settles near the start of the row.
+        androidx.compose.runtime.CompositionLocalProvider(androidx.compose.foundation.gestures.LocalBringIntoViewSpec provides PivotSpec) {
         LazyRow(
             modifier = Modifier.focusRestorer(),
             // Room above and below for a card's lift and shadow.
@@ -196,6 +198,7 @@ fun CardRow(row: Shelf, memory: FocusMemory, onFocus: (Tile) -> Unit = {}, onCli
             items(row.items, key = { it.key }) { c ->
                 PosterCard(c, memory, "${row.key}/${c.key}", wide, onFocus, onClick)
             }
+        }
         }
     }
 }
@@ -215,12 +218,29 @@ fun HGap(w: Dp) = Spacer(Modifier.width(w))
 // start of the list (rows to the top, posters to the left), instead of
 // only as far as it takes to show it.
 val PivotSpec = object : BringIntoViewSpec {
-    // Gliding there with a long, soft settle, as Apple TV's lists do.
+    // Gliding there with a short, soft settle (a long glide stutters on a
+    // TV's slow processor).
     override val scrollAnimationSpec: androidx.compose.animation.core.AnimationSpec<Float> =
-        androidx.compose.animation.core.tween(480, easing = Settle)
+        androidx.compose.animation.core.tween(320, easing = Settle)
 
     override fun calculateScrollDistance(offset: Float, size: Float, containerSize: Float): Float =
         offset - containerSize * 0.04f
+}
+
+// Home's rows going up and down: the highlighted poster's row moves to the
+// top with its title in view above it (lined up by the poster alone, the
+// title slid under the banner).
+@Composable
+fun rememberRowsSpec(): BringIntoViewSpec {
+    val above = with(androidx.compose.ui.platform.LocalDensity.current) { 46.dp.toPx() } // the title and the row's top padding
+    return remember(above) {
+        object : BringIntoViewSpec {
+            override val scrollAnimationSpec: androidx.compose.animation.core.AnimationSpec<Float> =
+                androidx.compose.animation.core.tween(320, easing = Settle)
+
+            override fun calculateScrollDistance(offset: Float, size: Float, containerSize: Float): Float = offset - above
+        }
+    }
 }
 
 // A title's page scrolls only as far as the highlight needs: opening it with

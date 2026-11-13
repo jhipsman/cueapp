@@ -614,7 +614,7 @@ fun HomeScreen(api: CueApi, only: String?, memory: FocusMemory, takeFocus: Boole
         settled?.let { Banner(api, it) } ?: Gap(16.dp)
         // The highlighted row moves up to just under the banner, and the
         // highlighted poster stays near the left, as in the TV's own apps.
-        CompositionLocalProvider(LocalBringIntoViewSpec provides PivotSpec) {
+        CompositionLocalProvider(LocalBringIntoViewSpec provides rememberRowsSpec()) {
             LazyColumn(state = listState, contentPadding = PaddingValues(top = 10.dp, bottom = 120.dp)) {
                 items(rows, key = { it.key }) { r ->
                     CardRow(r, memory, onFocus = { spot = it }, onClick = onCard)
