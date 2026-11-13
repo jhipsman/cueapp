@@ -189,16 +189,6 @@ fun LivePreview(api: CueApi, ch: Channel, modifier: Modifier = Modifier) {
             playWhenReady = true
         }
     }
-    // The sound rises once the picture shows, and falls before it goes.
-    LaunchedEffect(player, shown, fading) {
-        if (!sound) return@LaunchedEffect
-        val to = if (shown && !fading) 0.7f else 0f
-        val from = player.volume
-        for (i in 1..12) {
-            player.volume = from + (to - from) * i / 12f
-            delay(if (to > from) 120 else 70)
-        }
-    }
     val owner = androidx.compose.ui.platform.LocalLifecycleOwner.current
     androidx.compose.runtime.DisposableEffect(player, owner) {
         val watch = androidx.lifecycle.LifecycleEventObserver { _, e ->
@@ -388,6 +378,16 @@ fun ClipLayer(api: CueApi, tile: Tile, modifier: Modifier = Modifier, sound: Boo
             })
             prepare()
             playWhenReady = true
+        }
+    }
+    // The sound rises once the picture shows, and falls before it goes.
+    LaunchedEffect(player, shown, fading) {
+        if (!sound) return@LaunchedEffect
+        val to = if (shown && !fading) 0.7f else 0f
+        val from = player.volume
+        for (i in 1..12) {
+            player.volume = from + (to - from) * i / 12f
+            delay(if (to > from) 120 else 70)
         }
     }
     val owner = androidx.compose.ui.platform.LocalLifecycleOwner.current
