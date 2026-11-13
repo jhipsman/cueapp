@@ -88,9 +88,9 @@ func TestNextPreviewOrder(t *testing.T) {
 		previewState.queue = append(previewState.queue, &previewJob{want: w, ahead: ahead})
 	}
 	add(1, false, 30*time.Second) // asked a while ago
-	add(2, true, 0)                // ahead of time
-	add(3, false, 2*time.Second)   // asked just now
-	add(4, false, 5*time.Minute)   // long gone
+	add(2, true, 0)               // ahead of time
+	add(3, false, 2*time.Second)  // asked just now
+	add(4, false, 5*time.Minute)  // long gone
 	previewState.Unlock()
 	defer func() {
 		previewState.Lock()
