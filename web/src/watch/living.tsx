@@ -107,7 +107,7 @@ export function usePreview(of: PreviewOf | null, forKey: string, ready = false) 
         const a = await api.watchPreview(of.kind, of.tmdbId, of.season, of.episode, ready)
         if (stop) return
         if (a.url) setState((s) => ({ ...s, src: a.url ?? '', waiting: true }))
-        else if (a.pending && !ready && tries++ < 25) {
+        else if (a.pending && !ready && tries++ < 90) {
           setState((s) => ({ ...s, waiting: true }))
           timer = window.setTimeout(ask, 2000)
         } else setState((s) => ({ ...s, waiting: false, none: true }))

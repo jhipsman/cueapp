@@ -15,6 +15,10 @@ const POSTERS = [
 ]
 const M = '/landing/'
 
+// Downloader's short code for cuetv.me/tv.apk (made at go.aftvnews.com).
+// Only on cuetv.me: another Cue gives its own address instead.
+const DOWNLOADER_CODE = location.hostname.endsWith('cuetv.me') ? '3575368' : ''
+
 // The 3D phone (three.js), fetched only for this page and only after it shows.
 const PhoneModel = lazy(() => import('./PhoneModel'))
 
@@ -394,8 +398,20 @@ export default function Landing() {
               </div>
               <div className="lp-step">
                 <span className="n">3</span>
-                <h3>Enter this in Downloader</h3>
-                <Copy text={`${host}/tv.apk`} />
+                {DOWNLOADER_CODE ? (
+                  <>
+                    <h3>Type this code in Downloader</h3>
+                    <p className="lp-code">{DOWNLOADER_CODE}</p>
+                    <p>
+                      Or the address <b>{host}/tv.apk</b>
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <h3>Enter this in Downloader</h3>
+                    <Copy text={`${host}/tv.apk`} />
+                  </>
+                )}
               </div>
             </div>
           )}

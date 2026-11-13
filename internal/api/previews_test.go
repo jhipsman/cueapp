@@ -69,3 +69,45 @@ func TestPrunePreviews(t *testing.T) {
 		t.Error("the newest clip was removed")
 	}
 }
+
+// The clip someone asked about most recently goes first; ones nobody has
+// asked about lately are dropped; ahead-of-time ones wait their turn.
+func TestNextPreviewOrder(t *testing.T) {
+	previewState.Lock()
+	saved := previewState.queue
+	previewState.queue = nil
+	previewState.making = map[string]bool{}
+	previewState.asked = map[string]time.Time{}
+	now := time.Now()
+	add := func(id int, ahead bool, asked time.Duration) {
+		w := previewWant{kind: "movie", tmdbID: id}
+		previewState.making[w.key()] = true
+		if !ahead {
+			previewState.asked[w.key()] = now.Add(-asked)
+		}
+		previewState.queue = append(previewState.queue, &previewJob{want: w, ahead: ahead})
+	}
+	add(1, false, 30*time.Second) // asked a while ago
+	add(2, true, 0)               // ahead of time
+	add(3, false, 2*time.Second)  // asked just now
+	add(4, false, 5*time.Minute)  // long gone
+	previewState.Unlock()
+	defer func() {
+		previewState.Lock()
+		previewState.queue = saved
+		previewState.Unlock()
+	}()
+
+	if j := nextPreview(); j == nil || j.want.tmdbID != 3 {
+		t.Fatalf("first = %+v, want the one asked about just now (3)", j)
+	}
+	if j := nextPreview(); j == nil || j.want.tmdbID != 1 {
+		t.Fatalf("second = %+v, want 1", j)
+	}
+	previewState.Lock()
+	gone := !previewState.making["movie-4"]
+	previewState.Unlock()
+	if !gone {
+		t.Error("a clip nobody asked about for minutes is still waiting")
+	}
+}

@@ -458,7 +458,7 @@ fun BannerPreview(api: CueApi, tile: Tile, modifier: Modifier = Modifier, onShow
     LaunchedEffect(key) {
         delay(1500)
         val path = "/api/watch/preview/${tile.kind}/${tile.tmdbId}?season=${tile.season ?: 1}&episode=${tile.episode ?: 1}"
-        for (attempt in 0 until 20) {
+        for (attempt in 0 until 45) {
             val a = runCatching { api.obj(path) }.getOrNull() ?: return@LaunchedEffect
             val u = a.optString("url")
             if (u.isNotEmpty()) {
