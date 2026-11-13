@@ -69,18 +69,54 @@ import coil.compose.AsyncImage
 
 // Pieces the app's screens share: colours, artwork, posters, rows.
 
-val Background = Color(0xFF101114)
-val Panel = Color(0xFF1B1D22)
+// The profile's theme, as chosen in Watch (Colors): its colour, how much
+// it glows, and the background (Midnight, Black, Slate or Tinted). The
+// colours below follow it, so the whole app changes with it.
+object CueTheme {
+    var accent by androidx.compose.runtime.mutableStateOf(CueTeal)
+    var background by androidx.compose.runtime.mutableStateOf("midnight")
+    var glow by androidx.compose.runtime.mutableStateOf("soft")
+
+    fun from(api: CueApi) {
+        accent = accentOf(api.accent)
+        background = api.themeBackground.ifEmpty { "midnight" }
+        glow = api.themeGlow.ifEmpty { "soft" }
+    }
+}
+
+val CueTeal = Color(0xFF34D1BF)
+
+val Background: Color get() = when (CueTheme.background) {
+    "black" -> Color(0xFF000000)
+    "slate" -> Color(0xFF0E1522)
+    "tinted" -> androidx.compose.ui.graphics.lerp(Color(0xFF0D0E11), CueTheme.accent, 0.07f)
+    else -> Color(0xFF101114)
+}
+val Panel: Color get() = when (CueTheme.background) {
+    "black" -> Color(0xFF141416)
+    "slate" -> Color(0xFF1A2333)
+    "tinted" -> androidx.compose.ui.graphics.lerp(Color(0xFF191B20), CueTheme.accent, 0.1f)
+    else -> Color(0xFF1B1D22)
+}
 val Dim = Color(0xFFA6A8AE)
-val Teal = Color(0xFF34D1BF)
+val Teal: Color get() = CueTheme.accent
+// How strongly things glow in the theme's colour: off, soft or strong.
+val GlowAmount: Float get() = when (CueTheme.glow) {
+    "off" -> 0f
+    "strong" -> 1.8f
+    else -> 1f
+}
+
+// The background at an opacity: for the fades over pictures.
+fun shade(alpha: Float): Color = Background.copy(alpha = alpha)
 
 // The profile's colour (or Cue's teal), for focus rings and progress.
-val LocalAccent = compositionLocalOf { Teal }
+val LocalAccent = compositionLocalOf { CueTeal }
 
 fun accentOf(hex: String): Color = try {
-    if (hex.length == 7 && hex.startsWith("#")) Color(android.graphics.Color.parseColor(hex)) else Teal
+    if (hex.length == 7 && hex.startsWith("#")) Color(android.graphics.Color.parseColor(hex)) else CueTeal
 } catch (e: Exception) {
-    Teal
+    CueTeal
 }
 
 // TMDB pictures a TV needs are smaller than the web's: they load faster.
@@ -157,11 +193,10 @@ fun PosterCard(card: Tile, memory: FocusMemory, memKey: String, wide: Boolean = 
                         )
                     }
                 }
-                val tintState = LocalTint.current
                 card.progress?.takeIf { it > 0 }?.let { p ->
                     Box(Modifier.align(Alignment.BottomStart).padding(horizontal = 8.dp, vertical = 5.dp).fillMaxWidth().height(3.dp)
                         .clip(RoundedCornerShape(2.dp)).background(Color(0x40FFFFFF))) {
-                        Box(Modifier.fillMaxWidth(p.toFloat().coerceIn(0f, 1f)).fillMaxHeight().drawBehind { drawRect(tintState.value ?: accent) })
+                        Box(Modifier.fillMaxWidth(p.toFloat().coerceIn(0f, 1f)).fillMaxHeight().background(accent)) // the theme's colour, not the picture's
                     }
                 }
                 if (card.isNew) Chip("NEW", Modifier.align(Alignment.TopStart).padding(7.dp), bg = accent, fg = Color.Black)

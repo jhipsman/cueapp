@@ -32,6 +32,27 @@ class CueApi(ctx: Context, val server: String) {
     var accent: String
         get() = prefs.getString("accent", "") ?: ""
         set(v) = prefs.edit().putString("accent", v).apply()
+    var themeBackground: String // midnight, black, slate or tinted
+        get() = prefs.getString("themeBackground", "") ?: ""
+        set(v) = prefs.edit().putString("themeBackground", v).apply()
+    var themeGlow: String // off, soft or strong
+        get() = prefs.getString("themeGlow", "") ?: ""
+        set(v) = prefs.edit().putString("themeGlow", v).apply()
+
+    private fun keepTheme(theme: JSONObject?) {
+        accent = theme?.optString("accent") ?: ""
+        themeBackground = theme?.optString("background") ?: ""
+        themeGlow = theme?.optString("glow") ?: ""
+    }
+
+    /** The profile's theme as it is now (it may have been changed on the web). */
+    suspend fun refreshTheme() {
+        val a = obj("/api/profiles").optJSONArray("profiles") ?: return
+        for (i in 0 until a.length()) {
+            val p = a.getJSONObject(i)
+            if (p.optInt("id") == profileId) keepTheme(p.optJSONObject("theme"))
+        }
+    }
 
     class Problem(val code: Int, message: String) : Exception(message)
 
@@ -115,7 +136,7 @@ class CueApi(ctx: Context, val server: String) {
         profileId = p.id
         profileName = prof?.optString("name") ?: p.name
         profileAvatar = prof?.optString("avatar")?.ifEmpty { null } ?: p.avatar
-        accent = prof?.optJSONObject("theme")?.optString("accent") ?: ""
+        keepTheme(prof?.optJSONObject("theme"))
     }
 
     // Managing the account's profiles (from its main profile; the server checks).

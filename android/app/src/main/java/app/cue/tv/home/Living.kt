@@ -103,23 +103,43 @@ private const val SLIDE_MS = 9000L
 data class SaverSlide(val tile: Tile, val line: String, val detail: String)
 
 fun saverSlides(home: Home): List<SaverSlide> {
-    val out = ArrayList<SaverSlide>()
+    // Yours (where you stopped, new episodes, your list) and ones you
+    // haven't watched (trending, "because you watched", the rest of Home),
+    // taken in turn, a new one first; the new ones shuffled each time.
+    val mine = ArrayList<SaverSlide>()
+    val fresh = ArrayList<SaverSlide>()
     val seen = HashSet<String>()
-    fun add(t: Tile, line: String, detail: String) {
+    fun add(to: MutableList<SaverSlide>, t: Tile, line: String, detail: String) {
         val k = "${t.kind}-${t.tmdbId}"
         if (t.backdrop == null || !seen.add(k)) return
-        out.add(SaverSlide(t, line, detail))
+        to.add(SaverSlide(t, line, detail))
     }
-    for (r in home.rows) for (t in r.items.take(8)) {
+    val yours = setOf("continue", "new-episodes", "my-list")
+    for (r in home.rows.filter { it.key in yours }) for (t in r.items.take(8)) {
         val kind = if (t.kind == "tv") "Series" else "Movie"
-        when {
-            r.key == "new-episodes" -> add(t, "New episode", t.episodeLine)
-            r.key == "continue" -> add(t, "You stopped here", t.episodeLine.ifEmpty { "${((t.progress ?: 0.0) * 100).toInt()}% watched" })
-            r.key == "my-list" -> add(t, "On your list", listOfNotNull(t.year?.toString(), kind).joinToString(" · "))
-            r.key.startsWith("trending") -> add(t, "Trending this week", listOfNotNull(t.year?.toString(), kind).joinToString(" · "))
+        when (r.key) {
+            "new-episodes" -> add(mine, t, "New episode", t.episodeLine)
+            "continue" -> add(mine, t, "You stopped here", t.episodeLine.ifEmpty { "${((t.progress ?: 0.0) * 100).toInt()}% watched" })
+            else -> add(mine, t, "On your list", listOfNotNull(t.year?.toString(), kind).joinToString(" · "))
         }
     }
-    return out.take(14)
+    for (r in home.rows.filter { it.key !in yours }) for (t in r.items.take(10)) {
+        val kind = if (t.kind == "tv") "Series" else "Movie"
+        val line = when {
+            r.key.startsWith("trending") -> "Trending this week"
+            else -> r.title
+        }
+        add(fresh, t, line, listOfNotNull(t.year?.toString(), kind).joinToString(" · "))
+    }
+    fresh.shuffle()
+    val out = ArrayList<SaverSlide>()
+    var i = 0
+    while (out.size < 20 && (i < fresh.size || i < mine.size)) {
+        if (i < fresh.size) out.add(fresh[i])
+        if (i < mine.size && out.size < 20) out.add(mine[i])
+        i++
+    }
+    return out
 }
 
 // Screensaver: the household's own titles full screen, one after another,
@@ -277,8 +297,8 @@ fun UpNextScreen(api: CueApi, next: Playback.UpNext, play: () -> Unit, dismiss: 
             contentScale = ContentScale.Crop,
             modifier = Modifier.fillMaxSize().settleIn(1.08f),
         )
-        Box(Modifier.fillMaxSize().background(Brush.horizontalGradient(0f to Color(0xF20C0D10), 0.5f to Color(0x990C0D10), 0.85f to Color.Transparent)))
-        Box(Modifier.fillMaxSize().background(Brush.verticalGradient(0.55f to Color.Transparent, 1f to Color(0xE60C0D10))))
+        Box(Modifier.fillMaxSize().background(Brush.horizontalGradient(0f to shade(0.95f), 0.5f to shade(0.60f), 0.85f to Color.Transparent)))
+        Box(Modifier.fillMaxSize().background(Brush.verticalGradient(0.55f to Color.Transparent, 1f to shade(0.90f))))
         Column(Modifier.align(Alignment.CenterStart).padding(start = Gutter + 8.dp).fillMaxSize(0.5f), verticalArrangement = Arrangement.Center) {
             Text("UP NEXT", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = tint(), letterSpacing = 2.sp, modifier = Modifier.rise(0))
             androidx.compose.foundation.layout.Spacer(Modifier.size(12.dp))
@@ -300,7 +320,7 @@ fun UpNextScreen(api: CueApi, next: Playback.UpNext, play: () -> Unit, dismiss: 
                             style = androidx.compose.ui.graphics.drawscope.Stroke(4.dp.toPx(), cap = androidx.compose.ui.graphics.StrokeCap.Round))
                     }
                 }
-                Pill("▶  Play now", primary = true, modifier = Modifier.focusRequester(focus), onClick = play)
+                Pill("Play now", primary = true, icon = app.cue.tv.R.drawable.ic_cue_play, modifier = Modifier.focusRequester(focus), onClick = play)
                 Pill("Back", onClick = dismiss)
             }
         }
@@ -322,8 +342,8 @@ fun StartingScreen(api: CueApi, s: Playback.Starting, note: String, back: () -> 
         Crossfade(targetState = picture, animationSpec = tween(500), label = "starting") { u ->
             if (u != null) AsyncImage(model = u, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
         }
-        Box(Modifier.fillMaxSize().background(Brush.horizontalGradient(0f to Color(0xF20C0D10), 0.5f to Color(0x990C0D10), 0.85f to Color.Transparent)))
-        Box(Modifier.fillMaxSize().background(Brush.verticalGradient(0.55f to Color.Transparent, 1f to Color(0xE60C0D10))))
+        Box(Modifier.fillMaxSize().background(Brush.horizontalGradient(0f to shade(0.95f), 0.5f to shade(0.60f), 0.85f to Color.Transparent)))
+        Box(Modifier.fillMaxSize().background(Brush.verticalGradient(0.55f to Color.Transparent, 1f to shade(0.90f))))
         Column(Modifier.align(Alignment.CenterStart).padding(start = Gutter + 8.dp).fillMaxSize(0.5f), verticalArrangement = Arrangement.Center) {
             Text(if (s.failed) "COULDN'T START" else "STARTING", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = tint(), letterSpacing = 2.sp)
             androidx.compose.foundation.layout.Spacer(Modifier.size(12.dp))

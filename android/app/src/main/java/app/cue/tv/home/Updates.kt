@@ -185,7 +185,7 @@ fun UpdateCard(api: CueApi, offer: UpdateOffer, later: () -> Unit) {
     val focus = remember { FocusRequester() }
     LaunchedEffect(Unit) { runCatching { focus.requestFocus() } }
     androidx.activity.compose.BackHandler { later() }
-    Box(Modifier.fillMaxSize().background(Color(0x990C0D10)), contentAlignment = Alignment.Center) {
+    Box(Modifier.fillMaxSize().background(shade(0.60f)), contentAlignment = Alignment.Center) {
         Column(
             Modifier.width(520.dp).clip(RoundedCornerShape(PanelCorner)).background(Panel).padding(32.dp).rise(0),
         ) {
