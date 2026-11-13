@@ -546,6 +546,89 @@ function AddAccountForm({ onAdded }: { onAdded: (a: Account) => void }) {
   )
 }
 
+// The family invite: a link an administrator sends round so each person
+// makes their own account (one that watches with this Cue's streaming and
+// can't change its settings). One link at a time, for seven days.
+function InviteCard({ onChanged }: { onChanged: () => void }) {
+  const toast = useToast()
+  const [invite, setInvite] = useState<{ token?: string; expires?: string } | null>(null)
+  const [busy, setBusy] = useState(false)
+  useEffect(() => {
+    api
+      .getInvite()
+      .then(setInvite)
+      .catch(() => setInvite({}))
+  }, [])
+  const link = invite?.token ? `${window.location.origin}/join/${invite.token}` : ''
+  async function make() {
+    setBusy(true)
+    try {
+      setInvite(await api.newInvite())
+      onChanged()
+    } catch (e) {
+      toast.error(errorText(e))
+    } finally {
+      setBusy(false)
+    }
+  }
+  async function end() {
+    setBusy(true)
+    try {
+      setInvite(await api.endInvite())
+      toast.success('The invite link no longer works.')
+    } catch (e) {
+      toast.error(errorText(e))
+    } finally {
+      setBusy(false)
+    }
+  }
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(link)
+      toast.success('Invite link copied. Send it to your family.')
+    } catch {
+      toast.error('Couldn\'t copy it: select the link and copy it yourself.')
+    }
+  }
+  return (
+    <fieldset className="group folders">
+      <legend>
+        <Icon name="mail" size={14} /> Invite family
+      </legend>
+      <p style={{ color: 'var(--text-dim)', marginTop: 0 }}>
+        Send a link, and each person makes their own account. They watch with this Cue's streaming (Premiumize, add-ons, live TV) and can't see or change its settings. A link works for seven days; making a new one ends the old.
+      </p>
+      {invite === null ? (
+        <div className="skeleton" style={{ height: 44, borderRadius: 10 }} />
+      ) : link ? (
+        <>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+            <input id="invite-link" readOnly value={link} onFocus={(e) => e.currentTarget.select()} style={{ flex: '1 1 320px', minWidth: 0 }} aria-label="Invite link" />
+            <button type="button" className="primary" onClick={() => void copy()}>
+              Copy link
+            </button>
+          </div>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', marginTop: 10 }}>
+            <span style={{ color: 'var(--text-dim)', fontSize: 13, marginRight: 'auto' }}>
+              Works until {new Date(invite.expires ?? '').toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' })}.
+            </span>
+            <button type="button" className="btn-sm" disabled={busy} onClick={() => void make()}>
+              Make a new link
+            </button>
+            <button type="button" className="btn-sm" disabled={busy} onClick={() => void end()}>
+              Turn it off
+            </button>
+          </div>
+        </>
+      ) : (
+        <button type="button" className="primary" disabled={busy} onClick={() => void make()}>
+          {busy ? 'Making a link…' : 'Make an invite link'}
+        </button>
+      )}
+    </fieldset>
+  )
+}
+
 function Accounts() {
   const { user, setUser } = useAuth()
   const toast = useToast()
@@ -604,6 +687,7 @@ function Accounts() {
           ))}
         </div>
       </fieldset>
+      <InviteCard onChanged={load} />
       <AddAccountForm onAdded={(a) => setAccounts((list) => [...(list ?? []), a])} />
       {editing && <EditAccountDialog a={editing} self={editing.id === user?.id} onClose={() => setEditing(null)} onSaved={saved} />}
       {removing && (

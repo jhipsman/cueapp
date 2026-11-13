@@ -424,7 +424,7 @@ export default function Landing() {
             <div>
               <p className="lp-eyebrow">Signing in</p>
               <h2>Sign in, then pick your profile.</h2>
-              <p>Ask whoever set up Cue for your sign-in. Your profile keeps your own list, your progress and your year in Cue.</p>
+              <p>Got an invite link? Open it to make your own account. Otherwise, ask whoever set up Cue for one. Your profile keeps your own list, your progress and your year in Cue.</p>
               <Link className="lp-btn primary" to="/login">
                 Sign in
               </Link>

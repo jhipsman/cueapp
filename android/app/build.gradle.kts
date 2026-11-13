@@ -18,6 +18,10 @@ android {
         targetSdk = 35
         versionCode = build
         versionName = "0.1.$build"
+        // The Cue server the app opens with, so there's no address to type:
+        // -PcueServer=https://... builds it for another server. Profile >
+        // Change server still points it elsewhere.
+        buildConfigField("String", "DEFAULT_SERVER", "\"" + (project.findProperty("cueServer") ?: "https://cuetv.me") + "\"")
     }
 
     // One fixed key, so every new APK can update the one already installed.
@@ -48,6 +52,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
     lint {
         // assembleRelease doesn't run lint; the TV app workflow runs lintRelease

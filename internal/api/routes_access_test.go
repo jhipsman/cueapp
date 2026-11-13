@@ -195,6 +195,7 @@ var memberRoutes = []string{
 // else changes: they show or change credentials, settings or accounts.
 var mustBeAdmin = []string{
 	"GET /api/users", "POST /api/users", "PUT /api/users/{id}", "DELETE /api/users/{id}",
+	"GET /api/users/invite", "POST /api/users/invite", "DELETE /api/users/invite",
 	"GET /api/settings", "PUT /api/settings", "POST /api/settings/folder-create",
 	"GET /api/indexers", "GET /api/usenet-servers", "GET /api/vpn/configs", "GET /api/notifications", "GET /api/media-servers",
 	"GET /api/system/backup", "POST /api/system/restore",

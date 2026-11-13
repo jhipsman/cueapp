@@ -2124,6 +2124,14 @@ export const api = {
   deleteRequest: (id: number) => del<null>(`/requests/${id}`),
   updateAccountById: (id: number, data: AccountChanges) => put<Account>(`/users/${id}`, data),
   deleteAccount: (id: number) => del<null>(`/users/${id}`),
+  // The family invite link (/join/{token}): see it, make a new one, turn it off.
+  getInvite: () => get<{ token?: string; expires?: string }>('/users/invite'),
+  newInvite: () => post<{ token: string; expires: string }>('/users/invite'),
+  endInvite: () => del<{ token?: string }>('/users/invite'),
+  // Signed out: whether an invite works, and making an account from it.
+  checkInvite: (token: string) => get<{ ok: boolean; expires: string }>(`/join/${encodeURIComponent(token)}`),
+  joinWithInvite: (token: string, data: { name: string; username: string; password: string }) =>
+    post<User>(`/join/${encodeURIComponent(token)}`, data),
 
   getSettings: () => get<Settings>('/settings'),
   putSettings: (partial: Partial<Settings> & { legalAcknowledged?: boolean; tmdbApiKey?: string; openSubtitlesApiKey?: string; openSubtitlesUsername?: string; openSubtitlesPassword?: string }) => put<Settings>('/settings', partial),

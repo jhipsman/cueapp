@@ -17,6 +17,7 @@ import Splash from './components/Splash'
 import Library from './pages/Library'
 import Login from './pages/Login'
 import Landing from './pages/Landing'
+import Join from './pages/Join'
 import MovieDetail from './pages/MovieDetail'
 import Onboarding from './pages/Onboarding'
 import Welcome from './pages/Welcome'
@@ -94,7 +95,10 @@ function Gate() {
     // Signed out at Cue's own address: the front page (what Cue is, the app
     // playing, how to get it), with Sign in a button away. Any other address
     // (a link to a title, the phone-search code) signs in first, then opens it.
-    return location.pathname === '/' ? <Landing /> : <Login />
+    if (location.pathname === '/') return <Landing />
+    // A family invite link: make your own account.
+    if (location.pathname.startsWith('/join/')) return <Join />
+    return <Login />
   }
   if (needsWizard) {
     return <Onboarding startStep={1} />
@@ -170,6 +174,7 @@ function Gate() {
         <Route path="/about" element={<Navigate to="/settings/about" replace />} />
         {/* Signed in from the front page's Sign in: on to Cue's start. */}
         <Route path="/login" element={<Navigate to="/" replace />} />
+        <Route path="/join/*" element={<Navigate to="/" replace />} />
         <Route path="*" element={<NotFound />} />
       </Route>
     </Routes>

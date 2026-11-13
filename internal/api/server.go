@@ -297,6 +297,9 @@ func (s *Server) Routes() http.Handler {
 	public.HandleFunc("POST /api/onboarding/admin", s.handleCreateAdmin)
 	public.HandleFunc("POST /api/auth/login", s.handleLogin)
 	public.HandleFunc("POST /api/auth/logout", s.handleLogout)
+	// The family invite link: check it, and make an account from it.
+	public.HandleFunc("GET /api/join/{token}", s.handleCheckJoin)
+	public.HandleFunc("POST /api/join/{token}", s.handleJoin)
 	// Calendar apps read the feed without signing in; the secret address is the key.
 	public.HandleFunc("GET /api/calendar/feed/{file}", s.handleCalendarFeed)
 	// A subtitle the player was handed: the signed address is the key, so
@@ -553,6 +556,9 @@ func (s *Server) protectedRoutes() *routeTable {
 	admin.HandleFunc("POST /api/users", s.handleCreateUser)
 	admin.HandleFunc("PUT /api/users/{id}", s.handleUpdateUser)
 	admin.HandleFunc("DELETE /api/users/{id}", s.handleDeleteUser)
+	admin.HandleFunc("GET /api/users/invite", s.handleGetInvite)
+	admin.HandleFunc("POST /api/users/invite", s.handlePostInvite)
+	admin.HandleFunc("DELETE /api/users/invite", s.handleDeleteInvite)
 
 	// Settings.
 	admin.HandleFunc("GET /api/settings", s.handleGetSettings)

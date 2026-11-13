@@ -171,6 +171,13 @@ Every route the server exposes. Routes marked **public** need no sign-in; all ot
 | PUT | `/api/indexers/{id}/priority` | admin | sets how much an indexer is preferred: 1 preferred, 2 normal, 3 last resort. |
 | POST | `/api/indexers/{id}/test` | admin | tests a saved indexer with its stored credentials. |
 
+## join
+
+| Method | Path | Access | What it does |
+|---|---|---|---|
+| GET | `/api/join/{token}` | **public** | GET /api/join/{token}: whether the invite still works. |
+| POST | `/api/join/{token}` | **public** | POST /api/join/{token} {"name","username","password"}: a new member account from the invite, signed in. |
+
 ## library
 
 | Method | Path | Access | What it does |
@@ -601,6 +608,9 @@ Every route the server exposes. Routes marked **public** need no sign-in; all ot
 |---|---|---|---|
 | GET | `/api/users` | admin | lists every account with its role and last sign-in. |
 | POST | `/api/users` | admin | adds an account for someone else, for example a family member, with the role the administrator picks. |
+| DELETE | `/api/users/invite` | admin | DELETE /api/users/invite: the link stops working. |
+| GET | `/api/users/invite` | admin | GET /api/users/invite: the invite link's secret and end, or {} when off. |
+| POST | `/api/users/invite` | admin | POST /api/users/invite: a new link (the old one stops working). |
 | DELETE | `/api/users/{id}` | admin | removes an account with its sessions and API keys. |
 | PUT | `/api/users/{id}` | admin | changes another account's name, email or role, or sets a new password for it (which signs that account out everywhere). |
 
@@ -664,4 +674,4 @@ Every route the server exposes. Routes marked **public** need no sign-in; all ot
 | PUT | `/api/watched/settings` | admin | PUT /api/watched/settings {"sync": true, "cleanup": {...}} |
 | POST | `/api/watched/sync` | admin | POST /api/watched/sync: read what's been watched now. |
 
-364 routes.
+369 routes.
