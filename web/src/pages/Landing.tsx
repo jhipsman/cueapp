@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { useDarkPage } from '../useDarkPage'
 import { titleFor } from '../documentTitle'
@@ -46,6 +46,33 @@ function Loop({ name, label, className }: { name: string; label: string; classNa
     return () => io.disconnect()
   }, [])
   return <video ref={v} className={className} src={`${M}${name}.mp4`} poster={`${M}${name}.jpg`} muted loop playsInline preload="metadata" aria-label={label} />
+}
+
+// Phone draws a modern phone around a clip: a brushed titanium edge with
+// its buttons, a thin black border, the pill-shaped camera cutout and a
+// status bar, so the recording sits on a real-looking screen.
+function Phone({ children }: { children: ReactNode }) {
+  return (
+    <div className="lp-device">
+      <i className="lp-key action" />
+      <i className="lp-key up" />
+      <i className="lp-key down" />
+      <i className="lp-key side" />
+      <div className="lp-device-bezel">
+        <div className="lp-device-screen">
+          <div className="lp-status" aria-hidden="true">
+            <span>9:41</span>
+            <span className="lp-island" />
+            <span className="lp-status-r">
+              <b className="lp-bars" />
+              <b className="lp-batt" />
+            </span>
+          </div>
+          {children}
+        </div>
+      </div>
+    </div>
+  )
 }
 
 function Copy({ text }: { text: string }) {
@@ -177,7 +204,9 @@ export default function Landing() {
               <Loop name="hero" label="Cue's Home screen, its banner playing a trailer while the pointer moves across Continue Watching" />
             </div>
             <div className="lp-phone">
-              <Loop name="phone" label="Cue on a phone, swiping through rows of shows" />
+              <Phone>
+                <Loop name="phone" label="Cue on a phone, swiping through rows of shows" />
+              </Phone>
             </div>
           </div>
         </div>
@@ -210,7 +239,9 @@ export default function Landing() {
             </div>
             <div className="lp-tile t-phone">
               <div className="lp-mini">
-                <Loop name="phone" label="Swiping through Cue on a phone" />
+                <Phone>
+                  <Loop name="phone" label="Swiping through Cue on a phone" />
+                </Phone>
               </div>
               <span className="lp-tag">
                 <b>●</b> Phone

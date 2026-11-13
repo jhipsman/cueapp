@@ -73,9 +73,35 @@
 .lp-stage3d:hover .lp-screen { transform: rotateY(-8deg) rotateX(3deg) }
 .lp-screen video, .lp-screen img { width: 100%; height: 100%; object-fit: cover }
 .lp-screen::after { content: ""; position: absolute; inset: 0; background: linear-gradient(115deg, rgba(255, 255, 255, 0.14), transparent 35%); pointer-events: none }
-.lp-phone { position: absolute; right: -2%; bottom: -10px; width: 26%; aspect-ratio: 392 / 660; border-radius: 30px; overflow: hidden; background: #000;
-  box-shadow: 0 0 0 6px #0b0d11, 0 0 0 7px #2b303b, 0 40px 80px rgba(0, 0, 0, 0.8); transform: rotate(4deg) }
-.lp-phone video, .lp-phone img { width: 100%; height: 100%; object-fit: cover }
+.lp-phone { position: absolute; right: -2%; bottom: -24px; width: 24%; transform: rotate(4deg); filter: drop-shadow(0 40px 50px rgba(0, 0, 0, 0.75)) }
+
+/* A modern phone, drawn: titanium edge and buttons, a thin black border,
+   the camera's pill and a status bar. Sizes follow the phone's width. */
+.lp-phone, .t-phone .lp-mini { container-type: inline-size }
+.lp-device { position: relative; aspect-ratio: 0.5; padding: 1.4cqw; border-radius: 16cqw;
+  background: linear-gradient(120deg, #f1f2f4 0%, #a3a7ad 14%, #e3e5e8 32%, #8c9097 52%, #d3d5d9 74%, #9a9ea5 90%, #e8e9ec 100%);
+  box-shadow: inset 0 0 0 0.35cqw rgba(255, 255, 255, 0.55), inset 0 0 0 0.7cqw rgba(0, 0, 0, 0.18) }
+.lp-device-bezel { height: 100%; padding: 3cqw; border-radius: 14.6cqw; background: #050506; box-shadow: inset 0 0 0 0.5cqw #1c1d21 }
+.lp-device-screen { position: relative; display: flex; flex-direction: column; height: 100%; overflow: hidden; border-radius: 11.6cqw; background: #000 }
+.lp-device-screen video, .lp-device-screen img { flex: 1; min-height: 0; width: 100%; object-fit: cover; object-position: 12% top; display: block }
+.lp-status { position: relative; flex: none; height: 13cqw; display: flex; align-items: center; justify-content: space-between; padding: 0 9cqw 0 11cqw;
+  color: #fff; font: 600 4.6cqw/1 -apple-system, 'SF Pro Text', 'Inter', system-ui, sans-serif; letter-spacing: -0.01em }
+.lp-island { position: absolute; left: 50%; top: 3cqw; width: 30cqw; height: 8.6cqw; transform: translateX(-50%); border-radius: 999px; background: #000;
+  box-shadow: inset -2.4cqw 0 0 -1.6cqw #000 }
+.lp-island::after { content: ''; position: absolute; right: 3cqw; top: 50%; width: 2.6cqw; height: 2.6cqw; transform: translateY(-50%); border-radius: 50%;
+  background: radial-gradient(circle at 40% 35%, #2c3a5a, #0a0d16 60%) }
+.lp-status-r { display: flex; align-items: center; gap: 1.6cqw }
+.lp-bars { width: 5.4cqw; height: 3.4cqw; background:
+  linear-gradient(#fff, #fff) 0 100% / 20% 40% no-repeat, linear-gradient(#fff, #fff) 33.3% 100% / 20% 60% no-repeat,
+  linear-gradient(#fff, #fff) 66.6% 100% / 20% 80% no-repeat, linear-gradient(#fff, #fff) 100% 100% / 20% 100% no-repeat }
+.lp-batt { position: relative; width: 7cqw; height: 3.4cqw; border-radius: 1cqw; border: 0.45cqw solid rgba(255, 255, 255, 0.45);
+  background: linear-gradient(90deg, #fff 0 80%, transparent 80%) content-box; padding: 0.4cqw }
+.lp-batt::after { content: ''; position: absolute; right: -1.3cqw; top: 50%; width: 0.7cqw; height: 1.4cqw; transform: translateY(-50%); border-radius: 0 0.5cqw 0.5cqw 0; background: rgba(255, 255, 255, 0.45) }
+.lp-key { position: absolute; width: 1.2cqw; border-radius: 0.6cqw; background: linear-gradient(90deg, #8d9198, #e4e6e9 55%, #a2a6ac) }
+.lp-key.action { left: -0.9cqw; top: 17%; height: 5%; }
+.lp-key.up { left: -0.9cqw; top: 25%; height: 9% }
+.lp-key.down { left: -0.9cqw; top: 36%; height: 9% }
+.lp-key.side { right: -0.9cqw; top: 28%; height: 14% }
 
 /* ---- Poster marquee ---- */
 .lp-marquee { position: relative; padding-block: 40px 20px; overflow: hidden; -webkit-mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent); mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent) }
@@ -104,8 +130,7 @@
 .lp-tag b { color: var(--teal); font-weight: 500 }
 .t-title { grid-column: span 4; grid-row: span 2 }
 .t-phone { grid-column: span 2; grid-row: span 2; background: radial-gradient(400px 300px at 50% 30%, rgba(52, 209, 191, 0.16), var(--ink-2)) }
-.t-phone .lp-mini { position: absolute; left: 50%; top: 26px; width: 46%; aspect-ratio: 392 / 660; transform: translateX(-50%) rotate(-3deg); border-radius: 22px; overflow: hidden; box-shadow: 0 0 0 5px #0b0d11, 0 0 0 6px #2b303b, 0 30px 60px rgba(0, 0, 0, 0.7) }
-.t-phone .lp-mini video, .t-phone .lp-mini img { width: 100%; height: 100%; object-fit: cover }
+.t-phone .lp-mini { position: absolute; left: 50%; top: 26px; width: 44%; transform: translateX(-50%) rotate(-3deg); filter: drop-shadow(0 30px 40px rgba(0, 0, 0, 0.7)) }
 .t-hover, .t-play { grid-column: span 3 }
 .t-live, .t-year, .t-people { grid-column: span 2 }
 .t-year { display: grid; align-content: center; justify-items: start; padding: 22px; background: radial-gradient(360px 220px at 80% 0%, rgba(52, 209, 191, 0.2), var(--ink-2)) }

@@ -55,6 +55,7 @@ under [Unreleased]. How releases are cut: [docs/RELEASING.md](docs/RELEASING.md)
 - **Stream add-ons**: paste a Stremio add-on link (Comet on ElfHosted, Torrentio, MediaFusion) in Settings > Downloading, and Play asks it for streams first, with its own scrapers and sorting. Links set up with your Premiumize key play straight away; Cue's own search is the fallback. See [docs/watch.md](docs/watch.md#stream-add-ons-comet-torrentio-mediafusion).
 
 ### Changed
+- The front page's phone is drawn as a modern phone: titanium edge and buttons, a thin black border, the camera cutout and a status bar.
 - **Preview clips stay out of the way** on small servers: they're made at the lowest priority, with the cheapest encoding, only while the server is quiet (load under 70% of its cores) and at most 12 an hour per core; the rest wait for another time.
 - **Cue's CPU** on the server page now includes the programs Cue runs (ffmpeg converting or cutting previews), so it shows what Cue really uses.
 - Posters (the tall movie and show cards) no longer play a preview when the mouse rests on them; the wide Continue Watching cards still do.
