@@ -437,3 +437,98 @@ private class VideoCrop {
         v.setTransform(m)
     }
 }
+
+// ---- Home's banner, alive ----
+
+// BannerPreview plays the title's own preview clip (cut by the server: a
+// small 720p file, light for the TV to decode, so the rows below stay
+// smooth), muted, once the highlight has rested on a title for a moment.
+// While the server is still making it, it asks again every couple of
+// seconds; moving on cancels it. It fades in over the banner's picture once
+// its first frame is up and plays for up to a minute.
+@androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
+@Composable
+fun BannerPreview(api: CueApi, tile: Tile, modifier: Modifier = Modifier, onShown: (Boolean) -> Unit = {}) {
+    val ctx = LocalContext.current
+    if (!trailersFit(ctx)) return
+    val key = "${tile.kind}-${tile.tmdbId}-${tile.season ?: 0}-${tile.episode ?: 0}"
+    var url by remember(key) { mutableStateOf<String?>(null) }
+    var shown by remember(key) { mutableStateOf(false) }
+    var ended by remember(key) { mutableStateOf(false) }
+    LaunchedEffect(key) {
+        delay(1500)
+        val path = "/api/watch/preview/${tile.kind}/${tile.tmdbId}?season=${tile.season ?: 1}&episode=${tile.episode ?: 1}"
+        for (attempt in 0 until 20) {
+            val a = runCatching { api.obj(path) }.getOrNull() ?: return@LaunchedEffect
+            val u = a.optString("url")
+            if (u.isNotEmpty()) {
+                url = api.server.trimEnd('/') + u
+                break
+            }
+            if (!a.optBoolean("pending")) return@LaunchedEffect
+            delay(2000)
+        }
+        if (url == null) return@LaunchedEffect
+        delay(60_000)
+        shown = false
+        delay(700)
+        ended = true
+    }
+    LaunchedEffect(shown) { onShown(shown) }
+    DisposableEffectOnLeave { onShown(false) }
+    val u = url ?: return
+    if (ended) return
+    val player = remember(u) {
+        // The clip comes from Cue itself: signed in, as this profile.
+        val http = androidx.media3.datasource.DefaultHttpDataSource.Factory()
+            .setUserAgent("CueTV/1 (native)")
+            .setDefaultRequestProperties(
+                buildMap {
+                    api.cookie.takeIf { it.isNotEmpty() }?.let { put("Cookie", it) }
+                    api.profileToken.takeIf { it.isNotEmpty() }?.let { put("X-Cue-Profile", it) }
+                },
+            )
+        androidx.media3.exoplayer.ExoPlayer.Builder(ctx)
+            .setMediaSourceFactory(androidx.media3.exoplayer.source.DefaultMediaSourceFactory(http))
+            .build().apply {
+                volume = 0f
+                repeatMode = androidx.media3.common.Player.REPEAT_MODE_ONE
+                setMediaItem(androidx.media3.common.MediaItem.fromUri(u))
+                addListener(object : androidx.media3.common.Player.Listener {
+                    override fun onRenderedFirstFrame() { shown = true }
+                })
+                prepare()
+                playWhenReady = true
+            }
+    }
+    val owner = androidx.compose.ui.platform.LocalLifecycleOwner.current
+    androidx.compose.runtime.DisposableEffect(player, owner) {
+        val watch = androidx.lifecycle.LifecycleEventObserver { _, e ->
+            if (e == androidx.lifecycle.Lifecycle.Event.ON_PAUSE) { player.stop(); shown = false; ended = true }
+        }
+        owner.lifecycle.addObserver(watch)
+        onDispose {
+            owner.lifecycle.removeObserver(watch)
+            player.release()
+        }
+    }
+    val alpha by animateFloatAsState(if (shown) 1f else 0f, tween(700), label = "banner-preview")
+    AndroidView(
+        factory = { c ->
+            androidx.media3.ui.PlayerView(c).apply {
+                useController = false
+                isFocusable = false
+                resizeMode = androidx.media3.ui.AspectRatioFrameLayout.RESIZE_MODE_ZOOM
+                setShutterBackgroundColor(android.graphics.Color.TRANSPARENT)
+                this.player = player
+            }
+        },
+        modifier = modifier.graphicsLayer { this.alpha = alpha },
+    )
+}
+
+// Runs once when the caller leaves the screen (or the title changes).
+@Composable
+private fun DisposableEffectOnLeave(leave: () -> Unit) {
+    androidx.compose.runtime.DisposableEffect(Unit) { onDispose { leave() } }
+}

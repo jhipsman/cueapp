@@ -18,6 +18,7 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
@@ -118,14 +119,23 @@ fun TourScreen(done: () -> Unit) {
     var at by remember { mutableIntStateOf(0) }
     var forward by remember { mutableStateOf(true) }
     val next = remember { FocusRequester() }
-    LaunchedEffect(at) { runCatching { next.requestFocus() } }
+    // The remote starts on Next (after the slide has drawn), and stays in
+    // the tour: left and right move between its buttons.
+    LaunchedEffect(at) {
+        kotlinx.coroutines.delay(60)
+        runCatching { next.requestFocus() }
+    }
     androidx.activity.compose.BackHandler {
         if (at > 0) {
             forward = false
             at--
         } else done()
     }
-    Box(Modifier.fillMaxSize().background(Color(0xD90A0B0E)), contentAlignment = Alignment.Center) {
+    Box(
+        Modifier.fillMaxSize().background(Brush.radialGradient(listOf(Color(0xFF15211F), Color(0xFF0A0B0E)), radius = 1400f))
+            .focusGroup(),
+        contentAlignment = Alignment.Center,
+    ) {
         Column(
             Modifier.width(620.dp).clip(RoundedCornerShape(26.dp)).background(
                 Brush.verticalGradient(listOf(Color(0xFF1E2026), Color(0xFF131418))),

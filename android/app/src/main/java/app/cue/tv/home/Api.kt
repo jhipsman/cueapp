@@ -107,6 +107,17 @@ class CueApi(ctx: Context, val server: String) {
         profileToken = ""
     }
 
+    /** Signs this TV out of its account (another person can then sign in). */
+    suspend fun signOut() {
+        runCatching { request("POST", "/api/auth/logout") }
+        profileToken = ""
+        profileName = ""
+        withContext(Dispatchers.Main) {
+            CookieManager.getInstance().removeAllCookies(null)
+            CookieManager.getInstance().flush()
+        }
+    }
+
     // ---- Movies and shows ----
 
     suspend fun home(): Home = Home.from(obj("/api/watch/home"))

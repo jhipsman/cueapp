@@ -28,10 +28,11 @@ import (
 // on them.
 
 const (
-	previewSeconds  = 22
-	previewMaxFiles = 400
-	previewMaxBytes = 1500 << 20
-	previewRetry    = 30 * time.Minute // after a failed try, how long before another
+	previewSeconds   = 22
+	previewMaxFiles  = 400
+	previewMaxBytes  = 1500 << 20
+	previewRetry     = 30 * time.Minute // after a failed try, how long before another
+	previewMaxQueued = 6                // clips being made or waiting their turn
 )
 
 var (
@@ -106,6 +107,15 @@ func (s *Server) handleWatchPreview(w http.ResponseWriter, r *http.Request) {
 	}
 	if r.URL.Query().Get("ready") == "1" {
 		writeJSON(w, http.StatusOK, map[string]any{"none": !making, "pending": making})
+		return
+	}
+	// A TV makes one for whatever its highlight rests on: past a few
+	// waiting, the rest are left for another time (not marked failed).
+	previewState.Lock()
+	queued := len(previewState.making)
+	previewState.Unlock()
+	if !making && queued >= previewMaxQueued {
+		writeJSON(w, http.StatusOK, map[string]any{"none": true, "busy": true})
 		return
 	}
 	s.startPreview(r, want)

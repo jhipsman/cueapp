@@ -102,6 +102,9 @@ enum class Stage { Checking, SignIn, Profiles, Ready }
 @Composable
 fun CueRoot(api: CueApi, playback: Playback, openWeb: (String) -> Unit, changeServer: () -> Unit) {
     var stage by remember { mutableStateOf(Stage.Checking) }
+    // Switch profile asked for: "Who's watching?" stays up even with one profile.
+    var switching by remember { mutableStateOf(false) }
+    val rootScope = rememberCoroutineScope()
     var problem by remember { mutableStateOf("") }
     var accent by remember { mutableStateOf(accentOf(api.accent)) }
     val tintState = remember { mutableStateOf<Color?>(null) }
@@ -135,6 +138,7 @@ fun CueRoot(api: CueApi, playback: Playback, openWeb: (String) -> Unit, changeSe
     LaunchedEffect(stage, inFront) {
         if (stage == Stage.Ready && inFront) AppUpdate.check(ctx, api.server)
     }
+    LaunchedEffect(stage) { if (stage == Stage.Ready) Tour.maybeShow(ctx) }
     LaunchedEffect(stage) {
         if (stage != Stage.Checking) return@LaunchedEffect
         problem = ""
@@ -166,12 +170,24 @@ fun CueRoot(api: CueApi, playback: Playback, openWeb: (String) -> Unit, changeSe
             when (stage) {
                 Stage.Checking -> Centered { Text("Cue", fontSize = 48.sp, fontWeight = FontWeight.Black, color = Teal) }
                 Stage.SignIn -> SignInScreen(api, problem, changeServer) { stage = Stage.Profiles }
-                Stage.Profiles -> ProfilesScreen(api) {
+                Stage.Profiles -> ProfilesScreen(api, pickAlone = !switching, signOut = {
+                    rootScope.launch {
+                        api.signOut()
+                        switching = false
+                        stage = Stage.SignIn
+                    }
+                }) {
+                    switching = false
                     accent = accentOf(api.accent)
                     stage = Stage.Ready
                 }
-                Stage.Ready -> MainScreen(api, playback, openWeb, changeServer) {
+                // The tour, once on a new TV (after the update offer), in
+                // place of the screens so the remote only moves within it.
+                Stage.Ready -> if (Tour.showing && !(AppUpdate.showing && AppUpdate.offer != null)) {
+                    TourScreen { Tour.done(ctx) }
+                } else MainScreen(api, playback, openWeb, changeServer) {
                     api.forgetProfile()
+                    switching = true
                     stage = Stage.Profiles
                 }
             }
@@ -179,12 +195,6 @@ fun CueRoot(api: CueApi, playback: Playback, openWeb: (String) -> Unit, changeSe
             playback.starting?.let { st -> StartingScreen(api, st, playback.note) { playback.cancelStarting() } }
             AppUpdate.offer?.takeIf { AppUpdate.showing && playback.upNext == null && stage == Stage.Ready }?.let { o ->
                 UpdateCard(api, o, later = { AppUpdate.later() })
-            }
-            // The tour, once on a new TV (after the update offer, never over
-            // something starting or playing).
-            LaunchedEffect(stage) { if (stage == Stage.Ready) Tour.maybeShow(ctx) }
-            if (Tour.showing && stage == Stage.Ready && !(AppUpdate.showing && AppUpdate.offer != null) && playback.upNext == null && playback.starting == null) {
-                TourScreen { Tour.done(ctx) }
             }
             saver?.let { Screensaver(api, it) }
             // While Cue's screensaver shows, the TV stays awake (otherwise the
@@ -276,7 +286,7 @@ fun quietButton() = ButtonDefaults.colors(containerColor = Color(0x22FFFFFF), co
 // ---- Who's watching ----
 
 @Composable
-fun ProfilesScreen(api: CueApi, done: () -> Unit) {
+fun ProfilesScreen(api: CueApi, pickAlone: Boolean = true, signOut: () -> Unit = {}, done: () -> Unit) {
     var list by remember { mutableStateOf<List<Profile>>(emptyList()) }
     var problem by remember { mutableStateOf("") }
     var asking by remember { mutableStateOf<Profile?>(null) }
@@ -294,7 +304,8 @@ fun ProfilesScreen(api: CueApi, done: () -> Unit) {
     LaunchedEffect(Unit) {
         try {
             list = api.profiles()
-            if (list.size == 1 && !list[0].hasPin) choose(list[0])
+            // Only one profile: straight in, unless this is Switch profile.
+            if (pickAlone && list.size == 1 && !list[0].hasPin) choose(list[0])
         } catch (e: Exception) {
             problem = e.message ?: "Couldn't load the profiles."
         }
@@ -337,6 +348,12 @@ fun ProfilesScreen(api: CueApi, done: () -> Unit) {
             if (problem.isNotEmpty()) {
                 Gap(16.dp)
                 Text(problem, color = Color(0xFFFF8A80), fontSize = 13.sp)
+            }
+            if (list.isNotEmpty()) {
+                Gap(32.dp)
+                Pill("Sign out", onClick = signOut)
+                Gap(6.dp)
+                Text("To sign in with another account on this TV", fontSize = 11.sp, color = Dim)
             }
         }
     }
@@ -542,13 +559,18 @@ fun Banner(api: CueApi, c: Tile) {
         Modifier.padding(horizontal = Gutter).padding(top = 8.dp).fillMaxWidth().height(226.dp)
             .clip(shape).background(Color(0xFF16171B)).border(1.dp, Color(0x14FFFFFF), shape),
     ) {
-        // The picture changes with a slow cross-fade. It stays still (a
-        // picture always moving, or a video, keeps a TV's processor busy and
-        // the rows below stutter); the title's page is where it comes alive.
+        // The picture changes with a slow cross-fade. Rest on a title and
+        // its preview clip (a small file the server cut, light to decode)
+        // fades in over it, muted; the story steps aside while it plays.
+        var live by remember(c.key) { mutableStateOf(false) }
         Crossfade(targetState = c.backdrop, animationSpec = tween(450, easing = Settle), label = "banner",
             modifier = Modifier.fillMaxHeight().fillMaxWidth(0.8f).align(Alignment.TopEnd)) { u ->
             if (u != null) AsyncImage(model = u, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
         }
+        key(c.key) {
+            BannerPreview(api, c, Modifier.fillMaxHeight().fillMaxWidth(0.8f).align(Alignment.TopEnd)) { live = it }
+        }
+        val story by animateFloatAsState(if (live) 0f else 1f, tween(600, easing = Settle), label = "banner-story")
         Box(Modifier.fillMaxSize().background(Brush.horizontalGradient(0.18f to Color(0xF516171B), 0.48f to Color(0x9916171B), 0.75f to Color.Transparent)))
         Box(Modifier.fillMaxSize().background(Brush.verticalGradient(0.5f to Color.Transparent, 1f to Color(0xCC16171B))))
         // The words fade out, and the new ones fade in as they rise.
@@ -571,7 +593,8 @@ fun Banner(api: CueApi, c: Tile) {
                 FactsRow(cc, extra = listOfNotNull(if (cc.kind == "tv") "Series" else "Movie", epCode(cc.season, cc.episode)))
                 cc.overview?.let {
                     Gap(6.dp)
-                    Text(it, fontSize = 11.sp, color = Color(0xCCFFFFFF), maxLines = 2, overflow = TextOverflow.Ellipsis, lineHeight = 15.sp)
+                    Text(it, fontSize = 11.sp, color = Color(0xCCFFFFFF), maxLines = 2, overflow = TextOverflow.Ellipsis, lineHeight = 15.sp,
+                        modifier = Modifier.graphicsLayer { alpha = story })
                 }
             }
         }
