@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The Cue mark: an even ring round a soft play button. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="256"
+    android:viewportHeight="256">
+    <path
+        android:fillColor="#34D1BF"
+        android:pathData="M206.77,198.93 A106,106 0 1 1 206.77,57.07 A21.0,21.0 0 0 1 175.56,85.18 A64,64 0 1 0 175.56,170.82 A21.0,21.0 0 0 1 206.77,198.93 Z M115.76,106.20 Q115.76,95.00 125.60,100.35 L166.64,122.65 Q176.48,128.00 166.64,133.35 L125.60,155.65 Q115.76,161.00 115.76,149.80 Z" />
+</vector>

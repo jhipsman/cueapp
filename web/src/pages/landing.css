@@ -179,3 +179,5 @@
   .lp-mrow, .lp-hero h1 .lp-sheen, .lp-eyebrow i { animation: none }
   .lp-screen, .lp-tile > .bg, .lp-faces span { transition: none }
 }
+/* Backgrounds stay inside the thin borders, so rounded corners stay soft. */
+.lp-tile, .lp-step, .lp-signin, .lp-tabs, .lp-copy, .lp-nav-in, .lp-tag { background-clip: padding-box }

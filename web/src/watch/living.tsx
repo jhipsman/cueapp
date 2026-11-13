@@ -10,8 +10,8 @@ import { onTV } from './tv'
 // of sight after YouTube says it's playing (so YouTube's own title and
 // buttons are gone), and how long a trailer plays before the banner settles
 // back to its picture.
-const TRAILER_REST = 2500
-const TRAILER_HIDDEN = 1200
+const TRAILER_REST = 500
+const TRAILER_HIDDEN = 1500
 const TRAILER_LENGTH = 60_000
 
 // When a title has no trailer, the banner shows real moments from it: a few
@@ -158,10 +158,18 @@ export function useTrailer(id: string | undefined, forKey: string) {
         m.event === 'onStateChange' ? m.info : m.event === 'infoDelivery' && m.info && typeof m.info === 'object' ? (m.info as { playerState?: number }).playerState : undefined
       if (m.event === 'onError') {
         window.clearTimeout(reveal)
+        reveal = 0
         setState((s) => ({ ...s, src: '', playing: false }))
       } else if (state === 1) {
+        // Playing: shown once YouTube's own title has faded (once, not
+        // put off by every report that it's still playing).
+        if (!reveal) reveal = window.setTimeout(() => setState((s) => (s.src ? { ...s, playing: true } : s)), TRAILER_HIDDEN)
+      } else if (state === 0 || state === 2 || state === -1 || state === 5) {
+        // Ended, paused, not started or cued: YouTube shows its big play
+        // button now, so the picture covers it until it plays again.
         window.clearTimeout(reveal)
-        reveal = window.setTimeout(() => setState((s) => (s.src ? { ...s, playing: true } : s)), TRAILER_HIDDEN)
+        reveal = 0
+        setState((s) => (s.playing ? { ...s, playing: false } : s))
       }
     }
     window.addEventListener('message', onMsg)
@@ -215,8 +223,12 @@ export function CardTrailer({ id }: { id: string }) {
       const state =
         m.event === 'onStateChange' ? m.info : m.event === 'infoDelivery' && m.info && typeof m.info === 'object' ? (m.info as { playerState?: number }).playerState : undefined
       if (state === 1) {
+        if (!reveal) reveal = window.setTimeout(() => setPlaying(true), 900)
+      } else if (state === 0 || state === 2 || state === -1 || state === 5) {
+        // YouTube's play button shows in these: hidden until it plays again.
         window.clearTimeout(reveal)
-        reveal = window.setTimeout(() => setPlaying(true), 900)
+        reveal = 0
+        setPlaying(false)
       }
     }
     window.addEventListener('message', onMsg)
