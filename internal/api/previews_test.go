@@ -152,3 +152,34 @@ func TestNextTonightSkipsMadeClips(t *testing.T) {
 		t.Fatalf("third = %+v, want nothing left", j)
 	}
 }
+
+// A film whose first sound is Spanish still gets an English clip.
+func TestCutPreviewPicksEnglish(t *testing.T) {
+	ffmpeg, ffprobe := ffmpegOnce()
+	if ffmpeg == "" || ffprobe == "" {
+		t.Skip("no ffmpeg here")
+	}
+	dir := t.TempDir()
+	src := filepath.Join(dir, "two.mkv")
+	if out, err := exec.Command(ffmpeg, "-v", "error", "-f", "lavfi", "-i", "testsrc=size=640x360:rate=24:duration=80",
+		"-f", "lavfi", "-i", "sine=frequency=300:duration=80", "-f", "lavfi", "-i", "sine=frequency=900:duration=80",
+		"-map", "0", "-map", "1", "-map", "2", "-c:v", "libx264", "-preset", "ultrafast", "-c:a", "aac",
+		"-metadata:s:a:0", "language=spa", "-metadata:s:a:1", "language=eng", "-disposition:a:0", "default", "-disposition:a:1", "0",
+		"-shortest", src).CombinedOutput(); err != nil {
+		t.Fatalf("make the film: %v %s", err, out)
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+	defer cancel()
+	want := previewWant{kind: "movie", tmdbID: 8}
+	if err := cutPreview(ctx, src, want, dir); err != nil {
+		t.Fatal(err)
+	}
+	out, err := exec.Command(ffprobe, "-v", "error", "-select_streams", "a", "-show_entries", "stream_tags=language", "-of", "default=nw=1:nk=1",
+		filepath.Join(dir, want.key()+".mp4")).Output()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := strings.TrimSpace(string(out)); got != "eng" {
+		t.Errorf("clip's sound is %q, want eng", got)
+	}
+}

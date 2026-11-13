@@ -76,11 +76,11 @@ func (p previewWant) key() string {
 	return fmt.Sprintf("tv-%d-%d-%d", p.tmdbID, p.season, p.episode)
 }
 
-// previewDir holds the clips. (Clips with sound live in previews-v2; the
-// first, silent ones in previews are cleared the first time one is made.)
-func (s *Server) previewDir() string { return filepath.Join(s.cfg.ConfigDir, "cache", "previews-v2") }
+// previewDir holds the clips. (Earlier ones, silent or with whatever sound
+// came first in the file, are cleared the first time one is made.)
+func (s *Server) previewDir() string { return filepath.Join(s.cfg.ConfigDir, "cache", "previews-v3") }
 
-var clearSilentPreviews sync.Once
+var clearOldPreviews sync.Once
 
 // GET /api/watch/preview/{kind}/{tmdbId}?season=&episode=[&ready=1]: the
 // clip's address when it's made ({"url"}); otherwise it's started and the
@@ -398,7 +398,11 @@ func (s *Server) previewSource(ctx context.Context, header http.Header, want pre
 }
 
 func (s *Server) makePreview(ctx context.Context, header http.Header, want previewWant) error {
-	clearSilentPreviews.Do(func() { _ = os.RemoveAll(filepath.Join(s.cfg.ConfigDir, "cache", "previews")) })
+	clearOldPreviews.Do(func() {
+		for _, old := range []string{"previews", "previews-v2"} {
+			_ = os.RemoveAll(filepath.Join(s.cfg.ConfigDir, "cache", old))
+		}
+	})
 	link, err := s.previewSource(ctx, header, want)
 	if err != nil {
 		return err
@@ -434,14 +438,22 @@ func cutPreview(ctx context.Context, link string, want previewWant, dir string) 
 	}
 	args = append(args,
 		"-ss", strconv.FormatFloat(at, 'f', 1, 64), "-i", link,
-		"-t", strconv.Itoa(previewSeconds), "-map", "0:v:0", "-map", "0:a:0?", "-sn", "-dn",
+		"-t", strconv.Itoa(previewSeconds), "-map", "0:"+strconv.Itoa(info.VideoIndex), "-sn", "-dn",
 		"-vf", "scale=-2:'min(720,ih)',fps=30,format=yuv420p",
 		// The cheapest encoding there is: the work is in reading the source,
 		// and on a small server every second of processor counts.
 		"-c:v", "libx264", "-preset", "ultrafast", "-tune", "fastdecode", "-crf", "28", "-threads", "1",
-		// The sound in stereo, fading in and out so the loop doesn't jump.
-		"-af", fmt.Sprintf("afade=t=in:d=1.2,afade=t=out:st=%d:d=1.8", previewSeconds-2),
-		"-c:a", "aac", "-b:a", "128k", "-ac", "2",
+	)
+	if info.AudioIndex >= 0 {
+		// The English sound (else the file's own default: probeFile picks),
+		// in stereo, fading in and out so the loop doesn't jump.
+		args = append(args, "-map", "0:"+strconv.Itoa(info.AudioIndex),
+			"-af", fmt.Sprintf("afade=t=in:d=1.2,afade=t=out:st=%d:d=1.8", previewSeconds-2),
+			"-c:a", "aac", "-b:a", "128k", "-ac", "2")
+	} else {
+		args = append(args, "-an")
+	}
+	args = append(args,
 		"-movflags", "+faststart", "-f", "mp4", tmp)
 	cmd := exec.CommandContext(ctx, ffmpeg, args...)
 	var out strings.Builder

@@ -96,6 +96,7 @@ under [Unreleased]. How releases are cut: [docs/RELEASING.md](docs/RELEASING.md)
 - **Premiumize.me as a downloader.** Add your Premiumize API key in Settings > Downloading > Usenet and torrents, under Cloud downloader, and torrents (or Usenet, or both, your choice) are downloaded by Premiumize on its own servers instead of by the built-in client. Releases Premiumize already has are ready at once. Cue then fetches the finished files over HTTPS, picks up where it stopped after a pause, and removes the transfer and its files from your Premiumize cloud once they are home. Torrents fetched this way need no VPN and don't seed. See [docs/downloads.md](docs/downloads.md#premiumize).
 
 ### Fixed
+- Previews play the **English** sound when a version has several languages (they took whichever came first, sometimes a dub); clips made before are made again. On Fire TV and Google TV a title page's moment prefers English too.
 - Family members (not administrators) can add, change and remove their own account's profiles, pictures included, from its main profile; it said only an administrator could.
 - The tour on Fire TV and Google TV: the remote now moves between its buttons instead of the screen behind it.
 - **Smoother edges on the web**: cards draw their faint edge inside the picture (a bright ring outside it showed stair-steps and a seam as cards lifted), and rounded panels keep their background inside their border, so corners no longer show a lighter, stepped halo.
