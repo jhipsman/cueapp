@@ -253,6 +253,15 @@ func (s *Server) handleWatchHome(w http.ResponseWriter, r *http.Request) {
 		warm = append(warm, cardPreview(c))
 	}
 	s.prewarmPreviews(r, warm)
+	// Everything else Home shows is made overnight, while the server is
+	// quiet, so most titles have a clip before anyone opens them.
+	var later []previewWant
+	for _, row := range home.Rows {
+		for _, c := range row.Items {
+			later = append(later, cardPreview(c))
+		}
+	}
+	rememberForTonight(r, later)
 	writeJSON(w, http.StatusOK, home)
 }
 
