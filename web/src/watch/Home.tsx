@@ -116,7 +116,7 @@ function Banner({ card, featured }: { card: WatchCard; featured: boolean }) {
   return (
     <header className={`wx-hero${onTV() ? '' : ' full'}${preview.playing && !preview.over ? ' playing' : ''}${frames.length > 1 ? ' framing' : ''}`}>
       {card.backdropUrl && <div className="wx-hero-pic drift" key={card.backdropUrl} style={{ backgroundImage: `url(${card.backdropUrl})` }} />}
-      {preview.src && <PreviewVideo key={preview.src} src={preview.src} onPlaying={preview.onPlaying} playing={preview.playing} over={preview.over} />}
+      {preview.src && <PreviewVideo key={preview.src} src={preview.src} onPlaying={preview.onPlaying} onEnded={preview.onEnded} playing={preview.playing} over={preview.over} />}
       {frames.length > 1 && <Frames urls={frames} />}
       {preview.waiting && !preview.playing && <span className="wx-trailer-wait" aria-hidden="true" />}
       <div className="wx-hero-body rise" key={`${card.kind}-${card.tmdbId}-${card.episode ?? 0}`}>

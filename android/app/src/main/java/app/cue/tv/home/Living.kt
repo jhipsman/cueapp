@@ -546,10 +546,14 @@ fun BannerPreview(api: CueApi, tile: Tile, modifier: Modifier = Modifier, onShow
             .setMediaSourceFactory(androidx.media3.exoplayer.source.DefaultMediaSourceFactory(http))
             .build().apply {
                 volume = 0f
-                repeatMode = androidx.media3.common.Player.REPEAT_MODE_ONE
+                // Played once, then the picture comes back (no looping).
+                repeatMode = androidx.media3.common.Player.REPEAT_MODE_OFF
                 setMediaItem(androidx.media3.common.MediaItem.fromUri(u))
                 addListener(object : androidx.media3.common.Player.Listener {
                     override fun onRenderedFirstFrame() { shown = true }
+                    override fun onPlaybackStateChanged(state: Int) {
+                        if (state == androidx.media3.common.Player.STATE_ENDED) shown = false
+                    }
                 })
                 prepare()
                 playWhenReady = true

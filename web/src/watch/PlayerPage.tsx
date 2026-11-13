@@ -383,7 +383,7 @@ export default function PlayerPage() {
       if (!silent) return
       // Cue can convert the sound into one the browser plays, from here.
       resumeAt.current = Math.floor((conv?.offset ?? 0) + v.currentTime)
-      if (startConvert('No sound in this browser, so Cue is converting it…')) return
+      if (startConvert('No sound in this browser, so Cue is converting the sound…', true)) return
       if (answer.option < answer.options && silentSkips.current < 2) {
         silentSkips.current++
         resumeAt.current = Math.floor((conv?.offset ?? 0) + v.currentTime)
@@ -601,8 +601,11 @@ export default function PlayerPage() {
   }
 
   // startConvert has Cue convert this version as it plays (from
-  // resumeAt), once; false when it can't or already did.
-  function startConvert(why: string): boolean {
+  // resumeAt), once; false when it can't or already did. soundOnly: the
+  // browser already shows this picture and only the sound was silent, so
+  // the picture is kept as it is and just the sound is remade (quick, and
+  // no hopping between versions that all have the same Dolby sound).
+  function startConvert(why: string, soundOnly = false): boolean {
     if (!answer?.convert || conv || converting.current) return false
     converting.current = true
     setNote(why)
@@ -611,13 +614,17 @@ export default function PlayerPage() {
       .then((p) => {
         // Remaking the whole picture is slow on a small server: other
         // versions are tried first, and this is the last resort.
-        if (!p.copyVideo && answer.option < answer.options) {
+        if (!soundOnly && !p.copyVideo && answer.option < answer.options) {
           moveOn()
           return
         }
-        setConv({ stream: p.stream, duration: p.duration, offset: Math.max(0, Math.floor(resumeAt.current)) })
+        const stream = soundOnly ? `${p.stream}${p.stream.includes('?') ? '&' : '?'}keep=1` : p.stream
+        setConv({ stream, duration: p.duration, offset: Math.max(0, Math.floor(resumeAt.current)) })
       })
-      .catch(() => moveOn())
+      .catch(() => {
+        if (soundOnly) setNote('Couldn’t fix the sound for this browser. Pick another in Versions, or watch on the TV app.')
+        else moveOn()
+      })
     return true
   }
 
@@ -881,7 +888,7 @@ export default function PlayerPage() {
                         hint: 'Cue converts the sound so this browser can play it',
                         onClick: () => {
                           resumeAt.current = Math.floor(video.current?.currentTime ?? 0)
-                          startConvert('Converting the sound for this browser…')
+                          startConvert('Converting the sound for this browser…', true)
                         },
                       },
                     ]

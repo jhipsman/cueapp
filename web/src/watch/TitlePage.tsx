@@ -78,7 +78,7 @@ export default function TitlePage({ kind }: { kind: WatchKind }) {
       {title.backdropUrl && <Ambient url={title.backdropUrl} />}
       <header className={`wx-hero${preview.playing && !preview.over ? ' playing' : ''}${frames.length > 1 ? ' framing' : ''}`}>
         {title.backdropUrl && <div className="wx-hero-pic settle" style={{ backgroundImage: `url(${title.backdropUrl})` }} />}
-        {preview.src && <PreviewVideo key={preview.src} src={preview.src} onPlaying={preview.onPlaying} playing={preview.playing} over={preview.over} sound />}
+        {preview.src && <PreviewVideo key={preview.src} src={preview.src} onPlaying={preview.onPlaying} onEnded={preview.onEnded} playing={preview.playing} over={preview.over} sound />}
         {frames.length > 1 && <Frames urls={frames} />}
         {preview.waiting && !preview.playing && <span className="wx-trailer-wait" aria-hidden="true" />}
         <div className="wx-hero-body rise">

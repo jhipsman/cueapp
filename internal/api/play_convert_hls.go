@@ -81,7 +81,8 @@ func (s *Server) handleConvertHLS(w http.ResponseWriter, r *http.Request) {
 	}
 	start, _ := strconv.ParseFloat(r.URL.Query().Get("t"), 64)
 	apple := r.URL.Query().Get("apple") == "1"
-	key := fmt.Sprintf("%s@%d@%t", link, int(start), apple)
+	keep := r.URL.Query().Get("keep") == "1"
+	key := fmt.Sprintf("%s@%d@%t@%t", link, int(start), apple, keep)
 
 	hls.mu.Lock()
 	s.startHLSJanitorLocked()
@@ -98,6 +99,7 @@ func (s *Server) handleConvertHLS(w http.ResponseWriter, r *http.Request) {
 			writeError(w, http.StatusBadGateway, "Couldn't open that version to convert it.")
 			return
 		}
+		keepPicture(r, &info)
 		sess, err = startHLS(key, link, info, start, apple)
 		if err != nil {
 			writeError(w, http.StatusServiceUnavailable, err.Error())

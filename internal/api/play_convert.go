@@ -76,6 +76,18 @@ type probeInfo struct {
 	VideoCodec    string `json:"-"`
 	AudioCodec    string `json:"-"`
 	AudioChannels int    `json:"-"`
+	// KeepVideo: the browser already plays this picture (only its sound
+	// was silent), so the picture is copied as it is, whatever it is, and
+	// only the sound is remade: quick, and light on the server.
+	KeepVideo bool `json:"-"`
+}
+
+// keepPicture marks a conversion asked with keep=1: the browser showed the
+// picture but heard nothing, so only the sound needs remaking.
+func keepPicture(r *http.Request, info *probeInfo) {
+	if r.URL.Query().Get("keep") == "1" {
+		info.KeepVideo = true
+	}
 }
 
 var probeCache = struct {
@@ -244,6 +256,7 @@ func (s *Server) handleConvertStream(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	start, _ := strconv.ParseFloat(r.URL.Query().Get("t"), 64)
+	keepPicture(r, &info)
 	args := convertArgs(link, info, start, false)
 	args = append(args, "-f", "mp4",
 		"-movflags", "frag_keyframe+empty_moov+default_base_moof", "-frag_duration", "2000000", "pipe:1")
@@ -279,9 +292,9 @@ func convertArgs(link string, info probeInfo, start float64, apple bool) []strin
 		args = append(args, "-map", fmt.Sprintf("0:%d", info.AudioIndex))
 	}
 	switch {
-	case apple && info.VideoCodec == "hevc":
+	case (apple || info.KeepVideo) && info.VideoCodec == "hevc":
 		args = append(args, "-c:v", "copy", "-tag:v", "hvc1")
-	case info.CopyVideo:
+	case info.CopyVideo || info.KeepVideo:
 		args = append(args, "-c:v", "copy")
 	default:
 		// Remade small enough to keep up on a modest server.

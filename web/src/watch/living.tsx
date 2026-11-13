@@ -128,15 +128,31 @@ export function usePreview(of: PreviewOf | null, forKey: string, ready = false) 
   return {
     ...current,
     onPlaying: () => setState((s) => (s.src ? { ...s, playing: true, waiting: false } : s)),
+    // Played once to the end: the picture comes back, as on Netflix.
+    onEnded: () => setState((s) => ({ ...s, playing: false, over: true })),
   }
 }
 
-// The clip itself, looping and filling its box like a picture. With sound
+// The clip itself, played once and filling its box like a picture. With sound
 // (a title's page, as on Netflix) it starts with sound when the browser
 // allows it (it does once you've clicked on the site), otherwise muted; a
 // button in the corner turns the sound on and off. Once the preview is over
 // it fades away and stops.
-export function PreviewVideo({ src, onPlaying, playing, over, sound = false }: { src: string; onPlaying: () => void; playing: boolean; over: boolean; sound?: boolean }) {
+export function PreviewVideo({
+  src,
+  onPlaying,
+  onEnded,
+  playing,
+  over,
+  sound = false,
+}: {
+  src: string
+  onPlaying: () => void
+  onEnded?: () => void
+  playing: boolean
+  over: boolean
+  sound?: boolean
+}) {
   const video = useRef<HTMLVideoElement>(null)
   const [muted, setMuted] = useState(true)
   const [hasSound, setHasSound] = useState(false)
@@ -186,10 +202,10 @@ export function PreviewVideo({ src, onPlaying, playing, over, sound = false }: {
           ref={video}
           src={src}
           muted
-          loop
           playsInline
           preload="auto"
           onPlaying={onPlaying}
+          onEnded={onEnded}
           // Whether the clip has sound at all (some versions have none).
           onLoadedData={(e) => {
             const v = e.currentTarget as HTMLVideoElement & { mozHasAudio?: boolean; webkitAudioDecodedByteCount?: number; audioTracks?: { length: number } }
@@ -212,7 +228,7 @@ export function CardPreview({ of }: { of: PreviewOf }) {
   if (!p.src) return null
   return (
     <span className={`wx-card-trailer${p.playing ? ' on' : ''}`} aria-hidden="true">
-      <video src={p.src} muted autoPlay loop playsInline onPlaying={p.onPlaying} />
+      <video src={p.src} muted autoPlay playsInline onPlaying={p.onPlaying} onEnded={p.onEnded} />
     </span>
   )
 }
