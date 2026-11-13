@@ -3803,9 +3803,10 @@ html.tv-mode .wx-card:focus .wx-card-sub {
   background: radial-gradient(70% 55% at 20% 0%, rgba(var(--wx-tint), 0.2), transparent 70%);
   transition: background 0.8s;
 }
+/* Progress bars keep the profile's own colour (its theme), not the
+   picture's, so they always match the theme chosen. */
 .wx-card-progress > span {
-  background: rgb(var(--wx-tint));
-  transition: background 0.8s;
+  background: var(--wx-accent);
 }
 .wx-hero.inset {
   box-shadow:

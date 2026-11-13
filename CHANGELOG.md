@@ -109,6 +109,7 @@ under [Unreleased]. How releases are cut: [docs/RELEASING.md](docs/RELEASING.md)
 - **Premiumize.me as a downloader.** Add your Premiumize API key in Settings > Downloading > Usenet and torrents, under Cloud downloader, and torrents (or Usenet, or both, your choice) are downloaded by Premiumize on its own servers instead of by the built-in client. Releases Premiumize already has are ready at once. Cue then fetches the finished files over HTTPS, picks up where it stopped after a pause, and removes the transfer and its files from your Premiumize cloud once they are home. Torrents fetched this way need no VPN and don't seed. See [docs/downloads.md](docs/downloads.md#premiumize).
 
 ### Fixed
+- Progress bars (Continue Watching) are in the profile's theme colour on the web and the TV; they took the colour of the picture, which mostly came out orange whatever theme was chosen.
 - Back from a title opened from More Like This goes straight back where you were (Fire TV, Google TV), instead of through every title on the way.
 - Home on Fire TV and Google TV: a highlighted row's title ("Trending movies") no longer slides under the banner, and rows and posters glide for a shorter time, which stutters less on slow TVs.
 - Previews play the **English** sound when a version has several languages (they took whichever came first, sometimes a dub); clips made before are made again. On Fire TV and Google TV a title page's moment prefers English too.

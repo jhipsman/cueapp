@@ -193,11 +193,10 @@ fun PosterCard(card: Tile, memory: FocusMemory, memKey: String, wide: Boolean = 
                         )
                     }
                 }
-                val tintState = LocalTint.current
                 card.progress?.takeIf { it > 0 }?.let { p ->
                     Box(Modifier.align(Alignment.BottomStart).padding(horizontal = 8.dp, vertical = 5.dp).fillMaxWidth().height(3.dp)
                         .clip(RoundedCornerShape(2.dp)).background(Color(0x40FFFFFF))) {
-                        Box(Modifier.fillMaxWidth(p.toFloat().coerceIn(0f, 1f)).fillMaxHeight().drawBehind { drawRect(tintState.value ?: accent) })
+                        Box(Modifier.fillMaxWidth(p.toFloat().coerceIn(0f, 1f)).fillMaxHeight().background(accent)) // the theme's colour, not the picture's
                     }
                 }
                 if (card.isNew) Chip("NEW", Modifier.align(Alignment.TopStart).padding(7.dp), bg = accent, fg = Color.Black)
