@@ -12,6 +12,7 @@ under [Unreleased]. How releases are cut: [docs/RELEASING.md](docs/RELEASING.md)
 - Releases are signed with a new update key, held only by the project owner. **Update now** installs only releases signed with it.
 
 ### Added
+- **Profile pictures**: in Manage profiles, each profile can wear a picture on its color (a fox, a unicorn, a game controller, 18 in all) instead of its initial, so everyone finds theirs at a glance: on the web, Fire TV, Google TV and Apple TV. Stored with the color (`"avatar": "teal/fox"`); `GET /api/profiles` lists them as `icons`.
 - **A short tour** (web, Fire TV, Google TV): the first time Watch opens, four slides cover what's worth knowing: **Other version** / **Try another version** when a version is blurry, in the wrong language, out of sync or keeps stopping; **Skip intro** and **Next episode**; subtitles; and searching from your phone. Each has a small drawing of the real control, lit. **How Cue works** in the profile menu (web) or on Profile (TV) shows it again.
 - **A new Cue logo**: the C with a play button, redrawn: an even ring with round ends and a soft play button set in its middle, beside "cue" in Sora Bold. On the web (header, sign-in, front page, favicon and home-screen icons) and the Fire TV and Google TV app (launcher icon, banner and header).
 - **Invite family**: in Settings > Accounts, make an invite link and send it round; each person makes their own account (one that watches with this Cue's Premiumize, add-ons and live TV, and can't see or change its settings) and is signed in. A link works for seven days; a new one ends the old, and it can be turned off. `GET`/`POST`/`DELETE /api/users/invite`, `GET`/`POST /api/join/{token}`.
@@ -55,6 +56,7 @@ under [Unreleased]. How releases are cut: [docs/RELEASING.md](docs/RELEASING.md)
 - **Stream add-ons**: paste a Stremio add-on link (Comet on ElfHosted, Torrentio, MediaFusion) in Settings > Downloading, and Play asks it for streams first, with its own scrapers and sorting. Links set up with your Premiumize key play straight away; Cue's own search is the fallback. See [docs/watch.md](docs/watch.md#stream-add-ons-comet-torrentio-mediafusion).
 
 ### Changed
+- A family member's menu in Watch shows **Your account** (their own name and password) instead of Settings.
 - **Downloader code 3575368** (cuetv.me/tv.apk) on the front page's Fire TV steps, so the app installs by typing a short number.
 - **Front page, what's in it**: the parts that make Cue different: every movie and show with no subscriptions, searching the TV from your phone (the 3D phone typing "Dune"), trying another version of a bad copy, skipping the intro, live TV with a guide, your year, and every screen it runs on.
 - **Sign out** is in Watch's profile menu (it was only in the library manager's).

@@ -6,6 +6,19 @@ import { applyTheme } from './theme'
 // The household's profiles and the one this device is on, for every Watch page.
 
 // Each is dark enough for the white initial on it to read (4.5:1 or more).
+// The pictures a profile can wear on its color (the server's AvatarIcons),
+// drawn as emoji so they look the same on every screen.
+export const AVATAR_ICONS: Record<string, string> = {
+  fox: '🦊', cat: '🐱', dog: '🐶', panda: '🐼', koala: '🐨', lion: '🦁', frog: '🐸', monkey: '🐵', unicorn: '🦄',
+  octopus: '🐙', penguin: '🐧', owl: '🦉', rocket: '🚀', star: '⭐', game: '🎮', ball: '⚽', pizza: '🍕', alien: '👾',
+}
+
+// avatarParts splits "teal/fox" into its color and picture ("" for none).
+export function avatarParts(avatar: string): { color: string; icon: string } {
+  const [color, icon = ''] = avatar.split('/')
+  return { color: color || 'teal', icon: AVATAR_ICONS[icon] ? icon : '' }
+}
+
 export const AVATAR_COLORS: Record<string, string> = {
   teal: '#0f766e',
   red: '#dc2626',
@@ -71,15 +84,16 @@ export function useProfiles(): ProfilesState {
   return v
 }
 
-// Avatar is a profile's colored tile with its initial.
+// Avatar is a profile's colored tile with its picture, or its initial.
 export function Avatar({ profile, size = 40 }: { profile: Pick<WatchProfile, 'name' | 'avatar'>; size?: number }) {
+  const { color, icon } = avatarParts(profile.avatar)
   return (
     <span
-      className="wx-avatar"
-      style={{ width: size, height: size, fontSize: size * 0.48, background: AVATAR_COLORS[profile.avatar] ?? AVATAR_COLORS.teal }}
+      className={`wx-avatar${icon ? ' pic' : ''}`}
+      style={{ width: size, height: size, fontSize: size * (icon ? 0.62 : 0.48), background: AVATAR_COLORS[color] ?? AVATAR_COLORS.teal }}
       aria-hidden="true"
     >
-      {(profile.name.trim()[0] ?? '?').toUpperCase()}
+      {icon ? AVATAR_ICONS[icon] : (profile.name.trim()[0] ?? '?').toUpperCase()}
     </span>
   )
 }

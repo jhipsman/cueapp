@@ -326,7 +326,7 @@ fun ProfilesScreen(api: CueApi, pickAlone: Boolean = true, signOut: () -> Unit =
                             border = CardDefaults.border(focusedBorder = Border(BorderStroke(3.dp, Color.White), shape = CircleShape)),
                         ) {
                             Box(Modifier.fillMaxSize().background(p.accent?.let { accentOf(it) } ?: avatarColor(p.avatar)), contentAlignment = Alignment.Center) {
-                                Text(p.name.take(1).uppercase(), fontSize = 44.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                                AvatarFace(p.avatar, p.name, 44.sp)
                             }
                         }
                         Gap(10.dp)
@@ -359,7 +359,25 @@ fun ProfilesScreen(api: CueApi, pickAlone: Boolean = true, signOut: () -> Unit =
     }
 }
 
-fun avatarColor(name: String): Color = when (name) {
+// The pictures a profile can wear on its color (the server's AvatarIcons),
+// as emoji. An avatar is "teal" or "teal/fox".
+private val avatarEmoji = mapOf(
+    "fox" to "🦊", "cat" to "🐱", "dog" to "🐶", "panda" to "🐼", "koala" to "🐨", "lion" to "🦁", "frog" to "🐸", "monkey" to "🐵",
+    "unicorn" to "🦄", "octopus" to "🐙", "penguin" to "🐧", "owl" to "🦉", "rocket" to "🚀", "star" to "⭐", "game" to "🎮",
+    "ball" to "⚽", "pizza" to "🍕", "alien" to "👾",
+)
+
+fun avatarPicture(avatar: String): String? = avatarEmoji[avatar.substringAfter('/', "")]
+
+// A profile's face: its picture, or the first letter of its name.
+@Composable
+fun AvatarFace(avatar: String, name: String, size: androidx.compose.ui.unit.TextUnit, letterColor: Color = Color.White) {
+    val pic = avatarPicture(avatar)
+    if (pic != null) Text(pic, fontSize = size * 1.25f)
+    else Text(name.take(1).uppercase().ifEmpty { "?" }, fontSize = size, fontWeight = FontWeight.Bold, color = letterColor)
+}
+
+fun avatarColor(avatar: String): Color = when (avatar.substringBefore('/')) {
     "red" -> Color(0xFFE5484D)
     "orange" -> Color(0xFFF76B15)
     "yellow" -> Color(0xFFE2A336)
@@ -457,8 +475,8 @@ fun MainScreen(api: CueApi, playback: Playback, openWeb: (String) -> Unit, chang
                     Tab(selected = tab == tabs.size, onFocus = { tab = tabs.size }, modifier = Modifier.focusRequester(tabFocus[tabs.size])) {
                         Box(Modifier.padding(horizontal = 8.dp, vertical = 3.dp).size(22.dp).clip(CircleShape).background(LocalAccent.current),
                             contentAlignment = Alignment.Center) {
-                            Text(api.profileName.take(1).uppercase().ifEmpty { "?" }, fontSize = 11.sp, fontWeight = FontWeight.Bold,
-                            color = if (LocalAccent.current.luminance() > 0.45f) Color.Black else Color.White)
+                            AvatarFace(api.profileAvatar, api.profileName, 11.sp,
+                                letterColor = if (LocalAccent.current.luminance() > 0.45f) Color.Black else Color.White)
                         }
                     }
                 }
@@ -997,7 +1015,7 @@ fun ProfileScreen(api: CueApi, switchProfile: () -> Unit, changeServer: () -> Un
     Centered {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Box(Modifier.size(96.dp).clip(CircleShape).background(LocalAccent.current), contentAlignment = Alignment.Center) {
-                Text(api.profileName.take(1).uppercase(), fontSize = 40.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                AvatarFace(api.profileAvatar, api.profileName, 40.sp)
             }
             Gap(12.dp)
             Text(api.profileName, fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color.White)

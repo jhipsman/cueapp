@@ -23,7 +23,7 @@ import { Avatar, ProfilesProvider, useProfiles } from './profiles'
 import { RemindersProvider } from './reminders'
 import { useModules } from '../ModulesContext'
 import { useAuth } from '../AuthContext'
-import { api } from '../api'
+import { api, isAdmin } from '../api'
 import { installTVNavigation, onTV, refocusSoon } from './tv'
 import './watch.css'
 
@@ -126,7 +126,8 @@ function ProfileGate() {
 // profiles and settings (the main profile only).
 function ProfileMenu() {
   const { active, data } = useProfiles()
-  const { setUser } = useAuth()
+  const { user, setUser } = useAuth()
+  const admin = isAdmin(user) // a family member's own account sees only its own name and password
   const { streamingOnly } = useModules()
   const navigate = useNavigate()
   const [open, setOpen] = useState(false)
@@ -179,7 +180,8 @@ function ProfileMenu() {
           <button onClick={() => navigate('/watch?tour=1')}>How Cue works</button>
           {owner && <button onClick={() => navigate('/watch/profiles')}>Manage profiles</button>}
           {onTV() && <button onClick={() => window.CueTV?.changeServer()}>Change server</button>}
-          {owner && <button onClick={() => navigate(streamingOnly ? '/settings/streaming' : '/')}>{streamingOnly ? 'Settings' : 'Settings and library'}</button>}
+          {owner && admin && <button onClick={() => navigate(streamingOnly ? '/settings/streaming' : '/')}>{streamingOnly ? 'Settings' : 'Settings and library'}</button>}
+          {owner && !admin && <button onClick={() => navigate('/settings/profile')}>Your account</button>}
           <button onClick={() => void signOut()}>Sign out</button>
         </div>
       )}
