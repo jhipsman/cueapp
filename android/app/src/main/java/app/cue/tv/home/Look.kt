@@ -261,6 +261,7 @@ fun Modifier.lift(focused: Boolean, scale: Float, shape: androidx.compose.ui.gra
     // drawn, so a new colour doesn't rebuild every card on the screen.
     val tintState = LocalTint.current
     val accent = LocalAccent.current
+    val light = lightMode() // a slow TV: no soft shadow (costly to draw)
     return this.graphicsLayer {
         val glow = tintState.value ?: accent
         val k = ((s - 1f) / (scale - 1f)).coerceIn(0f, 1f)
@@ -272,7 +273,7 @@ fun Modifier.lift(focused: Boolean, scale: Float, shape: androidx.compose.ui.gra
         // The shadow steps on with the highlight rather than growing frame by
         // frame (redrawing a big soft shadow every frame is what makes a
         // Fire TV stutter).
-        shadowElevation = if (focused) 18.dp.toPx() else 0f
+        shadowElevation = if (focused && !light) 18.dp.toPx() else 0f
         this.shape = shape
         clip = false
     }
@@ -282,11 +283,12 @@ fun Modifier.lift(focused: Boolean, scale: Float, shape: androidx.compose.ui.gra
 // light that sweeps across it once as the highlight arrives.
 @Composable
 fun Sheen(focused: Boolean, modifier: Modifier = Modifier) {
+    val light = lightMode() // a slow TV: the shine, without the moving band
     val sweep = remember { androidx.compose.animation.core.Animatable(-1f) }
     val glow by androidx.compose.animation.core.animateFloatAsState(if (focused) 1f else 0f,
         androidx.compose.animation.core.tween(300), label = "glow")
     LaunchedEffect(focused) {
-        if (focused) {
+        if (focused && !light) {
             sweep.snapTo(-0.5f)
             sweep.animateTo(1.5f, androidx.compose.animation.core.tween(1100, easing = Settle))
         } else {
