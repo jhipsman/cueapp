@@ -59,6 +59,8 @@ under [Unreleased]. How releases are cut: [docs/RELEASING.md](docs/RELEASING.md)
 - **Stream add-ons**: paste a Stremio add-on link (Comet on ElfHosted, Torrentio, MediaFusion) in Settings > Downloading, and Play asks it for streams first, with its own scrapers and sorting. Links set up with your Premiumize key play straight away; Cue's own search is the fallback. See [docs/watch.md](docs/watch.md#stream-add-ons-comet-torrentio-mediafusion).
 
 ### Changed
+- **Smoother everywhere on Fire TV and Google TV**: opening a title zooms it in over Home and Back zooms it away; the player fades in and out; its controls glide up as they appear; pausing dims the picture and the pause mark pops in softly instead of snapping on.
+- **New buttons** (Fire TV, Google TV): frosted glass with a fine edge and real icons (Play, My List); the one the remote is on turns white, lifts and gets a soft ring of light in the profile's colour.
 - **Home on Fire TV and Google TV, as on a title's page**: the highlighted title's picture fills the screen behind the tabs and rows, fading into the page, with its logo and story on it, instead of a banner in a card. The blurred picture behind Home is gone too (costly on a TV).
 - **A faster TV app**: it's now optimized when built (R8), and installs Compose's ready-made startup profiles itself, which an APK installed outside the app store otherwise goes without, so screens and scrolling are smooth from the first use.
 - **Previews are ready before you open a title**: everything Home shows gets its clip made while nobody is using Cue (no one signed in has done anything for half an hour: overnight, mostly), one after another while the server is quiet. Clips are 12 seconds now (twice as quick to make, about 2–3 MB each), so one not made yet appears sooner.
@@ -101,6 +103,7 @@ under [Unreleased]. How releases are cut: [docs/RELEASING.md](docs/RELEASING.md)
 - **Premiumize.me as a downloader.** Add your Premiumize API key in Settings > Downloading > Usenet and torrents, under Cloud downloader, and torrents (or Usenet, or both, your choice) are downloaded by Premiumize on its own servers instead of by the built-in client. Releases Premiumize already has are ready at once. Cue then fetches the finished files over HTTPS, picks up where it stopped after a pause, and removes the transfer and its files from your Premiumize cloud once they are home. Torrents fetched this way need no VPN and don't seed. See [docs/downloads.md](docs/downloads.md#premiumize).
 
 ### Fixed
+- Back from a title opened from More Like This goes straight back where you were (Fire TV, Google TV), instead of through every title on the way.
 - Home on Fire TV and Google TV: a highlighted row's title ("Trending movies") no longer slides under the banner, and rows and posters glide for a shorter time, which stutters less on slow TVs.
 - Previews play the **English** sound when a version has several languages (they took whichever came first, sometimes a dub); clips made before are made again. On Fire TV and Google TV a title page's moment prefers English too.
 - Family members (not administrators) can add, change and remove their own account's profiles, pictures included, from its main profile; it said only an administrator could.

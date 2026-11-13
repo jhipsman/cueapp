@@ -41,6 +41,8 @@ class HomeActivity : ComponentActivity() {
                 Intent(this, PlayerActivity::class.java)
                     .putExtra(PlayerActivity.EXTRA_JSON, json)
                     .putExtra(PlayerActivity.EXTRA_SERVER, server),
+                // The player fades in, rather than the TV's own window switch.
+                androidx.core.app.ActivityOptionsCompat.makeCustomAnimation(this, android.R.anim.fade_in, android.R.anim.fade_out),
             )
         }
         setContent {
