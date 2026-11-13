@@ -746,9 +746,11 @@ func (s *Server) protectedRoutes() *routeTable {
 	admin.HandleFunc("PUT /api/settings/omdb", s.handlePutOMDb)
 	admin.HandleFunc("GET /api/settings/youtube", s.handleGetYouTube)
 	admin.HandleFunc("PUT /api/settings/youtube", s.handlePutYouTube)
-	admin.HandleFunc("POST /api/profiles", s.handleAddWatchProfile)
-	admin.HandleFunc("PUT /api/profiles/{id}", s.handleUpdateWatchProfile)
-	admin.HandleFunc("DELETE /api/profiles/{id}", s.handleRemoveWatchProfile)
+	// Each account manages its own profiles (a family member's too: their
+	// account's, never anyone else's), from its main profile.
+	play.HandleFunc("POST /api/profiles", s.handleAddWatchProfile)
+	play.HandleFunc("PUT /api/profiles/{id}", s.handleUpdateWatchProfile)
+	play.HandleFunc("DELETE /api/profiles/{id}", s.handleRemoveWatchProfile)
 	admin.HandleFunc("GET /api/settings/streaming", s.handleGetStreamingSettings)
 	admin.HandleFunc("GET /api/settings/streaming/setup", s.handleStreamingSetup)
 	admin.HandleFunc("GET /api/settings/iptv", s.handleGetIPTV)

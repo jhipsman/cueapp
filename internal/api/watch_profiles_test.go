@@ -128,3 +128,53 @@ func TestWatchProfilesAndTheSettingsLock(t *testing.T) {
 }
 
 func itoa(n int64) string { return strconv.FormatInt(n, 10) }
+
+// A family member (not an administrator) manages their own account's
+// profiles, and can't touch anyone else's.
+func TestMemberManagesOwnProfiles(t *testing.T) {
+	s := newBareServer(t)
+	if _, err := s.db.Exec(`INSERT INTO users (id, username, password_hash, is_admin) VALUES (1, 'dad', 'x', 1), (2, 'amy', 'x', 0)`); err != nil {
+		t.Fatal(err)
+	}
+	routes := s.protectedRoutes()
+	as := func(u *auth.User, method, target, body string, pathValues ...string) *httptest.ResponseRecorder {
+		r := httptest.NewRequest(method, target, strings.NewReader(body)).WithContext(auth.WithUser(context.Background(), u))
+		for i := 0; i+1 < len(pathValues); i += 2 {
+			r.SetPathValue(pathValues[i], pathValues[i+1])
+		}
+		w := httptest.NewRecorder()
+		routes.ServeHTTP(w, r)
+		return w
+	}
+	dad := &auth.User{ID: 1, Username: "dad", IsAdmin: true}
+	amy := &auth.User{ID: 2, Username: "amy"}
+	listOf := func(u *auth.User) profilesPayload {
+		var p profilesPayload
+		_ = json.Unmarshal(as(u, "GET", "/api/profiles", "").Body.Bytes(), &p)
+		return p
+	}
+	dadMain := listOf(dad).Profiles[0].ID
+	amyMain := listOf(amy).Profiles[0].ID
+
+	if w := as(amy, "PUT", "/api/profiles/"+itoa(amyMain), `{"avatar":"pink/unicorn"}`, "id", itoa(amyMain)); w.Code != http.StatusOK {
+		t.Fatalf("Amy picking her picture: %d %s", w.Code, w.Body)
+	}
+	if got := listOf(amy).Profiles[0].Avatar; got != "pink/unicorn" {
+		t.Errorf("Amy's avatar = %q", got)
+	}
+	if w := as(amy, "POST", "/api/profiles", `{"name":"Amy's kids","avatar":"yellow/panda"}`); w.Code != http.StatusCreated {
+		t.Fatalf("Amy adding a profile: %d %s", w.Code, w.Body)
+	}
+	if n := len(listOf(dad).Profiles); n != 1 {
+		t.Errorf("Amy's profile landed in Dad's account: he has %d", n)
+	}
+	if w := as(amy, "PUT", "/api/profiles/"+itoa(dadMain), `{"name":"hacked"}`, "id", itoa(dadMain)); w.Code == http.StatusOK {
+		t.Fatalf("Amy changed Dad's profile")
+	}
+	if w := as(amy, "DELETE", "/api/profiles/"+itoa(dadMain), "", "id", itoa(dadMain)); w.Code == http.StatusNoContent {
+		t.Fatalf("Amy removed Dad's profile")
+	}
+	if listOf(dad).Profiles[0].Name != "dad" {
+		t.Error("Dad's profile changed")
+	}
+}

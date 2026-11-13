@@ -56,6 +56,7 @@ under [Unreleased]. How releases are cut: [docs/RELEASING.md](docs/RELEASING.md)
 - **Stream add-ons**: paste a Stremio add-on link (Comet on ElfHosted, Torrentio, MediaFusion) in Settings > Downloading, and Play asks it for streams first, with its own scrapers and sorting. Links set up with your Premiumize key play straight away; Cue's own search is the fallback. See [docs/watch.md](docs/watch.md#stream-add-ons-comet-torrentio-mediafusion).
 
 ### Changed
+- The cloud image built from every change is for Intel/AMD servers only, so it's ready in about half the time; releases still build for ARM too.
 - A family member's menu in Watch shows **Your account** (their own name and password) instead of Settings.
 - **Downloader code 3575368** (cuetv.me/tv.apk) on the front page's Fire TV steps, so the app installs by typing a short number.
 - **Front page, what's in it**: the parts that make Cue different: every movie and show with no subscriptions, searching the TV from your phone (the 3D phone typing "Dune"), trying another version of a bad copy, skipping the intro, live TV with a guide, your year, and every screen it runs on.
@@ -94,6 +95,7 @@ under [Unreleased]. How releases are cut: [docs/RELEASING.md](docs/RELEASING.md)
 - **Premiumize.me as a downloader.** Add your Premiumize API key in Settings > Downloading > Usenet and torrents, under Cloud downloader, and torrents (or Usenet, or both, your choice) are downloaded by Premiumize on its own servers instead of by the built-in client. Releases Premiumize already has are ready at once. Cue then fetches the finished files over HTTPS, picks up where it stopped after a pause, and removes the transfer and its files from your Premiumize cloud once they are home. Torrents fetched this way need no VPN and don't seed. See [docs/downloads.md](docs/downloads.md#premiumize).
 
 ### Fixed
+- Family members (not administrators) can add, change and remove their own account's profiles, pictures included, from its main profile; it said only an administrator could.
 - The tour on Fire TV and Google TV: the remote now moves between its buttons instead of the screen behind it.
 - **Smoother edges on the web**: cards draw their faint edge inside the picture (a bright ring outside it showed stair-steps and a seam as cards lifted), and rounded panels keep their background inside their border, so corners no longer show a lighter, stepped halo.
 - **Trailers on the web start sooner and never show YouTube's buttons**: they begin loading half a second after the banner settles (not two and a half), sit a little further zoomed past YouTube's title bar, and hide whenever YouTube pauses, ends or reloads, when it shows its play button. On the TV a title's page starts its clip after 0.8 s instead of 2.

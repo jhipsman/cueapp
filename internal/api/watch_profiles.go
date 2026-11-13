@@ -223,8 +223,22 @@ func writeWatchProfileError(w http.ResponseWriter, err error) {
 	}
 }
 
+// profilesFromMain is the lock on adding, changing and removing an
+// account's profiles: only from its main profile (in a household with
+// several), so the kids' profile can't rename or unlock the others.
+func (s *Server) profilesFromMain(w http.ResponseWriter, r *http.Request) bool {
+	if s.mainProfileActive(r) {
+		return true
+	}
+	writeError(w, http.StatusForbidden, "Profiles are changed from the main profile. Switch to it first.")
+	return false
+}
+
 // POST /api/profiles {"name","avatar"} (main profile only)
 func (s *Server) handleAddWatchProfile(w http.ResponseWriter, r *http.Request) {
+	if !s.profilesFromMain(w, r) {
+		return
+	}
 	u := auth.UserFromContext(r.Context())
 	var req struct {
 		Name   string `json:"name"`
@@ -245,6 +259,9 @@ func (s *Server) handleAddWatchProfile(w http.ResponseWriter, r *http.Request) {
 // PUT /api/profiles/{id} {"name"?, "avatar"?, "pin"?} (main profile only;
 // "pin": "" removes it)
 func (s *Server) handleUpdateWatchProfile(w http.ResponseWriter, r *http.Request) {
+	if !s.profilesFromMain(w, r) {
+		return
+	}
 	u := auth.UserFromContext(r.Context())
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
@@ -278,6 +295,9 @@ func (s *Server) handleUpdateWatchProfile(w http.ResponseWriter, r *http.Request
 
 // DELETE /api/profiles/{id} (main profile only; not the main profile)
 func (s *Server) handleRemoveWatchProfile(w http.ResponseWriter, r *http.Request) {
+	if !s.profilesFromMain(w, r) {
+		return
+	}
 	u := auth.UserFromContext(r.Context())
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
