@@ -17,6 +17,7 @@ import Splash from './components/Splash'
 import Library from './pages/Library'
 import Login from './pages/Login'
 import Landing from './pages/Landing'
+import SetupTV from './pages/SetupTV'
 import Join from './pages/Join'
 import MovieDetail from './pages/MovieDetail'
 import Onboarding from './pages/Onboarding'
@@ -98,6 +99,8 @@ function Gate() {
     if (location.pathname === '/') return <Landing />
     // A family invite link: make your own account.
     if (location.pathname.startsWith('/join/')) return <Join />
+    // How to get Cue on a TV, with pictures (the invite text links here).
+    if (location.pathname === '/setup-tv') return <SetupTV />
     return <Login />
   }
   if (needsWizard) {
@@ -116,6 +119,7 @@ function Gate() {
       />
       {/* cuetv.me/link: what the TV's sign-in says to type on a phone. */}
       <Route path="/link/:code?" element={<LinkRedirect />} />
+      <Route path="/setup-tv" element={<SetupTV />} />
       <Route
         path="/watch/*"
         element={

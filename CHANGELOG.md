@@ -12,6 +12,7 @@ under [Unreleased]. How releases are cut: [docs/RELEASING.md](docs/RELEASING.md)
 - Releases are signed with a new update key, held only by the project owner. **Update now** installs only releases signed with it.
 
 ### Added
+- **Get Cue on your TV, with pictures** (cuetv.me/setup-tv): each step for a Fire TV or a Google TV with a drawing of the TV screen and what to press lit: getting Downloader, allowing it to install apps (and turning on developer options), typing the code, installing, and signing in with a phone. Open to anyone; the texted invite and the front page link to it.
 - **Text the invite**: Settings > Accounts > Invite family has **Text it** (opens Messages on a phone with the invite written out: the link, then how to get Cue on a Fire TV or Google TV with Downloader's code), **Share**, and **Copy the whole message**.
 - **Manage profiles on the TV** (Fire TV, Google TV): Profile > Manage profiles changes each profile's name, picture and color, adds one or removes one, with the remote (from the main profile; PINs are set on the web).
 - **Light mode** (Fire TV, Google TV): still pictures instead of moving previews, and highlighted cards without their soft shadow and sweeping shine (the parts that redraw every frame), for TVs with a slow processor. On by itself on TVs with little memory (most built-in Google TVs); Profile switches it.
@@ -60,6 +61,7 @@ under [Unreleased]. How releases are cut: [docs/RELEASING.md](docs/RELEASING.md)
 - **Stream add-ons**: paste a Stremio add-on link (Comet on ElfHosted, Torrentio, MediaFusion) in Settings > Downloading, and Play asks it for streams first, with its own scrapers and sorting. Links set up with your Premiumize key play straight away; Cue's own search is the fallback. See [docs/watch.md](docs/watch.md#stream-add-ons-comet-torrentio-mediafusion).
 
 ### Changed
+- **Cleaner buttons on Fire TV and Google TV**: every button the same frosted glass with white words; only the one the remote is on turns solid white and grows a touch (no coloured ring). Seasons and channel groups are plain tabs, the chosen one with a short line under it, so the highlight and the choice never look alike.
 - **Smoother everywhere on Fire TV and Google TV**: opening a title zooms it in over Home and Back zooms it away; the player fades in and out; its controls glide up as they appear; pausing dims the picture and the pause mark pops in softly instead of snapping on.
 - **New buttons** (Fire TV, Google TV): frosted glass with a fine edge and real icons (Play, My List); the one the remote is on turns white, lifts and gets a soft ring of light in the profile's colour.
 - **Home on Fire TV and Google TV, as on a title's page**: the highlighted title's picture fills the screen behind the tabs and rows, fading into the page, with its logo and story on it, instead of a banner in a card. The blurred picture behind Home is gone too (costly on a TV).

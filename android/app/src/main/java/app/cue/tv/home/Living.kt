@@ -300,7 +300,7 @@ fun UpNextScreen(api: CueApi, next: Playback.UpNext, play: () -> Unit, dismiss: 
                             style = androidx.compose.ui.graphics.drawscope.Stroke(4.dp.toPx(), cap = androidx.compose.ui.graphics.StrokeCap.Round))
                     }
                 }
-                Pill("▶  Play now", primary = true, modifier = Modifier.focusRequester(focus), onClick = play)
+                Pill("Play now", primary = true, icon = app.cue.tv.R.drawable.ic_cue_play, modifier = Modifier.focusRequester(focus), onClick = play)
                 Pill("Back", onClick = dismiss)
             }
         }

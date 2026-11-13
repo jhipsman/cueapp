@@ -568,7 +568,7 @@ function InviteCard({ onChanged }: { onChanged: () => void }) {
   const message = [
     "You're invited to Cue, the family's streaming app.",
     `1. Make your account: ${link}`,
-    `2. On a Fire TV or Google TV: install the free Downloader app, open it, ${tvStep}, then Install.`,
+    `2. On a Fire TV or Google TV: install the free Downloader app, open it, ${tvStep}, then Install. Step by step, with pictures: ${window.location.origin}/setup-tv`,
     "3. Open Cue on the TV and scan the code with your phone to sign in.",
     `On a phone or laptop, just go to ${window.location.host}.`,
   ].join('\n\n')

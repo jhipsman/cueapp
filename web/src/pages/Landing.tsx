@@ -405,6 +405,9 @@ export default function Landing() {
                     <p>
                       Or the address <b>{host}/tv.apk</b>
                     </p>
+                    <p>
+                      <a href="/setup-tv">Step by step, with pictures</a>
+                    </p>
                   </>
                 ) : (
                   <>

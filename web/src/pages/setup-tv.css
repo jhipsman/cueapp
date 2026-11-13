@@ -1,0 +1,354 @@
+/* Get Cue on your TV (SetupTV.tsx): steps, each with a drawn TV screen. */
+.stv {
+  --teal: #34d1bf;
+  --dl: #f47a20; /* Downloader's orange */
+  min-height: 100dvh;
+  padding: max(28px, env(safe-area-inset-top)) 16px 48px;
+  background: radial-gradient(600px 360px at 85% -5%, rgba(52, 209, 191, 0.18), transparent 70%), #0d0f13;
+  color: #f2f3f5;
+  font-family: Inter, system-ui, sans-serif;
+}
+.stv > * {
+  max-width: 760px;
+  margin-inline: auto;
+}
+.stv header {
+  display: grid;
+  justify-items: start;
+  gap: 8px;
+  margin-bottom: 22px;
+}
+.stv-logo {
+  width: 40px;
+  height: 40px;
+  color: var(--teal);
+}
+.stv h1 {
+  margin: 4px 0 0;
+  font: 800 clamp(28px, 7vw, 40px) / 1.05 Sora, system-ui, sans-serif;
+  letter-spacing: -0.02em;
+}
+.stv header p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.65);
+  font-size: 16px;
+}
+.stv-tabs {
+  display: flex;
+  gap: 6px;
+  padding: 4px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  width: fit-content;
+  margin-bottom: 22px;
+  margin-left: max(0px, calc((100% - 760px) / 2));
+}
+.stv-tabs button {
+  border: 0;
+  border-radius: 999px;
+  padding: 9px 18px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.7);
+  font: 600 15px Inter, system-ui, sans-serif;
+  cursor: pointer;
+}
+.stv-tabs button.on {
+  background: #fff;
+  color: #0b0c0f;
+}
+.stv-steps {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: 18px;
+}
+.stv-steps li {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  gap: 20px;
+  align-items: center;
+  padding: 16px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.04);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.07);
+}
+@media (max-width: 620px) {
+  .stv-steps li {
+    grid-template-columns: 1fr;
+  }
+}
+.stv-words {
+  display: grid;
+  gap: 6px;
+}
+.stv-n {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--teal);
+  color: #06201d;
+  font-weight: 800;
+  font-size: 14px;
+}
+.stv h2 {
+  margin: 4px 0 0;
+  font: 700 20px/1.2 Sora, system-ui, sans-serif;
+}
+.stv-text {
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 15.5px;
+  line-height: 1.55;
+}
+.stv-text b {
+  color: #fff;
+}
+.stv-text small {
+  display: block;
+  margin-top: 8px;
+  font-size: 13.5px;
+  color: rgba(255, 255, 255, 0.55);
+}
+.stv-path {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 10px 0 0;
+  font-size: 13.5px;
+  font-weight: 600;
+}
+.stv-path span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.stv-path span:not(:has(em)),
+.stv-path span {
+  color: #fff;
+}
+.stv-path em {
+  font-style: normal;
+  color: var(--teal);
+  margin: 0 2px;
+}
+.stv-foot {
+  margin-top: 26px;
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 14px;
+}
+
+/* The drawn TV screen */
+.stv-screen {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  border-radius: 10px;
+  overflow: hidden;
+  background: linear-gradient(160deg, #1d2230, #10131a);
+  box-shadow:
+    0 0 0 5px #08090c,
+    0 0 0 6px #2a2e36,
+    0 18px 40px rgba(0, 0, 0, 0.5);
+  padding: 7% 8%;
+  container-type: inline-size;
+  font-size: 4.2cqw;
+  color: #e9ebef;
+}
+.lit {
+  outline: 0.6cqw solid #fff;
+  outline-offset: 0.5cqw;
+  animation: stv-pulse 1.8s ease-in-out infinite;
+}
+@keyframes stv-pulse {
+  50% {
+    outline-color: rgba(255, 255, 255, 0.35);
+  }
+}
+.stv-search {
+  display: flex;
+  align-items: center;
+  gap: 2cqw;
+  padding: 2cqw 3cqw;
+  border-radius: 2cqw;
+  background: rgba(255, 255, 255, 0.1);
+  width: 60%;
+}
+.stv-glass {
+  opacity: 0.7;
+}
+.stv-results {
+  display: flex;
+  gap: 4cqw;
+  margin-top: 6cqw;
+}
+.stv-app {
+  width: 22cqw;
+  aspect-ratio: 16 / 10;
+  border-radius: 2cqw;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 1cqw;
+  background: var(--dl);
+  color: #fff;
+  font-weight: 800;
+}
+.stv-app small {
+  font-size: 2.6cqw;
+  font-weight: 700;
+}
+.stv-dl {
+  font-size: 6cqw;
+  line-height: 1;
+}
+.stv-app.dim {
+  background: rgba(255, 255, 255, 0.08);
+}
+.stv-get {
+  position: absolute;
+  right: 8%;
+  bottom: 10%;
+  padding: 1.6cqw 4cqw;
+  border-radius: 99px;
+  background: #fff;
+  color: #0b0c0f;
+  font-weight: 700;
+}
+.stv-crumb {
+  margin: 0 0 4cqw;
+  font-size: 3cqw;
+  color: rgba(255, 255, 255, 0.55);
+}
+.stv-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 2.4cqw 3cqw;
+  border-radius: 1.6cqw;
+  margin-bottom: 1.6cqw;
+  background: rgba(255, 255, 255, 0.05);
+}
+.stv-row.lit {
+  background: rgba(255, 255, 255, 0.16);
+}
+.stv-row b {
+  opacity: 0.5;
+}
+.stv-toggle {
+  width: 8cqw;
+  height: 4.4cqw;
+  border-radius: 99px;
+  background: rgba(255, 255, 255, 0.25);
+  position: relative;
+}
+.stv-toggle::after {
+  content: '';
+  position: absolute;
+  top: 0.6cqw;
+  left: 0.6cqw;
+  width: 3.2cqw;
+  height: 3.2cqw;
+  border-radius: 50%;
+  background: #fff;
+}
+.stv-toggle.on {
+  background: var(--teal);
+}
+.stv-toggle.on::after {
+  left: auto;
+  right: 0.6cqw;
+}
+.stv-dlbar {
+  margin: -7% -8% 4cqw;
+  padding: 2.4cqw 8%;
+  background: var(--dl);
+  font-weight: 800;
+}
+.stv-field {
+  padding: 2.4cqw 3cqw;
+  border-radius: 1.6cqw;
+  background: #fff;
+  color: #0b0c0f;
+  font-weight: 800;
+  letter-spacing: 0.3em;
+}
+.stv-keys {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 1.6cqw;
+  margin-top: 4cqw;
+}
+.stv-keys span {
+  display: grid;
+  place-items: center;
+  padding: 1.6cqw 0;
+  border-radius: 1.2cqw;
+  background: rgba(255, 255, 255, 0.08);
+  font-weight: 600;
+}
+.stv-keys .wide {
+  grid-column: span 2;
+  background: #fff;
+  color: #0b0c0f;
+  font-weight: 800;
+}
+.stv-dialog {
+  height: 100%;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 2cqw;
+  text-align: center;
+}
+.stv-dialog p {
+  margin: 0;
+}
+.stv-mark {
+  width: 9cqw;
+  height: 9cqw;
+  color: var(--teal);
+}
+.stv-dialog-buttons {
+  display: flex;
+  gap: 3cqw;
+  margin-top: 2cqw;
+}
+.stv-dialog-buttons span {
+  padding: 1.6cqw 5cqw;
+  border-radius: 99px;
+  background: rgba(255, 255, 255, 0.1);
+}
+.stv-dialog-buttons .lit {
+  background: #fff;
+  color: #0b0c0f;
+  font-weight: 700;
+}
+.stv-signin {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  gap: 6cqw;
+}
+.stv-signin p {
+  margin: 2cqw 0 0;
+  font-size: 3.4cqw;
+  color: rgba(255, 255, 255, 0.8);
+}
+.stv-qr {
+  flex: none;
+  width: 30cqw;
+  aspect-ratio: 1;
+  border-radius: 2cqw;
+  background:
+    linear-gradient(#000, #000) 8% 8% / 24% 24% no-repeat,
+    linear-gradient(#000, #000) 92% 8% / 24% 24% no-repeat,
+    linear-gradient(#000, #000) 8% 92% / 24% 24% no-repeat,
+    repeating-conic-gradient(#000 0 25%, #fff 0 50%) 0 0 / 16% 16%,
+    #fff;
+  box-shadow: 0 0 0 2cqw #fff;
+}
+@media (prefers-reduced-motion: reduce) {
+  .lit {
+    animation: none;
+  }
+}

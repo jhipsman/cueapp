@@ -803,7 +803,7 @@ fun TitleScreen(api: CueApi, playback: Playback, card: Tile, memory: FocusMemory
                 item {
                     LazyRow(Modifier.focusRestorer(), contentPadding = PaddingValues(horizontal = Gutter, vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         items(t.seasons, key = { it.number }) { s ->
-                            Pill(s.name, primary = s.number == season) { season = s.number }
+                            ChoiceTab(s.name, selected = s.number == season) { season = s.number }
                         }
                     }
                 }
@@ -939,7 +939,7 @@ fun LiveScreen(api: CueApi, playback: Playback, openWeb: (String) -> Unit) {
                 Gap(8.dp)
             }
             items(groups, key = { it.first }) { (id, name) ->
-                Pill(name, primary = id == group, modifier = Modifier.fillMaxWidth()) { group = id }
+                ChoiceTab(name, selected = id == group, modifier = Modifier.fillMaxWidth()) { group = id }
             }
         }
         CompositionLocalProvider(LocalBringIntoViewSpec provides PivotSpec) {

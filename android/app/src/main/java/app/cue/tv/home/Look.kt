@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.foundation.layout.offset
 import androidx.tv.material3.Border
 import androidx.compose.foundation.BorderStroke
 import androidx.tv.material3.LocalContentColor
@@ -188,42 +189,77 @@ fun TitleMark(title: String, logo: String?, maxWidth: Dp, maxHeight: Dp, fontSiz
     }
 }
 
-// A pill button. The main one is solid white with dark words; others are
-// frosted glass with a fine edge. With the remote on it, any pill turns
-// white, lifts a little and gets a soft ring of light round it. An icon
-// (a drawable) sits before the words.
+// A pill button, as on Apple TV: every one frosted glass with white words
+// (the main one a little brighter), and only the one the remote is on turns
+// solid white with dark words and grows a touch. One look throughout, so
+// it's always clear where the highlight is. An icon (a drawable) can sit
+// before the words.
 @Composable
 fun Pill(text: String, primary: Boolean = false, modifier: Modifier = Modifier, small: String? = null, icon: Int? = null, onClick: () -> Unit) {
     val shape = RoundedCornerShape(50)
     Button(
         onClick = onClick,
-        modifier = modifier.height(38.dp),
+        modifier = modifier.height(36.dp),
         shape = ButtonDefaults.shape(shape),
-        scale = ButtonDefaults.scale(focusedScale = 1.06f, pressedScale = 0.97f),
+        scale = ButtonDefaults.scale(focusedScale = 1.05f, pressedScale = 0.98f),
         colors = ButtonDefaults.colors(
-            containerColor = if (primary) Color(0xF2FFFFFF) else Color(0x1FFFFFFF),
-            contentColor = if (primary) Color(0xFF0B0C0F) else Color(0xF2FFFFFF),
+            containerColor = if (primary) Color(0x40FFFFFF) else Color(0x24FFFFFF),
+            contentColor = Color.White,
             focusedContainerColor = Color.White,
             focusedContentColor = Color(0xFF0B0C0F),
             pressedContainerColor = Color(0xFFE6E7EA),
             pressedContentColor = Color(0xFF0B0C0F),
         ),
         border = ButtonDefaults.border(
-            border = Border(BorderStroke(1.dp, if (primary) Color.Transparent else Color(0x29FFFFFF)), shape = shape),
-            // A halo just outside the pill, in the profile's colour.
-            focusedBorder = Border(BorderStroke(2.dp, tint().copy(alpha = 0.75f)), inset = (-4).dp, shape = shape),
+            border = Border(BorderStroke(1.dp, Color(0x1FFFFFFF)), shape = shape),
+            focusedBorder = Border(BorderStroke(0.dp, Color.Transparent), shape = shape),
         ),
-        contentPadding = PaddingValues(start = if (icon != null) 16.dp else 20.dp, end = 20.dp, top = 0.dp, bottom = 0.dp),
+        contentPadding = PaddingValues(start = if (icon != null) 14.dp else 18.dp, end = 18.dp, top = 0.dp, bottom = 0.dp),
     ) {
         if (icon != null) {
             androidx.tv.material3.Icon(
                 androidx.compose.ui.res.painterResource(icon), contentDescription = null,
-                modifier = Modifier.size(16.dp),
+                modifier = Modifier.size(14.dp),
             )
             Spacer(Modifier.width(8.dp))
         }
-        Text(text, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 0.2.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
-        small?.let { Text("  $it", fontSize = 11.sp, fontWeight = FontWeight.Medium, color = LocalContentColor.current.copy(alpha = 0.6f)) }
+        Text(text, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        small?.let {
+            Spacer(Modifier.width(8.dp))
+            Text(it, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = LocalContentColor.current.copy(alpha = 0.6f), maxLines = 1)
+        }
+    }
+}
+
+// A choice among several (a season, a channel group): plain words, the
+// chosen one bright with a short line under it in the profile's colour; the
+// one the remote is on turns into a white pill, as buttons do.
+@Composable
+fun ChoiceTab(text: String, selected: Boolean, modifier: Modifier = Modifier, onClick: () -> Unit) {
+    val shape = RoundedCornerShape(50)
+    val line = tint()
+    Button(
+        onClick = onClick,
+        modifier = modifier.height(34.dp),
+        shape = ButtonDefaults.shape(shape),
+        scale = ButtonDefaults.scale(focusedScale = 1.05f, pressedScale = 0.98f),
+        colors = ButtonDefaults.colors(
+            containerColor = Color.Transparent,
+            contentColor = if (selected) Color.White else Color(0xA6FFFFFF),
+            focusedContainerColor = Color.White,
+            focusedContentColor = Color(0xFF0B0C0F),
+            pressedContainerColor = Color(0xFFE6E7EA),
+            pressedContentColor = Color(0xFF0B0C0F),
+        ),
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp),
+    ) {
+        Box(contentAlignment = Alignment.BottomCenter) {
+            Text(text, fontSize = 13.sp, fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium, maxLines = 1,
+                modifier = Modifier.padding(bottom = 3.dp))
+            if (selected) {
+                Box(Modifier.offset(y = 4.dp).width(18.dp).height(2.dp).clip(RoundedCornerShape(1.dp)).background(line))
+            }
+        }
     }
 }
 
