@@ -4,13 +4,14 @@ import "net/http"
 
 // contentSecurityPolicy fits the single-page app: everything comes from
 // Cue itself except poster and cover images (TMDB, the Cover Art
-// Archive and the Internet Archive it redirects to). Inline styles are
+// Archive and the Internet Archive it redirects to, and the music
+// catalog's album covers from Deezer). Inline styles are
 // allowed because React sets style attributes; scripts are never inline.
 const contentSecurityPolicy = "default-src 'self'; " +
 	"script-src 'self'; " +
 	// blob: styles and fonts are an EPUB's own, unpacked by the reader.
 	"style-src 'self' 'unsafe-inline' blob:; " +
-	"img-src 'self' data: blob: https://image.tmdb.org https://coverartarchive.org https://archive.org https://*.archive.org https://covers.openlibrary.org; " +
+	"img-src 'self' data: blob: https://image.tmdb.org https://coverartarchive.org https://archive.org https://*.archive.org https://covers.openlibrary.org https://e-cdns-images.dzcdn.net https://cdn-images.dzcdn.net https://cdns-images.dzcdn.net; " +
 	"font-src 'self' blob:; " +
 	// https: lets the player stream straight from Premiumize, whose files
 	// are served from changing CDN hosts.

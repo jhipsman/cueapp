@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { api, type ModuleKey } from '../../api'
 import Icon, { type IconName } from '../../components/Icon'
 import Switch from '../../components/Switch'
@@ -61,7 +62,7 @@ const MODULES: ModuleInfo[] = [
 // is off disappears from the menu and does nothing in the background, but
 // nothing is ever deleted, so switching it back on picks up where it left off.
 export default function ModulesSettings() {
-  const { modules, set, refresh } = useModules()
+  const { modules, set, refresh, streamingOnly } = useModules()
   const toast = useToast()
   const [busy, setBusy] = useState<ModuleKey | null>(null)
 
@@ -89,6 +90,12 @@ export default function ModulesSettings() {
 
   return (
     <div className="module-page">
+      {streamingOnly && (
+        <p className="module-intro module-paused">
+          <Icon name="info" size={16} /> Cue is set to <strong>Streaming only</strong>, so these do nothing for now: they're for downloading to the server,
+          which needs sites to search and room on its disk. <Link to="/settings/streaming">Change it in Streaming</Link>.
+        </p>
+      )}
       <p className="module-intro">
         Pick the kinds of media you want. A switched-off one leaves the menu, and <strong>nothing is deleted</strong>.
       </p>

@@ -1746,6 +1746,9 @@ button.cal-more:hover { text-decoration: underline; }
 /* Settings, Modules: one card per kind of media, side by side, equal height */
 .module-page { display: grid; gap: 18px; }
 .module-intro { margin: 0; color: var(--text-dim); max-width: 90ch; line-height: 1.55; }
+.module-paused { color: var(--text); padding: 12px 14px; border-radius: 12px; background: color-mix(in srgb, var(--accent) 10%, var(--surface)); border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--border)); }
+.module-paused svg { vertical-align: -3px; margin-right: 4px; }
+.module-paused a { color: var(--accent); font-weight: 600; }
 .module-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); gap: 16px; align-items: stretch; }
 .module-card {
   --mc: var(--accent);

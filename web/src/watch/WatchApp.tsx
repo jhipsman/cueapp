@@ -1,5 +1,8 @@
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import { Link, NavLink, Route, Routes, useLocation, useNavigate, useNavigationType, useSearchParams } from 'react-router-dom'
+import { MusicProvider } from './music/player'
+import PlayerBar from './music/PlayerBar'
+import { MusicAlbumPage, MusicArtistPage, MusicHome } from './music/MusicPages'
 import CueWordmark from '../components/CueWordmark'
 import Screensaver from './Screensaver'
 import Tour from './Tour'
@@ -48,6 +51,7 @@ export default function WatchApp() {
     <div className="wx">
       <ProfilesProvider>
         <RemindersProvider>
+        <MusicProvider>
         <ProfileGate />
         <Screensaver />
         <Tour />
@@ -77,15 +81,20 @@ export default function WatchApp() {
                 <Route path="list" element={<MyList />} />
                 <Route path="live" element={<LivePage />} />
                 <Route path="search" element={<SearchPage />} />
+                <Route path="music" element={<MusicHome />} />
+                <Route path="music/album/:id" element={<MusicAlbumPage />} />
+                <Route path="music/artist/:id" element={<MusicArtistPage />} />
                 <Route path="movie/:tmdbId" element={<TitlePage kind="movie" />} />
                 <Route path="tv/:tmdbId" element={<TitlePage kind="tv" />} />
                 <Route path="*" element={<Home />} />
               </Routes>
               </SectionView>
+              <PlayerBar />
             </>
           }
         />
         </Routes>
+        </MusicProvider>
         </RemindersProvider>
       </ProfilesProvider>
     </div>
@@ -109,7 +118,7 @@ function SectionView({ children }: { children: ReactNode }) {
     freshLoad.current = false
     // Back: the page you came from slides back in from the left. Opening a
     // title: it grows into place. Another section: a soft rise.
-    const anim = back ? 'wx-view-back' : /\/(movie|tv)\/\d+/.test(pathname) ? 'wx-view-open' : 'wx-view-in'
+    const anim = back ? 'wx-view-back' : /\/(movie|tv|music\/album|music\/artist)\/\d+/.test(pathname) ? 'wx-view-open' : 'wx-view-in'
     el.classList.remove('wx-view-in', 'wx-view-back', 'wx-view-open')
     void el.offsetWidth // restart the animation
     el.classList.add(anim)
@@ -224,6 +233,10 @@ function PhoneTabs() {
           Live TV
         </NavLink>
       )}
+      <NavLink to="/watch/music">
+        <Icon name="music" size={20} />
+        Music
+      </NavLink>
       <NavLink to="/watch/list">
         <Icon name="bookmark" size={20} />
         My List
@@ -274,6 +287,7 @@ function TopBar() {
         <NavLink to="/watch/movies">Movies</NavLink>
         <NavLink to="/watch/list">My List</NavLink>
         {liveTV && <NavLink to="/watch/live">Live TV</NavLink>}
+        <NavLink to="/watch/music">Music</NavLink>
       </div>
       <div className="wx-nav-right">
         <label className="wx-search">
