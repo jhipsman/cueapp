@@ -385,6 +385,12 @@ func (s *Server) servePlay(w http.ResponseWriter, r *http.Request, t playTarget)
 		entry.candidates = browserAudioFirst(entry.candidates, pm != nil)
 		entry.candidates = browserFilesFirst(entry.candidates)
 	}
+	if forClip(r.Context()) {
+		// Cutting a preview clip, not watching: the lightest version that
+		// looks the same in a 720p clip is several times quicker to cut on
+		// a small server than a 4K one.
+		entry.candidates = clipFriendlyFirst(entry.candidates)
+	}
 	if option > len(entry.candidates) {
 		// Past every version found (none would play here): the Internet
 		// Archive's and YouTube's, if not added yet.
