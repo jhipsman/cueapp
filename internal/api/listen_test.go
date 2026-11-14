@@ -176,3 +176,36 @@ func TestListenSoundFindsCachedRelease(t *testing.T) {
 		t.Errorf("songs = %+v", got.Tracks)
 	}
 }
+
+// Public sites' names often have no dash: the artist's and album's words
+// in the name still count, after the properly named ones.
+func TestRankAlbumReleasesWithoutDash(t *testing.T) {
+	res := []indexers.Result{
+		{Title: "Taylor Swift The Tortured Poets Department 2024 Mp3 320kbps PMEDIA", Seeders: 300},
+		{Title: "Taylor Swift - The Tortured Poets Department (2024) [FLAC]", Seeders: 10},
+		{Title: "Taylor Swift 1989 Taylors Version 2023 FLAC", Seeders: 500},
+		{Title: "Taylor Swift Discography 2006-2024 MP3", Seeders: 900},
+	}
+	got := rankAlbumReleases(res, "Taylor Swift", "The Tortured Poets Department", 2024)
+	if len(got) != 2 || !strings.Contains(got[0].Title, " - ") || !strings.Contains(got[1].Title, "PMEDIA") {
+		t.Errorf("got %+v: want the dashed one, then the undashed one; not 1989 or the discography", got)
+	}
+}
+
+func TestNothingFoundSaysWhichStep(t *testing.T) {
+	for _, c := range []struct {
+		sites           int
+		failed          []string
+		found, torrents int
+		want            string
+	}{
+		{2, []string{"A", "B"}, 0, 0, "None of your torrent sites answered"},
+		{2, nil, 0, 0, "found nothing at all"},
+		{2, nil, 4, 0, "none are torrents"},
+		{2, nil, 9, 9, "none of them is Record by Band"},
+	} {
+		if got := nothingFound("Band", "Record", c.sites, c.failed, c.found, c.torrents); !strings.Contains(got, c.want) {
+			t.Errorf("%+v: %q, want it to say %q", c, got, c.want)
+		}
+	}
+}
