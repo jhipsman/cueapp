@@ -32,12 +32,13 @@ import (
 // on them.
 
 const (
-	previewSeconds   = 12
-	previewMaxFiles  = 400
-	previewMaxBytes  = 1500 << 20
-	previewRetry     = 30 * time.Minute // after a failed try, how long before another
-	previewMaxQueued = 12               // clips waiting their turn
-	previewForgotten = 75 * time.Second // a clip nobody has asked about for this long isn't wanted any more
+	previewSeconds    = 12
+	previewMaxFiles   = 400
+	previewMaxBytes   = 1500 << 20
+	previewRetry      = 30 * time.Minute // after a failed try, how long before another
+	previewMaxQueued  = 12               // clips waiting their turn
+	previewTonightMax = 300              // titles on one account's list for the night
+	previewForgotten  = 75 * time.Second // a clip nobody has asked about for this long isn't wanted any more
 )
 
 var (
@@ -56,7 +57,8 @@ var (
 
 // previewJob is a clip waiting its turn. Ahead-of-time ones (ahead: Home's
 // banner and Continue Watching) wait for a quiet server; one someone is
-// looking at goes first, newest first, and is dropped once they've moved on.
+// looking at goes first, newest first, and once they've moved on it waits
+// with the ahead-of-time ones.
 type previewJob struct {
 	want   previewWant
 	ctx    context.Context
@@ -203,8 +205,48 @@ func rememberForTonight(r *http.Request, wants []previewWant) {
 		return
 	}
 	tonight.Lock()
-	tonight.byUser[u.ID] = tonightList{ctx: context.WithoutCancel(r.Context()), header: r.Header.Clone(), wants: wants}
+	// Home's titles first, then what was added since (More Like This),
+	// without repeats.
+	have := map[string]bool{}
+	list := make([]previewWant, 0, len(wants))
+	for _, w := range append(wants, tonight.byUser[u.ID].wants...) {
+		if !have[w.key()] && len(list) < previewTonightMax {
+			have[w.key()] = true
+			list = append(list, w)
+		}
+	}
+	tonight.byUser[u.ID] = tonightList{ctx: context.WithoutCancel(r.Context()), header: r.Header.Clone(), wants: list}
 	tonight.Unlock()
+}
+
+// alsoTonight adds the first few of a title's More Like This to the
+// night's list (after Home's, without repeats), so what someone is likely to
+// open next has a clip too.
+func alsoTonight(r *http.Request, cards []watchCard, n int) {
+	u := auth.UserFromContext(r.Context())
+	if u == nil || len(cards) == 0 || !canConvert() {
+		return
+	}
+	tonight.Lock()
+	defer tonight.Unlock()
+	l, ok := tonight.byUser[u.ID]
+	if !ok {
+		l = tonightList{ctx: context.WithoutCancel(r.Context()), header: r.Header.Clone()}
+	}
+	have := map[string]bool{}
+	for _, w := range l.wants {
+		have[w.key()] = true
+	}
+	for i, c := range cards {
+		if i == n || len(l.wants) >= previewTonightMax {
+			break
+		}
+		if w := cardPreview(c); !have[w.key()] {
+			have[w.key()] = true
+			l.wants = append(l.wants, w)
+		}
+	}
+	tonight.byUser[u.ID] = l
 }
 
 // lastUsed is when a signed-in request last came in (access.go), in Unix
@@ -298,8 +340,9 @@ func nextPreview() *previewJob {
 		key := j.want.key()
 		at := previewState.asked[key]
 		if !j.ahead && time.Since(at) > previewForgotten {
-			delete(previewState.making, key) // they've moved on
-			continue
+			// They've moved on: no longer first in line, but still made when
+			// the server has room, so it's ready if they come back.
+			j.ahead = true
 		}
 		kept = append(kept, j)
 		if !j.ahead && (best < 0 || at.After(bestAt)) {
@@ -363,7 +406,7 @@ func (s *Server) previewWorker() {
 // lookup, asked as a web browser would (Premiumize's converted copy first,
 // which is lighter to cut from).
 func (s *Server) previewSource(ctx context.Context, header http.Header, want previewWant) (string, error) {
-	req := httptest.NewRequest(http.MethodGet, "/api/play/tmdb?client=web", nil).WithContext(ctx)
+	req := httptest.NewRequest(http.MethodGet, "/api/play/tmdb?client=web", nil).WithContext(context.WithValue(ctx, clipLookup{}, true))
 	req.Header = header.Clone()
 	rec := httptest.NewRecorder()
 	req.SetPathValue("tmdbId", strconv.Itoa(want.tmdbID))
@@ -523,4 +566,32 @@ func (s *Server) prewarmPreviews(r *http.Request, wants []previewWant) {
 		}
 		s.startPreview(r, want, true)
 	}
+}
+
+// clipLookup marks a Play lookup made to cut a preview clip.
+type clipLookup struct{}
+
+func forClip(ctx context.Context) bool {
+	v, _ := ctx.Value(clipLookup{}).(bool)
+	return v
+}
+
+// clipFriendlyFirst orders versions for cutting a clip: 1080p or smaller
+// before 4K (four times fewer pixels to decode on one core), and among
+// those, H.264 before HEVC (quicker to decode). Otherwise the usual order.
+func clipFriendlyFirst(cands []playCandidate) []playCandidate {
+	cost := func(c playCandidate) int {
+		n := 0
+		if resolutionLines(c.Release) > 1080 {
+			n += 2
+		}
+		r := strings.ToLower(c.Release)
+		if strings.Contains(r, "x265") || strings.Contains(r, "hevc") || strings.Contains(r, "h265") || strings.Contains(r, "h.265") {
+			n++
+		}
+		return n
+	}
+	out := append([]playCandidate(nil), cands...)
+	sort.SliceStable(out, func(i, j int) bool { return cost(out[i]) < cost(out[j]) })
+	return out
 }

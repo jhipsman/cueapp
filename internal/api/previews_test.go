@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"net/http"
+	"net/http/httptest"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -10,6 +11,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/jhipsman/cueapp/internal/auth"
 )
 
 // A preview is a short, silent, browser-friendly clip cut from early in the
@@ -72,7 +75,7 @@ func TestPrunePreviews(t *testing.T) {
 }
 
 // The clip someone asked about most recently goes first; ones nobody has
-// asked about lately are dropped; ahead-of-time ones wait their turn.
+// asked about lately wait with the ahead-of-time ones.
 func TestNextPreviewOrder(t *testing.T) {
 	previewState.Lock()
 	saved := previewState.queue
@@ -107,11 +110,19 @@ func TestNextPreviewOrder(t *testing.T) {
 	if j := nextPreview(); j == nil || j.want.tmdbID != 1 {
 		t.Fatalf("second = %+v, want 1", j)
 	}
+	// The one they left minutes ago is kept, waiting with the ahead-of-time
+	// ones, so it's ready if they come back.
 	previewState.Lock()
-	gone := !previewState.making["movie-4"]
+	kept := previewState.making["movie-4"]
+	var demoted bool
+	for _, j := range previewState.queue {
+		if j.want.tmdbID == 4 {
+			demoted = j.ahead
+		}
+	}
 	previewState.Unlock()
-	if !gone {
-		t.Error("a clip nobody asked about for minutes is still waiting")
+	if !kept || !demoted {
+		t.Errorf("a clip they left: kept %v, waiting with the ahead-of-time ones %v", kept, demoted)
 	}
 }
 
@@ -181,5 +192,52 @@ func TestCutPreviewPicksEnglish(t *testing.T) {
 	}
 	if got := strings.TrimSpace(string(out)); got != "eng" {
 		t.Errorf("clip's sound is %q, want eng", got)
+	}
+}
+
+// Cutting a clip prefers a 1080p (or smaller) H.264 version over 4K or
+// HEVC, keeping the usual order otherwise.
+func TestClipFriendlyFirst(t *testing.T) {
+	in := []playCandidate{
+		{Release: "Film.2024.2160p.WEB-DL.x265"},
+		{Release: "Film.2024.1080p.WEB-DL.x265"},
+		{Release: "Film.2024.2160p.BluRay.x264"},
+		{Release: "Film.2024.1080p.BluRay.x264"},
+		{Release: "Film.2024.720p.WEB.x264"},
+	}
+	got := clipFriendlyFirst(in)
+	want := []string{"Film.2024.1080p.BluRay.x264", "Film.2024.720p.WEB.x264", "Film.2024.1080p.WEB-DL.x265", "Film.2024.2160p.BluRay.x264", "Film.2024.2160p.WEB-DL.x265"}
+	for i := range want {
+		if got[i].Release != want[i] {
+			t.Fatalf("order = %v, want %v", got, want)
+		}
+	}
+	if in[0].Release != "Film.2024.2160p.WEB-DL.x265" {
+		t.Error("the list Play uses was changed")
+	}
+}
+
+// A title's More Like This joins the night's list after Home's, and Home
+// loading again keeps it (without repeats).
+func TestTonightKeepsMoreLikeThis(t *testing.T) {
+	if !canConvert() {
+		t.Skip("no ffmpeg")
+	}
+	r := httptest.NewRequest(http.MethodGet, "/", nil)
+	r = r.WithContext(auth.WithUser(r.Context(), &auth.User{ID: 4242}))
+	defer func() {
+		tonight.Lock()
+		delete(tonight.byUser, 4242)
+		tonight.Unlock()
+	}()
+	home := []previewWant{{kind: "movie", tmdbID: 1}, {kind: "movie", tmdbID: 2}}
+	rememberForTonight(r, home)
+	alsoTonight(r, []watchCard{{Kind: "movie", TMDBID: 2}, {Kind: "movie", TMDBID: 3}}, 8)
+	rememberForTonight(r, home)
+	tonight.Lock()
+	got := tonight.byUser[4242].wants
+	tonight.Unlock()
+	if len(got) != 3 || got[2].tmdbID != 3 {
+		t.Fatalf("night's list = %+v, want Home's two then 3", got)
 	}
 }

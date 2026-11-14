@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useRef, useState, type PointerEve
 import { useNavigate } from 'react-router-dom'
 import { api, type WatchCard, type WatchExtras, type WatchRatings } from '../api'
 import Icon from '../components/Icon'
-import { CardPreview } from './living'
+import { CardPreview, trailersAllowed } from './living'
 import { onTV } from './tv'
 
 // Building blocks shared by the Watch pages.
@@ -27,6 +27,18 @@ function warm(card: WatchCard) {
   if (warmed.has(key)) return
   warmed.add(key)
   void api.prefetchPlay(card.kind, card.tmdbId, card.season ?? 0, card.episode ?? 0).catch(() => undefined)
+}
+
+// warmClip starts making a title's preview clip once the pointer or the
+// highlight has rested on its card a moment, so it's often ready by the
+// time the title is opened (nothing plays on the card itself).
+const clipWarmed = new Set<string>()
+function warmClip(card: WatchCard) {
+  if (!trailersAllowed()) return
+  const key = `${card.kind}:${card.tmdbId}:${card.season ?? 0}:${card.episode ?? 0}`
+  if (clipWarmed.has(key)) return
+  clipWarmed.add(key)
+  void api.watchPreview(card.kind, card.tmdbId, card.season, card.episode).catch(() => undefined)
 }
 
 export function epCode(season?: number, episode?: number): string {
@@ -78,7 +90,10 @@ export function Card({ card, wide }: { card: WatchCard; wide?: boolean }) {
         warm(card)
         setHot(true)
         window.clearTimeout(restTimer.current)
-        restTimer.current = window.setTimeout(() => setResting(true), 1300)
+        restTimer.current = window.setTimeout(() => {
+          setResting(true)
+          warmClip(card)
+        }, 1000)
       }}
       onPointerMove={tilt}
       onPointerLeave={(e) => {
@@ -91,7 +106,10 @@ export function Card({ card, wide }: { card: WatchCard; wide?: boolean }) {
         warm(card)
         setHot(true)
         spotlight?.(card)
+        window.clearTimeout(restTimer.current)
+        restTimer.current = window.setTimeout(() => warmClip(card), 1000)
       }}
+      onBlur={() => window.clearTimeout(restTimer.current)}
     >
       <span className="wx-card-art">
         {img ? <img src={img} alt="" loading="lazy" /> : <span className="wx-card-fallback">{card.title}</span>}
