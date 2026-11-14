@@ -634,6 +634,7 @@ func (s *Server) handleWatchMovie(w http.ResponseWriter, r *http.Request) {
 		t.More = movieCards(more)
 	}()
 	wg.Wait()
+	alsoTonight(r, t.More, 8)
 	writeJSON(w, http.StatusOK, t)
 }
 
@@ -696,6 +697,7 @@ func (s *Server) handleWatchShow(w http.ResponseWriter, r *http.Request) {
 		t.More = showCards(more)
 	}()
 	wg.Wait()
+	alsoTonight(r, t.More, 8)
 	writeJSON(w, http.StatusOK, t)
 }
 
