@@ -200,6 +200,16 @@ Every route the server exposes. Routes marked **public** need no sign-in; all ot
 | POST | `/api/library/scan` | admin | starts a scan of an existing folder. |
 | GET | `/api/library/scan/{id}` | admin |  |
 
+## listen
+
+| Method | Path | Access | What it does |
+|---|---|---|---|
+| GET | `/api/listen/album/{id}` | signed in | GET /api/listen/album/{id}: an album and its tracklist. |
+| GET | `/api/listen/album/{id}/sound` | signed in | GET /api/listen/album/{id}/sound: where the album's songs stand. |
+| GET | `/api/listen/artist/{id}` | signed in | GET /api/listen/artist/{id}: an artist's top songs, albums and similar artists. |
+| GET | `/api/listen/home` | signed in | GET /api/listen/home: charts and new releases. |
+| GET | `/api/listen/search` | signed in | GET /api/listen/search?q=: songs, albums and artists. |
+
 ## live
 
 | Method | Path | Access | What it does |
@@ -679,4 +689,4 @@ Every route the server exposes. Routes marked **public** need no sign-in; all ot
 | PUT | `/api/watched/settings` | admin | PUT /api/watched/settings {"sync": true, "cleanup": {...}} |
 | POST | `/api/watched/sync` | admin | POST /api/watched/sync: read what's been watched now. |
 
-374 routes.
+379 routes.

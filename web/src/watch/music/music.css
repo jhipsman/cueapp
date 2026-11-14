@@ -1,0 +1,961 @@
+/* Watch > Music: the pages, the bar along the bottom and the full-screen
+   player. Colours come from Watch's theme (the profile's accent). */
+
+.mu-page {
+  padding: 84px var(--wx-gutter) 40px;
+  max-width: 1500px;
+  margin: 0 auto;
+}
+.mu-note {
+  color: var(--wx-dim);
+  padding: 24px 0;
+}
+
+/* Loading: three soft dots. */
+.mu-loading {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  padding: 120px 0;
+}
+.mu-loading span {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--wx-dim);
+  animation: mu-dot 1s ease-in-out infinite;
+}
+.mu-loading span:nth-child(2) {
+  animation-delay: 0.15s;
+}
+.mu-loading span:nth-child(3) {
+  animation-delay: 0.3s;
+}
+@keyframes mu-dot {
+  50% {
+    opacity: 0.25;
+    transform: translateY(-4px);
+  }
+}
+
+/* Search */
+.mu-search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 520px;
+  padding: 0 16px;
+  height: 48px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--wx-dim);
+  transition:
+    background 0.25s,
+    box-shadow 0.25s;
+}
+.mu-search:focus-within {
+  background: rgba(255, 255, 255, 0.14);
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.85);
+}
+.mu-search input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: none;
+  color: var(--wx-text);
+  font: 500 1rem inherit;
+  font-family: inherit;
+  outline: none;
+}
+.mu-search button {
+  border: 0;
+  background: none;
+  color: var(--wx-dim);
+  cursor: pointer;
+  display: grid;
+}
+
+/* Shelves of covers, scrolling sideways */
+.mu-shelf {
+  margin-top: 34px;
+}
+.mu-shelf h2 {
+  margin: 0 0 14px;
+  font-size: 1.3rem;
+  font-weight: 750;
+  letter-spacing: -0.01em;
+}
+.mu-row {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: clamp(132px, 15vw, 190px);
+  gap: 18px;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  padding-bottom: 8px;
+  margin: 0 calc(-1 * var(--wx-gutter));
+  padding-inline: var(--wx-gutter);
+  scrollbar-width: none;
+}
+.mu-row::-webkit-scrollbar {
+  display: none;
+}
+.mu-card {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  color: inherit;
+  text-decoration: none;
+  scroll-snap-align: start;
+  padding: 10px;
+  margin: -10px;
+  border-radius: 12px;
+  transition: background 0.25s;
+}
+.mu-card:hover,
+.mu-card:focus-visible {
+  background: rgba(255, 255, 255, 0.07);
+  outline: none;
+}
+.mu-card strong,
+.mu-card small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mu-card strong {
+  font-size: 0.95rem;
+  font-weight: 650;
+  margin-top: 6px;
+}
+.mu-card small {
+  color: var(--wx-dim);
+  font-size: 0.85rem;
+}
+.mu-cover {
+  position: relative;
+  display: block;
+  aspect-ratio: 1;
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--wx-panel);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.45);
+}
+.mu-cover.round {
+  border-radius: 50%;
+}
+.mu-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.mu-artist {
+  text-align: center;
+}
+.mu-cover-play {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  width: 46px;
+  height: 46px;
+  border: 0;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--wx-accent);
+  color: var(--wx-accent-text);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.45);
+  cursor: pointer;
+  opacity: 0;
+  transform: translateY(8px);
+  transition:
+    opacity 0.25s,
+    transform 0.35s var(--wx-settle),
+    scale 0.2s;
+}
+.mu-card:hover .mu-cover-play,
+.mu-card:focus-visible .mu-cover-play,
+.mu-cover-play:focus-visible {
+  opacity: 1;
+  transform: none;
+}
+.mu-cover-play:hover {
+  scale: 1.06;
+}
+.mu-cover-play:active {
+  scale: 0.94;
+}
+@media (hover: none) {
+  .mu-cover-play {
+    display: none;
+  }
+}
+
+/* Song lists */
+.mu-songs {
+  display: grid;
+  gap: 2px;
+}
+.mu-song {
+  display: flex;
+  align-items: center;
+  border-radius: 8px;
+  transition: background 0.2s;
+}
+.mu-song:hover {
+  background: rgba(255, 255, 255, 0.07);
+}
+.mu-song-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 8px 10px;
+  border: 0;
+  background: none;
+  color: inherit;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+  border-radius: 8px;
+}
+.mu-song-main:focus-visible {
+  outline: 2px solid #fff;
+}
+.mu-song-n {
+  width: 22px;
+  flex: none;
+  text-align: right;
+  color: var(--wx-dim);
+  font-variant-numeric: tabular-nums;
+  display: flex;
+  justify-content: flex-end;
+}
+.mu-song-main img {
+  width: 44px;
+  height: 44px;
+  border-radius: 4px;
+  object-fit: cover;
+  flex: none;
+}
+.mu-song-words {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+}
+.mu-song-words strong,
+.mu-song-words small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mu-song-words strong {
+  font-weight: 550;
+}
+.mu-song-words small {
+  color: var(--wx-dim);
+  font-size: 0.85rem;
+}
+.mu-song.current .mu-song-words strong,
+.mu-q.current .mu-song-words strong {
+  color: var(--wx-accent);
+}
+.mu-song-len {
+  color: var(--wx-dim);
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+}
+.mu-song-more {
+  border: 0;
+  background: none;
+  color: var(--wx-dim);
+  padding: 10px;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.mu-song:hover .mu-song-more,
+.mu-song-more:focus-visible {
+  opacity: 1;
+}
+@media (hover: none) {
+  .mu-song-more {
+    opacity: 0.7;
+  }
+}
+.mu-e {
+  display: inline-grid;
+  place-items: center;
+  width: 15px;
+  height: 15px;
+  margin-right: 6px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.55);
+  color: #000;
+  font-style: normal;
+  font-size: 0.6rem;
+  font-weight: 800;
+  vertical-align: 1px;
+}
+.mu-more {
+  justify-self: start;
+  margin: 8px 10px 0;
+  border: 0;
+  background: none;
+  color: var(--wx-dim);
+  font-weight: 700;
+  cursor: pointer;
+}
+.mu-more:hover {
+  color: var(--wx-text);
+}
+.mu-disc {
+  margin: 18px 10px 6px;
+  font-size: 0.9rem;
+  color: var(--wx-dim);
+}
+
+/* The playing bars */
+.mu-bars {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 14px;
+}
+.mu-bars i {
+  width: 3px;
+  height: 100%;
+  border-radius: 1px;
+  background: var(--wx-accent);
+  animation: mu-bar 0.9s ease-in-out infinite;
+  transform-origin: bottom;
+}
+.mu-bars i:nth-child(2) {
+  animation-delay: -0.3s;
+}
+.mu-bars i:nth-child(3) {
+  animation-delay: -0.6s;
+}
+@keyframes mu-bar {
+  0%,
+  100% {
+    transform: scaleY(0.3);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
+
+/* Search: the top result beside the songs */
+.mu-top-result {
+  display: grid;
+  grid-template-columns: minmax(240px, 0.8fr) 1.6fr;
+  gap: 28px;
+}
+@media (max-width: 760px) {
+  .mu-top-result {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+}
+.mu-best {
+  display: grid;
+  gap: 6px;
+  padding: 20px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.06);
+  color: inherit;
+  text-decoration: none;
+  transition: background 0.25s;
+}
+.mu-best:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+.mu-best img {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  object-fit: cover;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+}
+.mu-best strong {
+  font-size: 1.8rem;
+  font-weight: 800;
+  margin-top: 10px;
+}
+.mu-best small {
+  color: var(--wx-dim);
+}
+
+/* An album or artist page */
+.mu-detail {
+  --mu-tint: rgb(var(--wx-accent-rgb));
+  position: relative;
+  isolation: isolate;
+}
+.mu-detail::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto;
+  height: 520px;
+  z-index: -1;
+  background: linear-gradient(to bottom, color-mix(in srgb, var(--mu-tint) 55%, transparent), transparent);
+  transition: background 0.8s;
+}
+.mu-head {
+  display: flex;
+  align-items: flex-end;
+  gap: 26px;
+  padding-top: 20px;
+}
+.mu-head-cover {
+  width: clamp(150px, 22vw, 240px);
+  aspect-ratio: 1;
+  border-radius: 8px;
+  object-fit: cover;
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.55);
+  animation: wx-view-open 0.6s var(--wx-settle) backwards;
+}
+.mu-head-words {
+  min-width: 0;
+}
+.mu-head-words small {
+  font-weight: 650;
+}
+.mu-head h1 {
+  margin: 6px 0 10px;
+  font-size: clamp(1.8rem, 5.5vw, 4.4rem);
+  font-weight: 850;
+  letter-spacing: -0.03em;
+  line-height: 1.02;
+}
+.mu-head p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.95rem;
+}
+.mu-head a,
+.mu-np a {
+  color: var(--wx-text);
+  font-weight: 700;
+  text-decoration: none;
+}
+.mu-head a:hover,
+.mu-np a:hover {
+  text-decoration: underline;
+}
+@media (max-width: 640px) {
+  .mu-head {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+  .mu-head-cover {
+    width: min(68vw, 280px);
+  }
+}
+.mu-artist-head {
+  height: clamp(240px, 40vh, 380px);
+  margin: -84px calc(-1 * var(--wx-gutter)) 0;
+  background-size: cover;
+  background-position: center 25%;
+  display: flex;
+  align-items: flex-end;
+  padding: 0 var(--wx-gutter) 24px;
+  position: relative;
+}
+.mu-artist-head::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, rgba(var(--wx-bg-rgb), 0.1), rgba(var(--wx-bg-rgb), 0.15) 40%, rgba(var(--wx-bg-rgb), 0.95));
+}
+.mu-artist-head > div {
+  position: relative;
+  z-index: 1;
+}
+.mu-artist-head h1 {
+  margin: 0;
+  font-size: clamp(2.2rem, 8vw, 5.5rem);
+  font-weight: 900;
+  letter-spacing: -0.035em;
+  line-height: 1;
+  text-shadow: 0 2px 24px rgba(0, 0, 0, 0.5);
+}
+.mu-artist-head small {
+  display: block;
+  margin-top: 8px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.85);
+}
+.mu-actions {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin: 26px 0 14px;
+}
+.mu-big-play {
+  width: 58px;
+  height: 58px;
+  border: 0;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--wx-accent);
+  color: var(--wx-accent-text);
+  cursor: pointer;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.4);
+  transition:
+    transform 0.3s var(--wx-settle),
+    filter 0.2s;
+}
+.mu-big-play:hover {
+  transform: scale(1.06);
+  filter: brightness(1.08);
+}
+.mu-big-play:active {
+  transform: scale(0.94);
+  transition-duration: 0.08s;
+}
+.mu-big-play svg,
+.mu-np-play svg,
+.mu-bar-btn.play svg {
+  stroke-width: 0;
+}
+.mu-icon-btn {
+  position: relative;
+  border: 0;
+  background: none;
+  color: var(--wx-dim);
+  padding: 8px;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  border-radius: 50%;
+  transition:
+    color 0.2s,
+    transform 0.3s var(--wx-settle);
+}
+.mu-icon-btn:hover {
+  color: var(--wx-text);
+  transform: scale(1.06);
+}
+.mu-icon-btn:active {
+  transform: scale(0.92);
+}
+.mu-icon-btn.on {
+  color: var(--wx-accent);
+}
+.mu-icon-btn.on::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 4px;
+  height: 4px;
+  margin-left: -2px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.mu-icon-btn.big {
+  color: var(--wx-text);
+}
+.mu-one {
+  position: absolute;
+  top: 2px;
+  right: 0;
+  font-style: normal;
+  font-size: 0.6rem;
+  font-weight: 800;
+}
+.mu-state {
+  color: var(--wx-dim);
+  font-size: 0.9rem;
+  animation: wx-fade-in 0.4s both;
+}
+.mu-state.bad {
+  color: #ffb4a8;
+  max-width: 60ch;
+}
+.mu-fine {
+  margin-top: 28px;
+  color: var(--wx-dim);
+  font-size: 0.85rem;
+}
+.mu-back {
+  display: none;
+}
+
+/* ---- The bar along the bottom ---- */
+html.mu-has-bar .wx-view {
+  padding-bottom: 84px;
+}
+.mu-bar {
+  position: fixed;
+  left: 12px;
+  right: 12px;
+  bottom: 12px;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--wx-panel) 88%, transparent);
+  -webkit-backdrop-filter: blur(20px) saturate(1.4);
+  backdrop-filter: blur(20px) saturate(1.4);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.07),
+    0 14px 40px rgba(0, 0, 0, 0.55);
+  overflow: hidden;
+  animation: mu-bar-in 0.5s var(--wx-settle) backwards;
+}
+@keyframes mu-bar-in {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+}
+@media (max-width: 640px) {
+  .mu-bar {
+    left: 8px;
+    right: 8px;
+    bottom: calc(64px + env(safe-area-inset-bottom));
+  }
+  html.mu-has-bar .wx-view {
+    padding-bottom: 150px;
+  }
+}
+html.tv-mode .mu-bar {
+  bottom: 24px;
+}
+.mu-bar-open {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border: 0;
+  background: none;
+  color: inherit;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+  padding: 0;
+}
+.mu-bar-open img {
+  width: 46px;
+  height: 46px;
+  border-radius: 6px;
+  object-fit: cover;
+  flex: none;
+}
+.mu-bar-words {
+  min-width: 0;
+  display: grid;
+}
+.mu-bar-words strong,
+.mu-bar-words small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mu-bar-words strong {
+  font-weight: 650;
+  font-size: 0.95rem;
+}
+.mu-bar-words small {
+  color: var(--wx-dim);
+  font-size: 0.82rem;
+}
+.mu-bar-controls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.mu-bar-btn {
+  width: 42px;
+  height: 42px;
+  border: 0;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: none;
+  color: var(--wx-text);
+  cursor: pointer;
+  transition:
+    transform 0.25s var(--wx-settle),
+    background 0.2s;
+}
+.mu-bar-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+.mu-bar-btn:active {
+  transform: scale(0.9);
+}
+.mu-bar-btn.play {
+  background: var(--wx-text);
+  color: var(--wx-bg);
+}
+@media (max-width: 640px) {
+  .mu-bar-btn.wide-only {
+    display: none;
+  }
+}
+.mu-bar-progress {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: 0;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--wx-accent);
+  transform-origin: left;
+  transition: transform 0.3s linear;
+}
+.mu-spin {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2.5px solid rgba(var(--wx-bg-rgb), 0.25);
+  border-top-color: var(--wx-bg);
+  animation: wx-spin 0.8s linear infinite;
+}
+.mu-spin.dark {
+  width: 26px;
+  height: 26px;
+  border-width: 3px;
+}
+
+/* ---- The whole screen ---- */
+.mu-np {
+  --mu-tint: rgb(var(--wx-accent-rgb));
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  grid-template-rows: auto 1fr auto auto auto auto;
+  justify-items: center;
+  gap: 14px;
+  padding: max(14px, env(safe-area-inset-top)) clamp(20px, 6vw, 60px) max(26px, env(safe-area-inset-bottom));
+  background:
+    linear-gradient(to bottom, color-mix(in srgb, var(--mu-tint) 60%, #000), color-mix(in srgb, var(--mu-tint) 18%, #0b0c0f) 60%, #0b0c0f),
+    #0b0c0f;
+  transition: background 0.8s;
+  animation: mu-np-in 0.45s var(--wx-settle) backwards;
+  overflow: hidden;
+}
+.mu-np.leaving {
+  animation: mu-np-out 0.22s ease-in forwards;
+}
+@keyframes mu-np-in {
+  from {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+}
+@keyframes mu-np-out {
+  to {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+}
+.mu-np > * {
+  width: 100%;
+  max-width: 520px;
+}
+.mu-np-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.mu-np-top small {
+  flex: 1;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.75);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mu-np .mu-icon-btn {
+  color: rgba(255, 255, 255, 0.8);
+}
+.mu-np .mu-icon-btn.on {
+  color: var(--wx-accent);
+}
+.mu-np-cover {
+  align-self: center;
+  width: min(100%, 52vh);
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: 10px;
+  box-shadow: 0 30px 70px rgba(0, 0, 0, 0.6);
+  transition: transform 0.6s var(--wx-settle);
+  animation: wx-view-open 0.6s var(--wx-settle) backwards;
+}
+.mu-np-cover.paused {
+  transform: scale(0.92);
+}
+.mu-np-queue {
+  align-self: stretch;
+  overflow-y: auto;
+  min-height: 0;
+  animation: wx-fade-in 0.3s both;
+}
+.mu-np-queue h3 {
+  margin: 12px 10px 6px;
+  font-size: 0.95rem;
+}
+.mu-np-words {
+  display: flex;
+  align-items: center;
+}
+.mu-np-words > div {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+.mu-np-words strong {
+  font-size: 1.45rem;
+  font-weight: 800;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mu-np-words a {
+  color: rgba(255, 255, 255, 0.75);
+  font-weight: 500;
+}
+.mu-np-note {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.9rem;
+}
+.mu-scrub-bar {
+  position: relative;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  touch-action: none;
+}
+.mu-scrub-bar::before {
+  content: '';
+  position: absolute;
+  inset: 8px 0;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.25);
+}
+.mu-scrub-fill {
+  position: absolute;
+  inset: 8px 0;
+  border-radius: 4px;
+  background: #fff;
+  transform-origin: left;
+}
+.mu-scrub-knob {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  margin-left: -7px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  transform: scale(0);
+  transition: transform 0.2s var(--wx-settle);
+}
+.mu-scrub-bar:hover .mu-scrub-knob,
+.mu-scrub-bar.active .mu-scrub-knob,
+.mu-scrub-bar:focus-visible .mu-scrub-knob {
+  transform: scale(1);
+}
+.mu-scrub-bar:focus-visible {
+  outline: none;
+}
+.mu-scrub-times {
+  display: flex;
+  justify-content: space-between;
+  color: rgba(255, 255, 255, 0.65);
+  font-size: 0.78rem;
+  font-variant-numeric: tabular-nums;
+}
+.mu-np-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.mu-np-play {
+  width: 70px;
+  height: 70px;
+  border: 0;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: #fff;
+  color: #0b0c0f;
+  cursor: pointer;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45);
+  transition: transform 0.3s var(--wx-settle);
+}
+.mu-np-play:hover {
+  transform: scale(1.05);
+}
+.mu-np-play:active {
+  transform: scale(0.92);
+  transition-duration: 0.08s;
+}
+.mu-np-play:focus-visible {
+  outline: 3px solid var(--wx-accent);
+  outline-offset: 3px;
+}
+.mu-np .mu-spin.dark {
+  border-color: rgba(0, 0, 0, 0.2);
+  border-top-color: #0b0c0f;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mu-np,
+  .mu-np.leaving,
+  .mu-bar,
+  .mu-head-cover,
+  .mu-np-cover {
+    animation: none;
+  }
+  .mu-bars i {
+    animation: none;
+    transform: scaleY(0.7);
+  }
+}
+
+/* The app's general button hover (a grey fill) doesn't belong here: each
+   music button keeps its own look when pointed at. */
+button.mu-icon-btn:hover,
+button.mu-song-main:hover,
+button.mu-bar-open:hover,
+button.mu-song-more:hover,
+button.mu-more:hover,
+.mu-search button:hover {
+  background: none;
+}
+button.mu-cover-play:hover,
+button.mu-big-play:hover {
+  background: var(--wx-accent);
+}
+button.mu-np-play:hover {
+  background: #fff;
+}
+button.mu-bar-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+button.mu-bar-btn.play,
+button.mu-bar-btn.play:hover {
+  background: var(--wx-text);
+}
+/* Skip icons: a filled triangle and its bar. */
+.mu-icon-btn.big svg,
+.mu-bar-btn svg {
+  stroke-width: 2.4;
+}

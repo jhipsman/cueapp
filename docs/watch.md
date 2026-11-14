@@ -119,6 +119,14 @@ TMDB doesn't have IMDb ratings, so Watch reads them from [OMDb](https://www.omdb
 
 Without a key, Watch shows TMDB's own score instead.
 
+## Music
+
+**Music** (a tab in Watch) works like the music apps: search songs, albums and artists, browse new releases, the top songs and albums and popular artists, open an album or an artist, and play. The player stays along the bottom while you browse; tap it for the whole screen, with the time bar, shuffle, repeat and what's up next. On a phone, the lock screen and headphone buttons work too.
+
+What's shown (names, covers, tracklists) comes from Deezer's free public catalog; no account or key is needed. The sound comes from your own sources, the same way films do: Cue searches your torrent sites for the album, asks Premiumize which release it already has, and plays the songs straight from Premiumize. A release Premiumize doesn't have yet is fetched into your Premiumize cloud first (usually minutes; the player says so), and it then counts against your Premiumize storage. Nothing is stored on this computer, so Music works in Streaming only mode.
+
+You need Premiumize and at least one torrent site that carries music (Settings > Torrent sites). Cue prefers 320 kbit/s MP3 or AAC, then CD-quality FLAC, so songs start quickly on a phone.
+
 ## Live TV
 
 Add your IPTV provider and Watch gets a **Live TV** tab: every channel with its logo, a TV guide of what's on now and for the next hours, and Favourites per profile.

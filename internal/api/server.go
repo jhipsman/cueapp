@@ -502,6 +502,12 @@ func (s *Server) protectedRoutes() *routeTable {
 	play.HandleFunc("GET /api/watch/extras/{kind}/{tmdbId}", s.handleWatchExtras)
 	play.HandleFunc("GET /api/watch/year", s.handleWatchYear)
 	play.HandleFunc("GET /api/watch/preview/{kind}/{tmdbId}", s.handleWatchPreview)
+	// Music, streamed (listen.go): the catalog, and each album's sound.
+	play.HandleFunc("GET /api/listen/home", s.handleListenHome)
+	play.HandleFunc("GET /api/listen/search", s.handleListenSearch)
+	play.HandleFunc("GET /api/listen/album/{id}", s.handleListenAlbum)
+	play.HandleFunc("GET /api/listen/album/{id}/sound", s.handleListenSound)
+	play.HandleFunc("GET /api/listen/artist/{id}", s.handleListenArtist)
 	play.HandleFunc("GET /api/watch/preview-file/{name}", s.handleWatchPreviewFile)
 	play.HandleFunc("GET /api/watch/remote/{code}", s.handleGetRemoteSearch)
 	play.HandleFunc("PUT /api/watch/remote/{code}", s.handlePutRemoteSearch)
