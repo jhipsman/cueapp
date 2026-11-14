@@ -12,6 +12,7 @@ under [Unreleased]. How releases are cut: [docs/RELEASING.md](docs/RELEASING.md)
 - Releases are signed with a new update key, held only by the project owner. **Update now** installs only releases signed with it.
 
 ### Fixed
+- **Settings in Streaming only mode opens on Streaming**, not on Media types (a page that mode hides from the menu), and Media types now says its switches do nothing while Streaming only is on, with a link to change it.
 - **No sound in the web player, and versions flicking past one after another**: when a browser shows a version's picture but can't play its sound (Dolby, DTS, TrueHD), Cue now keeps the picture exactly as it is and converts only the sound, from the same moment. Before, it converted only plain H.264 pictures and otherwise jumped to the next version, which usually had the same sound, so it cycled. **No sound? Fix it** in Versions does the same.
 
 ### Added

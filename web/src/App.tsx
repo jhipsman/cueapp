@@ -157,7 +157,7 @@ function Gate() {
         <Route path="/calendar" element={<Upcoming tab="calendar" />} />
         <Route path="/queue" element={<Queue />} />
         <Route path="/settings" element={<SettingsLayout />}>
-          <Route index element={<Navigate to={admin ? 'modules' : 'profile'} replace />} />
+          <Route index element={<Navigate to={!admin ? 'profile' : streamingOnly ? 'streaming' : 'modules'} replace />} />
           <Route path="streaming" element={<AdminOnly><StreamingSettings /></AdminOnly>} />
           <Route path="modules" element={<AdminOnly><ModulesSettings /></AdminOnly>} />
           <Route path="media" element={<AdminOnly><MediaSettings /></AdminOnly>} />
