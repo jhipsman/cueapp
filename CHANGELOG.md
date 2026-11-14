@@ -11,6 +11,9 @@ under [Unreleased]. How releases are cut: [docs/RELEASING.md](docs/RELEASING.md)
 ### Security
 - Releases are signed with a new update key, held only by the project owner. **Update now** installs only releases signed with it.
 
+### Fixed
+- **No sound in the web player, and versions flicking past one after another**: when a browser shows a version's picture but can't play its sound (Dolby, DTS, TrueHD), Cue now keeps the picture exactly as it is and converts only the sound, from the same moment. Before, it converted only plain H.264 pictures and otherwise jumped to the next version, which usually had the same sound, so it cycled. **No sound? Fix it** in Versions does the same.
+
 ### Added
 - **Get Cue on your TV, with pictures** (cuetv.me/setup-tv): each step for a Fire TV or a Google TV with a drawing of the TV screen and what to press lit: getting Downloader, allowing it to install apps (and turning on developer options), typing the code, installing, and signing in with a phone. Open to anyone; the texted invite and the front page link to it.
 - **Text the invite**: Settings > Accounts > Invite family has **Text it** (opens Messages on a phone with the invite written out: the link, then how to get Cue on a Fire TV or Google TV with Downloader's code), **Share**, and **Copy the whole message**.
@@ -61,6 +64,8 @@ under [Unreleased]. How releases are cut: [docs/RELEASING.md](docs/RELEASING.md)
 - **Stream add-ons**: paste a Stremio add-on link (Comet on ElfHosted, Torrentio, MediaFusion) in Settings > Downloading, and Play asks it for streams first, with its own scrapers and sorting. Links set up with your Premiumize key play straight away; Cue's own search is the fallback. See [docs/watch.md](docs/watch.md#stream-add-ons-comet-torrentio-mediafusion).
 
 ### Changed
+- **Smoother web app, like the TV**: opening a title grows it into place, Back slides the page you came from in from the left, and switching sections rises softly. The player fades up from black and fades back out when you leave; its controls glide in and out, play and pause bloom softly, its menus open from their button, and buttons dip when pressed. Reduced-motion settings get plain fades.
+- **Previews play once**, then the title's picture comes back (web and TV), instead of looping.
 - **The screensaver shows things you haven't watched too** (TV and web): trending titles, "because you watched", and the rest of Home, mixed in with your own (where you stopped, new episodes, your list) and shuffled each time.
 - **Home on the web, full-bleed**: the banner is no longer a card in the margins; the title's picture runs edge to edge under the header and fades into the page to the left and below, with the first rows sitting over its faded foot, as on a title's page and in the TV app.
 - **The TV app follows your theme** (Fire TV, Google TV): the profile's Colors from Watch (its colour, glow and background: Midnight, Black, Slate or Tinted) now colour the whole app, the backgrounds, panels, fades and highlights too, and a change made on the web shows the next time Cue comes to the front.

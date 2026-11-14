@@ -96,6 +96,16 @@ function CopyLink({ url }: { url: string }) {
 export default function PlayerPage() {
   const params = useParams()
   const navigate = useNavigate()
+  // Leaving fades the picture to black first, then the page you came from
+  // slides back in (as on the TV).
+  const shell = useRef<HTMLDivElement>(null)
+  const leave = useCallback(() => {
+    const el = shell.current
+    if (el?.classList.contains('leaving')) return // already on its way out
+    if (!el || matchMedia('(prefers-reduced-motion: reduce)').matches) return navigate(-1)
+    el.classList.add('leaving')
+    window.setTimeout(() => navigate(-1), 220)
+  }, [navigate])
   const kind = params.season !== undefined ? 'tv' : 'movie'
   const tmdbId = Number(params.tmdbId)
   const season = Number(params.season ?? 0)
@@ -351,11 +361,11 @@ export default function PlayerPage() {
   // Escape leaves the player.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && !document.fullscreenElement) navigate(-1)
+      if (e.key === 'Escape' && !document.fullscreenElement) leave()
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [navigate])
+  }, [leave])
 
   // The next-episode countdown.
   useEffect(() => {
@@ -383,7 +393,7 @@ export default function PlayerPage() {
       if (!silent) return
       // Cue can convert the sound into one the browser plays, from here.
       resumeAt.current = Math.floor((conv?.offset ?? 0) + v.currentTime)
-      if (startConvert('No sound in this browser, so Cue is converting it…')) return
+      if (startConvert('No sound in this browser, so Cue is converting the sound…', true)) return
       if (answer.option < answer.options && silentSkips.current < 2) {
         silentSkips.current++
         resumeAt.current = Math.floor((conv?.offset ?? 0) + v.currentTime)
@@ -601,8 +611,11 @@ export default function PlayerPage() {
   }
 
   // startConvert has Cue convert this version as it plays (from
-  // resumeAt), once; false when it can't or already did.
-  function startConvert(why: string): boolean {
+  // resumeAt), once; false when it can't or already did. soundOnly: the
+  // browser already shows this picture and only the sound was silent, so
+  // the picture is kept as it is and just the sound is remade (quick, and
+  // no hopping between versions that all have the same Dolby sound).
+  function startConvert(why: string, soundOnly = false): boolean {
     if (!answer?.convert || conv || converting.current) return false
     converting.current = true
     setNote(why)
@@ -611,13 +624,17 @@ export default function PlayerPage() {
       .then((p) => {
         // Remaking the whole picture is slow on a small server: other
         // versions are tried first, and this is the last resort.
-        if (!p.copyVideo && answer.option < answer.options) {
+        if (!soundOnly && !p.copyVideo && answer.option < answer.options) {
           moveOn()
           return
         }
-        setConv({ stream: p.stream, duration: p.duration, offset: Math.max(0, Math.floor(resumeAt.current)) })
+        const stream = soundOnly ? `${p.stream}${p.stream.includes('?') ? '&' : '?'}keep=1` : p.stream
+        setConv({ stream, duration: p.duration, offset: Math.max(0, Math.floor(resumeAt.current)) })
       })
-      .catch(() => moveOn())
+      .catch(() => {
+        if (soundOnly) setNote('Couldn’t fix the sound for this browser. Pick another in Versions, or watch on the TV app.')
+        else moveOn()
+      })
     return true
   }
 
@@ -683,10 +700,10 @@ export default function PlayerPage() {
   const yt = answer && !error ? answer.youtube : undefined
   const playing = answer && !error && !onTV() && !yt
   return (
-    <div className="wx-player">
+    <div className="wx-player" ref={shell}>
       {!playing && !yt && (
         <div className="wx-player-top">
-          <button className="wx-round" onClick={() => navigate(-1)} aria-label="Back">
+          <button className="wx-round" onClick={() => leave()} aria-label="Back">
             <Icon name="x" size={20} />
           </button>
           <div className="wx-player-title">
@@ -707,7 +724,7 @@ export default function PlayerPage() {
             <button className="wx-btn" onClick={() => void load(1, true)}>
               Search again
             </button>
-            <button className="wx-btn" onClick={() => navigate(-1)}>
+            <button className="wx-btn" onClick={() => leave()}>
               Go back
             </button>
           </div>
@@ -721,7 +738,7 @@ export default function PlayerPage() {
           title={answer.title}
           note={note || `From YouTube · ${answer.release}`}
           startSec={resumeAt.current}
-          onBack={() => navigate(-1)}
+          onBack={() => leave()}
           onEnded={() => {
             if (kind === 'tv') void nextEpisode()
           }}
@@ -786,7 +803,7 @@ export default function PlayerPage() {
                   }
                 : undefined
             }
-            onBack={() => navigate(-1)}
+            onBack={() => leave()}
             note={note || subsNote}
             thumbs={answer.thumbs ? (sec) => `/api/thumb?u=${encodeURIComponent(answer.thumbs!)}&t=${Math.floor(sec / 10) * 10}` : undefined}
             captions={{
@@ -881,7 +898,7 @@ export default function PlayerPage() {
                         hint: 'Cue converts the sound so this browser can play it',
                         onClick: () => {
                           resumeAt.current = Math.floor(video.current?.currentTime ?? 0)
-                          startConvert('Converting the sound for this browser…')
+                          startConvert('Converting the sound for this browser…', true)
                         },
                       },
                     ]

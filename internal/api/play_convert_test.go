@@ -249,3 +249,22 @@ func TestConvertHLSForAppleTV(t *testing.T) {
 		t.Fatalf("piece: %d bytes, streams %q %v", len(joined), got, err)
 	}
 }
+
+// TestConvertKeepsPicture: with keep=1 (the browser showed the picture but
+// heard nothing), an HEVC picture is copied as it is and only the Dolby
+// sound is remade, instead of re-encoding the whole picture.
+func TestConvertKeepsPicture(t *testing.T) {
+	info := probeInfo{VideoIndex: 0, AudioIndex: 1, VideoCodec: "hevc", AudioCodec: "eac3", AudioChannels: 6}
+	plain := strings.Join(convertArgs("/f.mkv", info, 0, false), " ")
+	if !strings.Contains(plain, "libx264") {
+		t.Fatalf("without keep the picture should be remade: %s", plain)
+	}
+	info.KeepVideo = true
+	kept := strings.Join(convertArgs("/f.mkv", info, 0, false), " ")
+	if strings.Contains(kept, "libx264") || !strings.Contains(kept, "-c:v copy -tag:v hvc1") {
+		t.Fatalf("keep should copy the picture: %s", kept)
+	}
+	if !strings.Contains(kept, "-c:a aac") {
+		t.Fatalf("keep should still remake the sound: %s", kept)
+	}
+}

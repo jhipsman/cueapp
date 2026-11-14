@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
-import { Link, NavLink, Route, Routes, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
+import { Link, NavLink, Route, Routes, useLocation, useNavigate, useNavigationType, useSearchParams } from 'react-router-dom'
 import CueWordmark from '../components/CueWordmark'
 import Screensaver from './Screensaver'
 import Tour from './Tour'
@@ -92,19 +92,28 @@ export default function WatchApp() {
   )
 }
 
+// The page's first showing (a fresh load counts as going "back" otherwise).
+const freshLoad = { current: true }
+
 // SectionView plays a short fade-and-rise each time the section changes
 // (Home, Shows, Movies, Live TV, a title...), as the TV apps do, without
 // remounting the page (Shows and Movies keep what they loaded).
 function SectionView({ children }: { children: ReactNode }) {
   const { pathname } = useLocation()
+  const how = useNavigationType()
   const box = useRef<HTMLDivElement>(null)
   useLayoutEffect(() => {
     const el = box.current
     if (!el) return
-    el.classList.remove('wx-view-in')
+    const back = how === 'POP' && !freshLoad.current // a fresh load is a "POP" too
+    freshLoad.current = false
+    // Back: the page you came from slides back in from the left. Opening a
+    // title: it grows into place. Another section: a soft rise.
+    const anim = back ? 'wx-view-back' : /\/(movie|tv)\/\d+/.test(pathname) ? 'wx-view-open' : 'wx-view-in'
+    el.classList.remove('wx-view-in', 'wx-view-back', 'wx-view-open')
     void el.offsetWidth // restart the animation
-    el.classList.add('wx-view-in')
-  }, [pathname])
+    el.classList.add(anim)
+  }, [pathname, how])
   return (
     <div className="wx-view" ref={box}>
       {children}
