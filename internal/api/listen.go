@@ -208,11 +208,32 @@ func (s *Server) lookForAlbum(id int64, pm *premiumize.Client) {
 	}
 	title := plainAlbumTitle(album.Title)
 	query := album.Artist.Name + " " + title
-	outcomes := indexers.SearchAll(ctx, enabled, query, musicCategories)
-	results := torrentResults(dropBlocked(indexers.MergeResults(outcomes), s.blockedKeys()))
-	ranked := rankAlbumReleases(results, album.Artist.Name, title, album.Year())
+	// The sites' music sections first; then everything, for sites that
+	// file albums elsewhere or don't label them.
+	var (
+		failed  []string
+		found   int
+		torrent int
+		ranked  []indexers.Result
+	)
+	for _, cats := range [][]int{musicCategories, nil} {
+		outcomes := indexers.SearchAll(ctx, enabled, query, cats)
+		failed = failed[:0]
+		for _, o := range outcomes {
+			if o.Err != nil {
+				failed = append(failed, o.IndexerName)
+			}
+		}
+		all := dropBlocked(indexers.MergeResults(outcomes), s.blockedKeys())
+		results := torrentResults(all)
+		found, torrent = max(found, len(all)), max(torrent, len(results))
+		if ranked = rankAlbumReleases(results, album.Artist.Name, title, album.Year()); len(ranked) > 0 {
+			break
+		}
+	}
+	slog.Info("listen: search", "album", album.Title, "artist", album.Artist.Name, "sites", len(enabled), "didnt_answer", len(failed), "releases", found, "torrents", torrent, "this_album", len(ranked))
 	if len(ranked) == 0 {
-		setSound(id, albumSound{Status: "none", Message: fmt.Sprintf("Your torrent sites have nothing for %s by %s. A site with more music may have it.", album.Title, album.Artist.Name)})
+		setSound(id, albumSound{Status: "none", Message: nothingFound(album.Artist.Name, album.Title, len(enabled), failed, found, torrent)})
 		return
 	}
 	if len(ranked) > listenMaxChecked {
@@ -358,10 +379,17 @@ func rankAlbumReleases(results []indexers.Result, artist, album string, year int
 	var keep []scored
 	for _, res := range results {
 		rel := music.ParseRelease(res.Title)
+		rank := listenRank(rel.Tier())
 		if ok, _ := music.ReleaseMatch(rel, artist, album, year); !ok {
-			continue
+			// Public sites often leave out the dash ("Artist Album 2024
+			// FLAC"): the artist's and the album's words both in the name
+			// will do, after the ones named properly.
+			if !namesAlbum(res.Title, rel, artist, album, year) {
+				continue
+			}
+			rank -= 10
 		}
-		keep = append(keep, scored{res, listenRank(rel.Tier())})
+		keep = append(keep, scored{res, rank})
 	}
 	sort.SliceStable(keep, func(i, j int) bool {
 		if keep[i].rank != keep[j].rank {
@@ -480,6 +508,51 @@ func matchAlbumFiles(tracks []deezer.Track, files []premiumize.File) []soundTrac
 		}
 	}
 	return out
+}
+
+// namesAlbum says a release's name has every word of the artist's name and
+// of the album's title in it (in any order), isn't a discography, and isn't
+// dated before the album.
+func namesAlbum(title string, rel music.Release, artist, album string, year int) bool {
+	if rel.Discography || (rel.Year > 0 && year > 0 && rel.Year < year) {
+		return false
+	}
+	if rel.Artist != "" && !music.SameArtist(rel.Artist, artist) {
+		return false // the name says plainly whose it is, and it's someone else's
+	}
+	have := map[string]bool{}
+	for _, w := range strings.Fields(plainWords(strings.ReplaceAll(title, "&", " and "))) {
+		have[w] = true
+	}
+	need := strings.Fields(plainWords(strings.ReplaceAll(artist+" "+album, "&", " and ")))
+	if len(need) == 0 {
+		return false
+	}
+	for _, w := range need {
+		if !have[w] && !(w == "the" || w == "a") {
+			return false
+		}
+	}
+	return true
+}
+
+// nothingFound says plainly which step came up empty.
+func nothingFound(artist, album string, sites int, failed []string, found, torrents int) string {
+	what := fmt.Sprintf("%s by %s", album, artist)
+	switch {
+	case len(failed) >= sites:
+		return fmt.Sprintf("None of your torrent sites answered (%s). Press Test next to each one in Settings > Torrent sites.", strings.Join(failed, ", "))
+	case found == 0:
+		msg := fmt.Sprintf("Your torrent sites found nothing at all for %s.", what)
+		if len(failed) > 0 {
+			msg += fmt.Sprintf(" (%s didn't answer.)", strings.Join(failed, ", "))
+		}
+		return msg + " A site with more music may have it."
+	case torrents == 0:
+		return fmt.Sprintf("Your sites found %s for %s, but none are torrents, and only torrents can play through Premiumize straight away.", plural(found, "release"), what)
+	default:
+		return fmt.Sprintf("Your sites found %s, but none of them is %s (other albums, other artists, or whole discographies).", plural(torrents, "torrent"), what)
+	}
 }
 
 func plainWords(s string) string {

@@ -211,6 +211,16 @@ export function MusicProvider({ children }: { children: ReactNode }) {
     if (tracks.length === 0) return
     const first = tracks[Math.min(start, tracks.length - 1)]
     const on = opts?.shuffle ?? false
+    // Pressing Play on an album that came up empty looks again (a torrent
+    // site may have been added since).
+    if (sounds[first.albumId]?.status === 'none') {
+      setSounds((m) => {
+        const copy = { ...m }
+        delete copy[first.albumId]
+        return copy
+      })
+      ask(first.albumId, true)
+    }
     setOriginal(tracks)
     setShuffleState(on)
     const q = on ? shuffled(tracks, opts?.shuffle && start === 0 ? undefined : first) : tracks
@@ -234,7 +244,7 @@ export function MusicProvider({ children }: { children: ReactNode }) {
       a.src = silence()
       void a.play().catch(() => undefined)
     }
-  }, [sounds])
+  }, [sounds, ask])
 
   const toggle = useCallback(() => {
     const a = audio.current
