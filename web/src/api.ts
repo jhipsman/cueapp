@@ -2130,6 +2130,13 @@ export const api = {
   newInvite: () => post<{ token: string; expires: string }>('/users/invite'),
   endInvite: () => del<{ token?: string }>('/users/invite'),
   // Signed out: whether an invite works, and making an account from it.
+  // The family code (Settings > Accounts): typed on the sign-in page to make an account.
+  getFamilyCode: () => get<{ code?: string }>('/users/family-code'),
+  newFamilyCode: () => post<{ code: string }>('/users/family-code'),
+  setFamilyCode: (code: string) => put<{ code: string }>('/users/family-code', { code }),
+  endFamilyCode: () => del<{ code?: string }>('/users/family-code'),
+  familyCodeOpen: () => get<{ open: boolean }>('/join/family-code'),
+  joinWithCode: (data: { code: string; name: string; username: string; password: string }) => post<User>('/join/family-code', data),
   checkInvite: (token: string) => get<{ ok: boolean; expires: string }>(`/join/${encodeURIComponent(token)}`),
   joinWithInvite: (token: string, data: { name: string; username: string; password: string }) =>
     post<User>(`/join/${encodeURIComponent(token)}`, data),

@@ -14,8 +14,11 @@ import (
 // string key that silently reads back empty.
 const (
 	// The family invite link (handlers_invite.go): its secret and when it ends.
-	KeyInviteToken       = "accounts.invite_token"
-	KeyInviteExpires     = "accounts.invite_expires"
+	KeyInviteToken   = "accounts.invite_token"
+	KeyInviteExpires = "accounts.invite_expires"
+	// The family code (handlers_family_code.go): typed on the sign-in page to
+	// make an account, instead of opening an invite link. Encrypted.
+	KeyFamilyCode        = "accounts.family_code"
 	KeyMoviesPath        = "library.movies_path"
 	KeyTVPath            = "library.tv_path" // falls back to the TV_DIR env default when unset
 	KeyDownloadsPath     = "library.downloads_path"

@@ -178,6 +178,8 @@ Every route the server exposes. Routes marked **public** need no sign-in; all ot
 
 | Method | Path | Access | What it does |
 |---|---|---|---|
+| GET | `/api/join/family-code` | **public** | GET /api/join/family-code: whether the sign-in page offers "Create an account" ({"open":true}). |
+| POST | `/api/join/family-code` | **public** | POST /api/join/family-code {"code","name","username","password"}: a new member account, signed in. |
 | GET | `/api/join/{token}` | **public** | GET /api/join/{token}: whether the invite still works. |
 | POST | `/api/join/{token}` | **public** | POST /api/join/{token} {"name","username","password"}: a new member account from the invite, signed in. |
 
@@ -611,6 +613,10 @@ Every route the server exposes. Routes marked **public** need no sign-in; all ot
 |---|---|---|---|
 | GET | `/api/users` | admin | lists every account with its role and last sign-in. |
 | POST | `/api/users` | admin | adds an account for someone else, for example a family member, with the role the administrator picks. |
+| DELETE | `/api/users/family-code` | admin | DELETE /api/users/family-code: no more accounts from a code. |
+| GET | `/api/users/family-code` | admin | GET /api/users/family-code: {"code"}, or {} when it's off. |
+| POST | `/api/users/family-code` | admin | POST /api/users/family-code: a new random code (the old one stops working). |
+| PUT | `/api/users/family-code` | admin | PUT /api/users/family-code {"code"}: a code of your own choosing. |
 | DELETE | `/api/users/invite` | admin | DELETE /api/users/invite: the link stops working. |
 | GET | `/api/users/invite` | admin | GET /api/users/invite: the invite link's secret and end, or {} when off. |
 | POST | `/api/users/invite` | admin | POST /api/users/invite: a new link (the old one stops working). |
@@ -679,4 +685,4 @@ Every route the server exposes. Routes marked **public** need no sign-in; all ot
 | PUT | `/api/watched/settings` | admin | PUT /api/watched/settings {"sync": true, "cleanup": {...}} |
 | POST | `/api/watched/sync` | admin | POST /api/watched/sync: read what's been watched now. |
 
-374 routes.
+380 routes.

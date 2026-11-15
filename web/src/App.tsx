@@ -98,7 +98,8 @@ function Gate() {
     // (a link to a title, the phone-search code) signs in first, then opens it.
     if (location.pathname === '/') return <Landing />
     // A family invite link: make your own account.
-    if (location.pathname.startsWith('/join/')) return <Join />
+    // A family invite link, or the family code ("Create an account").
+    if (location.pathname === '/join' || location.pathname.startsWith('/join/')) return <Join />
     // How to get Cue on a TV, with pictures (the invite text links here).
     if (location.pathname === '/setup-tv') return <SetupTV />
     return <Login />

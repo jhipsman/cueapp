@@ -202,6 +202,7 @@ var memberRoutes = []string{
 var mustBeAdmin = []string{
 	"GET /api/users", "POST /api/users", "PUT /api/users/{id}", "DELETE /api/users/{id}",
 	"GET /api/users/invite", "POST /api/users/invite", "DELETE /api/users/invite",
+	"GET /api/users/family-code", "POST /api/users/family-code", "PUT /api/users/family-code", "DELETE /api/users/family-code",
 	"GET /api/settings", "PUT /api/settings", "POST /api/settings/folder-create",
 	"GET /api/indexers", "GET /api/usenet-servers", "GET /api/vpn/configs", "GET /api/notifications", "GET /api/media-servers",
 	"GET /api/system/backup", "POST /api/system/restore",

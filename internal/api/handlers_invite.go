@@ -125,6 +125,13 @@ func (s *Server) handleJoin(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "Couldn't read that request. Reload the page and try again.")
 		return
 	}
+	s.makeMember(w, r, req.Name, req.Username, req.Password)
+}
+
+// makeMember makes a family member's account (from the invite link or the
+// family code) and signs it in.
+func (s *Server) makeMember(w http.ResponseWriter, r *http.Request, name, username, password string) {
+	req := struct{ Name, Username, Password string }{name, username, password}
 	req.Username = strings.TrimSpace(req.Username)
 	first, last := splitName(req.Name, "", "")
 	if rejectBad(w, checkUsername(req.Username), checkPassword(req.Password, "Password"), checkMaxLen(first, "Name", nameMax)) {

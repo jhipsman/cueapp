@@ -6,6 +6,7 @@ The keys the app stores in its settings table. You normally change these from th
 
 | Key | Notes |
 |---|---|
+| `accounts.family_code` |  |
 | `accounts.invite_expires` |  |
 | `accounts.invite_token` |  |
 | `app.streaming_only` | "1" streaming only (Watch is the app, the download jobs rest), "0" the full library manager; unset = CUE_STREAMING_ONLY (on unless "0") |

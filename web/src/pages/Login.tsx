@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react'
+import { Link } from 'react-router-dom'
 import { api } from '../api'
 import { useAuth } from '../AuthContext'
 import { useDarkPage } from '../useDarkPage'
@@ -15,8 +16,13 @@ export default function Login() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
+  const [canJoin, setCanJoin] = useState(false) // a family code is set: "Create an account"
   useEffect(() => {
     document.title = titleFor('Sign in')
+    api
+      .familyCodeOpen()
+      .then((o) => setCanJoin(o.open))
+      .catch(() => undefined)
   }, [])
 
   // Sign-in only checks that both boxes are filled in. The username format is
@@ -64,6 +70,11 @@ export default function Login() {
           {busy ? 'Signing in…' : 'Sign in'}
         </button>
         <FormProblem v={v} verb="sign in" />
+        {canJoin && (
+          <p className="auth-sub auth-join">
+            New here? <Link to="/join">Create an account</Link>
+          </p>
+        )}
         <details className="forgot">
           <summary>Forgot your password?</summary>
           <p>

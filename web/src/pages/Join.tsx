@@ -9,13 +9,16 @@ import { titleFor } from '../documentTitle'
 import * as check from '../validate'
 import { FieldError, FormProblem, useValidation } from '../useValidation'
 
-// Joining from a family invite link (/join/{token}): your own account on
-// this Cue, made by you. It watches with the household's streaming, and
-// you're signed in straight away.
+// Joining from a family invite link (/join/{token}), or with the family
+// code (/join, from "Create an account" on the sign-in page): your own
+// account on this Cue, made by you. It watches with the household's
+// streaming, and you're signed in straight away.
 export default function Join() {
   // Shown before sign-in, outside the router's routes: the code is read
   // from the address itself.
   const token = decodeURIComponent(useLocation().pathname.split('/join/')[1] ?? '').split('/')[0]
+  const withCode = token === ''
+  const [code, setCode] = useState('')
   const { refresh } = useAuth()
   const navigate = useNavigate()
   useDarkPage(true)
@@ -28,6 +31,10 @@ export default function Join() {
   const [busy, setBusy] = useState(false)
   useEffect(() => {
     document.title = titleFor('Join')
+    if (withCode) {
+      setState('ok')
+      return
+    }
     api
       .checkInvite(token)
       .then(() => setState('ok'))
@@ -35,9 +42,10 @@ export default function Join() {
         setProblem(e instanceof Error ? e.message : String(e))
         setState('ended')
       })
-  }, [token])
+  }, [token, withCode])
 
   const v = useValidation({
+    code: withCode ? check.required(code, 'Enter the family code.') : '',
     username: check.username(username),
     password: check.password(password),
     again: check.passwordsMatch(password, again),
@@ -49,7 +57,8 @@ export default function Join() {
     setProblem('')
     setBusy(true)
     try {
-      await api.joinWithInvite(token, { name: name.trim(), username: username.trim(), password })
+      if (withCode) await api.joinWithCode({ code, name: name.trim(), username: username.trim(), password })
+      else await api.joinWithInvite(token, { name: name.trim(), username: username.trim(), password })
       await refresh()
       navigate('/', { replace: true })
     } catch (err) {
@@ -77,11 +86,27 @@ export default function Join() {
         )}
         {state === 'ok' && (
           <>
-            <p className="auth-sub">You're invited. Make your own account to start watching.</p>
+            <p className="auth-sub">{withCode ? 'Make your own account with the family code.' : "You're invited. Make your own account to start watching."}</p>
             {problem && <p className="error-text">{problem}</p>}
+            {withCode && (
+              <label>
+                Family code
+                <input
+                  value={code}
+                  onChange={(e) => setCode(e.target.value)}
+                  autoFocus
+                  autoComplete="off"
+                  autoCapitalize="characters"
+                  spellCheck={false}
+                  placeholder="Ask whoever runs Cue"
+                  {...v.bind('code', code, setCode)}
+                />
+                <FieldError v={v} name="code" />
+              </label>
+            )}
             <label>
               Your name
-              <input value={name} onChange={(e) => setName(e.target.value)} autoFocus autoComplete="name" placeholder="What everyone calls you" maxLength={80} />
+              <input value={name} onChange={(e) => setName(e.target.value)} autoFocus={!withCode} autoComplete="name" placeholder="What everyone calls you" maxLength={80} />
             </label>
             <label>
               Username
