@@ -2,10 +2,13 @@ package api
 
 import (
 	"bytes"
+	"compress/gzip"
 	"io/fs"
 	"net/http"
 	"regexp"
 	"strings"
+	"sync"
+	"time"
 
 	"github.com/jhipsman/cueapp/web"
 )
@@ -47,6 +50,17 @@ func frontendHandler() http.Handler {
 		} else {
 			w.Header().Set("Cache-Control", "no-cache")
 		}
+		if strings.HasSuffix(r.URL.Path, ".glb") && strings.Contains(r.Header.Get("Accept-Encoding"), "gzip") {
+			// The front page's 3D phone: sent compressed (about half the
+			// size). Proxies such as Caddy don't compress this kind of file.
+			if gz := gzipped(sub, trimLeadingSlash(r.URL.Path)); gz != nil {
+				w.Header().Set("Content-Type", "model/gltf-binary")
+				w.Header().Set("Content-Encoding", "gzip")
+				w.Header().Set("Vary", "Accept-Encoding")
+				http.ServeContent(w, r, "", startTime, bytes.NewReader(gz))
+				return
+			}
+		}
 		if strings.HasSuffix(r.URL.Path, ".webmanifest") {
 			// What browsers expect for "Add to home screen".
 			w.Header().Set("Content-Type", "application/manifest+json")
@@ -73,3 +87,27 @@ func bookshelfPage(page []byte) []byte {
 }
 
 var titleTag = regexp.MustCompile(`<title>[^<]*</title>`)
+
+// startTime is when this Cue started: the embedded files' modification time.
+var startTime = time.Now()
+
+// gzipCache holds compressed copies of embedded files, made on first ask.
+var gzipCache sync.Map
+
+// gzipped is an embedded file compressed with gzip, or nil.
+func gzipped(fsys fs.FS, name string) []byte {
+	if v, ok := gzipCache.Load(name); ok {
+		return v.([]byte)
+	}
+	raw, err := fs.ReadFile(fsys, name)
+	if err != nil {
+		return nil
+	}
+	var buf bytes.Buffer
+	zw, _ := gzip.NewWriterLevel(&buf, gzip.BestCompression)
+	if _, err := zw.Write(raw); err != nil || zw.Close() != nil {
+		return nil
+	}
+	gzipCache.Store(name, buf.Bytes())
+	return buf.Bytes()
+}

@@ -181,12 +181,12 @@ export default function PhoneModel({ model, clip, poster, searchPoster, turn = -
   return <div className={`lp-phone3d${ready ? ' on' : ''}`} ref={box} aria-hidden="true" />
 }
 
-// The phone's search page, searching the TV: "Dune" is typed, then the
+// The phone's search page, searching the TV: "Wildwood" is typed, then the
 // film appears. Loops every six seconds.
 function searchScreen(posterUrl: string): ScreenPainter {
   const poster = new Image()
   poster.src = posterUrl
-  const word = 'Dune'
+  const word = 'Wildwood'
   return (ctx, w, h, t) => {
     const u = w / 100 // one unit is a hundredth of the width
     const loop = t % 6
@@ -201,7 +201,7 @@ function searchScreen(posterUrl: string): ScreenPainter {
     ctx.beginPath()
     ctx.roundRect(7 * u, 34 * u, 86 * u, 15 * u, 4 * u)
     ctx.fill()
-    const typed = word.slice(0, Math.max(0, Math.min(word.length, Math.floor((loop - 0.6) / 0.3) + 1)))
+    const typed = word.slice(0, Math.max(0, Math.min(word.length, Math.floor((loop - 0.6) / 0.2) + 1)))
     ctx.fillStyle = '#fff'
     ctx.font = `600 ${7 * u}px Inter, system-ui, sans-serif`
     ctx.fillText(typed, 12 * u, 41.5 * u)

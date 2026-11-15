@@ -10,14 +10,32 @@ import './landing.css'
 // straight to Watch and this page isn't seen again.
 
 const POSTERS = [
-  1368337, 1792170, 1375441, 1294189, 969681, 1003596, 1283515, 791523, 1570488, 1384216, 1300968, 1170608, 1117898, 1567605, 1465063,
-  1290418, 1084244, 1153576, 1380417, 1377237, 247718, 225385, 213375, 258989, 120911, 153312, 314271, 81723, 84773, 248830,
+  969681, 791523, 1084244, 1368337, 1153576, 1117898, 1384216, 1003596, 1570488, 1465063, 81723, 248830,
+  1375441, 1294189, 1300968, 1380417, 1377237, 247718, 225385, 258989, 120911, 153312, 314271, 84773,
 ]
 const M = '/landing/'
 
 // Downloader's short code for cuetv.me/tv.apk (made at go.aftvnews.com).
 // Only on cuetv.me: another Cue gives its own address instead.
 const DOWNLOADER_CODE = location.hostname.endsWith('cuetv.me') ? '3575368' : ''
+
+// The poster wall, its rows sliding by; paused while it's out of sight, so
+// it costs nothing once you've scrolled past.
+function Marquee({ children }: { children: ReactNode }) {
+  const box = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const el = box.current
+    if (!el || typeof IntersectionObserver === 'undefined') return
+    const io = new IntersectionObserver(([e]) => el.classList.toggle('still', !e.isIntersecting))
+    io.observe(el)
+    return () => io.disconnect()
+  }, [])
+  return (
+    <div className="lp-marquee" aria-hidden="true" ref={box}>
+      {children}
+    </div>
+  )
+}
 
 // The 3D phone (three.js), fetched only for this page and only after it shows.
 const PhoneModel = lazy(() => import('./PhoneModel'))
@@ -222,15 +240,15 @@ export default function Landing() {
         </div>
       </header>
 
-      <div className="lp-marquee" aria-hidden="true">
-        {[POSTERS.slice(0, 15), POSTERS.slice(15)].map((row, i) => (
+      <Marquee>
+        {[POSTERS.slice(0, 12), POSTERS.slice(12)].map((row, i) => (
           <div className="lp-mrow" key={i}>
             {row.concat(row).map((n, k) => (
-              <img key={k} src={`${M}p${n}.jpg`} alt="" loading="lazy" />
+              <img key={k} src={`${M}p${n}.webp`} alt="" loading="lazy" />
             ))}
           </div>
         ))}
-      </div>
+      </Marquee>
 
       <section className="lp-part" id="inside">
         <div className="lp-wrap">
@@ -253,16 +271,16 @@ export default function Landing() {
                   <div className="lp-remote" aria-hidden="true">
                     <p>Searching on the TV</p>
                     <div className="lp-remote-field">
-                      <span className="lp-typed">Dune</span>
+                      <span className="lp-typed">Wildwood</span>
                     </div>
                     <div className="lp-remote-mic" />
                     <div className="lp-remote-hits">
-                      <img src={`${M}p1170608.jpg`} alt="" loading="lazy" />
+                      <img src={`${M}p791523.webp`} alt="" loading="lazy" />
                     </div>
                   </div>
                 </Phone>
                 <Suspense fallback={null}>
-                  <PhoneModel model={`${M}iphone.glb`} searchPoster={`${M}p1170608.jpg`} turn={0.22} />
+                  <PhoneModel model={`${M}iphone.glb`} searchPoster={`${M}p791523.webp`} turn={0.22} />
                 </Suspense>
               </div>
               <span className="lp-tag">
@@ -339,7 +357,7 @@ export default function Landing() {
           </div>
           <div className="lp-cinema" ref={cinema}>
             {adOn ? (
-              <video ref={ad} src={`${M}commercial.mp4`} poster={`${M}commercial.jpg`} controls playsInline aria-label="The Cue commercial" />
+              <video ref={ad} src={`${M}commercial.mp4`} poster={`${M}commercial.jpg`} controls playsInline preload="none" aria-label="The Cue commercial" />
             ) : (
               <>
                 <img src={`${M}commercial.jpg`} alt="Meet Cue, from the commercial" />
