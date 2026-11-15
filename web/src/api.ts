@@ -224,65 +224,6 @@ export interface WatchProfiles {
 
 // Watch: the streaming side (browse anything, play from Premiumize).
 export type WatchKind = 'movie' | 'tv'
-// ---- Music, streamed (Watch > Music) ----
-export interface ListenArtist {
-  id: number
-  name: string
-  picture: string
-  fans?: number
-}
-export interface ListenTrack {
-  id: number
-  title: string
-  length: number
-  number?: number
-  disc?: number
-  explicit?: boolean
-  artist: ListenArtist
-  albumId: number
-  albumTitle: string
-  cover: string
-}
-export interface ListenAlbum {
-  id: number
-  title: string
-  cover: string
-  coverSmall: string
-  artist: ListenArtist
-  released?: string
-  type?: string
-  genre?: string
-  explicit?: boolean
-  tracks?: ListenTrack[]
-  length?: number
-}
-export interface ListenHome {
-  topTracks: ListenTrack[]
-  topAlbums: ListenAlbum[]
-  topArtists: ListenArtist[]
-  newReleases: ListenAlbum[]
-}
-export interface ListenResults {
-  tracks: ListenTrack[]
-  albums: ListenAlbum[]
-  artists: ListenArtist[]
-}
-export interface ListenArtistPage {
-  artist: ListenArtist
-  top: ListenTrack[]
-  albums: ListenAlbum[]
-  related: ListenArtist[]
-}
-// Where an album's songs stand: looking, fetching (into Premiumize), ready
-// (each song's address by track id) or none (with why).
-export interface AlbumSound {
-  status: 'looking' | 'fetching' | 'ready' | 'none'
-  message?: string
-  progress?: number
-  release?: string
-  tracks?: { id: number; url: string }[]
-}
-
 export interface WatchCard {
   kind: WatchKind
   tmdbId: number
@@ -2361,11 +2302,6 @@ export const api = {
     get<null>(`/play/tmdb/${kind}/${tmdbId}${kind === 'tv' ? `/${season}/${episode}` : ''}?prefetch=1`).catch(() => null),
   watchHome: () => get<WatchHome>('/watch/home'),
   watchSearch: (q: string) => get<WatchCard[]>(`/watch/search?q=${encodeURIComponent(q)}`),
-  listenHome: () => get<ListenHome>('/listen/home'),
-  listenSearch: (q: string) => get<ListenResults>(`/listen/search?q=${encodeURIComponent(q)}`),
-  listenAlbum: (id: number) => get<ListenAlbum>(`/listen/album/${id}`),
-  listenArtist: (id: number) => get<ListenArtistPage>(`/listen/artist/${id}`),
-  albumSound: (id: number, again = false) => get<AlbumSound>(`/listen/album/${id}/sound${again ? '?again=1' : ''}`),
   watchTitle: (kind: WatchKind, tmdbId: number) => get<WatchTitle>(`/watch/${kind}/${tmdbId}`),
   watchSeason: (tmdbId: number, season: number) => get<WatchEpisode[]>(`/watch/tv/${tmdbId}/season/${season}`),
   watchSubtitles: (kind: 'movie' | 'tv', tmdbId: number, season: number, episode: number, release: string, choice = 0) =>
