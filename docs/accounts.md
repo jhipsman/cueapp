@@ -91,6 +91,12 @@ Accounts made this way are basic users that can watch and find subtitles, and as
 
 One link works at a time, for seven days. **Make a new link** ends the old one; **Turn it off** ends it at once. Wrong links are counted like failed sign-ins.
 
+### The family code
+
+A link has to be sent and runs out after a week. The **family code** is one code you make once and tell your family, for example `MAPLE-RIVER-42`. In **Settings > Accounts**, under **Family code**, choose **Make a family code** (or **Choose my own**, at least 8 letters or numbers). The sign-in page then shows **New here? Create an account**: whoever has the code types it there, with a name, a username and a password, and is signed in straight away. Capitals, spaces and dashes don't matter.
+
+The code doesn't run out. **Make a new code** or **Turn it off** stops the old one at once; accounts already made keep working. Accounts made with it are the same basic users as from an invite link, and wrong codes are counted like failed sign-ins, so the code can't be guessed.
+
 ## Changing, resetting and removing accounts
 
 An admin can do the following for any other account, using the buttons on its card:

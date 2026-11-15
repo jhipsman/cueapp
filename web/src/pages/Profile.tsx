@@ -549,6 +549,111 @@ function AddAccountForm({ onAdded }: { onAdded: (a: Account) => void }) {
 // The family invite: a link an administrator sends round so each person
 // makes their own account (one that watches with this Cue's streaming and
 // can't change its settings). One link at a time, for seven days.
+// The family code: one code, made once, that family members type on the
+// sign-in page ("New here? Create an account") to make their own account.
+// It doesn't end by itself; a new one (or turning it off) ends the old.
+function FamilyCodeCard({ onChanged }: { onChanged: () => void }) {
+  const toast = useToast()
+  const [code, setCode] = useState<string | null>(null)
+  const [own, setOwn] = useState('')
+  const [choosing, setChoosing] = useState(false)
+  const [busy, setBusy] = useState(false)
+  useEffect(() => {
+    api
+      .getFamilyCode()
+      .then((r) => setCode(r.code ?? ''))
+      .catch(() => setCode(''))
+  }, [])
+  const message = [
+    `Join the family's Cue: go to ${window.location.host}, tap Sign in, then "Create an account".`,
+    `Family code: ${code}`,
+    `To watch on a Fire TV or Google TV, the steps with pictures are at ${window.location.origin}/setup-tv`,
+  ].join('\n\n')
+  async function run(work: () => Promise<{ code?: string }>, done: string) {
+    setBusy(true)
+    try {
+      const r = await work()
+      setCode(r.code ?? '')
+      setChoosing(false)
+      setOwn('')
+      if (done) toast.success(done)
+      onChanged()
+    } catch (e) {
+      toast.error(errorText(e))
+    } finally {
+      setBusy(false)
+    }
+  }
+  return (
+    <fieldset className="group folders">
+      <legend>
+        <Icon name="key" size={14} /> Family code
+      </legend>
+      <p style={{ color: 'var(--text-dim)', marginTop: 0 }}>
+        Tell your family one code, once. Anyone with it can make their own account from the sign-in page ("New here? Create an account"), on any phone or computer.
+        Their accounts watch with this Cue's streaming and can't see or change its settings. A new code, or turning it off, stops the old one; accounts already made keep working.
+      </p>
+      {code === null ? (
+        <div className="skeleton" style={{ height: 44, borderRadius: 10 }} />
+      ) : code ? (
+        <>
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+            <code style={{ fontSize: 22, fontWeight: 800, letterSpacing: '0.06em', padding: '8px 14px', borderRadius: 10, background: 'var(--surface-2)' }}>{code}</code>
+            <button
+              type="button"
+              className="primary"
+              onClick={() =>
+                void navigator.clipboard
+                  .writeText(code)
+                  .then(() => toast.success('Family code copied.'))
+                  .catch(() => toast.error("Couldn't copy it."))
+              }
+            >
+              Copy
+            </button>
+            <a className="btn-link" href={`sms:?&body=${encodeURIComponent(message)}`}>
+              <Icon name="chat" size={14} /> Text it
+            </a>
+          </div>
+          {choosing ? (
+            <form
+              style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 12 }}
+              onSubmit={(e) => {
+                e.preventDefault()
+                void run(() => api.setFamilyCode(own), 'Saved. The old code no longer works.')
+              }}
+            >
+              <input value={own} onChange={(e) => setOwn(e.target.value)} placeholder="At least 8 letters or numbers" aria-label="Your own family code" autoFocus style={{ flex: '1 1 240px' }} />
+              <button type="submit" className="primary" disabled={busy || own.trim().length < 8}>
+                Save
+              </button>
+              <button type="button" className="btn-sm" onClick={() => setChoosing(false)}>
+                Cancel
+              </button>
+            </form>
+          ) : (
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 12 }}>
+              <button type="button" className="btn-sm" disabled={busy} onClick={() => void run(api.newFamilyCode, 'New code made. The old one no longer works.')}>
+                Make a new code
+              </button>
+              <button type="button" className="btn-sm" disabled={busy} onClick={() => setChoosing(true)}>
+                Choose my own
+              </button>
+              <button type="button" className="btn-sm" disabled={busy} onClick={() => void run(api.endFamilyCode, 'Turned off. Nobody can make an account with a code now.')}>
+                Turn it off
+              </button>
+            </div>
+          )}
+        </>
+      ) : (
+        <button type="button" className="primary" disabled={busy} onClick={() => void run(api.newFamilyCode, '')}>
+          {busy ? 'Making a code…' : 'Make a family code'}
+        </button>
+      )}
+    </fieldset>
+  )
+}
+
 function InviteCard({ onChanged }: { onChanged: () => void }) {
   const toast = useToast()
   const [invite, setInvite] = useState<{ token?: string; expires?: string } | null>(null)
@@ -727,6 +832,7 @@ function Accounts() {
           ))}
         </div>
       </fieldset>
+      <FamilyCodeCard onChanged={load} />
       <InviteCard onChanged={load} />
       <AddAccountForm onAdded={(a) => setAccounts((list) => [...(list ?? []), a])} />
       {editing && <EditAccountDialog a={editing} self={editing.id === user?.id} onClose={() => setEditing(null)} onSaved={saved} />}

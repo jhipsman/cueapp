@@ -301,6 +301,8 @@ func (s *Server) Routes() http.Handler {
 	public.HandleFunc("POST /api/auth/tv-link", s.handleTVLinkStart)
 	public.HandleFunc("GET /api/auth/tv-link/{token}", s.handleTVLinkPoll)
 	// The family invite link: check it, and make an account from it.
+	public.HandleFunc("GET /api/join/family-code", s.handleFamilyCodeOpen)
+	public.HandleFunc("POST /api/join/family-code", s.handleJoinWithCode)
 	public.HandleFunc("GET /api/join/{token}", s.handleCheckJoin)
 	public.HandleFunc("POST /api/join/{token}", s.handleJoin)
 	// Calendar apps read the feed without signing in; the secret address is the key.
@@ -564,6 +566,10 @@ func (s *Server) protectedRoutes() *routeTable {
 	admin.HandleFunc("GET /api/users/invite", s.handleGetInvite)
 	admin.HandleFunc("POST /api/users/invite", s.handlePostInvite)
 	admin.HandleFunc("DELETE /api/users/invite", s.handleDeleteInvite)
+	admin.HandleFunc("GET /api/users/family-code", s.handleGetFamilyCode)
+	admin.HandleFunc("POST /api/users/family-code", s.handleNewFamilyCode)
+	admin.HandleFunc("PUT /api/users/family-code", s.handleSetFamilyCode)
+	admin.HandleFunc("DELETE /api/users/family-code", s.handleEndFamilyCode)
 
 	// Settings.
 	admin.HandleFunc("GET /api/settings", s.handleGetSettings)
