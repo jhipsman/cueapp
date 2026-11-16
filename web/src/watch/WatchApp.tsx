@@ -3,6 +3,8 @@ import { Link, NavLink, Route, Routes, useLocation, useNavigate, useNavigationTy
 import CueWordmark from '../components/CueWordmark'
 import Screensaver from './Screensaver'
 import Tour from './Tour'
+import SettingsPage from './SettingsPage'
+import { AccountPrefsProvider } from './prefs'
 import YearPage from './YearPage'
 import RemoteSearch from './RemoteSearch'
 import LinkTV from './LinkTV'
@@ -47,6 +49,7 @@ export default function WatchApp() {
   return (
     <div className="wx">
       <ProfilesProvider>
+        <AccountPrefsProvider>
         <RemindersProvider>
         <ProfileGate />
         <Screensaver />
@@ -77,6 +80,7 @@ export default function WatchApp() {
                 <Route path="list" element={<MyList />} />
                 <Route path="live" element={<LivePage />} />
                 <Route path="search" element={<SearchPage />} />
+                <Route path="settings/:section?" element={<SettingsPage />} />
                 <Route path="movie/:tmdbId" element={<TitlePage kind="movie" />} />
                 <Route path="tv/:tmdbId" element={<TitlePage kind="tv" />} />
                 <Route path="*" element={<Home />} />
@@ -87,6 +91,7 @@ export default function WatchApp() {
         />
         </Routes>
         </RemindersProvider>
+        </AccountPrefsProvider>
       </ProfilesProvider>
     </div>
   )
@@ -185,14 +190,10 @@ function ProfileMenu() {
             <Avatar profile={active} size={28} /> {active.name}
           </div>
           {multi && <button onClick={() => navigate('/watch/who')}>Switch profile</button>}
-          <button onClick={() => navigate('/watch/theme')}>Colors</button>
-          <button onClick={() => navigate('/watch/quality')}>Streaming quality</button>
-          <button onClick={() => navigate('/watch/year')}>Your year in Cue</button>
-          <button onClick={() => navigate('/watch?tour=1')}>How Cue works</button>
+          <button onClick={() => navigate('/watch/settings')}>Settings</button>
           {owner && <button onClick={() => navigate('/watch/profiles')}>Manage profiles</button>}
           {onTV() && <button onClick={() => window.CueTV?.changeServer()}>Change server</button>}
-          {owner && admin && <button onClick={() => navigate(streamingOnly ? '/settings/streaming' : '/')}>{streamingOnly ? 'Settings' : 'Settings and library'}</button>}
-          {owner && !admin && <button onClick={() => navigate('/settings/profile')}>Your account</button>}
+          {owner && admin && <button onClick={() => navigate(streamingOnly ? '/settings/streaming' : '/')}>{streamingOnly ? 'Server settings' : 'Server and library'}</button>}
           <button onClick={() => void signOut()}>Sign out</button>
         </div>
       )}

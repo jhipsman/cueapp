@@ -97,6 +97,18 @@ A link has to be sent and runs out after a week. The **family code** is one code
 
 The code doesn't run out. **Make a new code** or **Turn it off** stops the old one at once; accounts already made keep working. Accounts made with it are the same basic users as from an invite link, and wrong codes are counted like failed sign-ins, so the code can't be guessed.
 
+## Two-step sign-in
+
+Any account can ask for a second step when signing in: after the password, a six-digit code from an authenticator app on the phone (Google Authenticator, Microsoft Authenticator, 1Password, the iPhone's Passwords, and the like). In Watch, open **Settings > Sign-in & security** and choose **Turn on**: scan the QR code (or on the phone itself, open it straight in the app), type the code the app shows, and keep the ten **backup codes** it gives somewhere safe. Each backup code signs in once instead of a code, for a lost phone; **New backup codes** makes ten new ones. Turning it off asks for the password.
+
+TVs sign in by scanning their code with a phone that's already signed in, so they need no code of their own. Signing a TV in with the password of an account that uses two-step asks you to use the phone instead.
+
+Locked out (no phone, no backup codes)? The owner can reset that account's password from the server (below), which also turns its two-step sign-in off.
+
+## Signed-in devices
+
+**Settings > TVs & devices > Sign out everywhere else** signs the account out of every other browser, phone and TV, keeping the one you're using. Use it after signing in on someone else's device, or if you think your password got out (and change the password too).
+
 ## Changing, resetting and removing accounts
 
 An admin can do the following for any other account, using the buttons on its card:

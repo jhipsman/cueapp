@@ -47,7 +47,7 @@ func resetPassword(args []string) error {
 	if err := auth.New(db).ResetPassword(username, password); err != nil {
 		return err
 	}
-	fmt.Printf("Password for %q updated. Any existing sessions were signed out.\n", username)
+	fmt.Printf("Password for %q updated. Any existing sessions were signed out, and two-step sign-in is off.\n", username)
 	return nil
 }
 

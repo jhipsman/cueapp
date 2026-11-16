@@ -16,6 +16,15 @@ import (
 // visible, reviewed change to this list, not a side effect.
 var memberRoutes = []string{
 	"GET /api/auth/me",
+	"GET /api/me/prefs",
+	"PUT /api/me/prefs",
+	"POST /api/auth/sign-out-others",
+	"GET /api/auth/two-step",
+	"POST /api/auth/two-step/start",
+	"GET /api/auth/two-step/qr",
+	"POST /api/auth/two-step/confirm",
+	"POST /api/auth/two-step/off",
+	"POST /api/auth/two-step/backup",
 	"PUT /api/auth/profile",
 	"POST /api/auth/change-password",
 	"GET /api/auth/api-keys",
@@ -151,6 +160,7 @@ var memberRoutes = []string{
 	"GET /api/watch/extras/{kind}/{tmdbId}",
 	"GET /api/watch/year",
 	"GET /api/watch/preview/{kind}/{tmdbId}",
+	"DELETE /api/watch/history",
 	"GET /api/watch/preview-file/{name}",
 	"GET /api/watch/remote/{code}",
 	"PUT /api/watch/remote/{code}",

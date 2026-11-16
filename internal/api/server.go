@@ -297,6 +297,7 @@ func (s *Server) Routes() http.Handler {
 	public.HandleFunc("POST /api/onboarding/admin", s.handleCreateAdmin)
 	public.HandleFunc("POST /api/auth/login", s.handleLogin)
 	public.HandleFunc("POST /api/auth/logout", s.handleLogout)
+	public.HandleFunc("POST /api/auth/login/code", s.handleLoginCode)
 	// Signing a TV in from a signed-in phone (handlers_tvlink.go).
 	public.HandleFunc("POST /api/auth/tv-link", s.handleTVLinkStart)
 	public.HandleFunc("GET /api/auth/tv-link/{token}", s.handleTVLinkPoll)
@@ -353,6 +354,17 @@ func (s *Server) protectedRoutes() *routeTable {
 
 	// Their own account.
 	member.HandleFunc("GET /api/auth/me", s.handleMe)
+	// Two-step sign-in, each account its own (handlers_two_step.go).
+	// The account's own settings, and signing out its other devices (account_prefs.go).
+	member.HandleFunc("GET /api/me/prefs", s.handleGetAccountPrefs)
+	member.HandleFunc("PUT /api/me/prefs", s.handlePutAccountPrefs)
+	member.HandleFunc("POST /api/auth/sign-out-others", s.handleSignOutOthers)
+	member.HandleFunc("GET /api/auth/two-step", s.handleGetTwoStep)
+	member.HandleFunc("POST /api/auth/two-step/start", s.handleStartTwoStep)
+	member.HandleFunc("GET /api/auth/two-step/qr", s.handleTwoStepQR)
+	member.HandleFunc("POST /api/auth/two-step/confirm", s.handleConfirmTwoStep)
+	member.HandleFunc("POST /api/auth/two-step/off", s.handleTwoStepOff)
+	member.HandleFunc("POST /api/auth/two-step/backup", s.handleNewBackupCodes)
 	member.HandleFunc("PUT /api/auth/profile", s.handleUpdateUserProfile)
 	member.HandleFunc("POST /api/auth/change-password", s.handleChangePassword)
 	member.HandleFunc("GET /api/auth/api-keys", s.handleListAPIKeys)
@@ -513,6 +525,7 @@ func (s *Server) protectedRoutes() *routeTable {
 	play.HandleFunc("PUT /api/watch/progress", s.handlePutWatchProgress)
 	play.HandleFunc("GET /api/watch/progress/{kind}/{tmdbId}", s.handleGetWatchProgress)
 	play.HandleFunc("DELETE /api/watch/progress/{kind}/{tmdbId}", s.handleForgetWatchProgress)
+	play.HandleFunc("DELETE /api/watch/history", s.handleClearWatchHistory)
 	play.HandleFunc("PUT /api/watch/list/{kind}/{tmdbId}", s.handleAddToWatchList)
 	play.HandleFunc("DELETE /api/watch/list/{kind}/{tmdbId}", s.handleRemoveFromWatchList)
 	// Live TV (live.go).

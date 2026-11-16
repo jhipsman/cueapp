@@ -57,7 +57,11 @@ final class Cue: ObservableObject {
     func signIn(server address: String, username: String, password: String) async throws {
         server = Cue.tidy(address)
         defaults.set(server, forKey: "server")
-        let _: Me = try await send("POST", "/api/auth/login", body: ["username": username, "password": password])
+        let me: Me = try await send("POST", "/api/auth/login", body: ["username": username, "password": password])
+        // Two-step sign-in is on: the password alone doesn't sign in.
+        if me.twoStep == true {
+            throw CueError(message: "This account uses two-step sign-in, which the Apple TV app can't do yet. Turn it off in Settings on the web, or sign in with another account.")
+        }
         stage = .profiles
     }
 
@@ -235,7 +239,7 @@ final class Cue: ObservableObject {
 
 struct Empty: Decodable {}
 struct Problem: Decodable { let error: String }
-struct Me: Decodable { let username: String? }
+struct Me: Decodable { let username: String?; let twoStep: Bool? }
 struct Picked: Decodable {
     let token: String
     let profile: Profile

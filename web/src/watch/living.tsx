@@ -81,8 +81,14 @@ export function Frames({ urls }: { urls: string[] }) {
 
 // A computer with a mouse, a wide enough window, and no request for less
 // motion: phones and TVs keep the still picture.
+// previewsOn is the account's Settings > Playback > Previews switch (prefs.tsx).
+let previewsOn = true
+export function setPreviewsOn(on: boolean) {
+  previewsOn = on
+}
+
 export function trailersAllowed(): boolean {
-  return matchMedia('(hover: hover) and (min-width: 900px)').matches && !matchMedia('(prefers-reduced-motion: reduce)').matches && !onTV()
+  return previewsOn && matchMedia('(hover: hover) and (min-width: 900px)').matches && !matchMedia('(prefers-reduced-motion: reduce)').matches && !onTV()
 }
 
 // usePreview: a title's own preview clip (cut on the server, kept),

@@ -2105,7 +2105,18 @@ export const api = {
   createAdmin: (data: { username: string; password: string; name?: string; email?: string; setupCode?: string }) => post<User>('/onboarding/admin', data),
   updateAccount: (data: { username: string; name: string; email: string }) => put<User>('/auth/profile', data),
 
-  login: (username: string, password: string) => post<User>('/auth/login', { username, password }),
+  // With two-step sign-in on, the password answers a ticket for loginCode instead of signing in.
+  login: (username: string, password: string) => post<User & { twoStep?: boolean; ticket?: string }>('/auth/login', { username, password }),
+  loginCode: (ticket: string, code: string) => post<User>('/auth/login/code', { ticket, code }),
+  twoStep: () => get<{ on: boolean; backupLeft: number }>('/auth/two-step'),
+  twoStepStart: () => post<{ secret: string; uri: string }>('/auth/two-step/start'),
+  twoStepConfirm: (code: string) => post<{ backupCodes: string[] }>('/auth/two-step/confirm', { code }),
+  twoStepOff: (password: string) => post<{ on: boolean }>('/auth/two-step/off', { password }),
+  twoStepBackup: (password: string) => post<{ backupCodes: string[] }>('/auth/two-step/backup', { password }),
+  accountPrefs: () => get<Record<string, string>>('/me/prefs'),
+  setAccountPrefs: (p: Record<string, string>) => put<Record<string, string>>('/me/prefs', p),
+  signOutOthers: () => post<{ signedOut: number }>('/auth/sign-out-others'),
+  clearWatchHistory: () => del<{ ok: boolean }>('/watch/history'),
   logout: () => post<null>('/auth/logout'),
   me: () => get<User>('/auth/me'),
   changePassword: (currentPassword: string, newPassword: string) =>

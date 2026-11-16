@@ -20,14 +20,22 @@ Every route the server exposes. Routes marked **public** need no sign-in; all ot
 | DELETE | `/api/auth/api-keys/{id}` | any account |  |
 | POST | `/api/auth/change-password` | any account |  |
 | POST | `/api/auth/login` | **public** |  |
+| POST | `/api/auth/login/code` | **public** | POST /api/auth/login/code {"ticket","code"}: the second step of signing in. |
 | POST | `/api/auth/logout` | **public** |  |
 | GET | `/api/auth/me` | any account |  |
 | PUT | `/api/auth/profile` | any account | lets the logged-in user change their username, name and email, returning the updated account. |
 | GET | `/api/auth/proxy-signin` | admin |  |
 | PUT | `/api/auth/proxy-signin` | admin |  |
+| POST | `/api/auth/sign-out-others` | any account | POST /api/auth/sign-out-others: signs the account out on every other device and browser (this one stays signed in). |
 | POST | `/api/auth/tv-link` | **public** | POST /api/auth/tv-link: a new code for a TV to show, and the secret token it asks with ({"code","token","expiresIn"}). |
 | POST | `/api/auth/tv-link/approve` | any account | POST /api/auth/tv-link/approve {"code"}: a signed-in phone signs the TV showing this code in to its own account. |
 | GET | `/api/auth/tv-link/{token}` | **public** | GET /api/auth/tv-link/{token}: the TV asking whether a phone has confirmed. |
+| GET | `/api/auth/two-step` | any account | GET /api/auth/two-step: {"on", "backupLeft"} for the signed-in account. |
+| POST | `/api/auth/two-step/backup` | any account | POST /api/auth/two-step/backup {"password"}: ten new backup codes (the old ones stop working). |
+| POST | `/api/auth/two-step/confirm` | any account | POST /api/auth/two-step/confirm {"code"}: turns two-step on once the app shows the right code; answers the ten backup codes ({"backupCodes"}), shown this once. |
+| POST | `/api/auth/two-step/off` | any account | POST /api/auth/two-step/off {"password"}: turns two-step off. |
+| GET | `/api/auth/two-step/qr` | any account | GET /api/auth/two-step/qr: the QR code of the secret being set up (PNG). |
+| POST | `/api/auth/two-step/start` | any account | POST /api/auth/two-step/start: a new secret to add to an authenticator app ({"secret","uri"}; the QR code is GET /api/auth/two-step/qr). |
 
 ## blocklist
 
@@ -232,6 +240,13 @@ Every route the server exposes. Routes marked **public** need no sign-in; all ot
 |---|---|---|---|
 | GET | `/api/manual-import` | admin | lists the video files in the downloads folder, biggest first, with what each file's name suggests. |
 | POST | `/api/manual-import` | admin | moves one file from the downloads folder into the library as the movie or episode chosen. |
+
+## me
+
+| Method | Path | Access | What it does |
+|---|---|---|---|
+| GET | `/api/me/prefs` | any account | GET /api/me/prefs: {"key":"value"} for the account's settings that are set. |
+| PUT | `/api/me/prefs` | any account | PUT /api/me/prefs {"key":"value",...}: saves some of the account's settings; answers them all. |
 
 ## media-servers
 
@@ -652,6 +667,7 @@ Every route the server exposes. Routes marked **public** need no sign-in; all ot
 | Method | Path | Access | What it does |
 |---|---|---|---|
 | GET | `/api/watch/extras/{kind}/{tmdbId}` | signed in | GET /api/watch/extras/{kind}/{tmdbId}: a title's logo, the main colour of its picture (for the glow and highlights) and its trailer (for the living banner), ... |
+| DELETE | `/api/watch/history` | signed in | DELETE /api/watch/history: the active profile's Continue Watching and what it has watched, forgotten. |
 | GET | `/api/watch/home` | signed in | GET /api/watch/home: Continue Watching, My List and the shelves. |
 | DELETE | `/api/watch/list/{kind}/{tmdbId}` | signed in | DELETE /api/watch/list/{kind}/{tmdbId} |
 | PUT | `/api/watch/list/{kind}/{tmdbId}` | signed in | PUT /api/watch/list/{kind}/{tmdbId} |
@@ -685,4 +701,4 @@ Every route the server exposes. Routes marked **public** need no sign-in; all ot
 | PUT | `/api/watched/settings` | admin | PUT /api/watched/settings {"sync": true, "cleanup": {...}} |
 | POST | `/api/watched/sync` | admin | POST /api/watched/sync: read what's been watched now. |
 
-380 routes.
+391 routes.

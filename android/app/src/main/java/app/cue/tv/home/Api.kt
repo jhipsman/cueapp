@@ -113,7 +113,11 @@ class CueApi(ctx: Context, val server: String) {
     }
 
     suspend fun signIn(user: String, password: String) {
-        request("POST", "/api/auth/login", JSONObject().put("username", user).put("password", password))
+        val answer = request("POST", "/api/auth/login", JSONObject().put("username", user).put("password", password))
+        // Two-step sign-in is on: the TV signs in with the phone instead.
+        if (runCatching { JSONObject(answer).optBoolean("twoStep") }.getOrDefault(false)) {
+            throw Problem(400, "This account uses two-step sign-in. Choose \"Sign in with your phone\" and scan the code instead.")
+        }
     }
 
     /** A code for signing this TV in from a phone: (code, token). */
