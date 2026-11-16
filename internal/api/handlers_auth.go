@@ -180,6 +180,11 @@ func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	s.LoginLimiter.RecordSuccess(ipKey)
+	byUser.RecordSuccess(userKey)
+	// Two-step sign-in on: no session yet, a ticket for the code instead.
+	if s.needsSecondStep(w, user) {
+		return
+	}
 	if err := s.Auth.RecordLogin(user.ID); err != nil {
 		log.Printf("api: login: %v", err) // bookkeeping only; the sign-in itself succeeded
 	}

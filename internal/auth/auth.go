@@ -340,7 +340,9 @@ func (s *Service) ResetPassword(username, newPassword string) error {
 	if err != nil {
 		return fmt.Errorf("hash password: %w", err)
 	}
-	res, err := s.db.Exec(`UPDATE users SET password_hash = ? WHERE username = ?`, string(hash), username)
+	// The way back in for a locked-out owner, so two-step sign-in goes too
+	// (they can turn it on again with a new phone).
+	res, err := s.db.Exec(`UPDATE users SET password_hash = ?, totp_secret = '', totp_backup = '', totp_last_step = 0 WHERE username = ?`, string(hash), username)
 	if err != nil {
 		return fmt.Errorf("update password: %w", err)
 	}
@@ -542,4 +544,15 @@ func isUniqueConstraintErr(err error) bool {
 	// modernc.org/sqlite surfaces SQLite's own message text; matching on
 	// substring avoids a hard dependency on its internal error type.
 	return err != nil && strings.Contains(strings.ToLower(err.Error()), "unique constraint")
+}
+
+// DeleteOtherSessions signs userID out everywhere but the session keep
+// (the device asking).
+func (s *Service) DeleteOtherSessions(userID int64, keep string) (int64, error) {
+	res, err := s.db.Exec(`DELETE FROM sessions WHERE user_id = ? AND token_hash <> ?`, userID, hashToken(keep))
+	if err != nil {
+		return 0, fmt.Errorf("delete sessions: %w", err)
+	}
+	n, _ := res.RowsAffected()
+	return n, nil
 }

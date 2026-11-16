@@ -16,6 +16,8 @@ export default function Login() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
+  const [ticket, setTicket] = useState('') // two-step sign-in: the password was right, now the code
+  const [code, setCode] = useState('')
   const [canJoin, setCanJoin] = useState(false) // a family code is set: "Create an account"
   useEffect(() => {
     document.title = titleFor('Sign in')
@@ -38,10 +40,23 @@ export default function Login() {
     setError('')
     setBusy(true)
     try {
-      await api.login(username, password)
+      if (ticket) {
+        await api.loginCode(ticket, code)
+      } else {
+        const r = await api.login(username, password)
+        if (r.twoStep && r.ticket) {
+          setTicket(r.ticket)
+          return
+        }
+      }
       await refresh()
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err))
+      const msg = err instanceof Error ? err.message : String(err)
+      setError(msg)
+      if (ticket && /again/i.test(msg) && /sign in/i.test(msg)) {
+        setTicket('') // the ticket ran out: back to the password
+        setCode('')
+      }
     } finally {
       setBusy(false)
     }
@@ -56,19 +71,61 @@ export default function Login() {
         </div>
         <p className="auth-sub">Sign in to continue</p>
         {error && <p className="error-text">{error}</p>}
-        <label>
-          Username
-          <input value={username} onChange={(e) => setUsername(e.target.value)} autoFocus autoComplete="username" {...v.bind('username', username, setUsername)} />
-          <FieldError v={v} name="username" />
-        </label>
-        <label>
-          Password
-          <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" {...v.bind('password')} />
-          <FieldError v={v} name="password" />
-        </label>
-        <button className="primary" type="submit" disabled={busy}>
-          {busy ? 'Signing in…' : 'Sign in'}
-        </button>
+        {ticket ? (
+          <>
+            <label>
+              Code from your authenticator app
+              <input
+                value={code}
+                onChange={(e) => setCode(e.target.value)}
+                autoFocus
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                placeholder="123456"
+                maxLength={20}
+              />
+            </label>
+            <p className="auth-sub" style={{ margin: 0 }}>
+              Lost your phone? Type one of your backup codes instead.
+            </p>
+            <button className="primary" type="submit" disabled={busy || code.trim().length < 6}>
+              {busy ? 'Checking…' : 'Sign in'}
+            </button>
+            <button
+              type="button"
+              className="link-button"
+              onClick={() => {
+                setTicket('')
+                setCode('')
+                setError('')
+              }}
+            >
+              Back
+            </button>
+          </>
+        ) : (
+          <>
+            <label>
+              Username
+              <input
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                autoFocus
+                autoComplete="username"
+                {...v.bind('username', username, setUsername)}
+              />
+              <FieldError v={v} name="username" />
+            </label>
+            <label>
+              Password
+              <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" {...v.bind('password')} />
+              <FieldError v={v} name="password" />
+            </label>
+            <button className="primary" type="submit" disabled={busy}>
+              {busy ? 'Signing in…' : 'Sign in'}
+            </button>
+          </>
+        )}
         <FormProblem v={v} verb="sign in" />
         {canJoin && (
           <p className="auth-sub auth-join">
@@ -78,7 +135,8 @@ export default function Login() {
         <details className="forgot">
           <summary>Forgot your password?</summary>
           <p>
-            Cue can&apos;t send reset emails. Ask an administrator to set a new password in Settings &gt; Accounts. If you&apos;re the owner, run this on the server that runs Cue:
+            Cue can&apos;t send reset emails. Ask an administrator to set a new password in Settings &gt; Accounts. If you&apos;re the owner, run this on the
+            server that runs Cue:
           </p>
           <code className="forgot-cmd">cd /opt/cue &amp;&amp; docker compose exec -u 1000:1000 cue /app/app reset-password &lt;username&gt;</code>
           <p>

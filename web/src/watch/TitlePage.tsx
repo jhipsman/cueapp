@@ -1,3 +1,4 @@
+import { usePrefs } from './prefs'
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { api, type WatchEpisode, type WatchKind, type WatchTitle } from '../api'
@@ -11,6 +12,7 @@ import { onTV } from './tv'
 // A movie's or a show's page: the banner with ratings and Play, then for a
 // show its seasons and episodes, then cast and "More like this".
 export default function TitlePage({ kind }: { kind: WatchKind }) {
+  const prefs = usePrefs()
   const navigate = useNavigate()
   const tmdbId = Number(useParams().tmdbId)
   const [title, setTitle] = useState<WatchTitle | null>(null)
@@ -78,7 +80,7 @@ export default function TitlePage({ kind }: { kind: WatchKind }) {
       {title.backdropUrl && <Ambient url={title.backdropUrl} />}
       <header className={`wx-hero${preview.playing && !preview.over ? ' playing' : ''}${frames.length > 1 ? ' framing' : ''}`}>
         {title.backdropUrl && <div className="wx-hero-pic settle" style={{ backgroundImage: `url(${title.backdropUrl})` }} />}
-        {preview.src && <PreviewVideo key={preview.src} src={preview.src} onPlaying={preview.onPlaying} onEnded={preview.onEnded} playing={preview.playing} over={preview.over} sound />}
+        {preview.src && <PreviewVideo key={preview.src} src={preview.src} onPlaying={preview.onPlaying} onEnded={preview.onEnded} playing={preview.playing} over={preview.over} sound={prefs.on('previewSound')} />}
         {frames.length > 1 && <Frames urls={frames} />}
         {preview.waiting && !preview.playing && <span className="wx-trailer-wait" aria-hidden="true" />}
         <div className="wx-hero-body rise">

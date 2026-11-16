@@ -113,11 +113,13 @@
 
 /* ---- Poster marquee ---- */
 .lp-marquee { position: relative; padding-block: 40px 20px; overflow: hidden; -webkit-mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent); mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent) }
-.lp-mrow { display: flex; gap: 14px; width: max-content; animation: lp-slide 70s linear infinite }
+/* Each row moves as one layer: the posters are painted once and slid, not redrawn every frame. */
+.lp-mrow { display: flex; gap: 14px; width: max-content; animation: lp-slide 70s linear infinite; will-change: transform; transform: translateZ(0) }
 .lp-mrow + .lp-mrow { margin-top: 14px; animation-direction: reverse; animation-duration: 80s }
-.lp-mrow img { width: 132px; height: 198px; object-fit: cover; border-radius: 12px; flex: none; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); opacity: 0.92 }
+.lp-mrow img { width: 132px; height: 198px; object-fit: cover; border-radius: 12px; flex: none; opacity: 0.92 }
 @keyframes lp-slide { to { transform: translateX(-50%) } }
-.lp-marquee:hover .lp-mrow { animation-play-state: paused }
+.lp-marquee:hover .lp-mrow,
+.lp-marquee.still .lp-mrow { animation-play-state: paused } /* still: scrolled out of sight */
 
 /* ---- Sections ---- */
 .lp-part { padding-block: 90px 10px }
@@ -154,8 +156,8 @@
 .lp-remote { flex: 1; display: grid; align-content: start; justify-items: center; gap: 6cqw; padding: 8cqw 7cqw 0; background: #0d0f13; color: #fff }
 .lp-remote p { margin: 0; justify-self: start; font-size: 5.5cqw; color: var(--teal); font-weight: 600 }
 .lp-remote-field { justify-self: stretch; height: 14cqw; display: flex; align-items: center; padding: 0 5cqw; border-radius: 4cqw; background: rgba(255, 255, 255, 0.08); font-size: 7cqw; font-weight: 600 }
-.lp-typed { display: inline-block; overflow: hidden; white-space: nowrap; width: 0; border-right: 0.6cqw solid var(--teal); animation: lp-type 6s steps(4) infinite, lp-caret 0.8s step-end infinite }
-@keyframes lp-type { 0%, 10% { width: 0 } 35%, 92% { width: 4.3ch } 100% { width: 0 } }
+.lp-typed { display: inline-block; overflow: hidden; white-space: nowrap; width: 0; border-right: 0.6cqw solid var(--teal); animation: lp-type 6s steps(8) infinite, lp-caret 0.8s step-end infinite }
+@keyframes lp-type { 0%, 10% { width: 0 } 35%, 92% { width: 8.6ch } 100% { width: 0 } }
 @keyframes lp-caret { 50% { border-color: transparent } }
 .lp-remote-mic { width: 18cqw; height: 18cqw; border-radius: 50%; background: var(--teal); box-shadow: 0 0 0 4cqw rgba(52, 209, 191, 0.18) }
 .lp-remote-hits { justify-self: stretch; display: grid; animation: lp-hits 6s infinite }
@@ -246,7 +248,7 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .lp-mrow, .lp-hero h1 .lp-sheen, .lp-eyebrow i, .lp-typed, .lp-remote-hits, .lp-pop .lit, .lp-skip { animation: none }
-  .lp-typed { width: 4.3ch }
+  .lp-typed { width: 8.6ch }
   .lp-screen, .lp-tile > .bg, .lp-faces span { transition: none }
 }
 /* Backgrounds stay inside the thin borders, so rounded corners stay soft. */

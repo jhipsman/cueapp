@@ -5137,3 +5137,232 @@ html.tv-mode .wx .wx-card:focus .wx-card-art {
     margin-top: -40px;
   }
 }
+
+/* ==== Settings (SettingsPage.tsx): categories on the left, the chosen one
+   on the right; on a phone, the list, then the category on its own. ==== */
+.wx-settings {
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr);
+  gap: 32px;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 96px var(--wx-gutter) 60px;
+}
+.wx-set-nav {
+  display: grid;
+  align-content: start;
+  gap: 4px;
+}
+.wx-set-nav h1 {
+  margin: 0 0 14px 12px;
+  font-size: 2rem;
+  font-weight: 800;
+}
+.wx-set-nav a {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 12px;
+  color: var(--wx-dim);
+  text-decoration: none;
+  font-weight: 600;
+  transition:
+    background 0.2s,
+    color 0.2s;
+}
+.wx-set-nav a span {
+  flex: 1;
+}
+.wx-set-nav a:hover,
+.wx-set-nav a:focus-visible {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--wx-text);
+}
+.wx-set-nav a.on {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--wx-text);
+}
+.wx-set-nav a.on svg:first-child {
+  color: var(--wx-accent);
+}
+.wx-set-go {
+  opacity: 0;
+}
+.wx-set-body {
+  min-width: 0;
+  animation: wx-view-in 0.35s var(--wx-settle) backwards;
+}
+.wx-set-body h2 {
+  margin: 0 0 18px;
+  font-size: 1.5rem;
+  font-weight: 750;
+}
+.wx-set-back {
+  display: none;
+}
+.wx-set-hint {
+  color: var(--wx-dim);
+  padding-top: 60px;
+}
+.wx-set-row {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 16px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+.wx-set-words {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+.wx-set-words small {
+  color: var(--wx-dim);
+  line-height: 1.45;
+}
+.wx-set-control {
+  flex: none;
+}
+.wx-set-form,
+.wx-set-panel {
+  display: grid;
+  gap: 10px;
+  padding: 18px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  max-width: 460px;
+}
+.wx-set-form input,
+.wx-set-inline input {
+  padding: 11px 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--wx-text);
+  font: inherit;
+}
+.wx-set-form input:focus,
+.wx-set-inline input:focus {
+  outline: 2px solid var(--wx-accent);
+  outline-offset: 1px;
+}
+.wx-set-form button {
+  justify-self: start;
+}
+.wx-set-panel ol {
+  margin: 0;
+  padding-left: 20px;
+  line-height: 1.7;
+  color: var(--wx-dim);
+}
+.wx-set-panel a {
+  color: var(--wx-accent);
+}
+.wx-set-panel code,
+.wx-set-codes code {
+  font-family: ui-monospace, Menlo, monospace;
+  color: var(--wx-text);
+}
+.wx-set-qr {
+  width: 200px;
+  height: 200px;
+  border-radius: 12px;
+  background: #fff;
+  padding: 10px;
+  image-rendering: pixelated;
+}
+.wx-set-codes {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+.wx-set-codes code {
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  text-align: center;
+  letter-spacing: 0.04em;
+}
+.wx-set-inline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  padding: 10px 0;
+}
+.wx-set-note {
+  margin: 8px 0 0;
+  color: #ffb4a8;
+}
+.wx-set-note.ok {
+  color: var(--wx-accent);
+}
+/* An on/off switch. */
+.wx-switch {
+  position: relative;
+  width: 50px;
+  height: 30px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.2);
+  cursor: pointer;
+  transition: background 0.25s;
+}
+.wx-switch i {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+  transition: transform 0.3s var(--wx-settle);
+}
+.wx-switch.on {
+  background: var(--wx-accent);
+}
+.wx-switch.on i {
+  transform: translateX(20px);
+}
+button.wx-switch:hover {
+  background: rgba(255, 255, 255, 0.28);
+}
+button.wx-switch.on:hover {
+  background: var(--wx-accent);
+}
+@media (max-width: 760px) {
+  .wx-settings {
+    grid-template-columns: 1fr;
+    padding-top: 80px;
+    padding-bottom: calc(96px + env(safe-area-inset-bottom));
+  }
+  .wx-settings.open .wx-set-nav {
+    display: none;
+  }
+  .wx-settings:not(.open) .wx-set-body {
+    display: none;
+  }
+  .wx-set-go {
+    opacity: 0.5;
+  }
+  .wx-set-nav a {
+    padding: 15px 12px;
+  }
+  .wx-set-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin: 0 0 10px -6px;
+    padding: 6px;
+    border: 0;
+    background: none;
+    color: var(--wx-dim);
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .wx-set-row {
+    flex-wrap: wrap;
+  }
+}

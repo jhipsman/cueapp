@@ -207,3 +207,10 @@ func (r *Repo) List(profileID int64) ([]ListItem, error) {
 	}
 	return out, rows.Err()
 }
+
+// ClearProgress forgets everything a profile was part-way through or has
+// watched (Continue Watching).
+func (r *Repo) ClearProgress(profileID int64) error {
+	_, err := r.db.Exec(`DELETE FROM watch_progress WHERE profile_id = ?`, profileID)
+	return err
+}

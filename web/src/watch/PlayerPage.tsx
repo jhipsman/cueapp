@@ -1,3 +1,4 @@
+import { usePrefs } from './prefs'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { api, profileToken, type PlayAnswer, type WatchEpisode, type WatchSkips } from '../api'
@@ -96,6 +97,7 @@ function CopyLink({ url }: { url: string }) {
 export default function PlayerPage() {
   const params = useParams()
   const navigate = useNavigate()
+  const prefs = usePrefs()
   // Leaving fades the picture to black first, then the page you came from
   // slides back in (as on the TV).
   const shell = useRef<HTMLDivElement>(null)
@@ -551,18 +553,20 @@ export default function PlayerPage() {
   }
 
   // The episode has ended: the next one plays after a short countdown.
+  // With Settings > Playback > Autoplay off, it's only offered.
   function onEnded() {
     save()
     if (kind !== 'tv') return
+    const after = () => (prefs.on('autoplayNext') ? setCountdown(NEXT_COUNTDOWN) : setOfferNext(true))
     if (next) {
-      setCountdown(NEXT_COUNTDOWN)
+      after()
       return
     }
     api
       .watchNext(tmdbId, season, episode)
       .then((n) => {
         setNext(n)
-        setCountdown(NEXT_COUNTDOWN)
+        after()
       })
       .catch(() => undefined)
   }

@@ -11,11 +11,29 @@ This page has a checklist, examples for the common proxies, and a list of what C
 3. **Do not publish port 8264 next to the proxy.** In `docker-compose.yml` bind it to the machine itself, for example `"127.0.0.1:8264:8264"`, or put the proxy and Cue in the same Docker network and remove the `ports:` line. Otherwise the app can be reached without the proxy.
 4. **Make the proxy forward the caller's address and scheme** (the examples below do). Cue uses them to count failed sign-ins per person and to mark the session cookie as HTTPS-only. Also make it **redirect plain `http://` to `https://`** (in Nginx Proxy Manager tick *Force SSL*): otherwise a password typed on an `http://` address travels in the clear.
 5. **Leave `TRUSTED_PROXIES` alone if your proxy is on the same machine, in the same Docker network or on your LAN.** Set it if the proxy is somewhere else, see [below](#trusted_proxies).
-6. **Use a long, unique password** for every account, and give family members the *Basic user* role, not *Admin* (see [accounts.md](./accounts.md)).
-7. **Don't add WebSocket or path-rewriting settings you don't need.** Cue only needs plain HTTP proxying. Don't strip the `Host`, `Origin` or `Sec-Fetch-*` headers.
-8. **Keep the backup file private.** A backup contains your database *and* the encryption key (`secret.key`), so whoever holds it can read every stored indexer key, Usenet password and VPN key.
-9. **Update.** Security fixes only go into the latest release.
-10. **Leave *Allow updates pushed through the API* off** (Settings > System > Server and backup). Switch it on only for the moment you push a file, see [below](#updating-the-program).
+6. **Turn on two-step sign-in for administrator accounts.** In Watch, open **Settings > Sign-in & security**: after the password, Cue also asks for a code from an authenticator app on your phone, so a leaked password alone can't get in. See [accounts.md](./accounts.md#two-step-sign-in).
+7. **Use a long, unique password** for every account, and give family members the *Basic user* role, not *Admin* (see [accounts.md](./accounts.md)).
+8. **Don't add WebSocket or path-rewriting settings you don't need.** Cue only needs plain HTTP proxying. Don't strip the `Host`, `Origin` or `Sec-Fetch-*` headers.
+9. **Keep the backup file private.** A backup contains your database *and* the encryption key (`secret.key`), so whoever holds it can read every stored indexer key, Usenet password and VPN key.
+10. **Update.** Security fixes only go into the latest release.
+11. **Leave *Allow updates pushed through the API* off** (Settings > System > Server and backup). Switch it on only for the moment you push a file, see [below](#updating-the-program).
+
+## Locking down a cloud server
+
+On a rented server (DigitalOcean, Hetzner, a VPS), the whole machine is on the internet, not just Cue. Once, over SSH:
+
+1. **Only open what's needed.** Allow SSH and the web, and nothing else:
+   ```sh
+   ufw allow OpenSSH && ufw allow 80/tcp && ufw allow 443/tcp && ufw --force enable
+   ```
+   (Or use your provider's firewall, such as DigitalOcean's Cloud Firewalls, with the same three rules.) Cue's own port, 8264, stays closed: only Caddy talks to it.
+2. **Sign in to the server with a key, not a password.** Once your SSH key works, turn password sign-in off: in `/etc/ssh/sshd_config` set `PasswordAuthentication no` and `PermitRootLogin prohibit-password`, then `systemctl restart ssh`. Keep the current session open until a new one signs in with the key.
+3. **Install security updates by themselves:**
+   ```sh
+   apt-get install -y unattended-upgrades && dpkg-reconfigure -plow unattended-upgrades
+   ```
+4. **Keep Cue updated.** The cloud setup checks for a new version every night; run `cd /opt/cue && docker compose pull && docker compose up -d` to update at once.
+5. **Turn on your provider's backups or snapshots,** or download Cue's own backup now and then (Settings > System > Server and backup), and keep it private (item 9 above).
 
 ## Example proxy setups
 

@@ -1,3 +1,4 @@
+import { usePrefs } from './prefs'
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import BrandMark from '../components/BrandMark'
@@ -12,19 +13,12 @@ import { useProfiles } from './profiles'
 
 const SEEN = 'cue.tour.v1'
 
-function seen(): boolean {
+// Seen on this browser before the account remembered it (older Cue).
+function seenHere(): boolean {
   try {
     return localStorage.getItem(SEEN) === '1'
   } catch {
-    return true // no storage (a private window): don't show it every time
-  }
-}
-
-function remember() {
-  try {
-    localStorage.setItem(SEEN, '1')
-  } catch {
-    /* nothing to keep it in */
+    return false
   }
 }
 
@@ -79,6 +73,10 @@ const slides: Slide[] = [
 
 export default function Tour() {
   const { active } = useProfiles()
+  // Once per account, on whichever device it signs in first (not per browser).
+  const prefs = usePrefs()
+  const seen = () => prefs.on('tourSeen') || seenHere()
+  const remember = () => void prefs.set('tourSeen', '1').catch(() => undefined)
   const { pathname } = useLocation()
   const [params, setParams] = useSearchParams()
   const navigate = useNavigate()
@@ -92,6 +90,11 @@ export default function Tour() {
   // First time on Home with a profile picked, or asked for from the menu.
   useEffect(() => {
     if (!active) return
+    if (!asked && !prefs.loaded) return // wait for the account's answer
+    if (!asked && home && seenHere() && !prefs.on('tourSeen')) {
+      remember() // seen here before: the account remembers it now
+      return
+    }
     if (asked || (home && !seen())) {
       const t = window.setTimeout(() => {
         setAt(0)
@@ -99,7 +102,8 @@ export default function Tour() {
       }, asked ? 0 : 700)
       return () => window.clearTimeout(t)
     }
-  }, [active, asked, home])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [active, asked, home, prefs.loaded])
 
   const close = useCallback(() => {
     remember()
