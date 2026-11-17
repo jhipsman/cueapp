@@ -12,6 +12,8 @@ under [Unreleased]. How releases are cut: [docs/RELEASING.md](docs/RELEASING.md)
 - Releases are signed with a new update key, held only by the project owner. **Update now** installs only releases signed with it.
 
 ### Fixed
+- **Next episode on Fire TV and Google TV is seamless**: the player finds the next episode in the background near the end, then moves on in place with a short fade (from Next, the countdown at the credits, or the episode ending), instead of going back to Home and through a second "Finding a version" screen.
+- **Loading on the TV shows the Cue logo**, gently breathing, instead of a spinning blue ring.
 - **Nothing above PG-13 plays by itself**: preview clips, Home's banner and the screensavers now only ever use titles rated up to PG-13 or TV-14 (R, TV-MA, NC-17 and unrated titles never), on top of the horror, anime and adult rules. And a version far from the title's length (another video with the same name) is skipped by Play and never used for a clip.
 - **An old preview clip kept playing after it was replaced**: browsers kept each clip for a day. Clips are now checked with Cue each time (and their address changes when one is made again).
 - **The wrong video for a film with a common name**: an adult video named like a film ("Anastasia.2020.XXX...") matched it by title and year, so Play and its preview clip could show it, as happened with the children's film Anastasia (2020). Releases named like adult videos (XXX, studio and site names) or filed under a site's XXX category never match a film or show now, for Play and library downloads alike. Every preview clip made before is thrown away and made again.

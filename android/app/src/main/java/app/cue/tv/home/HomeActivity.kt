@@ -30,6 +30,7 @@ class HomeActivity : ComponentActivity() {
             d?.getStringExtra(PlayerActivity.RESULT_REASON) ?: "back",
             d?.getLongExtra(PlayerActivity.RESULT_POSITION, 0L) ?: 0L,
             d?.getStringExtra(PlayerActivity.RESULT_MESSAGE) ?: "",
+            d?.getStringExtra(PlayerActivity.RESULT_EPISODE) ?: "",
         )
     }
 
