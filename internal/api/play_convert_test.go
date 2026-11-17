@@ -218,7 +218,18 @@ func TestConvertHLSForAppleTV(t *testing.T) {
 	srv := httptest.NewServer(mux)
 	defer srv.Close()
 
-	resp, err := http.Get(srv.URL + "/api/play/convert/hls?apple=1&u=" + url.QueryEscape(s.convertToken(files.URL+"/clip.mkv")))
+	// The Apple TV keeps the Dolby surround; Safari (iPhone) gets stereo
+	// AAC. Both copy the HEVC picture rather than remake it.
+	for _, c := range []struct{ query, sound string }{{"apple=1&", "eac3"}, {"", "aac"}} {
+		hlsPiece(t, srv.URL+"/api/play/convert/hls?"+c.query+"u="+url.QueryEscape(s.convertToken(files.URL+"/clip.mkv")), dir, c.sound)
+	}
+}
+
+// hlsPiece fetches a conversion's playlist and first fragmented-MP4 piece
+// and checks the picture is HEVC (copied, tagged hvc1) with the given sound.
+func hlsPiece(t *testing.T, addr, dir, sound string) {
+	t.Helper()
+	resp, err := http.Get(addr)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -245,7 +256,7 @@ func TestConvertHLSForAppleTV(t *testing.T) {
 	cmd.Stdout = &info
 	err = cmd.Run()
 	got := info.String()
-	if err != nil || !strings.Contains(got, "hevc,hvc1") || !strings.Contains(got, "eac3") || !strings.Contains(got, ",6") {
+	if err != nil || !strings.Contains(got, "hevc,hvc1") || !strings.Contains(got, sound) || (sound == "eac3" && !strings.Contains(got, ",6")) {
 		t.Fatalf("piece: %d bytes, streams %q %v", len(joined), got, err)
 	}
 }

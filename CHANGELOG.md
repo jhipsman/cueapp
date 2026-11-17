@@ -12,6 +12,8 @@ under [Unreleased]. How releases are cut: [docs/RELEASING.md](docs/RELEASING.md)
 - Releases are signed with a new update key, held only by the project owner. **Update now** installs only releases signed with it.
 
 ### Fixed
+- Usenet: when one download finished while another was running, the provider could refuse the next connection with "too many connections". Cue now gives a connection's place back only once the provider has hung up.
+- Watch parties on an iPhone or iPad: a phone joining no longer lags far behind or restarts its video each time someone presses play or pause. Safari now gets an HEVC picture copied as it is instead of remade (far quicker on a small server), a phone that is converting only jumps when it's more than 15 seconds out (aiming a few seconds ahead for the time it takes to start), and it no longer pulls everyone back to where it is. When the phone won't start the video with sound by itself, it shows **Tap to join the party**.
 - **Watch parties got stuck on "Starting…" for shows Cue converts for the browser** (most shows on a phone or PC): every time a converted video loaded, the party lined it up again, which restarted the conversion, over and over. A converted video now jumps only for a real difference (8 seconds while playing), never while it's loading, and joining starts its conversion once, at the party's moment.
 - **The tour shows once per account**, not on every new browser or device: whether it's been seen is kept on the account.
 - **Settings in Streaming only mode opens on Streaming**, not on Media types (a page that mode hides from the menu), and Media types now says its switches do nothing while Streaming only is on, with a link to change it.

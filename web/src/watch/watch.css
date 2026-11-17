@@ -5762,3 +5762,23 @@ button.wx-switch.on:hover {
   border: 0;
   border-radius: 0;
 }
+
+/* A phone that refused to start the party's video with sound: one tap does. */
+.wx-party-tap {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 30;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 26px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--wx-accent, #e50914);
+  color: #fff;
+  font: 600 17px/1 inherit;
+  box-shadow: 0 10px 40px rgb(0 0 0 / 0.5);
+  cursor: pointer;
+}

@@ -742,6 +742,11 @@ export default function PlayerPage() {
     <div className={`wx-player${partyCode && partyOpen ? ' with-party' : ''}`} ref={shell}>
       {partyCode && partyOpen && <PartyPanel party={party} code={partyCode} onClose={() => setPartyOpen(false)} />}
       {partyCode && <FloatingReactions list={party.floating} />}
+      {partyCode && party.needsTap && (
+        <button type="button" className="wx-party-tap" onClick={party.tap}>
+          <Icon name="play" size={22} /> Tap to join the party
+        </button>
+      )}
       {!playing && !yt && (
         <div className="wx-player-top">
           <button className="wx-round" onClick={() => leave()} aria-label="Back">

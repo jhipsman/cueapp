@@ -224,7 +224,9 @@ func (s *Server) handleConvertProbe(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]any{
 		"duration":  info.Duration,
 		"copyVideo": info.CopyVideo,
-		"stream":    "/api/play/convert/stream?u=" + url.QueryEscape(r.URL.Query().Get("u")),
+		// Safari plays HEVC, so for it the picture is copied too (HLS).
+		"hevc":   info.VideoCodec == "hevc",
+		"stream": "/api/play/convert/stream?u=" + url.QueryEscape(r.URL.Query().Get("u")),
 		// For Safari (iPhone, iPad, Mac), which plays a stream only as HLS
 		// or as a file it can fetch in pieces.
 		"hls": "/api/play/convert/hls?u=" + url.QueryEscape(r.URL.Query().Get("u")),
