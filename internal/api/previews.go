@@ -80,7 +80,16 @@ func (p previewWant) key() string {
 
 // previewDir holds the clips. (Earlier ones, silent or with whatever sound
 // came first in the file, are cleared the first time one is made.)
-func (s *Server) previewDir() string { return filepath.Join(s.cfg.ConfigDir, "cache", "previews-v3") }
+// previewDir is v4: clips cut before adult videos were kept from matching a
+// film by name (adult_release.go) are thrown away and made again.
+func (s *Server) previewDir() string { return filepath.Join(s.cfg.ConfigDir, "cache", "previews-v4") }
+
+// dropOldPreviews removes the clips of earlier versions of the cache.
+func (s *Server) dropOldPreviews() {
+	for _, old := range []string{"previews", "previews-v2", "previews-v3"} {
+		_ = os.RemoveAll(filepath.Join(s.cfg.ConfigDir, "cache", old))
+	}
+}
 
 var clearOldPreviews sync.Once
 
@@ -325,7 +334,10 @@ func (s *Server) startPreview(r *http.Request, want previewWant, ahead bool) {
 	// itself may be long finished by then.
 	previewState.queue = append(previewState.queue, &previewJob{want: want, ctx: context.WithoutCancel(r.Context()), header: r.Header.Clone(), ahead: ahead})
 	previewState.Unlock()
-	previewOnce.Do(func() { go s.previewWorker() })
+	previewOnce.Do(func() {
+		go s.dropOldPreviews()
+		go s.previewWorker()
+	})
 	select {
 	case previewWake <- struct{}{}:
 	default:
