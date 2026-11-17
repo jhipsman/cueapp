@@ -12,6 +12,7 @@ under [Unreleased]. How releases are cut: [docs/RELEASING.md](docs/RELEASING.md)
 - Releases are signed with a new update key, held only by the project owner. **Update now** installs only releases signed with it.
 
 ### Fixed
+- **An old preview clip kept playing after it was replaced**: browsers kept each clip for a day. Clips are now checked with Cue each time (and their address changes when one is made again).
 - **The wrong video for a film with a common name**: an adult video named like a film ("Anastasia.2020.XXX...") matched it by title and year, so Play and its preview clip could show it, as happened with the children's film Anastasia (2020). Releases named like adult videos (XXX, studio and site names) or filed under a site's XXX category never match a film or show now, for Play and library downloads alike. Every preview clip made before is thrown away and made again.
 - **Preview clips of erotic films**: titles TMDB tags as erotic, softcore, or for nudity or sex scenes now count as adult, so they get no preview clip and stay off the banner and screensavers (before, only TMDB's adult flag and NC-17 did).
 - **Nowhere to add the OpenSubtitles key in streaming-only mode**: the server settings now have **Movie info and subtitles > Subtitles** with just the key (the TV app reads the subtitles inside the file; a browser can't, so it finds them on OpenSubtitles), and the player's message says where to go.
@@ -28,6 +29,7 @@ under [Unreleased]. How releases are cut: [docs/RELEASING.md](docs/RELEASING.md)
 - **No sound in the web player, and versions flicking past one after another**: when a browser shows a version's picture but can't play its sound (Dolby, DTS, TrueHD), Cue now keeps the picture exactly as it is and converts only the sound, from the same moment. Before, it converted only plain H.264 pictures and otherwise jumped to the next version, which usually had the same sound, so it cycled. **No sound? Fix it** in Versions does the same.
 
 ### Added
+- **Wrong video** in the player (web and TV): when what plays isn't the title at all, one press makes Cue never use that version for it again, for the whole household, throws away the preview clip cut from it, and plays the next version.
 - **Phone alerts**: Settings > Alerts turns on alerts on a phone or computer for a new episode of a show you're watching, and for titles you asked to be reminded about once they're out. Web push signed with Cue's own key; the push carries no text (the phone asks your Cue what to say). On iPhone, in Cue added to the Home Screen.
 - **Send to TV**: a title's page on a phone or computer has **Play on TV** for any Fire TV or Google TV with Cue open; the TV starts it, and the phone becomes its remote (play, pause, back 10 s, forward 30 s, jump, stop). **TV remote** in the avatar menu.
 - **Coming soon and Remind me**: films not out yet have their own **Coming soon** section (top bar on the web, a tab on the TV), apart from what you can watch: the day each streams ("March 4th"), its picture and story, and **Remind me**, which puts it under **Out now** at the top of Home once it's out, until you play it. More like this only lists what's out.

@@ -126,7 +126,8 @@ func (s *Server) handleWatchPreview(w http.ResponseWriter, r *http.Request) {
 	if fi, err := os.Stat(file); err == nil && fi.Size() > 0 {
 		now := time.Now()
 		_ = os.Chtimes(file, now, now) // recently used: kept longest
-		writeJSON(w, http.StatusOK, map[string]any{"url": "/api/watch/preview-file/" + want.key() + ".mp4"})
+		// The clip's time in its address, so a clip made again is never an old copy.
+		writeJSON(w, http.StatusOK, map[string]any{"url": fmt.Sprintf("/api/watch/preview-file/%s.mp4?v=%d", want.key(), fi.ModTime().Unix())})
 		return
 	}
 	if !canConvert() {
@@ -158,7 +159,9 @@ func (s *Server) handleWatchPreviewFile(w http.ResponseWriter, r *http.Request) 
 		http.NotFound(w, r)
 		return
 	}
-	w.Header().Set("Cache-Control", "private, max-age=86400")
+	// Checked with Cue each time (a quick "not changed" when it isn't): a
+	// clip can be thrown away and made again from another version.
+	w.Header().Set("Cache-Control", "private, no-cache")
 	w.Header().Set("Content-Type", "video/mp4")
 	http.ServeFile(w, r, filepath.Join(s.previewDir(), name))
 }

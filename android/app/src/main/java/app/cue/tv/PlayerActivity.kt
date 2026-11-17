@@ -864,6 +864,11 @@ class PlayerActivity : Activity() {
             if (hasOther && !live && !catchup) {
                 otherButton = iconPill("Other version", R.drawable.ic_cue_versions) { end("other") }.also { addView(it) }
             }
+            // Not this title at all (a different video with the same name):
+            // Cue never uses this version for it again, and tries the next.
+            if (!live && !catchup && info.optString("release").isNotEmpty()) {
+                addView(iconPill("Wrong video", R.drawable.ic_cue_versions) { end("wrong", info.optString("release")) })
+            }
             if (!live && !catchup) {
                 partyButton = iconPill("Watch party", R.drawable.ic_cue_party) { partyPressed() }.also { addView(it) }
                 reactButton = iconPill("React", R.drawable.ic_cue_react) { showReactions() }.also {

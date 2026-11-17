@@ -238,6 +238,16 @@ class Playback(
                 }
             }
             "other" -> nextVersion(v, position.toDouble(), "")
+            // The wrong video for this title: never this version again; the
+            // same number is now the next one.
+            "wrong" -> startJob = scope.launch {
+                note = "Got it: that version won't be used for this again. Trying the next one…"
+                runCatching {
+                    api.request("POST", "/api/play/wrong", JSONObject()
+                        .put("kind", v.kind).put("tmdbId", v.id).put("season", v.season).put("episode", v.episode).put("release", message))
+                }
+                openVod(v, 0.0)
+            }
             "nosound" -> if (v.silent < 2) {
                 v.silent++
                 nextVersion(v, position.toDouble(), "Version ${v.option} had no sound on this TV.")
