@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/jhipsman/cueapp/internal/auth"
 	"log/slog"
+	"math"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -471,7 +472,48 @@ func (s *Server) makePreview(ctx context.Context, header http.Header, want previ
 	if err != nil {
 		return err
 	}
+	// A video whose length is far from the title's is a different video with
+	// the same name: no clip from it (it plays by itself).
+	if want := s.expectedLength(ctx, want); want > 0 {
+		if info, err := probeFile(ctx, link); err == nil && !lengthMatches(info.Duration, want) {
+			return fmt.Errorf("the version is %.0f minutes long, the title %.0f: not cutting a clip from what's likely another video", info.Duration/60, want/60)
+		}
+	}
 	return cutPreview(ctx, link, want, s.previewDir())
+}
+
+// expectedLength is how long the title is, in seconds, by TMDB (0: not known).
+func (s *Server) expectedLength(ctx context.Context, want previewWant) float64 {
+	tm := s.TMDB()
+	if tm == nil || want.tmdbID <= 0 || (want.kind != "movie" && want.kind != "tv") {
+		return 0
+	}
+	if want.kind == "movie" {
+		if d, err := tm.GetMovieDetail(ctx, want.tmdbID); err == nil {
+			return float64(d.Runtime) * 60
+		}
+		return 0
+	}
+	eps, err := tm.GetSeasonCached(ctx, want.tmdbID, want.season)
+	if err != nil {
+		return 0
+	}
+	for _, e := range eps {
+		if e.Episode == want.episode {
+			return float64(e.Runtime) * 60
+		}
+	}
+	return 0
+}
+
+// lengthMatches says whether a video of got seconds can be a title of want
+// seconds: within a quarter, or ten minutes for a short one (cuts, credits
+// and recaps differ; a different video usually differs far more).
+func lengthMatches(got, want float64) bool {
+	if got <= 0 || want <= 0 {
+		return true
+	}
+	return math.Abs(got-want) <= max(600, want/4)
 }
 
 // cutPreview cuts the clip for want from link into dir.

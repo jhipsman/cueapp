@@ -104,3 +104,9 @@ func (s *Server) handleWrongVersion(w http.ResponseWriter, r *http.Request) {
 	}
 	w.WriteHeader(http.StatusNoContent)
 }
+
+// previewWantOf is a play target as a title (for its expected length).
+func previewWantOf(t playTarget) previewWant {
+	kind, id, season, episode := titleOf(t)
+	return previewWant{kind: kind, tmdbID: id, season: season, episode: episode}
+}

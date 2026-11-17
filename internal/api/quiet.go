@@ -5,14 +5,16 @@ import (
 	"fmt"
 	"regexp"
 	"slices"
+	"strings"
 	"sync"
 	"time"
 
 	"github.com/jhipsman/cueapp/internal/metadata"
 )
 
-// Quiet titles: horror, anime and adult titles are kept off what plays or
-// shows by itself (Home's banner, the preview clips and the screensavers),
+// Quiet titles: horror, anime, adult titles and anything rated above PG-13
+// (or not rated) are kept off what plays or shows by itself (Home's banner,
+// the preview clips and the screensavers),
 // so nobody walking past the TV gets a fright. They can still be found,
 // browsed and played like any other title; only nothing pushes them.
 //
@@ -36,6 +38,15 @@ func quietBy(genres []int, language string, countries []string, adult bool, cert
 		return true
 	}
 	return slices.Contains(genres, genreAnimation) && (language == "ja" || slices.Contains(countries, "JP"))
+}
+
+// familyRating says whether a rating lets a title show by itself: up to
+// PG-13 or TV-14. R, TV-MA, NC-17 and titles with no rating never play a
+// clip or show on the banner or a screensaver, whatever their genre or tags
+// say (those can be missing; a rating rarely is for anything mainstream).
+func familyRating(cert string) bool {
+	r := ratingRank[strings.ToUpper(strings.TrimSpace(cert))]
+	return r > 0 && r <= ratingRank["PG-13"]
 }
 
 // adultWords are TMDB keywords for erotic films, nudity and sex scenes.
@@ -101,13 +112,15 @@ func (s *Server) quietTitle(ctx context.Context, kind string, id int) bool {
 		if err != nil {
 			return false
 		}
-		q = quietBy(genreIDs(d.GenreIDs, d.Genres), d.OriginalLanguage, nil, d.Adult, d.Certification()) || adultKeywords(d.Keywords.List)
+		q = quietBy(genreIDs(d.GenreIDs, d.Genres), d.OriginalLanguage, nil, d.Adult, d.Certification()) || adultKeywords(d.Keywords.List) ||
+			!familyRating(d.Certification())
 	case "tv":
 		d, err := tm.GetShowFull(ctx, id)
 		if err != nil {
 			return false
 		}
-		q = quietBy(genreIDs(d.GenreIDs, d.Genres), d.OriginalLanguage, d.OriginCountry, false, "") || adultKeywords(d.Keywords.List)
+		q = quietBy(genreIDs(d.GenreIDs, d.Genres), d.OriginalLanguage, d.OriginCountry, false, "") || adultKeywords(d.Keywords.List) ||
+			!familyRating(d.ContentRating())
 	default:
 		return false
 	}

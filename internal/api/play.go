@@ -431,7 +431,22 @@ func (s *Server) servePlay(w http.ResponseWriter, r *http.Request, t playTarget)
 	}
 
 	// Premiumize's cache can drop a release between the check and now, and a
-	// pack may not hold the episode wanted: then the next option is used.
+	// pack may not hold the episode wanted: then the next option is used. So
+	// is a file far from the title's length: another video with its name.
+	expect := s.expectedLength(ctx, previewWantOf(t))
+	wrongLength := func(link string) bool {
+		if expect <= 0 || link == "" {
+			return false
+		}
+		pctx, cancel := context.WithTimeout(ctx, 6*time.Second)
+		defer cancel()
+		info, err := probeFile(pctx, link)
+		if err != nil || lengthMatches(info.Duration, expect) {
+			return false
+		}
+		slog.Info("play: a version's length is far from the title's; trying the next", "title", t.label, "minutes", int(info.Duration/60), "want", int(expect/60))
+		return true
+	}
 	for i := option - 1; i < len(entry.candidates); i++ {
 		c := entry.candidates[i]
 		if c.YouTube != "" || c.Direct {
@@ -447,7 +462,7 @@ func (s *Server) servePlay(w http.ResponseWriter, r *http.Request, t playTarget)
 			// Premiumize's converted copy of the same torrent plays
 			// everywhere, so it goes first, with the file itself behind it.
 			if files, err := pm.DirectDL(ctx, "magnet:?xt=urn:btih:"+c.Hash); err == nil {
-				if f, ok := pickPlayFile(files, t, s.releaseMapperFor(t)); ok && f.StreamLink != "" {
+				if f, ok := pickPlayFile(files, t, s.releaseMapperFor(t)); ok && f.StreamLink != "" && !wrongLength(f.Link) {
 					writeJSON(w, http.StatusOK, s.withConvert(web, playAnswer{
 						Title: t.label, URL: f.Link, StreamURL: f.StreamLink,
 						FileName: path.Base(f.Path), SizeBytes: f.Size,
@@ -465,6 +480,9 @@ func (s *Server) servePlay(w http.ResponseWriter, r *http.Request, t playTarget)
 			if file != c.URL && !addonFileReal(ctx, file) {
 				// The add-on's "not ready yet" video: the next version.
 				slog.Info("play: an add-on gave its not-cached placeholder; trying the next version", "title", t.label, "addon", c.Source)
+				continue
+			}
+			if wrongLength(file) {
 				continue
 			}
 			writeJSON(w, http.StatusOK, s.withConvert(web, playAnswer{
@@ -486,7 +504,7 @@ func (s *Server) servePlay(w http.ResponseWriter, r *http.Request, t playTarget)
 			continue
 		}
 		f, ok := pickPlayFile(files, t, s.releaseMapperFor(t))
-		if !ok {
+		if !ok || wrongLength(f.Link) {
 			continue
 		}
 		writeJSON(w, http.StatusOK, s.withConvert(web, playAnswer{

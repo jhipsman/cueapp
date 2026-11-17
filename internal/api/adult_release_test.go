@@ -57,3 +57,15 @@ func TestWrongVersion(t *testing.T) {
 		t.Fatalf("another film lost it: %d", len(got))
 	}
 }
+
+func TestLengthMatches(t *testing.T) {
+	film := 89 * 60.0
+	for got, want := range map[float64]bool{89 * 60: true, 95 * 60: true, 75 * 60: true, 28 * 60: false, 150 * 60: false, 0: true} {
+		if lengthMatches(got, film) != want {
+			t.Errorf("%.0f min for an 89 min film: %v, want %v", got/60, !want, want)
+		}
+	}
+	if !lengthMatches(30*60, 22*60) || lengthMatches(60*60, 22*60) {
+		t.Error("episode lengths")
+	}
+}
