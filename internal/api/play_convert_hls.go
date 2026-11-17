@@ -100,6 +100,12 @@ func (s *Server) handleConvertHLS(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		keepPicture(r, &info)
+		// Safari plays HEVC itself (as fragmented-MP4 pieces), so the
+		// picture is copied rather than remade: remaking it is slower than
+		// playing on a small server, and copying takes next to no CPU.
+		if info.VideoCodec == "hevc" {
+			info.KeepVideo = true
+		}
 		sess, err = startHLS(key, link, info, start, apple)
 		if err != nil {
 			writeError(w, http.StatusServiceUnavailable, err.Error())
@@ -164,7 +170,7 @@ func startHLS(key, link string, info probeInfo, start float64, apple bool) (*hls
 	args := append(convertArgs(link, info, start, apple),
 		"-f", "hls", "-hls_time", "4", "-hls_list_size", "0", "-hls_playlist_type", "event",
 		"-hls_flags", "independent_segments+temp_file")
-	if apple {
+	if apple || (info.KeepVideo && info.VideoCodec == "hevc") {
 		args = append(args, "-hls_segment_type", "fmp4", "-hls_fmp4_init_filename", "init.mp4",
 			"-hls_segment_filename", filepath.Join(dir, "seg_%05d.m4s"), filepath.Join(dir, "index.m3u8"))
 	} else {

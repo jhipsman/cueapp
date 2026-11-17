@@ -65,6 +65,7 @@ export function useParty(o: SyncOpts) {
   const [floating, setFloating] = useState<Floating[]>([])
   const [problem, setProblem] = useState('')
   const [unread, setUnread] = useState(0)
+  const [needsTap, setNeedsTap] = useState(false)
   const stateRef = useRef<PartyState | null>(null)
   const got = useRef(0) // when the last state arrived (performance.now())
   const applying = useRef(0) // until when the player's own events are ours, not the viewer's
@@ -81,16 +82,25 @@ export function useParty(o: SyncOpts) {
     // Paused, everyone stops on the same frame; playing, a second or so
     // either way is fine. A converted video starts again on every jump, so
     // it only jumps for a real difference (and never while it's loading).
+    // Play and pause alone never restart it: it plays on from where it is.
+    // When it does jump, it aims a few seconds ahead, for the time the new
+    // stream takes to start, and ignores its own events until it's loaded.
     const costly = !!opts.current.costlySeek
     if (costly && (v.readyState < 2 || v.seeking)) return
-    const slack = costly ? (s.playing ? 8 : 4) : s.playing ? 1.5 : 0.25
+    const slack = costly ? 15 : s.playing ? 1.5 : 0.25
     if (Math.abs(here - target) > slack) {
-      applying.current = performance.now() + 1200
-      opts.current.seek(target)
+      applying.current = performance.now() + (costly ? 35_000 : 1200)
+      opts.current.seek(costly && s.playing ? target + 4 : target)
+      if (costly) return
     }
     if (s.playing && v.paused) {
       applying.current = performance.now() + 1200
-      void v.play().catch(() => undefined)
+      // A phone that wasn't tapped yet may refuse to start with sound.
+      v.play()
+        .then(() => setNeedsTap(false))
+        .catch((e: unknown) => {
+          if (e instanceof DOMException && e.name === 'NotAllowedError') setNeedsTap(true)
+        })
     } else if (!s.playing && !v.paused) {
       applying.current = performance.now() + 1200
       v.pause()
@@ -170,8 +180,16 @@ export function useParty(o: SyncOpts) {
     if (!code || !video) return
     const mine = () => performance.now() > applying.current
     const send = (action: 'play' | 'pause' | 'seek') => {
+      // A converted video that is still catching up doesn't pull everyone
+      // back to where it is on play or pause.
+      let pos = opts.current.position()
+      const s = stateRef.current
+      if (opts.current.costlySeek && s && action !== 'seek') {
+        const there = s.pos + (s.playing ? (performance.now() - got.current) / 1000 : 0)
+        if (Math.abs(pos - there) > 15) pos = there
+      }
       void api
-        .partyState(code, { client, action, pos: opts.current.position() })
+        .partyState(code, { client, action, pos })
         .then((s) => {
           got.current = performance.now()
           stateRef.current = s
@@ -237,7 +255,13 @@ export function useParty(o: SyncOpts) {
 
   const chat = useCallback((text: string) => (code ? api.partyChat(code, client, text) : Promise.resolve({ ok: false })), [code, client])
   const react = useCallback((emoji: string) => code && void api.partyReact(code, client, emoji).catch(() => undefined), [code, client])
-  return { client, state, msgs, floating, problem, chat, react, unread, seen: () => setUnread(0) }
+  // tap starts the video from a tap, which a phone always allows.
+  const tap = () => {
+    setNeedsTap(false)
+    const v = opts.current.video
+    if (v) void v.play().catch(() => undefined)
+  }
+  return { client, state, msgs, floating, problem, chat, react, unread, seen: () => setUnread(0), needsTap, tap }
 }
 
 // startParty makes a party for what's playing; answers its code.

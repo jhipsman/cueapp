@@ -2426,9 +2426,10 @@ export const api = {
   getOMDb: () => get<{ set: boolean }>('/settings/omdb'),
   putOMDb: (apiKey: string) => put<{ set: boolean }>('/settings/omdb', { apiKey }),
   convertProbe: (token: string) =>
-    get<{ duration: number; copyVideo: boolean; stream: string; hls: string }>(`/play/convert?u=${encodeURIComponent(token)}`)
-      // Safari plays a stream being made only as HLS.
-      .then((p) => ({ ...p, stream: safari() ? p.hls : p.stream })),
+    get<{ duration: number; copyVideo: boolean; stream: string; hls: string; hevc?: boolean }>(`/play/convert?u=${encodeURIComponent(token)}`)
+      // Safari plays a stream being made only as HLS, and plays HEVC itself
+      // (so that picture is copied, not remade).
+      .then((p) => (safari() ? { ...p, stream: p.hls, copyVideo: p.copyVideo || !!p.hevc } : p)),
   saveProfileTheme: (t: WatchTheme) => put<WatchTheme>('/profile/theme', t),
   streamPrefs: () => get<StreamPrefs>('/profile/streaming'),
   saveStreamPrefs: (p: StreamPrefs) => put<StreamPrefs>('/profile/streaming', p),
