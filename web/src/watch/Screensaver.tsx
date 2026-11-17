@@ -27,7 +27,8 @@ function slidesFrom(rows: { key: string; title: string; items: WatchCard[] }[]):
   const seen = new Set<string>()
   const add = (to: Slide[], c: WatchCard, line: string, detail: string) => {
     const k = `${c.kind}-${c.tmdbId}`
-    if (!c.backdropUrl || seen.has(k)) return
+    // Horror, anime and adult titles never show here by themselves.
+    if (!c.backdropUrl || c.quiet || seen.has(k)) return
     seen.add(k)
     to.push({ card: c, line, detail })
   }

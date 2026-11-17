@@ -133,6 +133,29 @@ func TestWatchParty(t *testing.T) {
 	if code, _ := call(dad, "POST", "/api/party/"+partyCode+"/react", `{"client":"dad-tab-123","emoji":"<b>"}`); code != http.StatusBadRequest {
 		t.Errorf("unknown reaction: %d", code)
 	}
+	// Wait for everyone: while Mom's player loads, the party is held (its
+	// clock stands still); once she's ready, it plays on from there.
+	call(dad, "POST", "/api/party/"+partyCode+"/state", `{"client":"dad-tab-123","action":"play","pos":600}`)
+	code2, held := call(mom, "POST", "/api/party/"+partyCode+"/state", `{"client":"mom-tab-456","action":"wait"}`)
+	if code2 != http.StatusOK || held["held"] != true || held["playing"] != true {
+		t.Fatalf("wait: %d %v", code2, held)
+	}
+	time.Sleep(300 * time.Millisecond)
+	_, still := call(dad, "GET", "/api/party/"+partyCode, "")
+	if still["pos"] != held["pos"] || still["held"] != true {
+		t.Fatalf("held party moved: %v then %v", held["pos"], still["pos"])
+	}
+	waiting := false
+	for _, m := range still["members"].([]any) {
+		waiting = waiting || m.(map[string]any)["waiting"] == true
+	}
+	if !waiting {
+		t.Fatalf("who it waits for isn't shown: %v", still["members"])
+	}
+	_, freed := call(mom, "POST", "/api/party/"+partyCode+"/state", `{"client":"mom-tab-456","action":"ready"}`)
+	if freed["held"] == true || freed["playing"] != true {
+		t.Fatalf("ready: %v", freed)
+	}
 	// Someone can't act as another member's tab.
 	if code, _ := call(mom, "POST", "/api/party/"+partyCode+"/state", `{"client":"dad-tab-123","action":"play","pos":1}`); code != http.StatusForbidden {
 		t.Errorf("acting as another's tab: %d", code)

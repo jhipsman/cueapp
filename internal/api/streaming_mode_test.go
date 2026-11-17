@@ -73,3 +73,29 @@ func TestBrowserAudioFirst(t *testing.T) {
 		t.Fatalf("order = %v, want %s", got, want)
 	}
 }
+
+func TestBrowserPictureFirst(t *testing.T) {
+	cands := []playCandidate{
+		{Release: "Movie.2019.2160p.WEB-DL.DV.HDR10.HEVC", URL: "u1"},
+		{Release: "Movie.2019.1080p.WEB-DL.x265.10bit", URL: "u2"},
+		{Release: "Movie.2019.1080p.WEB-DL.AAC.H.264", URL: "u3"},
+		{Release: "Movie.2019.1080p.WEB.AV1", URL: "u4"},
+		{Release: "Movie.2019.2160p.HEVC", Hash: "abc", URL: "u5"}, // Premiumize converts it
+		{Release: "Movie.2019.720p.x264", URL: "u6"},
+		{Release: "The.Dvd.Shop.1999.1080p", URL: "u7"}, // "dv" inside a word isn't Dolby Vision
+	}
+	order := func(safari bool) string {
+		var got []string
+		for _, c := range browserPictureFirst(cands, true, safari) {
+			got = append(got, c.URL)
+		}
+		return strings.Join(got, " ")
+	}
+	if got, want := order(false), "u3 u5 u6 u7 u1 u2 u4"; got != want {
+		t.Errorf("Chrome: order = %s, want %s", got, want)
+	}
+	// Safari plays HEVC; only AV1 goes last.
+	if got, want := order(true), "u1 u2 u3 u5 u6 u7 u4"; got != want {
+		t.Errorf("Safari: order = %s, want %s", got, want)
+	}
+}

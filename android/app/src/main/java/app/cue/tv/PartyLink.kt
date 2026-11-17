@@ -123,6 +123,14 @@ class PartyLink(
         post("/api/party/$code/state", JSONObject().put("client", client).put("action", "episode").put("pos", 0).put("title", title))
     }
 
+    /** The party's version (its release name) of what [playPath] plays, so the TV that started the party can move to it. Call off the main thread. */
+    fun partyRelease(playPath: String): String {
+        val c = open("GET", "$playPath?option=1&party=$code", timeout = 30_000)
+        val text = if (c.responseCode in 200..299) c.inputStream.bufferedReader().use { it.readText() } else ""
+        c.disconnect()
+        return runCatching { JSONObject(text).optString("release") }.getOrDefault("")
+    }
+
     fun react(emoji: String) = fire("/api/party/$code/react", JSONObject().put("client", client).put("emoji", emoji))
 
     private fun fire(path: String, body: JSONObject) {

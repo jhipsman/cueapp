@@ -230,6 +230,7 @@ export interface PartyMember {
   name: string
   avatar: string
   host: boolean
+  waiting?: boolean // their player is loading: the party waits for them
 }
 export interface PartyTitle {
   kind: 'movie' | 'tv'
@@ -246,6 +247,7 @@ export interface PartyState {
   pos: number
   by?: string
   members: PartyMember[]
+  held?: boolean // playing, but waiting while someone's player loads
 }
 export interface PartyMsg {
   id: number
@@ -279,6 +281,7 @@ export interface WatchCard {
   episodeTitle?: string
   new?: boolean // the episode came out in the last two weeks
   logoUrl?: string // logo artwork: on the Home banner and title pages ("" when none)
+  quiet?: boolean // horror, anime or adult: kept off the banner, previews and screensaver
 }
 // What brings a title's artwork alive: its logo, the main colour of its
 // picture ("r, g, b") and a YouTube trailer id.
@@ -406,6 +409,19 @@ export function safari(): boolean {
   const ua = navigator.userAgent
   const ios = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1)
   return ios || (/Safari\//.test(ua) && !/Chrome|Chromium|CriOS|Android|Edg|Firefox|FxiOS/.test(ua))
+}
+
+// browserCantOpen says, from a version's file name, that this browser
+// surely can't play it as it is (so Cue converts it straight away instead of
+// trying it first): AVI, WMV and the like anywhere; MKV in Safari; HEVC and
+// AV1 pictures outside Safari (which plays HEVC).
+export function browserCantOpen(fileName: string, release = ''): boolean {
+  const ext = /\.([a-z0-9]{2,4})$/i.exec(fileName)?.[1]?.toLowerCase() ?? ''
+  if (['avi', 'wmv', 'flv', 'mpg', 'mpeg', 'ts', 'm2ts', 'vob', 'divx', 'xvid'].includes(ext)) return true
+  const name = `${fileName} ${release}`
+  if (/(^|[^a-z0-9])av1([^a-z0-9]|$)/i.test(name)) return true
+  if (safari()) return ext === 'mkv'
+  return /(^|[^a-z0-9])(x\.?265|h\.?265|hevc|10-?bit)([^a-z0-9]|$)/i.test(name)
 }
 
 export interface PlayAnswer {
@@ -2161,7 +2177,7 @@ export const api = {
   startParty: (data: PartyTitle & { pos: number; playing: boolean; client: string }) => post<PartyState>('/party', data),
   getParty: (code: string) => get<PartyState>(`/party/${encodeURIComponent(code)}`),
   joinParty: (code: string, client: string) => post<{ party: PartyState; msgs: PartyMsg[] }>(`/party/${encodeURIComponent(code)}/join`, { client }),
-  partyState: (code: string, data: { client: string; action: 'play' | 'pause' | 'seek' | 'episode'; pos: number; title?: PartyTitle }) =>
+  partyState: (code: string, data: { client: string; action: 'play' | 'pause' | 'seek' | 'episode' | 'wait' | 'ready'; pos: number; title?: PartyTitle }) =>
     post<PartyState>(`/party/${encodeURIComponent(code)}/state`, data),
   partyChat: (code: string, client: string, text: string) => post<{ ok: boolean }>(`/party/${encodeURIComponent(code)}/chat`, { client, text }),
   partyReact: (code: string, client: string, emoji: string) => post<{ ok: boolean }>(`/party/${encodeURIComponent(code)}/react`, { client, emoji }),
@@ -2360,9 +2376,10 @@ export const api = {
   // Watch (the streaming side): any title by TMDB id.
   // web: a browser is playing it (not the TV app), so versions with sound a
   // browser can play come first.
-  playTMDB: (kind: WatchKind, tmdbId: number, season = 0, episode = 0, option = 1, fresh = false, web = false) =>
+  // party: in a watch party, its code (everyone gets the party's version).
+  playTMDB: (kind: WatchKind, tmdbId: number, season = 0, episode = 0, option = 1, fresh = false, web = false, party = '') =>
     get<PlayAnswer>(
-      `/play/tmdb/${kind}/${tmdbId}${kind === 'tv' ? `/${season}/${episode}` : ''}?option=${option}${fresh ? '&fresh=1' : ''}${web ? '&client=web' : ''}`,
+      `/play/tmdb/${kind}/${tmdbId}${kind === 'tv' ? `/${season}/${episode}` : ''}?option=${option}${fresh ? '&fresh=1' : ''}${web ? `&client=web${safari() ? '&safari=1' : ''}` : ''}${party ? `&party=${encodeURIComponent(party)}` : ''}`,
     ),
   // prefetchPlay looks a stream up ahead of time, so Play starts at once.
   prefetchPlay: (kind: WatchKind, tmdbId: number, season = 0, episode = 0) =>

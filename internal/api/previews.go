@@ -107,6 +107,11 @@ func (s *Server) handleWatchPreview(w http.ResponseWriter, r *http.Request) {
 			want.season, want.episode = 1, 1
 		}
 	}
+	// Horror, anime and adult titles get no clip (quiet.go).
+	if s.quietTitle(r.Context(), kind, id) {
+		writeJSON(w, http.StatusOK, map[string]any{"none": true})
+		return
+	}
 	file := filepath.Join(s.previewDir(), want.key()+".mp4")
 	if fi, err := os.Stat(file); err == nil && fi.Size() > 0 {
 		now := time.Now()
@@ -241,7 +246,7 @@ func alsoTonight(r *http.Request, cards []watchCard, n int) {
 		if i == n || len(l.wants) >= previewTonightMax {
 			break
 		}
-		if w := cardPreview(c); !have[w.key()] {
+		if w := cardPreview(c); !c.Quiet && !have[w.key()] {
 			have[w.key()] = true
 			l.wants = append(l.wants, w)
 		}

@@ -5782,3 +5782,38 @@ button.wx-switch.on:hover {
   box-shadow: 0 10px 40px rgb(0 0 0 / 0.5);
   cursor: pointer;
 }
+
+/* The party holds while someone's player loads: who it waits for. */
+.wx-party-wait {
+  position: absolute;
+  top: 22px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 30;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 18px;
+  border-radius: 999px;
+  background: rgb(0 0 0 / 0.7);
+  backdrop-filter: blur(8px);
+  color: #fff;
+  font-size: 15px;
+  pointer-events: none;
+  animation: wx-party-in 0.3s ease backwards;
+}
+.wx-party-wait-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #fff;
+  animation: wx-party-pulse 1s ease-in-out infinite alternate;
+}
+@keyframes wx-party-pulse {
+  from {
+    opacity: 0.3;
+  }
+  to {
+    opacity: 1;
+  }
+}

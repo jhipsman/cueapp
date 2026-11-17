@@ -35,6 +35,9 @@ const (
 	partyGone       = 45 * time.Second // a member not heard from (no open stream) for this long has left
 	partyChatMax    = 300              // characters
 	partyBeat       = 20 * time.Second
+	// partyWaitMax is how long the party waits for one member's player to
+	// load before carrying on without them (they catch up on their own).
+	partyWaitMax = 30 * time.Second
 )
 
 var partyAlphabet = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"
@@ -49,8 +52,12 @@ type partyMember struct {
 	Name    string `json:"name"`
 	Avatar  string `json:"avatar"`
 	Host    bool   `json:"host"`
-	streams int
-	seen    time.Time
+	// Waiting: this member's player is loading, and the party waits for it
+	// (at most partyWaitMax, from waitSince).
+	Waiting   bool `json:"waiting,omitempty"`
+	waitSince time.Time
+	streams   int
+	seen      time.Time
 }
 
 type partyMsg struct {
@@ -85,6 +92,12 @@ type party struct {
 	nextID  int64
 	subs    map[chan []byte]string // open event streams, by client
 	active  time.Time
+	// held: it's playing, but waiting for someone's player to load; the
+	// position stands still (pos) until they're ready.
+	held bool
+	// release is the version everyone plays (its release name): the first
+	// one asked for with party=CODE (play.go), so all are on the same cut.
+	release string
 }
 
 var parties = struct {
@@ -106,7 +119,7 @@ func newPartyCode() (string, error) {
 
 // now is the party's position at this moment.
 func (p *party) now() float64 {
-	if !p.playing {
+	if !p.playing || p.held {
 		return p.pos
 	}
 	return p.pos + time.Since(p.posAt).Seconds()
@@ -119,14 +132,37 @@ type partySnapshot struct {
 	Pos     float64        `json:"pos"`
 	By      string         `json:"by,omitempty"`
 	Members []*partyMember `json:"members"`
+	// Held: playing, but everyone waits while someone's player loads.
+	Held bool `json:"held,omitempty"`
 }
 
 func (p *party) snapshot() partySnapshot {
-	s := partySnapshot{Code: p.code, Title: p.title, Playing: p.playing, Pos: math.Round(p.now()*100) / 100, By: p.by, Members: []*partyMember{}}
+	s := partySnapshot{Code: p.code, Title: p.title, Playing: p.playing, Pos: math.Round(p.now()*100) / 100, By: p.by, Members: []*partyMember{}, Held: p.playing && p.held}
 	for _, m := range p.members {
 		s.Members = append(s.Members, m)
 	}
 	return s
+}
+
+// rehold works out whether the party waits for anyone: someone whose player
+// is loading, for at most partyWaitMax each. Holding stops the clock where
+// it is; letting go starts it from there. It reports whether that changed.
+// Called with p.mu held.
+func (p *party) rehold() bool {
+	waiting := false
+	for _, m := range p.members {
+		if m.Waiting && time.Since(m.waitSince) >= partyWaitMax {
+			m.Waiting = false // carry on without them
+		}
+		waiting = waiting || m.Waiting
+	}
+	if waiting == p.held {
+		return false
+	}
+	at := p.now()
+	p.held = waiting
+	p.pos, p.posAt = at, time.Now()
+	return true
 }
 
 // send writes an event to every open stream. Called with p.mu held.
@@ -402,6 +438,7 @@ func (p *party) dropIfGone(client string) {
 		return
 	}
 	delete(p.members, client)
+	p.rehold()
 	p.say("event", m.Name, m.Avatar, m.Name+" left")
 	if m.Host {
 		for _, other := range p.members {
@@ -421,7 +458,7 @@ func (s *Server) handlePartyState(w http.ResponseWriter, r *http.Request) {
 	}
 	var req struct {
 		Client  string      `json:"client"`
-		Action  string      `json:"action"` // play, pause, seek, episode, sync
+		Action  string      `json:"action"` // play, pause, seek, episode, wait, ready
 		Pos     float64     `json:"pos"`
 		Title   *partyTitle `json:"title"`
 		Playing *bool       `json:"playing"`
@@ -441,6 +478,26 @@ func (s *Server) handlePartyState(w http.ResponseWriter, r *http.Request) {
 	p.active = time.Now()
 	pos := math.Max(0, req.Pos)
 	switch req.Action {
+	case "wait", "ready":
+		// This member's player is loading (or ready again): no line in the
+		// chat; everyone's player shows who it waits for.
+		was := m.Waiting
+		m.Waiting = req.Action == "wait"
+		if m.Waiting && !was {
+			m.waitSince = time.Now()
+			time.AfterFunc(partyWaitMax, func() {
+				p.mu.Lock()
+				defer p.mu.Unlock()
+				if p.rehold() {
+					p.send("state", p.snapshot())
+				}
+			})
+		}
+		if p.rehold() || was != m.Waiting {
+			p.send("state", p.snapshot())
+		}
+		writeJSON(w, http.StatusOK, p.snapshot())
+		return
 	case "play":
 		p.playing, p.pos, p.posAt = true, pos, time.Now()
 		p.say("event", m.Name, m.Avatar, m.Name+" pressed play")
@@ -461,7 +518,7 @@ func (s *Server) handlePartyState(w http.ResponseWriter, r *http.Request) {
 		t := *req.Title
 		t.Title = truncate(t.Title, 200)
 		p.title = t
-		p.playing, p.pos, p.posAt = true, 0, time.Now()
+		p.playing, p.pos, p.posAt, p.release = true, 0, time.Now(), ""
 		p.say("event", m.Name, m.Avatar, fmt.Sprintf("%s started S%d:E%d", m.Name, t.Season, t.Episode))
 	default:
 		writeError(w, http.StatusBadRequest, "That isn't something a party can do.")

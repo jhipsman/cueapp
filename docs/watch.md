@@ -104,6 +104,7 @@ The first time Watch opens on a browser or TV, four short slides show the contro
 - **Colour from the picture**: the glow behind the page, the highlight's halo and the progress bars take the main colour of the artwork in view.
 - **Cards with depth**: a card tilts toward the mouse (or sways gently on a TV), and Continue Watching cards float the title's logo in front of the picture.
 - **Screensaver**: after three minutes untouched on a computer or TV, Cue shows your own titles full screen with a clock: new episodes, where you stopped, your list. Any button brings you back.
+- **Kept quiet**: horror films, anime (Japanese animation) and adult titles (TMDB's adult flag, or rated NC-17) never show by themselves. They're left off Home's banner and both screensavers, get no preview clip, and aren't cut overnight. You can still find, browse and play them like anything else; their rows on Home (such as Horror) stay.
 
 ## Your year in Cue
 
@@ -124,7 +125,10 @@ Without a key, Watch shows TMDB's own score instead.
 Watch something at the same time as someone else in your household, as the old Netflix Party did. In the player, press **Watch party**: a party starts for what's playing, with a chat beside the picture.
 
 - **Joining:** everyone signed in to this Cue sees the party at the top of Home ("Dad is watching Wildwood · Join") and joins with one press, on a TV too, starting at the same moment. On a phone or computer, **Invite** also copies a link to send.
-- **In step:** anyone's play, pause or jump happens for everybody, and the chat says who did it ("Mom paused", "Dad jumped to 1:10"). A player that falls behind while buffering catches up by itself; at the end of an episode the party moves on to the next one together.
+- **In step:** anyone's play, pause or jump happens for everybody, and the chat says who did it ("Mom paused", "Dad jumped to 1:10"). At the end of an episode the party moves on to the next one together.
+- **Within a fraction of a second:** a player a little behind or ahead plays a touch faster or slower (5%, which nobody notices) until it's level, instead of jumping, so even a phone whose video Cue converts lines up. Only a big difference is jumped.
+- **Waiting for everyone:** while someone's player is loading (joining, buffering, after a jump), the party pauses for everyone with "Waiting for Mom…" and plays on together once they're ready. It waits half a minute at most for any one person.
+- **The same version for everyone:** the party picks one version every device plays most easily (Premiumize's MP4 copy when there is one, else one a browser plays as it is), and everyone, the starter too, plays it, so the same moment is at the same second everywhere.
 - **Chat and reactions:** type in the chat, or send a reaction that floats up everyone's picture. On a TV, **React** in the player's controls sends one with the remote, and the party panel shows a QR code that opens the chat on your phone.
 
 Each person plays from their own stream; only the position is shared. Parties live on your own server and end when everyone has left (or Cue restarts).
@@ -190,7 +194,7 @@ Everything Watch shows comes from the API, so a TV app can show the same things.
 | `PUT` / `DELETE /api/watch/list/{kind}/{tmdbId}` | add to or remove from My List |
 | `GET /api/watch/skips/{kind}/{tmdbId}?season=&episode=&duration=` | where the intro, recap and credits are, in seconds |
 | `GET` / `PUT /api/profile/streaming` | the profile's [Streaming quality](#streaming-quality): `{"quality":"4k|1080p|720p","size":"smart|10|20|30|50|any","remux":"avoid|allow","hdr":"prefer|any","dolbyVision":"prefer|allow|avoid","efficient":true,"lightSound":true}` |
-| `GET /api/play/convert?u=` | for a version a player can't open (`convert` in what to play, asked with `client=web`): its length and where it plays converted, as an MP4 stream (`stream`) or HLS (`hls`; add `&apple=1` for the Apple TV, which keeps HEVC, HDR and Dolby sound, and `&t=` to start further in) |
+| `GET /api/play/convert?u=` | for a version a player can't open (`convert` in what to play, asked with `client=web`, plus `safari=1` from Safari, which plays HEVC; for a browser, versions it plays as it is come first): its length and where it plays converted, as an MP4 stream (`stream`) or HLS (`hls`; add `&apple=1` for the Apple TV, which keeps HEVC, HDR and Dolby sound, and `&t=` to start further in) |
 | `PUT /api/profile/theme` | the profile's colors: `{"accent":"#34d1bf","glow":"off|soft|strong","background":"midnight|black|slate|tinted"}` |
 
 `kind` is `movie` or `tv`.

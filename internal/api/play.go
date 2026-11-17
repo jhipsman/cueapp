@@ -382,8 +382,15 @@ func (s *Server) servePlay(w http.ResponseWriter, r *http.Request, t playTarget)
 	web := r.URL.Query().Get("client") == "web"
 	if web {
 		// A web browser: versions it can play with sound first.
+		// The picture counts more than the sound: a sound the browser can't
+		// play is converted quickly, a picture slowly.
 		entry.candidates = browserAudioFirst(entry.candidates, pm != nil)
+		entry.candidates = browserPictureFirst(entry.candidates, pm != nil, r.URL.Query().Get("safari") == "1")
 		entry.candidates = browserFilesFirst(entry.candidates)
+	}
+	if code := r.URL.Query().Get("party"); code != "" {
+		// In a watch party: the party's version, the same for everyone.
+		entry.candidates = partyVersionFirst(code, entry.candidates, pm != nil)
 	}
 	if forClip(r.Context()) {
 		// Cutting a preview clip, not watching: the lightest version that

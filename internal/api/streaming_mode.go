@@ -161,6 +161,30 @@ var cinemaAudio = regexp.MustCompile(`(?i)(^|[^a-z0-9])(dts(-?hd|-?x|-?ma)?|true
 // With Premiumize set up (converted), an add-on link whose torrent is known
 // gets Premiumize's converted copy, which has browser sound, so it isn't
 // judged either.
+// browserPicture matches release names with a picture most web browsers
+// can't play: HEVC (x265, 10-bit, HDR, Dolby Vision) and AV1. Safari plays
+// HEVC; no browser can be counted on for the rest.
+var (
+	hevcPicture = regexp.MustCompile(`(?i)(^|[^a-z0-9])(x\.?265|h\.?265|hevc|10-?bit|hdr(10)?(\+|plus)?|dolby[ .]?vision|dovi|dv)([^a-z0-9]|$)`)
+	av1Picture  = regexp.MustCompile(`(?i)(^|[^a-z0-9])av1([^a-z0-9]|$)`)
+)
+
+// browserPictureFirst puts versions whose picture the browser plays as it is
+// before the ones Cue would have to convert (remaking the picture is slow on
+// a small server, and trying them first only to move on wastes the wait).
+// As with the sound, Premiumize's converted copies aren't judged.
+func browserPictureFirst(cands []playCandidate, converted, safari bool) []playCandidate {
+	remade := func(c playCandidate) bool {
+		if c.URL == "" || (converted && c.Hash != "") {
+			return false
+		}
+		return av1Picture.MatchString(c.Release) || (!safari && hevcPicture.MatchString(c.Release))
+	}
+	out := append([]playCandidate(nil), cands...)
+	sort.SliceStable(out, func(i, j int) bool { return !remade(out[i]) && remade(out[j]) })
+	return out
+}
+
 func browserAudioFirst(cands []playCandidate, converted bool) []playCandidate {
 	silent := func(c playCandidate) bool {
 		return c.URL != "" && !(converted && c.Hash != "") && cinemaAudio.MatchString(c.Release)
