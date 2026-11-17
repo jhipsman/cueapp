@@ -701,6 +701,7 @@ export default function PlayerPage() {
     title: { kind, tmdbId, season: kind === 'tv' ? season : undefined, episode: kind === 'tv' ? episode : undefined, title: answer?.title ?? '', option: answer?.option },
     position: () => (conv?.offset ?? 0) + (video.current?.currentTime ?? 0),
     seek: (sec) => seekAbs(sec),
+    costlySeek: !!conv?.stream,
     follow: (t) => navigate(`${playHref(t.kind, t.tmdbId, t.season, t.episode)}?party=${partyCode}`, { replace: true }),
     startAt: (sec) => {
       resumeAt.current = sec
