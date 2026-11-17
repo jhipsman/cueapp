@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -360,7 +361,7 @@ fun StartingScreen(api: CueApi, s: Playback.Starting, note: String, back: () -> 
             androidx.compose.foundation.layout.Spacer(Modifier.size(24.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(14.dp), verticalAlignment = Alignment.CenterVertically) {
                 if (!s.failed) {
-                    androidx.compose.material3.CircularProgressIndicator(modifier = Modifier.size(26.dp), color = Color.White, strokeWidth = 3.dp, trackColor = Color(0x33FFFFFF))
+                    LoadingMark(26.dp)
                     Text(note.ifEmpty { "Finding a version…" }, fontSize = 14.sp, color = Color(0xCCFFFFFF))
                 } else {
                     Pill("Back", primary = true, modifier = Modifier.focusRequester(focus), onClick = back)
@@ -589,4 +590,26 @@ fun BannerPreview(api: CueApi, tile: Tile, modifier: Modifier = Modifier, onShow
 @Composable
 private fun DisposableEffectOnLeave(leave: () -> Unit) {
     androidx.compose.runtime.DisposableEffect(Unit) { onDispose { leave() } }
+}
+
+/** Loading: the Cue mark gently breathing (growing and fading a touch), not a spinning ring. */
+@androidx.compose.runtime.Composable
+fun LoadingMark(size: androidx.compose.ui.unit.Dp) {
+    val t = androidx.compose.animation.core.rememberInfiniteTransition(label = "loading")
+    val k by t.animateFloat(
+        0f, 1f,
+        androidx.compose.animation.core.infiniteRepeatable(
+            androidx.compose.animation.core.tween(900, easing = androidx.compose.animation.core.FastOutSlowInEasing),
+            androidx.compose.animation.core.RepeatMode.Reverse,
+        ),
+        label = "breath",
+    )
+    androidx.compose.foundation.Image(
+        androidx.compose.ui.res.painterResource(app.cue.tv.R.drawable.ic_cue_mark), contentDescription = "Loading",
+        modifier = Modifier.size(size).graphicsLayer {
+            alpha = 0.55f + 0.45f * k
+            scaleX = 0.92f + 0.12f * k
+            scaleY = 0.92f + 0.12f * k
+        },
+    )
 }

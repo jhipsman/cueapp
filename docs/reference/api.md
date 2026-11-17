@@ -403,6 +403,7 @@ Every route the server exposes. Routes marked **public** need no sign-in; all ot
 | GET | `/api/play/series/{id}/{season}/{episode}` | signed in | GET /api/play/series/{id}/{season}/{episode}[?option=N][&fresh=1] |
 | GET | `/api/play/tmdb/movie/{tmdbId}` | signed in | GET /api/play/tmdb/movie/{tmdbId}: any movie, in the library or not. |
 | GET | `/api/play/tmdb/tv/{tmdbId}/{season}/{episode}` | signed in | GET /api/play/tmdb/tv/{tmdbId}/{season}/{episode}: any episode of any show. |
+| POST | `/api/play/wrong` | signed in | POST /api/play/wrong {kind, tmdbId, season, episode, release}: this version is the wrong video for the title (another film with the same name, a mislabelled ... |
 
 ## profile
 
@@ -745,4 +746,4 @@ Every route the server exposes. Routes marked **public** need no sign-in; all ot
 | PUT | `/api/watched/settings` | admin | PUT /api/watched/settings {"sync": true, "cleanup": {...}} |
 | POST | `/api/watched/sync` | admin | POST /api/watched/sync: read what's been watched now. |
 
-415 routes.
+416 routes.

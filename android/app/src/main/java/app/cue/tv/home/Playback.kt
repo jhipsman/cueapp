@@ -52,7 +52,7 @@ class Playback(
         upNext = null
     }
 
-    private data class Vod(val kind: String, val id: Int, val season: Int, val episode: Int, var option: Int = 1, var options: Int = 1, var silent: Int = 0, var party: String = "")
+    private data class Vod(val kind: String, val id: Int, var season: Int, var episode: Int, var option: Int = 1, var options: Int = 1, var silent: Int = 0, var party: String = "")
 
     private var vod: Vod? = null
     private var upNextParty = ""
@@ -173,7 +173,18 @@ class Playback(
 
     // How the player ended: reason (ended, next, other, nosound, error, back,
     // channel-up, channel-down, channel), where it was, and a message.
-    fun ended(reason: String, position: Long, message: String) {
+    fun ended(reason: String, position: Long, message: String, episodeNow: String = "") {
+        // The player moved on to later episodes itself: what follows (Other
+        // version, Next, Up next) is about the one it ended on.
+        episodeNow.split('|').takeIf { it.size == 2 }?.let { p ->
+            vod?.let { v ->
+                v.season = p[0].toIntOrNull() ?: v.season
+                v.episode = p[1].toIntOrNull() ?: v.episode
+                v.option = 1
+                v.options = 1
+                v.silent = 0
+            }
+        }
         // Sent from a phone while something played: "kind|id|season|episode".
         if (reason == "remote-play") {
             message.split('|').takeIf { it.size == 4 }?.let { p ->
@@ -238,6 +249,16 @@ class Playback(
                 }
             }
             "other" -> nextVersion(v, position.toDouble(), "")
+            // The wrong video for this title: never this version again; the
+            // same number is now the next one.
+            "wrong" -> startJob = scope.launch {
+                note = "Got it: that version won't be used for this again. Trying the next one…"
+                runCatching {
+                    api.request("POST", "/api/play/wrong", JSONObject()
+                        .put("kind", v.kind).put("tmdbId", v.id).put("season", v.season).put("episode", v.episode).put("release", message))
+                }
+                openVod(v, 0.0)
+            }
             "nosound" -> if (v.silent < 2) {
                 v.silent++
                 nextVersion(v, position.toDouble(), "Version ${v.option} had no sound on this TV.")

@@ -499,6 +499,7 @@ func (s *Server) protectedRoutes() *routeTable {
 	play.HandleFunc("GET /api/play/series/{id}/{season}/{episode}", s.handlePlayEpisode)
 	// Watch: browse and stream anything (watch_api.go, play.go).
 	play.HandleFunc("GET /api/play/tmdb/movie/{tmdbId}", s.handlePlayTMDBMovie)
+	play.HandleFunc("POST /api/play/wrong", s.handleWrongVersion)
 	play.HandleFunc("GET /api/play/tmdb/tv/{tmdbId}/{season}/{episode}", s.handlePlayTMDBEpisode)
 	play.HandleFunc("GET /api/profiles", s.handleListWatchProfiles)
 	play.HandleFunc("POST /api/profiles/{id}/select", s.handleSelectWatchProfile)

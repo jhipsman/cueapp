@@ -30,7 +30,6 @@ import android.webkit.CookieManager
 import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
-import android.widget.ProgressBar
 import android.widget.ScrollView
 import android.widget.TextView
 import android.widget.Toast
@@ -116,7 +115,7 @@ class PlayerActivity : Activity() {
     private lateinit var timeNow: TextView
     private var speed = 1f
     private lateinit var playPause: TextView
-    private lateinit var spinner: ProgressBar
+    private lateinit var spinner: View // loading: the Cue mark, breathing
     private lateinit var pauseBadge: ImageView
     private var nextButton: TextView? = null
     private var otherButton: View? = null
@@ -269,10 +268,26 @@ class PlayerActivity : Activity() {
             setKeepContentOnPlayerReset(true)
             styleSubtitles(subtitleView)
         }
-        spinner = ProgressBar(this).apply {
-            isIndeterminate = true
-            indeterminateTintList = ColorStateList.valueOf(teal)
+        // Loading shows the Cue mark gently breathing (growing and fading a
+        // touch), not a spinning ring.
+        val mark = ImageView(this).apply {
+            setImageResource(R.drawable.ic_cue_mark)
+            visibility = View.GONE
         }
+        android.animation.ValueAnimator.ofFloat(0f, 1f).apply {
+            duration = 900
+            repeatMode = android.animation.ValueAnimator.REVERSE
+            repeatCount = android.animation.ValueAnimator.INFINITE
+            interpolator = android.view.animation.AccelerateDecelerateInterpolator()
+            addUpdateListener { a ->
+                val t = a.animatedValue as Float
+                mark.alpha = 0.55f + 0.45f * t
+                mark.scaleX = 0.92f + 0.12f * t
+                mark.scaleY = 0.92f + 0.12f * t
+            }
+            start()
+        }
+        spinner = mark
         pauseBadge = ImageView(this).apply {
             setImageDrawable(getDrawable(R.drawable.ic_cue_pause)?.mutate()?.apply { setTint(Color.WHITE) })
             setPadding(px(16), px(16), px(16), px(16))
@@ -296,7 +311,7 @@ class PlayerActivity : Activity() {
             val startView = buildStartScreen()
             startScreen = startView
             addView(startView, FrameLayout.LayoutParams(MATCH, MATCH))
-            addView(spinner, FrameLayout.LayoutParams(px(44), px(44), Gravity.CENTER))
+            addView(spinner, FrameLayout.LayoutParams(px(40), px(40), Gravity.CENTER))
             addView(pauseBadge, FrameLayout.LayoutParams(px(72), px(72), Gravity.CENTER))
             addView(controls, FrameLayout.LayoutParams(MATCH, MATCH))
             skipButton = buildSkipButton()
@@ -340,7 +355,14 @@ class PlayerActivity : Activity() {
                 }
                 spinner.visibility = if (state == Player.STATE_BUFFERING) View.VISIBLE else View.GONE
                 if (state == Player.STATE_ENDED) {
-                    if (live) end("error", "The channel stopped.") else end("ended", party?.code ?: "")
+                    when {
+                        live -> end("error", "The channel stopped.")
+                        // The next episode is ready: a short count here, then it plays
+                        // in this player (no trip back to Home).
+                        nextReady != null && countdownLeft < 0 && !partyFollower() -> startNextCountdown()
+                        countdownLeft >= 0 -> Unit
+                        else -> end("ended", party?.code ?: "")
+                    }
                 }
             }
 
@@ -858,11 +880,16 @@ class PlayerActivity : Activity() {
             if (isShow && !live && !catchup) {
                 nextButton = pill("Next episode", R.drawable.ic_cue_next) {
                     learnCredits()
-                    end("next", party?.code ?: "")
+                    goNext()
                 }.also { addView(it) }
             }
             if (hasOther && !live && !catchup) {
                 otherButton = iconPill("Other version", R.drawable.ic_cue_versions) { end("other") }.also { addView(it) }
+            }
+            // Not this title at all (a different video with the same name):
+            // Cue never uses this version for it again, and tries the next.
+            if (!live && !catchup && info.optString("release").isNotEmpty()) {
+                addView(iconPill("Wrong video", R.drawable.ic_cue_versions) { end("wrong", info.optString("release")) })
             }
             if (!live && !catchup) {
                 partyButton = iconPill("Watch party", R.drawable.ic_cue_party) { partyPressed() }.also { addView(it) }
@@ -1254,6 +1281,9 @@ class PlayerActivity : Activity() {
         // (a guess, or one for another cut) isn't trusted.
         val creditsOk = credits > 0 && dur - credits <= MAX_CREDITS
         nearEnd = nextButton != null && dur > 0 && pos < dur - 1000 && ((creditsOk && pos >= credits) || dur - pos < 30_000)
+        // From five minutes before the end (or the credits), the next episode
+        // is found, so moving on is instant.
+        if (isShow && !live && !catchup && dur > 0 && (nearEnd || dur - pos < 5 * 60_000)) prepareNext()
         updateSkip(pos)
     }
 
@@ -1558,7 +1588,7 @@ class PlayerActivity : Activity() {
         if (skipTo == NEXT) {
             skipButton.visibility = View.GONE
             learnCredits()
-            end("next")
+            goNext()
             return
         }
         if (skipTo <= 0) return
@@ -1618,13 +1648,125 @@ class PlayerActivity : Activity() {
             val next = nextButton ?: return
             if (countdownLeft <= 0) {
                 countdownLeft = -1
-                end("next")
+                goNext()
                 return
             }
             next.text = "Next episode in $countdownLeft"
             countdownLeft--
             main.postDelayed(this, 1000)
         }
+    }
+
+    // ---- The next episode, ready before it's needed ----
+    //
+    // Near the end of an episode the player finds the next one (its version,
+    // as Home would) in the background. Next (the button, the countdown,
+    // Skip at the credits, or the episode ending) then plays it right here:
+    // a quick fade, the new episode, no trip back to Home and no second
+    // "Finding a version" screen. If it isn't ready, Home does it as before.
+
+    private var nextReady: JSONObject? = null
+    private var nextAsked = false
+    private var swapped = false // this player moved on to another episode (for Home)
+
+    // A member of a party who didn't start it follows the party's own moves.
+    private fun partyFollower() = party != null && partyHost.not() && partyState?.optString("by") != party?.client
+
+    private fun getJson(path: String): JSONObject? {
+        if (server.isEmpty()) return null
+        return runCatching {
+            val c = URL("$server$path").openConnection() as HttpURLConnection
+            c.connectTimeout = 8000
+            c.readTimeout = 30_000
+            CookieManager.getInstance().getCookie(server)?.let { c.setRequestProperty("Cookie", it) }
+            info.optString("token").takeIf { it.isNotEmpty() }?.let { c.setRequestProperty("X-Cue-Profile", it) }
+            val ok = c.responseCode in 200..299
+            val text = if (ok) c.inputStream.bufferedReader().use { it.readText() } else ""
+            c.disconnect()
+            if (ok) JSONObject(text) else null
+        }.getOrNull()
+    }
+
+    private fun prepareNext() {
+        if (nextAsked) return
+        nextAsked = true
+        val id = info.optInt("tmdbId")
+        val s = info.optInt("season")
+        val e = info.optInt("episode")
+        val partyCode = party?.code.orEmpty()
+        Thread {
+            val n = getJson("/api/watch/tv/$id/next?season=$s&episode=$e") ?: return@Thread
+            val ns = n.optInt("season")
+            val ne = n.optInt("episode")
+            if (ne < 1) return@Thread
+            val a = getJson("/api/play/tmdb/tv/$id/$ns/$ne?option=1" + (if (partyCode.isNotEmpty()) "&party=$partyCode" else "")) ?: return@Thread
+            if (a.optString("url").isEmpty() || a.optString("youtube").isNotEmpty()) return@Thread
+            val label = "S$ns:E$ne"
+            val sub = listOf(label, a.optString("quality"), a.optString("source").takeIf { it.isNotEmpty() }?.let { "via $it" } ?: "")
+                .filter { it.isNotEmpty() }.joinToString(" · ")
+            val j = JSONObject(info.toString())
+                .put("url", a.optString("url"))
+                .put("title", a.optString("title"))
+                .put("subtitle", sub)
+                .put("startSec", 0.0)
+                .put("hasOther", a.optInt("option", 1) < a.optInt("options", 1))
+                .put("season", ns)
+                .put("episode", ne)
+                .put("thumbs", a.optString("thumbs"))
+                .put("release", a.optString("release"))
+                // The new episode's skip times come once it's playing (fetchSkips).
+                .put("introStart", 0.0).put("introEnd", 0.0).put("recapStart", 0.0).put("recapEnd", 0.0)
+                .put("creditsStart", 0.0).put("creditsFromEnd", 0.0)
+            main.post { if (!finished) nextReady = j }
+        }.start()
+    }
+
+    private fun startNextCountdown() {
+        val next = nextButton ?: return
+        showControls(next)
+        countdownLeft = 5
+        main.removeCallbacks(countdown)
+        main.post(countdown)
+    }
+
+    // goNext plays the next episode: here when it's ready, else through Home.
+    private fun goNext() {
+        val j = nextReady
+        if (j == null) {
+            end("next", party?.code ?: "")
+            return
+        }
+        cancelCountdown()
+        hideSkip()
+        saveProgress()
+        nextReady = null
+        nextAsked = false
+        swapped = true
+        // A short fade to black over the change.
+        val veil = View(this).apply { setBackgroundColor(Color.BLACK); alpha = 0f }
+        (video.parent as? FrameLayout)?.addView(veil, FrameLayout.LayoutParams(MATCH, MATCH))
+        veil.animate().alpha(1f).setDuration(220).withEndAction {
+            info = j
+            introStart = 0; introEnd = 0; recapStart = 0; recapEnd = 0; creditsStart = 0; creditsFromEnd = 0
+            skipTo = 0
+            skipsAsked = false
+            nearEnd = false
+            externalSubs = false
+            hasOther = info.optBoolean("hasOther")
+            otherButton?.visibility = if (hasOther) View.VISIBLE else View.GONE
+            titleText?.text = info.optString("title")
+            subtitle?.text = info.optString("subtitle")
+            frameCache.evictAll()
+            player.setMediaItem(mediaItem(""))
+            player.prepare()
+            player.playWhenReady = true
+            party?.let { l -> Thread { runCatching { l.sendEpisode(partyTitle()) } }.start() }
+            reportScreen(force = true)
+            hideControls()
+            veil.animate().alpha(0f).setStartDelay(350).setDuration(320).withEndAction {
+                (veil.parent as? FrameLayout)?.removeView(veil)
+            }.start()
+        }.start()
     }
 
     private fun cancelCountdown() {
@@ -2253,7 +2395,8 @@ class PlayerActivity : Activity() {
                 .putExtra(RESULT_REASON, reason)
                 .putExtra(RESULT_POSITION, player.currentPosition / 1000)
                 .putExtra(RESULT_DURATION, dur)
-                .putExtra(RESULT_MESSAGE, message),
+                .putExtra(RESULT_MESSAGE, message)
+                .putExtra(RESULT_EPISODE, if (swapped) "${info.optInt("season")}|${info.optInt("episode")}" else ""),
         )
         finish()
     }
@@ -2290,6 +2433,8 @@ class PlayerActivity : Activity() {
         const val RESULT_POSITION = "position"
         const val RESULT_DURATION = "duration"
         const val RESULT_MESSAGE = "message"
+        const val RESULT_EPISODE = "episode" // "season|episode" when the player moved on to another episode
+
         private const val SAVE_EVERY_MS = 15_000L
         private const val FPS_SAMPLES = 48
         private const val MATCH = ViewGroup.LayoutParams.MATCH_PARENT

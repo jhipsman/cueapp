@@ -2443,6 +2443,8 @@ export const api = {
   screenPlay: (id: string, t: { kind: WatchKind; tmdbId: number; season?: number; episode?: number }) =>
     post<null>(`/screens/${encodeURIComponent(id)}/play`, t),
   screenControl: (id: string, action: RemoteAction, pos = 0) => post<null>(`/screens/${encodeURIComponent(id)}/control`, { action, pos }),
+  // This version is the wrong video for the title: never offered for it again.
+  markWrongVersion: (t: { kind: WatchKind; tmdbId: number; season: number; episode: number; release: string }) => post<null>('/play/wrong', t),
   // Coming soon: films not out to stream yet, soonest first.
   comingSoon: () => get<WatchCard[]>('/watch/coming-soon'),
   // Tell this profile when a title is out to stream (or stop).

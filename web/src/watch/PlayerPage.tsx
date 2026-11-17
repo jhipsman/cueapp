@@ -1038,6 +1038,26 @@ export default function PlayerPage() {
                   href: a.href,
                   onClick: () => video.current?.pause(),
                 })),
+                ...(answer.release
+                  ? [
+                      {
+                        label: 'Wrong video',
+                        hint: 'Not this title? Cue never uses this version for it again',
+                        onClick: () => {
+                          const at = answer.option
+                          void api
+                            .markWrongVersion({ kind, tmdbId, season: kind === 'tv' ? season : 0, episode: kind === 'tv' ? episode : 0, release: answer.release })
+                            .then(() => {
+                              setNote('Got it: that version won’t be used for this again. Trying the next one…')
+                              resumeAt.current = 0
+                              // The same number is now the next version (this one's gone).
+                              void load(at)
+                            })
+                            .catch((e) => setNote(e instanceof Error ? e.message : String(e)))
+                        },
+                      },
+                    ]
+                  : []),
                 { label: 'Search again', hint: 'Look for versions afresh', onClick: () => void load(1, true) },
               ],
             }}
