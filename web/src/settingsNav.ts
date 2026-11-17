@@ -59,7 +59,7 @@ const GROUPS: { key: string; label: string; icon: IconName; color: string; pages
 const STREAMING_GROUPS: typeof GROUPS = [
   { key: 'streaming', label: 'Streaming', icon: 'play', color: '#34d1bf', pages: ['/settings/streaming'] },
   { key: 'indexers', label: 'Torrent sites', icon: 'search', color: '#a5b4fc', pages: ['/settings/indexers'] },
-  { key: 'metadata', label: 'Movie info and ratings', icon: 'globe', color: '#c1acf7', pages: ['/settings/metadata'] },
+  { key: 'metadata', label: 'Movie info and subtitles', icon: 'globe', color: '#c1acf7', pages: ['/settings/metadata', '/settings/subtitles'] },
   { key: 'profile', label: 'Accounts', icon: 'user', color: '#8fb8f5', pages: ['/settings/profile'] },
   { key: 'system', label: 'System', icon: 'hard', color: '#b4bfcc', pages: ['/settings/system', '/settings/logs', '/settings/about'] },
 ]
