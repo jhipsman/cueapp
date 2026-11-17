@@ -616,7 +616,7 @@ fun MainScreen(api: CueApi, playback: Playback, openWeb: (String) -> Unit, chang
                 modifier = Modifier.fillMaxSize(),
             ) { showing ->
                 when (showing) {
-                    0 -> HomeScreen(api, null, memories[0], pageTakesFocus, tookFocus, setAmbient, onCard)
+                    0 -> HomeScreen(api, null, memories[0], pageTakesFocus, tookFocus, setAmbient, onCard, playback)
                     1 -> HomeScreen(api, "tv", memories[1], pageTakesFocus, tookFocus, setAmbient, onCard)
                     2 -> HomeScreen(api, "movie", memories[2], pageTakesFocus, tookFocus, setAmbient, onCard)
                     3 -> LiveScreen(api, playback, openWeb)
@@ -638,7 +638,7 @@ fun MainScreen(api: CueApi, playback: Playback, openWeb: (String) -> Unit, chang
 // rows slide up beneath it.
 @Composable
 fun HomeScreen(api: CueApi, only: String?, memory: FocusMemory, takeFocus: Boolean, tookFocus: () -> Unit,
-               setAmbient: (Tile?) -> Unit, onCard: (Tile) -> Unit) {
+               setAmbient: (Tile?) -> Unit, onCard: (Tile) -> Unit, playback: Playback? = null) {
     var home by remember { mutableStateOf<Home?>(homeCache) }
     var problem by remember { mutableStateOf("") }
     var spot by remember { mutableStateOf<Tile?>(null) }
@@ -686,6 +686,7 @@ fun HomeScreen(api: CueApi, only: String?, memory: FocusMemory, takeFocus: Boole
         // highlighted poster stays near the left, as in the TV's own apps.
         CompositionLocalProvider(LocalBringIntoViewSpec provides rememberRowsSpec()) {
             LazyColumn(state = listState, contentPadding = PaddingValues(top = 10.dp, bottom = 120.dp)) {
+                if (only == null && playback != null) item(key = "parties") { PartiesNow(api, playback) }
                 items(rows, key = { it.key }) { r ->
                     CardRow(r, memory, onFocus = { spot = it }, onClick = onCard)
                 }
@@ -1170,6 +1171,56 @@ fun ProfileScreen(api: CueApi, switchProfile: () -> Unit, changeServer: () -> Un
             Gap(10.dp)
             Text(if (light) "Still pictures instead of moving previews, for a smoother TV." else "Moving previews on. Turn Light mode on if this TV feels slow.",
                 fontSize = 11.sp, color = Dim)
+        }
+    }
+}
+
+// Watch parties going on now (party.go): someone in the household started
+// one; OK joins it, at the same moment, with nothing to type or open.
+@Composable
+fun PartiesNow(api: CueApi, playback: Playback) {
+    var list by remember { mutableStateOf<List<org.json.JSONObject>>(emptyList()) }
+    LaunchedEffect(Unit) {
+        while (true) {
+            val a = runCatching { api.arr("/api/parties") }.getOrNull()
+            if (a != null) list = (0 until a.length()).mapNotNull { a.optJSONObject(it) }
+            delay(20_000)
+        }
+    }
+    if (list.isEmpty()) return
+    Column(Modifier.padding(start = 48.dp, end = 48.dp, bottom = 14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        list.forEach { p ->
+            val t = p.optJSONObject("title") ?: return@forEach
+            val host = p.optJSONObject("host")?.optString("name") ?: "Someone"
+            val what = t.optString("title") + if (t.optString("kind") == "tv" && t.optInt("season") > 0) " · S${t.optInt("season")}:E${t.optInt("episode")}" else ""
+            val shape = RoundedCornerShape(16.dp)
+            Card(
+                onClick = {
+                    playback.playTitle(t.optString("kind"), t.optInt("tmdbId"), t.optInt("season", 1), t.optInt("episode", 1), null, party = p.optString("code"))
+                },
+                modifier = Modifier.fillMaxWidth(),
+                shape = CardDefaults.shape(shape),
+                scale = CardDefaults.scale(focusedScale = 1.02f),
+                colors = CardDefaults.colors(containerColor = tint().copy(alpha = 0.16f), focusedContainerColor = tint().copy(alpha = 0.3f)),
+                border = CardDefaults.border(focusedBorder = Border(BorderStroke(2.dp, Color.White), shape = shape)),
+            ) {
+                Row(Modifier.padding(horizontal = 18.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+                    val faces = p.optJSONArray("faces")
+                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                        for (i in 0 until (faces?.length() ?: 0)) {
+                            val f = faces?.optJSONObject(i) ?: continue
+                            Box(Modifier.size(32.dp).clip(CircleShape).background(avatarColor(f.optString("avatar"))), contentAlignment = Alignment.Center) {
+                                AvatarFace(f.optString("avatar"), f.optString("name"), 14.sp)
+                            }
+                        }
+                    }
+                    Column(Modifier.weight(1f).padding(start = 14.dp)) {
+                        Text("● Watch party · ${p.optInt("members")} watching", fontSize = 12.sp, color = Dim)
+                        Text("$host is watching $what", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = Color.White, maxLines = 1)
+                    }
+                    Text("Join", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                }
+            }
         }
     }
 }

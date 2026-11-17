@@ -372,6 +372,25 @@ Every route the server exposes. Routes marked **public** need no sign-in; all ot
 | POST | `/api/onboarding/admin` | **public** | is onboarding wizard step 1. |
 | GET | `/api/onboarding/status` | **public** | tells the frontend whether to show the first-run wizard or the normal app shell. |
 
+## parties
+
+| Method | Path | Access | What it does |
+|---|---|---|---|
+| GET | `/api/parties` | signed in | GET /api/parties: the watch parties going on now, for Home's "Join" (anyone signed in to this Cue can see and join them: on a TV, with the remote, there's no... |
+
+## party
+
+| Method | Path | Access | What it does |
+|---|---|---|---|
+| POST | `/api/party` | signed in | POST /api/party {title..., "pos", "playing", "client"}: a new party for what the caller is watching, with the caller as its first member. |
+| GET | `/api/party/{code}` | signed in | GET /api/party/{code}: what the party is watching, where it is, and who's there (the join page asks this first). |
+| POST | `/api/party/{code}/chat` | signed in | POST /api/party/{code}/chat {"client","text"}. |
+| GET | `/api/party/{code}/events` | signed in | GET /api/party/{code}/events?client=: the party's updates as they happen (Server-Sent Events): "state" (where everyone should be, and who's there) and "msg" ... |
+| POST | `/api/party/{code}/join` | signed in | POST /api/party/{code}/join {"client"}: joins as the active profile; answers the party and its chat so far. |
+| POST | `/api/party/{code}/leave` | signed in | POST /api/party/{code}/leave {"client"}: leaving straight away (the player closed), rather than after a while. |
+| POST | `/api/party/{code}/react` | signed in | POST /api/party/{code}/react {"client","emoji"}: a reaction that floats up everyone's screen (not kept in the chat). |
+| POST | `/api/party/{code}/state` | signed in | POST /api/party/{code}/state {"client","action","pos", title for "episode"}: play, pause, seek or a new episode, for everyone. |
+
 ## play
 
 | Method | Path | Access | What it does |
@@ -701,4 +720,4 @@ Every route the server exposes. Routes marked **public** need no sign-in; all ot
 | PUT | `/api/watched/settings` | admin | PUT /api/watched/settings {"sync": true, "cleanup": {...}} |
 | POST | `/api/watched/sync` | admin | POST /api/watched/sync: read what's been watched now. |
 
-391 routes.
+400 routes.

@@ -119,6 +119,16 @@ TMDB doesn't have IMDb ratings, so Watch reads them from [OMDb](https://www.omdb
 
 Without a key, Watch shows TMDB's own score instead.
 
+## Watch parties
+
+Watch something at the same time as someone else in your household, as the old Netflix Party did. In the player, press **Watch party**: a party starts for what's playing, with a chat beside the picture.
+
+- **Joining:** everyone signed in to this Cue sees the party at the top of Home ("Dad is watching Wildwood · Join") and joins with one press, on a TV too, starting at the same moment. On a phone or computer, **Invite** also copies a link to send.
+- **In step:** anyone's play, pause or jump happens for everybody, and the chat says who did it ("Mom paused", "Dad jumped to 1:10"). A player that falls behind while buffering catches up by itself; at the end of an episode the party moves on to the next one together.
+- **Chat and reactions:** type in the chat, or send a reaction that floats up everyone's picture. On a TV, **React** in the player's controls sends one with the remote, and the party panel shows a QR code that opens the chat on your phone.
+
+Each person plays from their own stream; only the position is shared. Parties live on your own server and end when everyone has left (or Cue restarts).
+
 ## Live TV
 
 Add your IPTV provider and Watch gets a **Live TV** tab: every channel with its logo, a TV guide of what's on now and for the next hours, and Favourites per profile.

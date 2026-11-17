@@ -224,6 +224,46 @@ export interface WatchProfiles {
 
 // Watch: the streaming side (browse anything, play from Premiumize).
 export type WatchKind = 'movie' | 'tv'
+// ---- Watch parties (party.tsx) ----
+export interface PartyMember {
+  profile: number
+  name: string
+  avatar: string
+  host: boolean
+}
+export interface PartyTitle {
+  kind: 'movie' | 'tv'
+  tmdbId: number
+  season?: number
+  episode?: number
+  title: string
+  option?: number
+}
+export interface PartyState {
+  code: string
+  title: PartyTitle
+  playing: boolean
+  pos: number
+  by?: string
+  members: PartyMember[]
+}
+export interface PartyMsg {
+  id: number
+  kind: 'chat' | 'event' | 'reaction'
+  name?: string
+  avatar?: string
+  text: string
+  at: number
+}
+export interface PartyNow {
+  code: string
+  title: PartyTitle
+  host?: PartyMember
+  members: number
+  faces: PartyMember[]
+  playing: boolean
+}
+
 export interface WatchCard {
   kind: WatchKind
   tmdbId: number
@@ -2117,6 +2157,15 @@ export const api = {
   setAccountPrefs: (p: Record<string, string>) => put<Record<string, string>>('/me/prefs', p),
   signOutOthers: () => post<{ signedOut: number }>('/auth/sign-out-others'),
   clearWatchHistory: () => del<{ ok: boolean }>('/watch/history'),
+  partiesNow: () => get<PartyNow[]>('/parties'),
+  startParty: (data: PartyTitle & { pos: number; playing: boolean; client: string }) => post<PartyState>('/party', data),
+  getParty: (code: string) => get<PartyState>(`/party/${encodeURIComponent(code)}`),
+  joinParty: (code: string, client: string) => post<{ party: PartyState; msgs: PartyMsg[] }>(`/party/${encodeURIComponent(code)}/join`, { client }),
+  partyState: (code: string, data: { client: string; action: 'play' | 'pause' | 'seek' | 'episode'; pos: number; title?: PartyTitle }) =>
+    post<PartyState>(`/party/${encodeURIComponent(code)}/state`, data),
+  partyChat: (code: string, client: string, text: string) => post<{ ok: boolean }>(`/party/${encodeURIComponent(code)}/chat`, { client, text }),
+  partyReact: (code: string, client: string, emoji: string) => post<{ ok: boolean }>(`/party/${encodeURIComponent(code)}/react`, { client, emoji }),
+  partyLeave: (code: string, client: string) => post<{ ok: boolean }>(`/party/${encodeURIComponent(code)}/leave`, { client }),
   logout: () => post<null>('/auth/logout'),
   me: () => get<User>('/auth/me'),
   changePassword: (currentPassword: string, newPassword: string) =>
