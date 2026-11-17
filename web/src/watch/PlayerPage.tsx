@@ -1,7 +1,7 @@
 import { usePrefs } from './prefs'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
-import { api, profileToken, type PlayAnswer, type WatchEpisode, type WatchSkips } from '../api'
+import { api, browserCantOpen, profileToken, type PlayAnswer, type WatchEpisode, type WatchSkips } from '../api'
 import Icon from '../components/Icon'
 import { useDocumentTitle } from '../documentTitle'
 import { epCode, playHref, Spinner } from './parts'
@@ -131,6 +131,8 @@ export default function PlayerPage() {
   // where in the video the conversion started, and how long the video is.
   const [conv, setConv] = useState<{ stream: string; duration: number; offset: number } | null>(null)
   const converting = useRef(false)
+  // The party (below), for a conversion starting where the party will be.
+  const partyRef = useRef<{ startPoint: () => number | undefined } | null>(null)
   // Asked once past the last version: Cue then looks on the Internet
   // Archive and YouTube.
   const askedBeyond = useRef(false)
@@ -640,7 +642,9 @@ export default function PlayerPage() {
           return
         }
         const stream = soundOnly ? `${p.stream}${p.stream.includes('?') ? '&' : '?'}keep=1` : p.stream
-        setConv({ stream, duration: p.duration, offset: Math.max(0, Math.floor(resumeAt.current)) })
+        // In a party, it starts where the party will be once it's going.
+        const at = partyRef.current?.startPoint() ?? resumeAt.current
+        setConv({ stream, duration: p.duration, offset: Math.max(0, Math.floor(at)) })
       })
       .catch(() => {
         if (soundOnly) setNote('Couldn’t fix the sound for this browser. Pick another in Versions, or watch on the TV app.')
@@ -676,8 +680,17 @@ export default function PlayerPage() {
     )
   }
 
+  // A file this browser surely can't open is converted at once, rather than
+  // tried first (and waited on) only to fail.
+  const convertFirst = !!answer && !onTV() && !answer.youtube && !answer.streamUrl && !!answer.convert && browserCantOpen(answer.fileName, answer.release)
+  useEffect(() => {
+    // Once it's known where to start (where you stopped).
+    if (convertFirst && resumeReady) startConvert('This version needs converting for this browser…')
+  }, [convertFirst, answer, resumeReady]) // eslint-disable-line react-hooks/exhaustive-deps
   const src = answer
-    ? conv?.stream
+    ? convertFirst && !conv
+      ? ''
+      : conv?.stream
       ? `${conv.stream}&t=${conv.offset}`
       : useOriginal
         ? answer.url
@@ -706,6 +719,9 @@ export default function PlayerPage() {
     startAt: (sec) => {
       resumeAt.current = sec
     },
+  })
+  useEffect(() => {
+    partyRef.current = party
   })
   async function beginParty() {
     const v = video.current

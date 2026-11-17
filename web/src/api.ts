@@ -409,6 +409,19 @@ export function safari(): boolean {
   return ios || (/Safari\//.test(ua) && !/Chrome|Chromium|CriOS|Android|Edg|Firefox|FxiOS/.test(ua))
 }
 
+// browserCantOpen says, from a version's file name, that this browser
+// surely can't play it as it is (so Cue converts it straight away instead of
+// trying it first): AVI, WMV and the like anywhere; MKV in Safari; HEVC and
+// AV1 pictures outside Safari (which plays HEVC).
+export function browserCantOpen(fileName: string, release = ''): boolean {
+  const ext = /\.([a-z0-9]{2,4})$/i.exec(fileName)?.[1]?.toLowerCase() ?? ''
+  if (['avi', 'wmv', 'flv', 'mpg', 'mpeg', 'ts', 'm2ts', 'vob', 'divx', 'xvid'].includes(ext)) return true
+  const name = `${fileName} ${release}`
+  if (/(^|[^a-z0-9])av1([^a-z0-9]|$)/i.test(name)) return true
+  if (safari()) return ext === 'mkv'
+  return /(^|[^a-z0-9])(x\.?265|h\.?265|hevc|10-?bit)([^a-z0-9]|$)/i.test(name)
+}
+
 export interface PlayAnswer {
   title: string
   url: string // the original file
@@ -2363,7 +2376,7 @@ export const api = {
   // browser can play come first.
   playTMDB: (kind: WatchKind, tmdbId: number, season = 0, episode = 0, option = 1, fresh = false, web = false) =>
     get<PlayAnswer>(
-      `/play/tmdb/${kind}/${tmdbId}${kind === 'tv' ? `/${season}/${episode}` : ''}?option=${option}${fresh ? '&fresh=1' : ''}${web ? '&client=web' : ''}`,
+      `/play/tmdb/${kind}/${tmdbId}${kind === 'tv' ? `/${season}/${episode}` : ''}?option=${option}${fresh ? '&fresh=1' : ''}${web ? `&client=web${safari() ? '&safari=1' : ''}` : ''}`,
     ),
   // prefetchPlay looks a stream up ahead of time, so Play starts at once.
   prefetchPlay: (kind: WatchKind, tmdbId: number, season = 0, episode = 0) =>

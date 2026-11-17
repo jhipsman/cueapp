@@ -191,7 +191,7 @@ Everything Watch shows comes from the API, so a TV app can show the same things.
 | `PUT` / `DELETE /api/watch/list/{kind}/{tmdbId}` | add to or remove from My List |
 | `GET /api/watch/skips/{kind}/{tmdbId}?season=&episode=&duration=` | where the intro, recap and credits are, in seconds |
 | `GET` / `PUT /api/profile/streaming` | the profile's [Streaming quality](#streaming-quality): `{"quality":"4k|1080p|720p","size":"smart|10|20|30|50|any","remux":"avoid|allow","hdr":"prefer|any","dolbyVision":"prefer|allow|avoid","efficient":true,"lightSound":true}` |
-| `GET /api/play/convert?u=` | for a version a player can't open (`convert` in what to play, asked with `client=web`): its length and where it plays converted, as an MP4 stream (`stream`) or HLS (`hls`; add `&apple=1` for the Apple TV, which keeps HEVC, HDR and Dolby sound, and `&t=` to start further in) |
+| `GET /api/play/convert?u=` | for a version a player can't open (`convert` in what to play, asked with `client=web`, plus `safari=1` from Safari, which plays HEVC; for a browser, versions it plays as it is come first): its length and where it plays converted, as an MP4 stream (`stream`) or HLS (`hls`; add `&apple=1` for the Apple TV, which keeps HEVC, HDR and Dolby sound, and `&t=` to start further in) |
 | `PUT /api/profile/theme` | the profile's colors: `{"accent":"#34d1bf","glow":"off|soft|strong","background":"midnight|black|slate|tinted"}` |
 
 `kind` is `movie` or `tv`.
