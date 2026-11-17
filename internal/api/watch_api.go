@@ -230,6 +230,24 @@ func (s *Server) handleWatchHome(w http.ResponseWriter, r *http.Request) {
 			home.Rows = append(home.Rows, row)
 		}
 	}
+	// A kids' profile sees only what its age limit allows.
+	if prof, ok := s.activeProfile(r); ok && prof.MaxRating != "" {
+		kept := home.Rows[:0]
+		for _, row := range home.Rows {
+			row.Items = s.ageFiltered(ctx, prof, row.Items)
+			if len(row.Items) > 0 {
+				kept = append(kept, row)
+			}
+		}
+		home.Rows = kept
+		shelves = kept
+		cont = nil
+		for _, row := range kept {
+			if row.Key == "continue" {
+				cont = row.Items
+			}
+		}
+	}
 	s.markQuiet(ctx, home.Rows)
 	// The banner: something trending this week with artwork, changing
 	// through the day so the page doesn't look the same every visit.
@@ -546,6 +564,9 @@ func (s *Server) handleWatchSeason(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "That isn't a valid season.")
 		return
 	}
+	if s.ageBlocked(w, r, watch.KindTV, tmdbID) {
+		return
+	}
 	eps, err := s.TMDB().GetSeasonCached(r.Context(), tmdbID, season)
 	if err != nil {
 		writeUpstreamError(w, "load the season from TMDB", err)
@@ -635,6 +656,9 @@ func (s *Server) handleWatchMovie(w http.ResponseWriter, r *http.Request) {
 	}
 	ctx := r.Context()
 	tm := s.TMDB()
+	if s.ageBlocked(w, r, watch.KindMovie, tmdbID) {
+		return
+	}
 	d, err := tm.GetMovieDetail(ctx, tmdbID)
 	if err != nil {
 		writeUpstreamError(w, "load the movie from TMDB", err)
@@ -660,6 +684,9 @@ func (s *Server) handleWatchMovie(w http.ResponseWriter, r *http.Request) {
 		more, _ := tm.RelatedMovies(ctx, tmdbID, metadata.RelatedRecommended)
 		t.More = movieCards(more)
 		s.markSoon(ctx, t.More)
+		if prof, ok := s.activeProfile(r); ok {
+			t.More = s.ageFiltered(ctx, prof, t.More)
+		}
 	}()
 	wg.Wait()
 	alsoTonight(r, t.More, 8)
@@ -679,6 +706,9 @@ func (s *Server) handleWatchShow(w http.ResponseWriter, r *http.Request) {
 	}
 	ctx := r.Context()
 	tm := s.TMDB()
+	if s.ageBlocked(w, r, watch.KindTV, tmdbID) {
+		return
+	}
 	d, err := tm.GetShowFull(ctx, tmdbID)
 	if err != nil {
 		writeUpstreamError(w, "load the show from TMDB", err)
@@ -731,6 +761,9 @@ func (s *Server) handleWatchShow(w http.ResponseWriter, r *http.Request) {
 		defer wg.Done()
 		more, _ := tm.RelatedShows(ctx, tmdbID, metadata.RelatedRecommended)
 		t.More = showCards(more)
+		if prof, ok := s.activeProfile(r); ok {
+			t.More = s.ageFiltered(ctx, prof, t.More)
+		}
 	}()
 	wg.Wait()
 	alsoTonight(r, t.More, 8)
@@ -779,6 +812,9 @@ func (s *Server) handleWatchSearch(w http.ResponseWriter, r *http.Request) {
 			PosterURL: metadata.PosterURL(m.PosterPath), BackdropURL: metadata.BackdropURL(m.BackdropPath), Rating: metadata.RoundRating(m.VoteAverage)})
 	}
 	s.markSoon(r.Context(), out) // films not out yet show "Coming soon"
+	if prof, ok := s.activeProfile(r); ok {
+		out = s.ageFiltered(r.Context(), prof, out)
+	}
 	writeJSON(w, http.StatusOK, out)
 }
 

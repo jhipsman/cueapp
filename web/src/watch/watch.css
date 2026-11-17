@@ -807,6 +807,7 @@ html.watch-mode body {
   width: 100%;
   color: var(--wx-dim);
 }
+.wx-edit select,
 .wx-edit input {
   background: var(--wx-panel);
   border: 1px solid rgba(255, 255, 255, 0.3);

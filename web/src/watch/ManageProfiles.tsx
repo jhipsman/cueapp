@@ -70,6 +70,7 @@ function ProfileEditor({ profile, colors, icons, onDone }: { profile: WatchProfi
   const { color, icon } = avatarParts(avatar)
   const join = (c: string, i: string) => (i ? `${c}/${i}` : c)
   const [pin, setPin] = useState('')
+  const [maxRating, setMaxRating] = useState(profile?.maxRating ?? '')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
 
@@ -88,11 +89,13 @@ function ProfileEditor({ profile, colors, icons, onDone }: { profile: WatchProfi
 
   async function save() {
     if (!profile) {
-      await api.addWatchProfile(name, avatar)
+      const made = await api.addWatchProfile(name, avatar)
+      if (maxRating) await api.updateWatchProfile(made.id, { maxRating })
       return
     }
-    const body: { name: string; avatar: string; pin?: string } = { name, avatar }
+    const body: { name: string; avatar: string; pin?: string; maxRating?: string } = { name, avatar }
     if (pin) body.pin = pin
+    if (!profile.main) body.maxRating = maxRating
     const res = await api.updateWatchProfile(profile.id, body)
     if (res.token && profile.main) setProfileToken(res.token) // a new PIN signed this device out of it
   }
@@ -146,6 +149,21 @@ function ProfileEditor({ profile, colors, icons, onDone }: { profile: WatchProfi
           ))}
         </div>
       </div>
+      {!profile?.main && (
+        <label>
+          Age limit
+          <select value={maxRating} onChange={(e) => setMaxRating(e.target.value)}>
+            <option value="">None: everything</option>
+            <option value="G">Little kids: G, TV-Y and TV-G</option>
+            <option value="PG">Kids: up to PG and TV-PG</option>
+            <option value="PG-13">Teens: up to PG-13 and TV-14</option>
+            <option value="R">Adults: up to R and TV-MA</option>
+          </select>
+          <span className="wx-dim" style={{ fontSize: 13 }}>
+            Titles above it don't show on this profile and won't play. Lock the main profile with a PIN so it can't be switched to.
+          </span>
+        </label>
+      )}
       {profile && (
         <label>
           {profile.hasPin ? 'New PIN (4 digits)' : 'Lock with a PIN (4 digits, optional)'}

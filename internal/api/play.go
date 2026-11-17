@@ -260,6 +260,9 @@ func (s *Server) handlePlayTMDBMovie(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "That isn't a valid TMDB id.")
 		return
 	}
+	if s.ageBlocked(w, r, "movie", tmdbID) {
+		return
+	}
 	if m, ok, err := s.MovieRepo.GetByTMDBID(tmdbID); err == nil && ok {
 		s.servePlay(w, r, movieTarget(m))
 		return
@@ -284,6 +287,9 @@ func (s *Server) handlePlayTMDBEpisode(w http.ResponseWriter, r *http.Request) {
 	episode, err3 := strconv.Atoi(r.PathValue("episode"))
 	if err1 != nil || err2 != nil || err3 != nil || tmdbID <= 0 || season < 0 || episode < 1 {
 		writeError(w, http.StatusBadRequest, "That isn't a valid episode.")
+		return
+	}
+	if s.ageBlocked(w, r, "tv", tmdbID) {
 		return
 	}
 	if series, ok, err := s.MovieRepo.GetSeriesByTMDBID(tmdbID); err == nil && ok {

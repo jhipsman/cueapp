@@ -24,6 +24,7 @@ Cue works like Netflix for a household: one sign-in, then **Who's watching?** an
 - **The main profile** is the account owner's (made from your account when you first open Watch). Only it can change settings, open the library manager, or add, edit and remove profiles. Cue checks this itself, so another profile can't get round it from the browser.
 - **Add profiles** under your avatar (top right) > **Manage profiles**: a name, a picture (a fox, a unicorn, a game controller... or just the initial) and a color, up to 6.
 - **Lock a profile with a PIN** (4 digits) in the same place. Put one on the main profile so nobody else can open settings. Changing a PIN signs every device out of that profile.
+- **Kids' profiles: an age limit.** In **Manage profiles**, give a profile an age limit: little kids (G, TV-Y, TV-G), kids (up to PG and TV-PG), teens (up to PG-13 and TV-14) or adults (up to R and TV-MA). Titles above it don't show anywhere on that profile (Home, search, More like this) and won't open or play, on the web and the TV apps alike. Films go by their US rating, shows by their TV rating; a title with no rating shows only under the adults limit. The main profile can't have one; lock it with a PIN so a child can't just switch to it.
 - **Switch profile** from the avatar menu. Each browser or TV remembers its own profile.
 - A household with only one profile and no PIN skips the picker.
 

@@ -196,6 +196,7 @@ export interface WatchProfile {
   hasPin: boolean
   main: boolean // the owner's: the only one that can change settings
   theme?: WatchTheme
+  maxRating?: string // a kids' profile's age limit: G, PG, PG-13 or R
 }
 // How a profile wants versions picked when it presses Play.
 export interface StreamPrefs {
@@ -2416,7 +2417,7 @@ export const api = {
   watchProfiles: () => get<WatchProfiles>('/profiles'),
   selectWatchProfile: (id: number, pin = '') => post<{ token: string; profile: WatchProfile }>(`/profiles/${id}/select`, { pin }),
   addWatchProfile: (name: string, avatar: string) => post<WatchProfile>('/profiles', { name, avatar }),
-  updateWatchProfile: (id: number, body: { name?: string; avatar?: string; pin?: string }) =>
+  updateWatchProfile: (id: number, body: { name?: string; avatar?: string; pin?: string; maxRating?: string }) =>
     put<{ profile: WatchProfile; token?: string }>(`/profiles/${id}`, body),
   removeWatchProfile: (id: number) => del<null>(`/profiles/${id}`),
   streamingSetup: () => get<{ movieInfo: boolean; streams: boolean; liveTV: boolean }>('/settings/streaming/setup'),

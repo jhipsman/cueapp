@@ -25,8 +25,11 @@ type Profile struct {
 	Theme  Theme
 	// StreamPrefs is how versions are picked when the profile presses Play.
 	StreamPrefs StreamPrefs
-	secret      string
-	pin         string // bcrypt hash
+	// MaxRating is the profile's age limit: the highest rating it may see
+	// and play (one of AgeLimits); "" for none.
+	MaxRating string
+	secret    string
+	pin       string // bcrypt hash
 }
 
 // Secret changes whenever the PIN does, so a sign-in to the profile made
@@ -54,7 +57,13 @@ var (
 	ErrMainProfile     = errors.New("the main profile can't be removed")
 	ErrBadPIN          = errors.New("a PIN is 4 digits")
 	ErrBadName         = errors.New("give the profile a name of up to 30 characters")
+	ErrBadAgeLimit     = errors.New("an age limit is G, PG, PG-13 or R")
+	ErrMainAgeLimit    = errors.New("the main profile can't have an age limit (it looks after the others)")
 )
+
+// AgeLimits are the age limits a profile can have, on the US film scale
+// (shows' TV ratings are matched to it).
+var AgeLimits = []string{"G", "PG", "PG-13", "R"}
 
 var pinRe = regexp.MustCompile(`^[0-9]{4}$`)
 
@@ -84,12 +93,12 @@ func cleanAvatar(a string) string {
 	return color
 }
 
-const profileCols = `id, user_id, name, avatar, pin_hash, secret, is_main, theme, stream_prefs`
+const profileCols = `id, user_id, name, avatar, pin_hash, secret, is_main, theme, stream_prefs, max_rating`
 
 func scanProfile(sc interface{ Scan(...any) error }) (Profile, error) {
 	var p Profile
 	var theme, prefs string
-	if err := sc.Scan(&p.ID, &p.UserID, &p.Name, &p.Avatar, &p.pin, &p.secret, &p.Main, &theme, &prefs); err != nil {
+	if err := sc.Scan(&p.ID, &p.UserID, &p.Name, &p.Avatar, &p.pin, &p.secret, &p.Main, &theme, &prefs, &p.MaxRating); err != nil {
 		return p, err
 	}
 	p.Theme = parseTheme(theme)
@@ -169,6 +178,8 @@ type ProfileChange struct {
 	Name   *string
 	Avatar *string
 	PIN    *string
+	// MaxRating sets the age limit ("" for none).
+	MaxRating *string
 }
 
 // UpdateProfile changes one of userID's profiles.
@@ -200,8 +211,18 @@ func (r *Repo) UpdateProfile(userID, id int64, c ProfileChange) (Profile, error)
 		}
 		p.secret = newSecret()
 	}
-	if _, err := r.db.Exec(`UPDATE profiles SET name = ?, avatar = ?, pin_hash = ?, secret = ? WHERE id = ? AND user_id = ?`,
-		p.Name, p.Avatar, p.pin, p.secret, id, userID); err != nil {
+	if c.MaxRating != nil {
+		switch {
+		case *c.MaxRating == "":
+		case !slices.Contains(AgeLimits, *c.MaxRating):
+			return Profile{}, ErrBadAgeLimit
+		case p.Main:
+			return Profile{}, ErrMainAgeLimit
+		}
+		p.MaxRating = *c.MaxRating
+	}
+	if _, err := r.db.Exec(`UPDATE profiles SET name = ?, avatar = ?, pin_hash = ?, secret = ?, max_rating = ? WHERE id = ? AND user_id = ?`,
+		p.Name, p.Avatar, p.pin, p.secret, p.MaxRating, id, userID); err != nil {
 		return Profile{}, fmt.Errorf("update profile: %w", err)
 	}
 	return r.Profile(userID, id)
