@@ -208,7 +208,7 @@ function SubtitlesSwitch({ enabled, onChange, disabled }: { enabled: boolean; on
 }
 
 export default function SubtitleSettings() {
-  const { refresh } = useModules()
+  const { refresh, streamingOnly } = useModules()
   const sw = useAutosaveSetting<boolean>(
     (s) => s.subtitlesEnabled ?? false,
     (v) => ({ subtitlesEnabled: v }),
@@ -218,6 +218,20 @@ export default function SubtitleSettings() {
   async function flip(next: boolean) {
     await sw.change(next)
     void refresh() // the rest of the app shows or hides its subtitle parts
+  }
+
+  // Streaming only: subtitles are found as you watch (in a browser; the TV
+  // app reads the ones inside the file), so only the key matters here.
+  if (streamingOnly) {
+    return (
+      <div className="settings-stack">
+        <p className="settings-note span-all" style={{ color: 'var(--text-dim)', margin: 0 }}>
+          The TV app shows the subtitles inside the video file. A browser can't read those, so Watch in a browser finds them on OpenSubtitles as you watch: add a free
+          OpenSubtitles API key here.
+        </p>
+        <OpenSubtitlesCard />
+      </div>
+    )
   }
 
   const details = (

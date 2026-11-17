@@ -27,6 +27,9 @@ var (
 // title equality (like matchesMovie) plus a year check only when both
 // sides carry one — plenty of TV releases omit the year entirely.
 func matchesShow(releaseTitle string, series library.Series) bool {
+	if adultName(releaseTitle) {
+		return false // an adult video with the same name (adult_release.go)
+	}
 	rel := parser.Parse(releaseTitle)
 	// A daily show's air date carries a year too ("Show.2024.03.15"): that
 	// is the episode's, not the show's.

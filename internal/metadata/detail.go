@@ -228,6 +228,10 @@ type MovieDetail struct {
 	IMDBID   string       `json:"imdb_id"`
 	Videos   videosBlock  `json:"videos"`
 	Credits  creditsBlock `json:"credits"`
+	// Keywords are TMDB's tags for it ("erotic movie", "time travel").
+	Keywords struct {
+		List []Genre `json:"keywords"`
+	} `json:"keywords"`
 	// BelongsToCollection is the series it's part of, if any.
 	BelongsToCollection *CollectionRef `json:"belongs_to_collection"`
 	ReleaseDates        struct {
@@ -254,7 +258,7 @@ func (c *Client) GetMovieDetail(ctx context.Context, tmdbID int) (*MovieDetail, 
 		return v.(*MovieDetail), nil
 	}
 	var d MovieDetail
-	q := url.Values{"append_to_response": {"videos,release_dates,credits"}}
+	q := url.Values{"append_to_response": {"videos,release_dates,credits,keywords"}}
 	if err := c.get(ctx, fmt.Sprintf("/movie/%d", tmdbID), q, &d); err != nil {
 		return nil, err
 	}
@@ -350,6 +354,10 @@ func (d *MovieDetail) Cast(n int) []CastMember { return topCast(d.Credits.Cast, 
 // ShowFull is GET /tv/{id} with videos, content ratings and credits appended.
 type ShowFull struct {
 	ShowDetail
+	// Keywords are TMDB's tags for it.
+	Keywords struct {
+		List []Genre `json:"results"`
+	} `json:"keywords"`
 	Tagline          string `json:"tagline"`
 	Status           string `json:"status"`
 	Homepage         string `json:"homepage"`
@@ -389,7 +397,7 @@ func (c *Client) GetShowFull(ctx context.Context, tmdbID int) (*ShowFull, error)
 		return v.(*ShowFull), nil
 	}
 	var d ShowFull
-	q := url.Values{"append_to_response": {"videos,content_ratings,credits,external_ids"}}
+	q := url.Values{"append_to_response": {"videos,content_ratings,credits,external_ids,keywords"}}
 	if err := c.get(ctx, fmt.Sprintf("/tv/%d", tmdbID), q, &d); err != nil {
 		return nil, err
 	}

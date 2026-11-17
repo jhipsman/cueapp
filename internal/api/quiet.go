@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"slices"
 	"sync"
 	"time"
@@ -14,6 +15,11 @@ import (
 // shows by itself (Home's banner, the preview clips and the screensavers),
 // so nobody walking past the TV gets a fright. They can still be found,
 // browsed and played like any other title; only nothing pushes them.
+//
+// Adult goes beyond TMDB's adult flag (only for pornography) and NC-17:
+// erotic films and ones TMDB tags for nudity or sex scenes count too, by
+// their keywords, which need the title's details (list results don't carry
+// them), so a list result can say a title is quiet but never that it isn't.
 
 const (
 	genreHorror    = 27 // TMDB's movie genre
@@ -23,13 +29,26 @@ const (
 // quietBy says whether a title with these facts is kept quiet: an adult
 // title, a horror film, or Japanese animation (anime).
 func quietBy(genres []int, language string, countries []string, adult bool, certification string) bool {
-	if adult || certification == "NC-17" {
+	if adult || certification == "NC-17" || certification == "X" {
 		return true
 	}
 	if slices.Contains(genres, genreHorror) {
 		return true
 	}
 	return slices.Contains(genres, genreAnimation) && (language == "ja" || slices.Contains(countries, "JP"))
+}
+
+// adultWords are TMDB keywords for erotic films, nudity and sex scenes.
+var adultWords = regexp.MustCompile(`(?i)\b(erotic\w*|softcore|sexploitation|\w*\s?nudity|nude\w*|full frontal|sex scenes?|explicit sex|sex tape|pornograph\w*|porn\w*|adult (film|movie|content)|striptease|stripper|bdsm|orgy|threesome|sexual fantasy|sensuality|lust)\b`)
+
+// adultKeywords says whether any of a title's keywords is an adult one.
+func adultKeywords(kws []metadata.Genre) bool {
+	for _, k := range kws {
+		if adultWords.MatchString(k.Name) {
+			return true
+		}
+	}
+	return false
 }
 
 func genreIDs(ids []int, full []metadata.Genre) []int {
@@ -46,18 +65,20 @@ var quietKnown sync.Map
 
 func quietKey(kind string, id int) string { return fmt.Sprintf("%s-%d", kind, id) }
 
+// noteMovieQuiet and noteShowQuiet answer from a list result, remembering
+// only a yes (a no still needs the keywords: quietTitle).
 func noteMovieQuiet(m metadata.Movie) bool {
 	q := quietBy(genreIDs(m.GenreIDs, m.Genres), m.OriginalLanguage, nil, m.Adult, "")
-	if len(m.GenreIDs) > 0 || len(m.Genres) > 0 || m.Adult {
-		quietKnown.Store(quietKey("movie", m.TMDBID), q)
+	if q {
+		quietKnown.Store(quietKey("movie", m.TMDBID), true)
 	}
 	return q
 }
 
 func noteShowQuiet(sh metadata.Show) bool {
 	q := quietBy(genreIDs(sh.GenreIDs, sh.Genres), sh.OriginalLanguage, sh.OriginCountry, false, "")
-	if len(sh.GenreIDs) > 0 || len(sh.Genres) > 0 {
-		quietKnown.Store(quietKey("tv", sh.TMDBID), q)
+	if q {
+		quietKnown.Store(quietKey("tv", sh.TMDBID), true)
 	}
 	return q
 }
@@ -80,13 +101,13 @@ func (s *Server) quietTitle(ctx context.Context, kind string, id int) bool {
 		if err != nil {
 			return false
 		}
-		q = quietBy(genreIDs(d.GenreIDs, d.Genres), d.OriginalLanguage, nil, d.Adult, d.Certification())
+		q = quietBy(genreIDs(d.GenreIDs, d.Genres), d.OriginalLanguage, nil, d.Adult, d.Certification()) || adultKeywords(d.Keywords.List)
 	case "tv":
 		d, err := tm.GetShowFull(ctx, id)
 		if err != nil {
 			return false
 		}
-		q = quietBy(genreIDs(d.GenreIDs, d.Genres), d.OriginalLanguage, d.OriginCountry, false, "")
+		q = quietBy(genreIDs(d.GenreIDs, d.Genres), d.OriginalLanguage, d.OriginCountry, false, "") || adultKeywords(d.Keywords.List)
 	default:
 		return false
 	}

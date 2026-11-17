@@ -48,6 +48,9 @@ interface SyncOpts {
   // Moving costs a restart (Cue converting the video as it plays: a jump
   // starts the conversion again), so only a real difference is worth one.
   costlySeek?: boolean
+  // Whether a point can be reached without that restart (a converted video
+  // that's already made that far): then a jump is cheap after all.
+  canSeek?: (sec: number) => boolean
 }
 
 export interface Floating {
@@ -92,11 +95,13 @@ export function useParty(o: SyncOpts) {
     // A converted one that jumped by itself lately doesn't again for a
     // while, however far out it is: chasing the party with restarts that
     // each take longer than the gap only starts it over and over.
-    const costly = !!opts.current.costlySeek
+    // A converted video that has already made the point it needs jumps
+    // there at once, like any other.
+    const costly = !!opts.current.costlySeek && !opts.current.canSeek?.(target)
     if (costly && (v.readyState < 2 || v.seeking)) return
     // Small differences while playing are closed by speed (drift, below),
     // not by jumping.
-    const slack = costly ? 20 : going ? 4 : 0.25
+    const slack = costly ? 12 : going ? 4 : 0.25
     const rested = performance.now() - jumped.current.at > 60_000
     if (Math.abs(here - target) > slack && (!costly || rested)) {
       applying.current = performance.now() + (costly ? 35_000 : 1200)
@@ -255,8 +260,8 @@ export function useParty(o: SyncOpts) {
       if (!s || !s.playing || s.held || v.paused || v.seeking || v.readyState < 3 || performance.now() < applying.current) return steady()
       const target = s.pos + (performance.now() - got.current) / 1000
       const off = opts.current.position() - target // above 0: ahead
-      const costly = !!opts.current.costlySeek
-      if (Math.abs(off) > (costly ? 20 : 4)) {
+      const costly = !!opts.current.costlySeek && !opts.current.canSeek?.(target)
+      if (Math.abs(off) > (costly ? 12 : 4)) {
         steady()
         apply(s)
         return

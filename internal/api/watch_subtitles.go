@@ -52,7 +52,7 @@ func (s *Server) handleWatchSubtitles(w http.ResponseWriter, r *http.Request) {
 	}
 	client := s.Subtitles()
 	if client == nil || !client.HasAPIKey() {
-		writeError(w, http.StatusConflict, "Subtitles need an OpenSubtitles key: add one in Settings > Movie info.")
+		writeError(w, http.StatusConflict, "Subtitles in a browser need a free OpenSubtitles key: the owner adds it in Server settings > Subtitles. (The TV app shows the subtitles inside the file.)")
 		return
 	}
 	ctx, cancel := context.WithTimeout(r.Context(), 25*time.Second)

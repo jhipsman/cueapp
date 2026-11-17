@@ -274,7 +274,7 @@ func (s *Server) rssSync(ctx context.Context) {
 func matchingResults(results []indexers.Result, m library.Movie) []indexers.Result {
 	var out []indexers.Result
 	for _, res := range results {
-		if matchesMovie(res.Title, m) {
+		if !adultResult(res) && matchesMovie(res.Title, m) {
 			out = append(out, res)
 		}
 	}
@@ -362,6 +362,9 @@ var nonAlnum = regexp.MustCompile(`[^a-z0-9]+`)
 // approximation worth revisiting if it mismatches often enough to matter
 // in practice.
 func matchesMovie(releaseTitle string, movie library.Movie) bool {
+	if adultName(releaseTitle) {
+		return false // an adult video with the same name (adult_release.go)
+	}
 	release := parser.Parse(releaseTitle)
 	if release.Year != 0 && movie.Year != 0 && release.Year != movie.Year {
 		return false

@@ -111,7 +111,7 @@ The first time Watch opens on a browser or TV, four short slides show the contro
 - **Colour from the picture**: the glow behind the page, the highlight's halo and the progress bars take the main colour of the artwork in view.
 - **Cards with depth**: a card tilts toward the mouse (or sways gently on a TV), and Continue Watching cards float the title's logo in front of the picture.
 - **Screensaver**: after three minutes untouched on a computer or TV, Cue shows your own titles full screen with a clock: new episodes, where you stopped, your list. Any button brings you back.
-- **Kept quiet**: horror films, anime (Japanese animation) and adult titles (TMDB's adult flag, or rated NC-17) never show by themselves. They're left off Home's banner and both screensavers, get no preview clip, and aren't cut overnight. You can still find, browse and play them like anything else; their rows on Home (such as Horror) stay.
+- **Kept quiet**: horror films, anime (Japanese animation) and adult titles (TMDB's adult flag, rated NC-17, or tagged on TMDB as erotic or for nudity or sex scenes) never show by themselves. They're left off Home's banner and both screensavers, get no preview clip, and aren't cut overnight. You can still find, browse and play them like anything else; their rows on Home (such as Horror) stay.
 
 ## Your year in Cue
 

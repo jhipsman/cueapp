@@ -382,6 +382,8 @@ func (s *Server) servePlay(w http.ResponseWriter, r *http.Request, t playTarget)
 			entry.nothing = strings.TrimSpace(entry.nothing + " " + s.fallbackTried())
 		}
 	}
+	// Never an adult video with the same name (add-ons and sites both list them).
+	entry.candidates = withoutAdult(entry.candidates)
 	if len(entry.candidates) == 0 {
 		writeError(w, http.StatusNotFound, entry.nothing)
 		return

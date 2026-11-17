@@ -34,6 +34,16 @@ func TestQuietTitles(t *testing.T) {
 		}
 	}
 
+	// Erotic films and ones tagged for nudity or sex scenes, by their keywords.
+	for kw, want := range map[string]bool{
+		"erotic movie": true, "softcore": true, "female nudity": true, "sex scene": true, "erotic thriller": true,
+		"time travel": false, "sexual identity": false, "superhero": false,
+	} {
+		if got := adultKeywords([]metadata.Genre{{Name: kw}}); got != want {
+			t.Errorf("keyword %q: %v, want %v", kw, got, want)
+		}
+	}
+
 	// Cards made from TMDB's lists know at once, and remember it.
 	horror := movieCard(metadata.Movie{TMDBID: 900001, Title: "Scary", GenreIDs: []int{27}})
 	comedy := movieCard(metadata.Movie{TMDBID: 900002, Title: "Funny", GenreIDs: []int{35}})
