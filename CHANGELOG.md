@@ -12,6 +12,7 @@ under [Unreleased]. How releases are cut: [docs/RELEASING.md](docs/RELEASING.md)
 - Releases are signed with a new update key, held only by the project owner. **Update now** installs only releases signed with it.
 
 ### Fixed
+- **Preview clips of erotic films**: titles TMDB tags as erotic, softcore, or for nudity or sex scenes now count as adult, so they get no preview clip and stay off the banner and screensavers (before, only TMDB's adult flag and NC-17 did).
 - **Nowhere to add the OpenSubtitles key in streaming-only mode**: the server settings now have **Movie info and subtitles > Subtitles** with just the key (the TV app reads the subtitles inside the file; a browser can't, so it finds them on OpenSubtitles), and the player's message says where to go.
 - **Watch party: a phone that fell a few seconds behind stayed behind.** A phone whose video Cue converts now jumps straight to the party's moment when that part is already converted (on an iPhone the conversion runs well ahead), instead of waiting for a gap of 20 seconds and restarting the conversion; it restarts only for a point not made yet, from 12 seconds out.
 - **The Fire TV player looks like the web one**: bare white icons with a soft ring on the one the remote is on (some Fire TVs drew the selected button as a plain white circle), no boxed panel, and everything about a fifth smaller.

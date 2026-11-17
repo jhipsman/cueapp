@@ -52,7 +52,7 @@ func TestGenreNamesCachedAndTolerant(t *testing.T) {
 
 func TestMovieDetailExtraction(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/movie/603" || r.URL.Query().Get("append_to_response") != "videos,release_dates,credits" {
+		if r.URL.Path != "/movie/603" || r.URL.Query().Get("append_to_response") != "videos,release_dates,credits,keywords" {
 			t.Fatalf("unexpected request %s", r.URL.String())
 		}
 		w.Write([]byte(`{
@@ -130,7 +130,7 @@ func TestCertificationFallsBackToAnyCountry(t *testing.T) {
 
 func TestShowFullExtraction(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/tv/1396" || r.URL.Query().Get("append_to_response") != "videos,content_ratings,credits,external_ids" {
+		if r.URL.Path != "/tv/1396" || r.URL.Query().Get("append_to_response") != "videos,content_ratings,credits,external_ids,keywords" {
 			t.Fatalf("unexpected request %s", r.URL.String())
 		}
 		w.Write([]byte(`{
