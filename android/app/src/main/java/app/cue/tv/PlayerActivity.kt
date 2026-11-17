@@ -270,24 +270,24 @@ class PlayerActivity : Activity() {
         }
         // Loading shows the Cue mark gently breathing (growing and fading a
         // touch), not a spinning ring.
-        spinner = ImageView(this).apply {
+        val mark = ImageView(this).apply {
             setImageResource(R.drawable.ic_cue_mark)
             visibility = View.GONE
-            android.animation.ValueAnimator.ofFloat(0f, 1f).apply {
-                duration = 900
-                repeatMode = android.animation.ValueAnimator.REVERSE
-                repeatCount = android.animation.ValueAnimator.INFINITE
-                interpolator = android.view.animation.AccelerateDecelerateInterpolator()
-                addUpdateListener { a ->
-                    val t = a.animatedValue as Float
-                    val v = this@apply
-                    v.alpha = 0.55f + 0.45f * t
-                    v.scaleX = 0.92f + 0.12f * t
-                    v.scaleY = 0.92f + 0.12f * t
-                }
-                start()
-            }
         }
+        android.animation.ValueAnimator.ofFloat(0f, 1f).apply {
+            duration = 900
+            repeatMode = android.animation.ValueAnimator.REVERSE
+            repeatCount = android.animation.ValueAnimator.INFINITE
+            interpolator = android.view.animation.AccelerateDecelerateInterpolator()
+            addUpdateListener { a ->
+                val t = a.animatedValue as Float
+                mark.alpha = 0.55f + 0.45f * t
+                mark.scaleX = 0.92f + 0.12f * t
+                mark.scaleY = 0.92f + 0.12f * t
+            }
+            start()
+        }
+        spinner = mark
         pauseBadge = ImageView(this).apply {
             setImageDrawable(getDrawable(R.drawable.ic_cue_pause)?.mutate()?.apply { setTint(Color.WHITE) })
             setPadding(px(16), px(16), px(16), px(16))
