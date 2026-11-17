@@ -482,8 +482,16 @@ export default function PlayerPage() {
     // A converted video jumps within what's already been made (quick: on an
     // iPhone the conversion runs well ahead of the picture); only further
     // than that does it start the conversion again from there.
-    if (conv?.stream && !(v && inConverted(t))) setConv({ ...conv, offset: Math.max(0, Math.floor(t)) })
+    if (conv?.stream && !(v && inConverted(t))) void restartAt(conv, t)
     else if (v) v.currentTime = conv?.stream ? t - conv.offset : t
+  }
+
+  // restartAt starts the conversion again from t. A copied picture can only
+  // start at a keyframe (a few seconds earlier), and the sound starts there
+  // with it; Cue says where, so the timeline matches the picture.
+  async function restartAt(c: NonNullable<typeof conv>, t: number) {
+    const start = await api.convertStart(c.stream, Math.max(0, t)).catch(() => Math.max(0, Math.floor(t)))
+    setConv((now) => (now && now.stream === c.stream ? { ...now, offset: start } : now))
   }
 
   // inConverted says whether a point in the title is in the part of the
@@ -630,7 +638,7 @@ export default function PlayerPage() {
     if (hiccups.current.n < 2) {
       hiccups.current.n++
       setNote('Lost the stream for a moment, picking up where it was…')
-      if (conv?.stream) setConv({ ...conv, offset: pos })
+      if (conv?.stream) void restartAt(conv, pos)
       else {
         resumeAt.current = pos
         v.load()
@@ -671,9 +679,13 @@ export default function PlayerPage() {
           return
         }
         const stream = soundOnly ? `${p.stream}${p.stream.includes('?') ? '&' : '?'}keep=1` : p.stream
-        // In a party, it starts where the party will be once it's going.
-        const at = partyRef.current?.startPoint() ?? resumeAt.current
-        setConv({ stream, duration: p.duration, offset: Math.max(0, Math.floor(at)) })
+        // In a party, it starts where the party will be once it's going
+        // (at the keyframe there, when the picture is copied: restartAt).
+        const at = Math.max(0, partyRef.current?.startPoint() ?? resumeAt.current)
+        void api
+          .convertStart(stream, at)
+          .catch(() => Math.floor(at))
+          .then((offset) => setConv({ stream, duration: p.duration, offset }))
       })
       .catch(() => {
         if (soundOnly) setNote('Couldn’t fix the sound for this browser. Pick another in Versions, or watch on the TV app.')
@@ -905,7 +917,7 @@ export default function PlayerPage() {
                       else noteJump(lastPos.current, sec)
                       lastPos.current = sec
                       ownSeek.current = true // the reload that follows isn't the viewer's
-                      setConv((c) => (c ? { ...c, offset: Math.max(0, Math.floor(sec)) } : c))
+                      if (conv) void restartAt(conv, sec)
                     },
                   }
                 : undefined

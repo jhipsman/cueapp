@@ -217,6 +217,7 @@ var memberRoutes = []string{
 	"DELETE /api/live/follows",
 	"GET /api/play/convert",
 	"GET /api/play/convert/stream",
+	"GET /api/play/convert/start",
 	"GET /api/live/logo/{id}",
 	"GET /api/media-servers/links",
 	"GET /api/queue",

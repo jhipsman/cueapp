@@ -259,6 +259,8 @@ func (s *Server) handleConvertStream(w http.ResponseWriter, r *http.Request) {
 	}
 	start, _ := strconv.ParseFloat(r.URL.Query().Get("t"), 64)
 	keepPicture(r, &info)
+	// A copied picture starts at a keyframe: the sound starts there too.
+	start = convertStart(r.Context(), link, info, start, false)
 	args := convertArgs(link, info, start, false)
 	args = append(args, "-f", "mp4",
 		"-movflags", "frag_keyframe+empty_moov+default_base_moof", "-frag_duration", "2000000", "pipe:1")
@@ -287,7 +289,7 @@ func convertArgs(link string, info probeInfo, start float64, apple bool) []strin
 		args = append(args, "-reconnect", "1", "-reconnect_streamed", "1", "-reconnect_delay_max", "5", "-user_agent", convertUA)
 	}
 	if start > 0 {
-		args = append(args, "-ss", strconv.FormatFloat(start, 'f', 1, 64))
+		args = append(args, "-ss", strconv.FormatFloat(start, 'f', 3, 64))
 	}
 	args = append(args, "-i", link, "-map", fmt.Sprintf("0:%d", info.VideoIndex))
 	if info.AudioIndex >= 0 {

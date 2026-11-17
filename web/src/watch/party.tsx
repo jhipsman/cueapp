@@ -415,7 +415,7 @@ export function PartyPanel({ party, code, onClose }: { party: ReturnType<typeof 
       <div className="wx-party-faces">
         {state?.members.map((m) => (
           <span key={`${m.profile}-${m.name}`} title={m.host ? `${m.name} (started it)` : m.name}>
-            <Avatar profile={m} size={30} />
+            <Avatar profile={m} size={24} />
           </span>
         ))}
         <button className="wx-party-invite" onClick={() => void share()}>
@@ -432,7 +432,7 @@ export function PartyPanel({ party, code, onClose }: { party: ReturnType<typeof 
             </p>
           ) : (
             <div key={m.id} className="wx-party-msg">
-              <Avatar profile={{ name: m.name ?? '', avatar: m.avatar ?? '' }} size={26} />
+              <Avatar profile={{ name: m.name ?? '', avatar: m.avatar ?? '' }} size={22} />
               <div>
                 <b>{m.name}</b>
                 <p>{m.text}</p>

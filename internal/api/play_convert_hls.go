@@ -82,7 +82,18 @@ func (s *Server) handleConvertHLS(w http.ResponseWriter, r *http.Request) {
 	start, _ := strconv.ParseFloat(r.URL.Query().Get("t"), 64)
 	apple := r.URL.Query().Get("apple") == "1"
 	keep := r.URL.Query().Get("keep") == "1"
-	key := fmt.Sprintf("%s@%d@%t@%t", link, int(start), apple, keep)
+	// A copied picture starts at a keyframe: the sound starts there too
+	// (convert_keyframe.go).
+	if start > 0 {
+		if info, err := probeFile(r.Context(), link); err == nil {
+			keepPicture(r, &info)
+			if info.VideoCodec == "hevc" {
+				info.KeepVideo = true
+			}
+			start = convertStart(r.Context(), link, info, start, apple)
+		}
+	}
+	key := fmt.Sprintf("%s@%d@%t@%t", link, int(start*10), apple, keep)
 
 	hls.mu.Lock()
 	s.startHLSJanitorLocked()
