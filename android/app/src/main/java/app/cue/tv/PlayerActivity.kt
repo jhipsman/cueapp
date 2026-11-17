@@ -192,6 +192,47 @@ class PlayerActivity : Activity() {
             main.postDelayed(this, 300)
         }
     }
+
+    // Send to TV: what's playing goes to Cue (for the phone's remote) every
+    // few seconds and on every change.
+    private var reported = 0L
+    private fun reportScreen(force: Boolean = false) {
+        if (live) return
+        val now = SystemClock.elapsedRealtime()
+        if (!force && now - reported < 5000) return
+        reported = now
+        val dur = player.duration.let { if (it == C.TIME_UNSET || it < 0) 0.0 else it / 1000.0 }
+        ScreenLink.report(JSONObject()
+            .put("kind", info.optString("kind"))
+            .put("tmdbId", info.optInt("tmdbId"))
+            .put("season", info.optInt("season"))
+            .put("episode", info.optInt("episode"))
+            .put("title", info.optString("title"))
+            .put("pos", position() / 1000.0)
+            .put("duration", dur)
+            .put("playing", player.playWhenReady))
+    }
+    private val screenTicker = object : Runnable {
+        override fun run() {
+            reportScreen()
+            main.postDelayed(this, 5000)
+        }
+    }
+
+    // A phone's remote.
+    private fun onRemote(c: JSONObject) {
+        if (live) return
+        when (c.optString("action")) {
+            "play" -> player.playWhenReady = true
+            "pause" -> player.playWhenReady = false
+            "back" -> seekToPosition(maxOf(0L, position() - 10_000))
+            "forward" -> seekToPosition(position() + 30_000)
+            "seek" -> seekToPosition((c.optDouble("pos", 0.0) * 1000).toLong())
+            "stop" -> end("back")
+        }
+        showControls()
+        reportScreen(force = true)
+    }
     private val hider = Runnable { if (player.isPlaying) hideControls() }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -233,11 +274,11 @@ class PlayerActivity : Activity() {
             indeterminateTintList = ColorStateList.valueOf(teal)
         }
         pauseBadge = ImageView(this).apply {
-            setImageResource(R.drawable.ic_cue_pause)
-            setPadding(px(22), px(22), px(22), px(22))
+            setImageDrawable(getDrawable(R.drawable.ic_cue_pause)?.mutate()?.apply { setTint(Color.WHITE) })
+            setPadding(px(16), px(16), px(16), px(16))
             background = GradientDrawable().apply {
                 shape = GradientDrawable.OVAL
-                setColor(0x88000000.toInt())
+                setColor(0x59000000)
             }
             visibility = View.GONE
         }
@@ -255,22 +296,22 @@ class PlayerActivity : Activity() {
             val startView = buildStartScreen()
             startScreen = startView
             addView(startView, FrameLayout.LayoutParams(MATCH, MATCH))
-            addView(spinner, FrameLayout.LayoutParams(px(64), px(64), Gravity.CENTER))
-            addView(pauseBadge, FrameLayout.LayoutParams(px(110), px(110), Gravity.CENTER))
+            addView(spinner, FrameLayout.LayoutParams(px(44), px(44), Gravity.CENTER))
+            addView(pauseBadge, FrameLayout.LayoutParams(px(72), px(72), Gravity.CENTER))
             addView(controls, FrameLayout.LayoutParams(MATCH, MATCH))
             skipButton = buildSkipButton()
             val fb = buildFrameBox()
             frameBox = fb
             addView(fb, FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.BOTTOM or Gravity.START).apply {
-                bottomMargin = px(158)
+                bottomMargin = px(118)
             })
             buildGuide()?.let {
                 guide = it
                 addView(it, FrameLayout.LayoutParams(px(400), MATCH, Gravity.START))
             }
-            addView(skipButton, FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, px(52), Gravity.BOTTOM or Gravity.END).apply {
-                marginEnd = px(48)
-                bottomMargin = px(150)
+            addView(skipButton, FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, px(42), Gravity.BOTTOM or Gravity.END).apply {
+                marginEnd = px(44)
+                bottomMargin = px(112)
             })
             val floats = FrameLayout(this@PlayerActivity)
             partyFloats = floats
@@ -313,10 +354,7 @@ class PlayerActivity : Activity() {
                     started = true
                     hideStartScreen()
                 }
-                playPause.setCompoundDrawablesRelative(
-                    getDrawable(if (isPlaying) R.drawable.ic_cue_pause else R.drawable.ic_cue_play)?.apply { setBounds(0, 0, px(14), px(14)) },
-                    null, null, null,
-                )
+                playPause.setCompoundDrawablesRelative(ctrlIcon(if (isPlaying) R.drawable.ic_cue_pause else R.drawable.ic_cue_play, big = true), null, null, null)
                 val paused = !isPlaying && player.playbackState == Player.STATE_READY
                 // Paused: the picture dims and the pause mark pops in, softly;
                 // playing again, both fade away.
@@ -408,6 +446,17 @@ class PlayerActivity : Activity() {
         if (!live && !catchup) main.postDelayed(saver, SAVE_EVERY_MS)
         main.post(ticker)
         showControls()
+        // A new title from a phone: this player hands over to Home, which opens it.
+        ScreenLink.onPlayInPlayer = { t ->
+            end("remote-play", "${t.optString("kind")}|${t.optInt("tmdbId")}|${t.optInt("season")}|${t.optInt("episode")}")
+        }
+        if (!live) {
+            ScreenLink.onControl = { onRemote(it) }
+            player.addListener(object : Player.Listener {
+                override fun onIsPlayingChanged(isPlaying: Boolean) = reportScreen(force = true)
+            })
+            main.post(screenTicker)
+        }
         if (!live && !catchup) {
             player.addListener(partyListener)
             info.optString("party").takeIf { it.isNotEmpty() }?.let { joinParty(it) }
@@ -735,21 +784,21 @@ class PlayerActivity : Activity() {
         val title = TextView(this).also { titleText = it }.apply {
             text = info.optString("title")
             setTextColor(Color.WHITE)
-            size(19f)
+            size(16f)
             typeface = Fonts.display(this@PlayerActivity)
             setShadowLayer(8f, 0f, 2f, Color.BLACK)
         }
         val sub = TextView(this).also { subtitle = it }.apply {
             text = info.optString("subtitle")
             setTextColor(0xFFC7C8CC.toInt())
-            size(13f)
+            size(11f)
             typeface = Fonts.text(this@PlayerActivity)
-            setPadding(0, px(4), 0, 0)
+            setPadding(0, px(3), 0, 0)
             visibility = if (text.isNullOrEmpty()) View.GONE else View.VISIBLE
         }
         val top = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(px(56), px(26), px(56), px(44))
+            setPadding(px(44), px(22), px(44), px(40))
             background = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(0xB3000000.toInt(), 0x00000000))
             addView(title)
             addView(sub)
@@ -766,12 +815,12 @@ class PlayerActivity : Activity() {
         }
         timeNow = TextView(this).apply {
             setTextColor(0xFFE6E7EA.toInt())
-            size(13f)
+            size(11f)
             typeface = Fonts.mono(this@PlayerActivity)
         }
         timeLeft = TextView(this).apply {
             setTextColor(0xFFE6E7EA.toInt())
-            size(13f)
+            size(11f)
             typeface = Fonts.mono(this@PlayerActivity)
         }
         val timeRow = LinearLayout(this).apply {
@@ -828,12 +877,7 @@ class PlayerActivity : Activity() {
         }
         val panel = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(px(18), px(13), px(12), px(10))
-            background = GradientDrawable().apply {
-                cornerRadius = px(18).toFloat()
-                setColor(0xC2141519.toInt())
-                setStroke(px(1), 0x1FFFFFFF)
-            }
+            setPadding(0, 0, 0, 0)
             addView(timeRow)
             addView(buttons)
             addView(LinearLayout(this@PlayerActivity).also { reactRow = it }.apply {
@@ -846,14 +890,14 @@ class PlayerActivity : Activity() {
         }
         // A soft shade behind the panel, so it reads over a bright picture.
         val shade = View(this).apply {
-            background = GradientDrawable(GradientDrawable.Orientation.BOTTOM_TOP, intArrayOf(0x99000000.toInt(), 0x00000000))
+            background = GradientDrawable(GradientDrawable.Orientation.BOTTOM_TOP, intArrayOf(0xD9000000.toInt(), 0x80000000.toInt(), 0x00000000))
         }
 
         return FrameLayout(this).apply {
             addView(top, FrameLayout.LayoutParams(MATCH, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.TOP))
-            addView(shade, FrameLayout.LayoutParams(MATCH, px(200), Gravity.BOTTOM))
+            addView(shade, FrameLayout.LayoutParams(MATCH, px(170), Gravity.BOTTOM))
             addView(panel, FrameLayout.LayoutParams(MATCH, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.BOTTOM).apply {
-                setMargins(px(96), 0, px(96), px(26))
+                setMargins(px(44), 0, px(44), px(18))
             })
         }
     }
@@ -872,7 +916,7 @@ class PlayerActivity : Activity() {
         for (sp in listOf(0.5f, 1f, 1.5f, 2f)) {
             val chip = TextView(this@PlayerActivity).apply {
                 text = (if (sp % 1f == 0f) "${sp.toInt()}" else "$sp") + "x"
-                size(12f)
+                size(10f)
                 typeface = Fonts.text(this@PlayerActivity, 600)
                 gravity = Gravity.CENTER
                 setPadding(px(11), 0, px(11), 0)
@@ -905,7 +949,7 @@ class PlayerActivity : Activity() {
                 }
             }
             chips += chip
-            addView(chip, LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, px(28)))
+            addView(chip, LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, px(24)))
         }
         layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { marginEnd = px(10) }
     }
@@ -918,14 +962,15 @@ class PlayerActivity : Activity() {
             val t = v as TextView
             t.text = if (has) (t.tag as? String).orEmpty() else ""
             t.compoundDrawablePadding = if (has) px(6) else 0
-            t.setPadding(px(11), px(6), px(if (has) 15 else 11), px(6))
+            t.setPadding(px(9), px(5), px(if (has) 13 else 9), px(5))
+            t.animate().scaleX(if (has) 1.06f else 1f).scaleY(if (has) 1.06f else 1f).setDuration(120).start()
         }
     }
 
     private fun liveBadge(): View = TextView(this).apply {
         text = "●  LIVE"
         setTextColor(Color.WHITE)
-        size(12f)
+        size(10f)
         typeface = Fonts.text(this@PlayerActivity, 700)
         letterSpacing = 0.08f
         setPadding(px(12), px(5), px(12), px(5))
@@ -936,38 +981,43 @@ class PlayerActivity : Activity() {
         }
     }
 
-    // pill is a button in the bottom row: white text and icon, turning into
-    // a white pill with dark text when the remote is on it.
+    // An icon for the bottom row, white whatever the box: the colour is put
+    // into the drawable itself (some Fire TVs ignore a TextView's icon tint,
+    // which drew a white icon on a white button: a plain white circle).
+    private fun ctrlIcon(icon: Int, big: Boolean = false) = getDrawable(icon)?.mutate()?.apply {
+        setTint(Color.WHITE)
+        val n = px(if (big) 18 else 15)
+        setBounds(0, 0, n, n)
+    }
+
+    // pill is a button in the bottom row, as in the web player: a bare white
+    // icon (and label); the one the remote is on gets a soft light ring and
+    // grows a touch, so it's clear without shouting.
     private fun pill(label: String, icon: Int, onClick: () -> Unit): TextView = TextView(this).apply {
         text = label
-        size(12f)
+        size(11f)
         typeface = Fonts.text(this@PlayerActivity, 500)
-        val colors = ColorStateList(
-            arrayOf(intArrayOf(android.R.attr.state_focused), intArrayOf()),
-            intArrayOf(0xFF0B0C0F.toInt(), Color.WHITE),
-        )
-        setTextColor(colors)
-        compoundDrawableTintList = colors
-        // Icons sized by the screen like the rest (a Fire TV's density
-        // would draw them half again as big as a Google TV's).
-        setCompoundDrawablesRelative(getDrawable(icon)?.apply { setBounds(0, 0, px(14), px(14)) }, null, null, null)
+        setTextColor(Color.WHITE)
+        setShadowLayer(6f, 0f, 1f, 0x99000000.toInt())
+        setCompoundDrawablesRelative(ctrlIcon(icon, big = label.isEmpty()), null, null, null)
         compoundDrawablePadding = if (label.isEmpty()) 0 else px(6)
         gravity = Gravity.CENTER
-        setPadding(px(11), px(6), px(if (label.isEmpty()) 11 else 15), px(6))
+        setPadding(px(9), px(5), px(if (label.isEmpty()) 9 else 13), px(5))
         background = StateListDrawable().apply {
             addState(intArrayOf(android.R.attr.state_focused), GradientDrawable().apply {
-                cornerRadius = px(17).toFloat()
-                setColor(Color.WHITE)
+                cornerRadius = px(16).toFloat()
+                setColor(0x33FFFFFF)
+                setStroke(px(2), 0xE6FFFFFF.toInt())
             })
             addState(intArrayOf(), GradientDrawable().apply {
-                cornerRadius = px(17).toFloat()
+                cornerRadius = px(16).toFloat()
                 setColor(Color.TRANSPARENT)
             })
         }
         isFocusable = true
         isFocusableInTouchMode = true
         setOnClickListener { onClick() }
-        layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, px(34)).apply { marginEnd = px(6) }
+        layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, px(30)).apply { marginEnd = px(4) }
     }
 
     // Sound: the box's own decoders first, the app's FFmpeg ones only for
@@ -1423,7 +1473,7 @@ class PlayerActivity : Activity() {
     // ---- Skip intro, the credits, and learning them ----
 
     private fun buildSkipButton(): TextView = TextView(this).apply {
-        size(16f)
+        size(13f)
         typeface = Fonts.text(this@PlayerActivity, 600)
         gravity = Gravity.CENTER
         setPadding(px(22), 0, px(22), 0)
@@ -2224,6 +2274,9 @@ class PlayerActivity : Activity() {
     }
 
     override fun onDestroy() {
+        ScreenLink.onControl = null
+        ScreenLink.onPlayInPlayer = null
+        if (!live) ScreenLink.report(JSONObject().put("playing", false)) // back on Home
         party?.close()
         main.removeCallbacksAndMessages(null)
         player.release()

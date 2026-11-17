@@ -196,6 +196,7 @@ export interface WatchProfile {
   hasPin: boolean
   main: boolean // the owner's: the only one that can change settings
   theme?: WatchTheme
+  maxRating?: string // a kids' profile's age limit: G, PG, PG-13 or R
 }
 // How a profile wants versions picked when it presses Play.
 export interface StreamPrefs {
@@ -249,6 +250,16 @@ export interface PartyState {
   members: PartyMember[]
   held?: boolean // playing, but waiting while someone's player loads
 }
+// A household TV with Cue open (Send to TV), and what it's showing.
+export interface Screen {
+  id: string
+  name: string
+  profile?: string
+  online: boolean
+  now: { kind?: WatchKind; tmdbId?: number; season?: number; episode?: number; title?: string; pos?: number; duration?: number; playing: boolean; at?: number }
+}
+export type RemoteAction = 'play' | 'pause' | 'back' | 'forward' | 'seek' | 'stop'
+
 export interface PartyMsg {
   id: number
   kind: 'chat' | 'event' | 'reaction'
@@ -282,6 +293,11 @@ export interface WatchCard {
   new?: boolean // the episode came out in the last two weeks
   logoUrl?: string // logo artwork: on the Home banner and title pages ("" when none)
   quiet?: boolean // horror, anime or adult: kept off the banner, previews and screensaver
+  soon?: boolean // a film not released anywhere yet (it's on Coming soon)
+  inTheaters?: boolean // showing in theaters only: it plays, usually as a camera recording
+  outDate?: string // on Coming soon: the day it streams, when known
+  reminding?: boolean // this profile asked to be told when it's out
+  outNow?: boolean // on "Out now": a title this profile asked about came out
 }
 // What brings a title's artwork alive: its logo, the main colour of its
 // picture ("r, g, b") and a YouTube trailer id.
@@ -345,6 +361,16 @@ export interface WatchTitle extends WatchCard {
   resumeEpisode?: number
   resumePosition?: number // seconds
   more: WatchCard[]
+  // Not out to stream yet: when it's coming ("In theaters now · streaming
+  // March 4th"), instead of Play; outDate is the day it streams.
+  notOut?: string
+  outDate?: string
+  // In theaters now (it still plays): "In theaters now · streaming March 4th".
+  theaterNote?: string
+  thumb?: 'up' | 'down' // this profile's thumb on it
+  reminding?: boolean // this profile asked to be told when it's out
+  // The film series it's part of: its films in order, and the next one out.
+  collection?: { id: number; name: string; parts: WatchCard[]; next?: WatchCard }
 }
 export interface WatchEpisode {
   season: number
@@ -2403,6 +2429,27 @@ export const api = {
   saveWatchProgress: (body: { kind: WatchKind; tmdbId: number; season?: number; episode?: number; position: number; duration: number }) =>
     put<null>('/watch/progress', body),
   forgetWatchProgress: (kind: WatchKind, tmdbId: number) => del<null>(`/watch/progress/${kind}/${tmdbId}`),
+  // Off Continue Watching (where you were is kept; watching again brings it back).
+  hideFromContinue: (kind: WatchKind, tmdbId: number) => del<null>(`/watch/continue/${kind}/${tmdbId}`),
+  // Phone alerts (web push): Cue's key, turning them on and off for this
+  // device, and a test alert.
+  pushKey: () => get<{ key: string }>('/push/key'),
+  pushSubscribe: (endpoint: string) => post<null>('/push/subscribe', { endpoint }),
+  pushUnsubscribe: (endpoint: string) => post<null>('/push/unsubscribe', { endpoint }),
+  pushTest: () => post<null>('/push/test', {}),
+  // Send to TV: the household's TVs with Cue open, playing a title on one,
+  // and its remote.
+  screens: () => get<Screen[]>('/screens'),
+  screenPlay: (id: string, t: { kind: WatchKind; tmdbId: number; season?: number; episode?: number }) =>
+    post<null>(`/screens/${encodeURIComponent(id)}/play`, t),
+  screenControl: (id: string, action: RemoteAction, pos = 0) => post<null>(`/screens/${encodeURIComponent(id)}/control`, { action, pos }),
+  // Coming soon: films not out to stream yet, soonest first.
+  comingSoon: () => get<WatchCard[]>('/watch/coming-soon'),
+  // Tell this profile when a title is out to stream (or stop).
+  setRemind: (kind: WatchKind, tmdbId: number, on: boolean) =>
+    on ? put<{ reminding: boolean }>(`/watch/remind/${kind}/${tmdbId}`, {}) : del<{ reminding: boolean }>(`/watch/remind/${kind}/${tmdbId}`),
+  // This profile's thumb on a title: up, down ("Not for me": off Home) or none.
+  setThumb: (kind: WatchKind, tmdbId: number, thumb: '' | 'up' | 'down') => put<{ thumb: string }>(`/watch/thumb/${kind}/${tmdbId}`, { thumb }),
   addToWatchList: (kind: WatchKind, tmdbId: number) => put<null>(`/watch/list/${kind}/${tmdbId}`),
   removeFromWatchList: (kind: WatchKind, tmdbId: number) => del<null>(`/watch/list/${kind}/${tmdbId}`),
   streamAddons: () => get<StreamAddon[]>('/settings/stream-addons'),
@@ -2411,7 +2458,7 @@ export const api = {
   watchProfiles: () => get<WatchProfiles>('/profiles'),
   selectWatchProfile: (id: number, pin = '') => post<{ token: string; profile: WatchProfile }>(`/profiles/${id}/select`, { pin }),
   addWatchProfile: (name: string, avatar: string) => post<WatchProfile>('/profiles', { name, avatar }),
-  updateWatchProfile: (id: number, body: { name?: string; avatar?: string; pin?: string }) =>
+  updateWatchProfile: (id: number, body: { name?: string; avatar?: string; pin?: string; maxRating?: string }) =>
     put<{ profile: WatchProfile; token?: string }>(`/profiles/${id}`, body),
   removeWatchProfile: (id: number) => del<null>(`/profiles/${id}`),
   streamingSetup: () => get<{ movieInfo: boolean; streams: boolean; liveTV: boolean }>('/settings/streaming/setup'),

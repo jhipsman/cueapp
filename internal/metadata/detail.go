@@ -6,6 +6,7 @@ import (
 	"math"
 	"net/url"
 	"sort"
+	"time"
 )
 
 // Genre is one entry of TMDB's genre tables.
@@ -220,18 +221,24 @@ func topCast(cast []CastMember, n int) []CastMember {
 // appended in the same request.
 type MovieDetail struct {
 	Movie
-	Runtime      int          `json:"runtime"`
-	Tagline      string       `json:"tagline"`
-	Status       string       `json:"status"`
-	Homepage     string       `json:"homepage"`
-	IMDBID       string       `json:"imdb_id"`
-	Videos       videosBlock  `json:"videos"`
-	Credits      creditsBlock `json:"credits"`
-	ReleaseDates struct {
+	Runtime  int          `json:"runtime"`
+	Tagline  string       `json:"tagline"`
+	Status   string       `json:"status"`
+	Homepage string       `json:"homepage"`
+	IMDBID   string       `json:"imdb_id"`
+	Videos   videosBlock  `json:"videos"`
+	Credits  creditsBlock `json:"credits"`
+	// BelongsToCollection is the series it's part of, if any.
+	BelongsToCollection *CollectionRef `json:"belongs_to_collection"`
+	ReleaseDates        struct {
 		Results []struct {
 			Country      string `json:"iso_3166_1"`
 			ReleaseDates []struct {
 				Certification string `json:"certification"`
+				// Type is TMDB's kind of release: 1 premiere, 2 limited
+				// theatrical, 3 theatrical, 4 digital, 5 physical, 6 TV.
+				Type        int    `json:"type"`
+				ReleaseDate string `json:"release_date"` // "2024-03-01T00:00:00.000Z"
 			} `json:"release_dates"`
 		} `json:"results"`
 	} `json:"release_dates"`
@@ -276,6 +283,62 @@ func (d *MovieDetail) Certification() string {
 		}
 	}
 	return first
+}
+
+// Release kinds in TMDB's release dates.
+const (
+	releaseTheatricalLimited = 2
+	releaseTheatrical        = 3
+	releaseDigital           = 4
+	releasePhysical          = 5
+	releaseTV                = 6
+)
+
+// theatricalWindow is how long after a film reaches cinemas it's taken to be
+// out to stream when TMDB lists no digital, disc or TV date (older films
+// often have none, and most films stream within about three months now).
+const theatricalWindow = 100 * 24 * time.Hour
+
+// Availability says whether the film is out to watch at home (digitally, on
+// disc or on TV) on day now, rather than only announced or in cinemas.
+// Home is the earliest home release date any country lists ("2025-03-04"),
+// when TMDB knows one; Cinemas is the earliest cinema date. A film with
+// neither a home date nor a cinema date over theatricalWindow ago isn't out.
+func (d *MovieDetail) Availability(now time.Time) (out bool, home, cinemas string) {
+	for _, country := range d.ReleaseDates.Results {
+		for _, rd := range country.ReleaseDates {
+			day := rd.ReleaseDate
+			if len(day) >= 10 {
+				day = day[:10]
+			}
+			if len(day) != 10 {
+				continue
+			}
+			switch rd.Type {
+			case releaseDigital, releasePhysical, releaseTV:
+				if home == "" || day < home {
+					home = day
+				}
+			case releaseTheatricalLimited, releaseTheatrical:
+				if cinemas == "" || day < cinemas {
+					cinemas = day
+				}
+			}
+		}
+	}
+	if cinemas == "" && len(d.ReleaseDate) == 10 {
+		cinemas = d.ReleaseDate
+	}
+	today := now.Format("2006-01-02")
+	switch {
+	case home != "":
+		out = home <= today
+	case cinemas != "":
+		if t, err := time.Parse("2006-01-02", cinemas); err == nil {
+			out = now.Sub(t) >= theatricalWindow
+		}
+	}
+	return out, home, cinemas
 }
 
 // Trailers are the movie's YouTube videos, best trailer first.

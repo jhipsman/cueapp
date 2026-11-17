@@ -2,6 +2,7 @@ import { usePrefs } from './prefs'
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { api, type WatchEpisode, type WatchKind, type WatchTitle } from '../api'
+import { useScreens } from './TVRemote'
 import Icon from '../components/Icon'
 import { useDocumentTitle } from '../documentTitle'
 import FreeElsewhere from './FreeElsewhere'
@@ -50,6 +51,41 @@ export default function TitlePage({ kind }: { kind: WatchKind }) {
       live = false
     }
   }, [kind, tmdbId])
+
+  const [thumb, setThumbState] = useState<'' | 'up' | 'down'>('')
+  const [offRow, setOffRow] = useState(false)
+  const [reminding, setReminding] = useState(false)
+  useEffect(() => {
+    setThumbState(title?.thumb ?? '')
+    setReminding(!!title?.reminding)
+  }, [title])
+  async function toggleRemind() {
+    const next = !reminding
+    setReminding(next)
+    try {
+      await api.setRemind(kind, tmdbId, next)
+    } catch {
+      setReminding(!next)
+    }
+  }
+  async function thumbIt(t: 'up' | 'down') {
+    const next = thumb === t ? '' : t
+    const was = thumb
+    setThumbState(next)
+    try {
+      await api.setThumb(kind, tmdbId, next)
+    } catch {
+      setThumbState(was)
+    }
+  }
+  async function hideFromRow() {
+    setOffRow(true)
+    try {
+      await api.hideFromContinue(kind, tmdbId)
+    } catch {
+      setOffRow(false)
+    }
+  }
 
   async function toggleList() {
     const next = !inList
@@ -102,13 +138,52 @@ export default function TitlePage({ kind }: { kind: WatchKind }) {
               <span>{kind === 'tv' ? 'Created by' : 'Directed by'}</span> {title.directors.slice(0, 2).join(', ')}
             </p>
           )}
+          {title.theaterNote && (
+            <p className="wx-theaters" role="note">
+              <Icon name="film" size={16} /> {title.theaterNote}. What's found now is usually a camera recording.
+            </p>
+          )}
           <div className="wx-actions">
-            <button className="wx-btn play" onClick={() => navigate(playHref(kind, tmdbId, title.resumeSeason, title.resumeEpisode))}>
-              <Icon name="play" size={22} /> {playLabel}
-            </button>
+            {title.notOut ? (
+              <>
+                <span className="wx-btn wx-not-out" role="status">
+                  <Icon name="calendar" size={20} /> {title.notOut}
+                </span>
+                <button className="wx-btn play" onClick={() => void toggleRemind()} aria-pressed={reminding}>
+                  <Icon name={reminding ? 'check' : 'clock'} size={20} /> {reminding ? 'Reminding you' : 'Remind me'}
+                </button>
+              </>
+            ) : (
+              <button className="wx-btn play" onClick={() => navigate(playHref(kind, tmdbId, title.resumeSeason, title.resumeEpisode))}>
+                <Icon name="play" size={22} /> {playLabel}
+              </button>
+            )}
             <button className="wx-btn" onClick={() => void toggleList()} aria-pressed={inList}>
               <Icon name={inList ? 'check' : 'plus'} size={20} strokeWidth={2.5} /> My List
             </button>
+            {title.theaterNote && (
+              <button className="wx-btn" onClick={() => void toggleRemind()} aria-pressed={reminding} title="Tells you when it streams properly">
+                <Icon name={reminding ? 'check' : 'clock'} size={18} /> {reminding ? 'Reminding you' : 'Remind me when it streams'}
+              </button>
+            )}
+            {!title.notOut && <PlayOnTV kind={kind} tmdbId={tmdbId} season={title.resumeSeason} episode={title.resumeEpisode} />}
+            <button className={`wx-btn wx-round${thumb === 'up' ? ' on' : ''}`} onClick={() => void thumbIt('up')} aria-pressed={thumb === 'up'} title="I like this" aria-label="I like this">
+              <Icon name="thumbs-up" size={20} />
+            </button>
+            <button
+              className={`wx-btn wx-round${thumb === 'down' ? ' on' : ''}`}
+              onClick={() => void thumbIt('down')}
+              aria-pressed={thumb === 'down'}
+              title="Not for me: keeps it off Home"
+              aria-label="Not for me"
+            >
+              <Icon name="thumbs-down" size={20} />
+            </button>
+            {(resuming || startedShow) && (
+              <button className="wx-btn" disabled={offRow} onClick={() => void hideFromRow()} title="Where you were is kept">
+                <Icon name={offRow ? 'check' : 'x'} size={18} /> {offRow ? 'Off Continue Watching' : 'Remove from Continue Watching'}
+              </button>
+            )}
           </div>
         </div>
       </header>
@@ -141,6 +216,8 @@ export default function TitlePage({ kind }: { kind: WatchKind }) {
         {kind === 'tv' && title.seasons && title.seasons.length > 0 && season !== null && (
           <Episodes tmdbId={tmdbId} seasons={title.seasons} season={season} onSeason={setSeason} />
         )}
+
+        {title.collection && <Row title={title.collection.name} items={title.collection.parts} />}
 
         {title.more.length > 0 && onTV() && <Row title="More like this" items={title.more.slice(0, 18)} />}
         {title.more.length > 0 && !onTV() && (
@@ -231,5 +308,41 @@ function Episodes({
         ))}
       </div>
     </>
+  )
+}
+
+// PlayOnTV sends the title to a household TV with Cue open (asking which,
+// when there are several), then opens the remote. Only shown while a TV is on.
+function PlayOnTV({ kind, tmdbId, season, episode }: { kind: WatchKind; tmdbId: number; season?: number; episode?: number }) {
+  const screens = useScreens(5000)
+  const navigate = useNavigate()
+  const [picking, setPicking] = useState(false)
+  const [error, setError] = useState('')
+  if (onTV() || !screens || screens.length === 0) return null
+  const send = async (id: string) => {
+    setError('')
+    try {
+      await api.screenPlay(id, { kind, tmdbId, season, episode })
+      navigate(`/watch/tv-remote/${id}`)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e))
+    }
+  }
+  return (
+    <span className="wx-playon">
+      <button className="wx-btn" onClick={() => (screens.length === 1 ? void send(screens[0].id) : setPicking((p) => !p))}>
+        <Icon name="tv" size={20} /> {screens.length === 1 ? `Play on ${screens[0].name}` : 'Play on TV'}
+      </button>
+      {picking && (
+        <span className="wx-playon-menu">
+          {screens.map((s) => (
+            <button key={s.id} onClick={() => void send(s.id)}>
+              {s.name}
+            </button>
+          ))}
+        </span>
+      )}
+      {error && <span className="wx-error">{error}</span>}
+    </span>
   )
 }

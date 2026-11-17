@@ -127,6 +127,7 @@ const (
 	KeyTrashDays            = "library.trash_days"             // days removed titles' files stay in the recycle bin (.cue-trash in the library folder); unset = 7, "0" = delete straight away
 	KeyHistoryRetentionDays = "cleanup.history_retention_days" // days finished downloads and activity are kept; unset = 90, "0" = forever
 	KeyCleanupLastRunAt     = "cleanup.last_run_at"            // when clean-up last ran (RFC 3339; set by the app, not user-editable)
+	KeyPushVAPID            = "push.vapid"                     // the key phone alerts are signed with (made by the app, encrypted; not user-editable)
 
 	// Signing in to Plex, Jellyfin and Emby: the id this install presents as
 	// its device (X-Plex-Client-Identifier, MediaBrowser DeviceId). Random,

@@ -107,8 +107,9 @@ func (s *Server) handleWatchPreview(w http.ResponseWriter, r *http.Request) {
 			want.season, want.episode = 1, 1
 		}
 	}
-	// Horror, anime and adult titles get no clip (quiet.go).
-	if s.quietTitle(r.Context(), kind, id) {
+	// Horror, anime and adult titles get no clip (quiet.go), and nor does
+	// one above a kids' profile's age limit.
+	if p, ok := s.activeProfile(r); s.quietTitle(r.Context(), kind, id) || (ok && !s.titleAllowed(r.Context(), p, kind, id)) {
 		writeJSON(w, http.StatusOK, map[string]any{"none": true})
 		return
 	}

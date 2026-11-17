@@ -24,6 +24,7 @@ Cue works like Netflix for a household: one sign-in, then **Who's watching?** an
 - **The main profile** is the account owner's (made from your account when you first open Watch). Only it can change settings, open the library manager, or add, edit and remove profiles. Cue checks this itself, so another profile can't get round it from the browser.
 - **Add profiles** under your avatar (top right) > **Manage profiles**: a name, a picture (a fox, a unicorn, a game controller... or just the initial) and a color, up to 6.
 - **Lock a profile with a PIN** (4 digits) in the same place. Put one on the main profile so nobody else can open settings. Changing a PIN signs every device out of that profile.
+- **Kids' profiles: an age limit.** In **Manage profiles**, give a profile an age limit: little kids (G, TV-Y, TV-G), kids (up to PG and TV-PG), teens (up to PG-13 and TV-14) or adults (up to R and TV-MA). Titles above it don't show anywhere on that profile (Home, search, More like this) and won't open or play, on the web and the TV apps alike. Films go by their US rating, shows by their TV rating; a title with no rating shows only under the adults limit. The main profile can't have one; lock it with a PIN so a child can't just switch to it.
 - **Switch profile** from the avatar menu. Each browser or TV remembers its own profile.
 - A household with only one profile and no PIN skips the picker.
 
@@ -32,9 +33,15 @@ Cue works like Netflix for a household: one sign-in, then **Who's watching?** an
 - **Browse.** Home has Continue Watching, My List, then trending, popular and genre rows of movies and shows. **Shows** and **Movies** at the top narrow it to one kind. Choosing a card, Continue Watching and new episodes included, opens its page, where **Resume** carries on and the episodes are listed; nothing starts playing by itself.
 - **Search anything.** Type in the search box: every movie and show TMDB knows comes up, not only what's in your library.
 - **Open a title.** Its page has the backdrop, description, IMDb and Rotten Tomatoes ratings (or TMDB's score), age rating, length, cast and genres, and **More like this**. A show has a season picker and its episodes, each with a thumbnail, description and length.
+- **In theaters.** A film showing in theaters but not out at home still plays: it's tagged **In theaters** (its page says "In theaters now · streaming March 4th"), and what's found for it is usually a camera recording, which Cue then takes too (after anything better). **Remind me when it streams** tells you once a proper copy is out.
+- **Not out yet.** A film not released anywhere yet has no Play: it's on **Coming soon** instead, with the day it streams. It goes by TMDB's release dates: a digital, disc or TV release (out at home), a theater date that's passed (in theaters), or neither.
+- **Coming soon and Remind me.** Films not out yet aren't mixed in with what you can watch: they have their own section, **Coming soon** (in the top bar, and a tab on the TV), with the day each streams ("March 4th") when it's known, its picture and what it's about. **Remind me** there or on a title's page puts it first in Coming soon, and once it's out it shows at the top of Home under **Out now** (and on your phone, if alerts are on) until you play it.
 - **Press Play.** Cue picks a version by the profile's [Streaming quality](#streaming-quality) and it starts. If one won't start, the next one is tried by itself. Once the picture has played, Cue never changes the version on its own: if the stream drops, it picks up where it was (twice at most), and then **Other version** in the player is yours to press.
 - **Pick up where you stopped.** Where you are is saved every 15 seconds, per account. Play on a title you started says **Resume**; on a show it goes to the episode you're on, or the next one.
 - **Next episode.** At the end of an episode a card offers the next one and plays it after 10 seconds.
+- **Remove from Continue Watching.** On the title's page (**Hide from row** on a TV): it leaves the row, but where you were is kept and your year in Cue still counts it. Watching it again brings it back.
+- **Thumbs.** 👍 on a title's page makes it count for **Because you watched**; 👎 (**Not for me**) keeps it off Home's rows for that profile (search still finds it). Press it again to take it back.
+- **Film series.** A film that's part of a series (Harry Potter, The Matrix...) shows the whole series in order on its page, and when it ends the player offers **Next in the series**.
 - **My List.** The **+** on a title's page saves it to My List, its own row on Home and its own page. This is separate from your library: adding to My List downloads nothing.
 
 The library manager (downloads, quality, settings) stays one click away: **Manage** in the top bar.
@@ -159,6 +166,20 @@ Things to know:
 - A channel counts as one of your provider's connections while it plays, wherever you watch it. If two TVs watch at once on a one-connection plan, the second is refused ("too many devices").
 - Channels the provider lists without a guide id show "No guide for this channel" and still play.
 - Your login is stored encrypted, and stream addresses that hold the password never reach the browser.
+
+## Send to TV
+
+Pick something on your phone and play it on the TV. Any Fire TV or Google TV with Cue open shows up: a title's page then has **Play on Living room TV** (or **Play on TV** to choose, when there are several), and the TV starts it, from where that TV's profile stopped. Your phone becomes its remote: what's playing, play and pause, back 10 seconds, forward 30, a time bar to jump with, and stop. **TV remote** in the avatar menu opens it any time. A TV's name is its device name (Fire TV: Settings > My Fire TV > About).
+
+The TVs are the household's: anyone signed in to this Cue sees them, as with watch parties.
+
+## Alerts on your phone
+
+**Settings > Alerts > Turn on** (in Watch, on the phone or computer you want them on): Cue tells that device when a new episode of a show your profile is watching comes out (within three days of it airing), and when something you pressed **Remind me** on is out to stream. Pressing an alert opens the title. **Send a test** checks they arrive.
+
+- **iPhone and iPad**: alerts work in Cue added to the Home Screen (in Safari: Share > Add to Home Screen), opened from there; iOS 16.4 or later.
+- **Private**: the push that wakes your phone goes through your phone's push service (Apple's, Google's or Mozilla's) but carries no text; the phone then asks your own Cue what to say. Cue only ever sends pushes to those services.
+- Each thing is told once per profile, and Cue looks every hour.
 
 ## The apps
 

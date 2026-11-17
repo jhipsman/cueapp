@@ -422,6 +422,16 @@ Every route the server exposes. Routes marked **public** need no sign-in; all ot
 | PUT | `/api/profiles/{id}` | signed in | PUT /api/profiles/{id} {"name"?, "avatar"?, "pin"?} (main profile only; "pin": "" removes it) |
 | POST | `/api/profiles/{id}/select` | signed in | POST /api/profiles/{id}/select {"pin": "1234"}: picks a profile on this device and answers with its token. |
 
+## push
+
+| Method | Path | Access | What it does |
+|---|---|---|---|
+| GET | `/api/push/key` | signed in | GET /api/push/key: the key a browser subscribes with. |
+| POST | `/api/push/pending` | signed in | POST /api/push/pending {"endpoint"}: the alerts waiting for this device (its worker asks when a push wakes it). |
+| POST | `/api/push/subscribe` | signed in | POST /api/push/subscribe {"endpoint"}: alerts on, on this device, for the active profile. |
+| POST | `/api/push/test` | signed in | POST /api/push/test: an alert to this profile's devices now, to see that alerts arrive. |
+| POST | `/api/push/unsubscribe` | signed in | POST /api/push/unsubscribe {"endpoint"}: alerts off on this device. |
+
 ## quality-profiles
 
 | Method | Path | Access | What it does |
@@ -467,6 +477,16 @@ Every route the server exposes. Routes marked **public** need no sign-in; all ot
 | DELETE | `/api/requests/{id}` | any account | DELETE /api/requests/{id}: someone takes back their own waiting request; an administrator can remove any. |
 | POST | `/api/requests/{id}/approve` | admin | POST /api/requests/{id}/approve: add the title as the person asked. |
 | POST | `/api/requests/{id}/decline` | admin | POST /api/requests/{id}/decline {"note": "..."} |
+
+## screens
+
+| Method | Path | Access | What it does |
+|---|---|---|---|
+| GET | `/api/screens` | signed in | GET /api/screens: the household's TVs that are on, with what each shows. |
+| GET | `/api/screens/listen` | signed in | GET /api/screens/listen?id=&name=: a TV's line (SSE): "play" {kind, tmdbId, season, episode, from} and "control" {action, pos}. |
+| POST | `/api/screens/{id}/control` | signed in | POST /api/screens/{id}/control {action: play\|pause\|back\|forward\|seek\|stop, pos}. |
+| POST | `/api/screens/{id}/play` | signed in | POST /api/screens/{id}/play {kind, tmdbId, season, episode}: the TV plays it. |
+| POST | `/api/screens/{id}/state` | signed in | POST /api/screens/{id}/state {kind, tmdbId, season, episode, title, pos, duration, playing}: what the TV is showing (it says so on every change, and every fe... |
 
 ## scripts
 
@@ -685,6 +705,8 @@ Every route the server exposes. Routes marked **public** need no sign-in; all ot
 
 | Method | Path | Access | What it does |
 |---|---|---|---|
+| GET | `/api/watch/coming-soon` | signed in | GET /api/watch/coming-soon: the Coming soon page. |
+| DELETE | `/api/watch/continue/{kind}/{tmdbId}` | signed in | DELETE /api/watch/continue/{kind}/{tmdbId}: takes a title off Continue Watching. |
 | GET | `/api/watch/extras/{kind}/{tmdbId}` | signed in | GET /api/watch/extras/{kind}/{tmdbId}: a title's logo, the main colour of its picture (for the glow and highlights) and its trailer (for the living banner), ... |
 | DELETE | `/api/watch/history` | signed in | DELETE /api/watch/history: the active profile's Continue Watching and what it has watched, forgotten. |
 | GET | `/api/watch/home` | signed in | GET /api/watch/home: Continue Watching, My List and the shelves. |
@@ -698,12 +720,15 @@ Every route the server exposes. Routes marked **public** need no sign-in; all ot
 | DELETE | `/api/watch/progress/{kind}/{tmdbId}` | signed in | DELETE /api/watch/progress/{kind}/{tmdbId}: take it off Continue Watching. |
 | GET | `/api/watch/progress/{kind}/{tmdbId}` | signed in | GET /api/watch/progress/{kind}/{tmdbId}?season=&episode=: where to resume. |
 | GET | `/api/watch/providers/{kind}/{tmdbId}` | signed in | GET /api/watch/providers/{kind}/{tmdbId}?region=US |
+| DELETE | `/api/watch/remind/{kind}/{tmdbId}` | signed in | PUT and DELETE /api/watch/remind/{kind}/{tmdbId}: tell this profile when the title is out to stream (or not any more). |
+| PUT | `/api/watch/remind/{kind}/{tmdbId}` | signed in | PUT and DELETE /api/watch/remind/{kind}/{tmdbId}: tell this profile when the title is out to stream (or not any more). |
 | GET | `/api/watch/remote/{code}` | signed in | GET /api/watch/remote/{code}: the words sent so far ({"q":"","seq":0} before any). |
 | PUT | `/api/watch/remote/{code}` | signed in | PUT /api/watch/remote/{code} {"q"}: the phone's words for the TV. |
 | GET | `/api/watch/search` | signed in | GET /api/watch/search?q=...: movies and shows, best match first. |
 | POST | `/api/watch/skips/learn` | signed in | POST /api/watch/skips/learn {"kind","tmdbId","season","segment","start","end","duration"}: the household skipped an intro (start to end) or the credits (pres... |
 | GET | `/api/watch/skips/{kind}/{tmdbId}` | signed in | GET /api/watch/skips/{kind}/{tmdbId}?season=&episode=&duration= |
 | GET | `/api/watch/subtitles/{kind}/{tmdbId}` | signed in | GET /api/watch/subtitles/{kind}/{tmdbId}?season=&episode=&release=&choice= is where the player gets the subtitle: {"url", "label", "choices"}. |
+| PUT | `/api/watch/thumb/{kind}/{tmdbId}` | signed in | PUT /api/watch/thumb/{kind}/{tmdbId} {"thumb":"up"\|"down"\|""}: this profile's thumb on a title. |
 | GET | `/api/watch/tv/{tmdbId}` | signed in | GET /api/watch/tv/{tmdbId} |
 | GET | `/api/watch/tv/{tmdbId}/next` | signed in | GET /api/watch/tv/{tmdbId}/next?season=1&episode=2: the episode to play after that one, for autoplay. |
 | GET | `/api/watch/tv/{tmdbId}/season/{season}` | signed in | GET /api/watch/tv/{tmdbId}/season/{season}: the season's episodes, with thumbnails and how far this account got in each. |
@@ -720,4 +745,4 @@ Every route the server exposes. Routes marked **public** need no sign-in; all ot
 | PUT | `/api/watched/settings` | admin | PUT /api/watched/settings {"sync": true, "cleanup": {...}} |
 | POST | `/api/watched/sync` | admin | POST /api/watched/sync: read what's been watched now. |
 
-400 routes.
+415 routes.

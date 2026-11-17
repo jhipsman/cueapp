@@ -11,6 +11,24 @@ export function titleHref(c: { kind: string; tmdbId: number }): string {
   return `/watch/${c.kind}/${c.tmdbId}`
 }
 
+// ordinal is "1st", "2nd", "3rd", "4th", "11th", "22nd"...
+export function ordinal(n: number): string {
+  const t = n % 100
+  const s = t >= 11 && t <= 13 ? 'th' : ({ 1: 'st', 2: 'nd', 3: 'rd' } as Record<number, string>)[n % 10] ?? 'th'
+  return `${n}${s}`
+}
+
+const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+
+// shortDate is "March 4th" (or "March 4th, 2027" in another year).
+export function shortDate(day: string): string {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(day)
+  if (!m) return day
+  const [y, mo, d] = [Number(m[1]), Number(m[2]), Number(m[3])]
+  const s = `${MONTHS[mo - 1]} ${ordinal(d)}`
+  return y === new Date().getFullYear() ? s : `${s}, ${y}`
+}
+
 export function playHref(kind: string, tmdbId: number, season?: number, episode?: number): string {
   return kind === 'tv' ? `/watch/play/tv/${tmdbId}/${season ?? 1}/${episode ?? 1}` : `/watch/play/movie/${tmdbId}`
 }
@@ -117,6 +135,9 @@ export function Card({ card, wide }: { card: WatchCard; wide?: boolean }) {
         {wide && ex?.logo && <img className="wx-card-logo" src={ex.logo} alt="" />}
         {wide && code && <span className="wx-chip">{code}</span>}
         {card.new && <span className="wx-card-new">New episode</span>}
+        {card.outNow && <span className="wx-card-new">Out now</span>}
+        {card.inTheaters && <span className="wx-card-new wx-card-theaters">In theaters</span>}
+        {card.soon && <span className="wx-card-new wx-card-soon">{card.outDate ? `Streaming ${shortDate(card.outDate)}` : 'Coming soon'}</span>}
         {card.progress !== undefined && card.progress > 0 && (
           <span className="wx-card-progress">
             <span style={{ width: `${Math.round(card.progress * 100)}%` }} />

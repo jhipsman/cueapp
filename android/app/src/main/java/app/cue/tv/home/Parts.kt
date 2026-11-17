@@ -200,6 +200,10 @@ fun PosterCard(card: Tile, memory: FocusMemory, memKey: String, wide: Boolean = 
                     }
                 }
                 if (card.isNew) Chip("NEW", Modifier.align(Alignment.TopStart).padding(7.dp), bg = accent, fg = Color.Black)
+                if (card.inTheaters) Chip("IN THEATERS", Modifier.align(Alignment.TopStart).padding(7.dp), bg = Color(0xFFF5C518), fg = Color.Black)
+                if (card.outNow) Chip("OUT NOW", Modifier.align(Alignment.TopStart).padding(7.dp), bg = accent, fg = Color.Black)
+                if (card.soon) Chip(card.outDate?.let { "Streaming ${shortDay(it)}" } ?: "COMING SOON", Modifier.align(Alignment.TopStart).padding(7.dp),
+                    bg = Color(0xE6FFFFFF), fg = Color.Black)
                 Sheen(focused)
             }
         }
@@ -310,3 +314,13 @@ fun Modifier.leaveWithArrows(): Modifier {
         }
     }
 }
+
+/** "March 4th" from "2027-03-04" ("March 4th, 2027" when not this year). */
+fun shortDay(day: String): String = runCatching {
+    val (y, m, d) = day.take(10).split('-').map { it.toInt() }
+    val months = listOf("January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December")
+    val t = d % 100
+    val suffix = if (t in 11..13) "th" else when (d % 10) { 1 -> "st"; 2 -> "nd"; 3 -> "rd"; else -> "th" }
+    val s = "${months[m - 1]} $d$suffix"
+    if (y == java.util.Calendar.getInstance().get(java.util.Calendar.YEAR)) s else "$s, $y"
+}.getOrDefault(day)

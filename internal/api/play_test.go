@@ -219,6 +219,12 @@ func TestPlayFallsBackWhenTheProfileRefusesAll(t *testing.T) {
 		}
 		t.Fatalf("ranked %q; want 2160p then 720p, no cam, no other year", titles)
 	}
+
+	// A film only in theaters: the camera copy is let in, after the rest.
+	got = rankAnyWatchable(results, playTarget{movie: &m, inTheaters: true})
+	if len(got) != 3 || !strings.Contains(got[2].Title, "HDCAM") {
+		t.Fatalf("in theaters: %d ranked, last %q", len(got), got[len(got)-1].Title)
+	}
 }
 
 func TestPlayWithNoIndexersExplains(t *testing.T) {

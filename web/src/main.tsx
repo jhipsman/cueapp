@@ -22,16 +22,21 @@ try {
   // ignore — worst case is one flash of the OS-default theme
 }
 
-// Cue has no service worker. One left behind by another app that once
-// ran on the same address would answer API calls from its own cache and
-// show stale data, so remove any we find and reload once.
+// Cue's only service worker is the one for phone alerts (push-sw.js: no
+// caching, and it controls no page). One left behind by another app that
+// once ran on the same address would answer API calls from its own cache and
+// show stale data, so remove any other we find, and reload once if it was
+// in charge of this page.
 if ('serviceWorker' in navigator) {
+  const ours = (url?: string) => !!url && new URL(url).pathname === '/push-sw.js'
   navigator.serviceWorker
     .getRegistrations()
     .then(async (regs) => {
-      if (regs.length === 0) return
-      await Promise.all(regs.map((r) => r.unregister()))
-      if (navigator.serviceWorker.controller) location.reload()
+      const stale = regs.filter((r) => !ours((r.active ?? r.waiting ?? r.installing)?.scriptURL))
+      if (stale.length === 0) return
+      await Promise.all(stale.map((r) => r.unregister()))
+      const boss = navigator.serviceWorker.controller
+      if (boss && !ours(boss.scriptURL)) location.reload()
     })
     .catch(() => {
       // ignore — not having permission to look is fine

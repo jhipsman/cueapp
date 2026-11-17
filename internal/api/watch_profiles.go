@@ -112,10 +112,12 @@ type profileView struct {
 	Main   bool   `json:"main"`
 	// Theme is the profile's colors in Watch.
 	Theme watch.Theme `json:"theme"`
+	// MaxRating is its age limit ("G", "PG", "PG-13", "R"), if any.
+	MaxRating string `json:"maxRating,omitempty"`
 }
 
 func viewWatchProfile(p watch.Profile) profileView {
-	return profileView{ID: p.ID, Name: p.Name, Avatar: p.Avatar, HasPIN: p.HasPIN, Main: p.Main, Theme: p.Theme}
+	return profileView{ID: p.ID, Name: p.Name, Avatar: p.Avatar, HasPIN: p.HasPIN, Main: p.Main, Theme: p.Theme, MaxRating: p.MaxRating}
 }
 
 // PUT /api/profile/theme {"accent","glow","background"}: the colors of the
@@ -214,7 +216,8 @@ func writeWatchProfileError(w http.ResponseWriter, err error) {
 	switch {
 	case errors.Is(err, watch.ErrProfileNotFound):
 		writeError(w, http.StatusNotFound, "That profile doesn't exist any more.")
-	case errors.Is(err, watch.ErrBadName), errors.Is(err, watch.ErrBadPIN), errors.Is(err, watch.ErrMainProfile), errors.Is(err, watch.ErrTooManyProfiles):
+	case errors.Is(err, watch.ErrBadName), errors.Is(err, watch.ErrBadPIN), errors.Is(err, watch.ErrMainProfile), errors.Is(err, watch.ErrTooManyProfiles),
+		errors.Is(err, watch.ErrBadAgeLimit), errors.Is(err, watch.ErrMainAgeLimit):
 		msg := err.Error()
 		writeError(w, http.StatusBadRequest, strings.ToUpper(msg[:1])+msg[1:]+".")
 	default:
@@ -272,12 +275,14 @@ func (s *Server) handleUpdateWatchProfile(w http.ResponseWriter, r *http.Request
 		Name   *string `json:"name"`
 		Avatar *string `json:"avatar"`
 		PIN    *string `json:"pin"`
+		// MaxRating: the age limit ("G", "PG", "PG-13", "R"; "" for none).
+		MaxRating *string `json:"maxRating"`
 	}
 	if err := decodeJSON(r, &req); err != nil {
 		writeError(w, http.StatusBadRequest, "That request couldn't be read.")
 		return
 	}
-	p, err := s.WatchRepo.UpdateProfile(u.ID, id, watch.ProfileChange{Name: req.Name, Avatar: req.Avatar, PIN: req.PIN})
+	p, err := s.WatchRepo.UpdateProfile(u.ID, id, watch.ProfileChange{Name: req.Name, Avatar: req.Avatar, PIN: req.PIN, MaxRating: req.MaxRating})
 	if err != nil {
 		writeWatchProfileError(w, err)
 		return

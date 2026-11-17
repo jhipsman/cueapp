@@ -807,6 +807,7 @@ html.watch-mode body {
   width: 100%;
   color: var(--wx-dim);
 }
+.wx-edit select,
 .wx-edit input {
   background: var(--wx-panel);
   border: 1px solid rgba(255, 255, 255, 0.3);
@@ -5816,4 +5817,211 @@ button.wx-switch.on:hover {
   to {
     opacity: 1;
   }
+}
+
+/* A title not out to stream yet: when it's coming, where Play would be. */
+.wx-btn.wx-not-out {
+  cursor: default;
+  background: rgb(255 255 255 / 0.12);
+  color: var(--wx-text, #fff);
+  font-weight: 600;
+}
+.wx-card-soon {
+  background: rgb(255 255 255 / 0.85);
+  color: #111;
+}
+
+/* Thumbs on a title's page: round, filled once chosen. */
+.wx-btn.wx-round {
+  width: 46px;
+  padding: 0;
+  justify-content: center;
+  border-radius: 50%;
+}
+.wx-btn.wx-round.on {
+  background: #fff;
+  color: #111;
+}
+
+/* The phone's TV remote (Send to TV). */
+.wx-remote {
+  max-width: 520px;
+  margin: 0 auto;
+  padding-top: 90px;
+  text-align: center;
+}
+.wx-remote h1 {
+  margin: 8px 0 4px;
+}
+.wx-remote-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 16px;
+}
+.wx-remote-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 28px 0 22px;
+  font-variant-numeric: tabular-nums;
+  font-size: 14px;
+}
+.wx-remote-bar input {
+  flex: 1;
+  accent-color: var(--wx-accent, #e50914);
+}
+.wx-remote-keys {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 22px;
+  margin-bottom: 24px;
+}
+.wx-remote-keys .wx-round {
+  width: 64px;
+  height: 64px;
+  font-weight: 700;
+}
+.wx-btn.wx-remote-main {
+  width: 84px;
+  height: 84px;
+  border-radius: 50%;
+  justify-content: center;
+  padding: 0;
+}
+.wx-playon {
+  position: relative;
+  display: inline-flex;
+}
+.wx-playon-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  min-width: 180px;
+  padding: 6px;
+  border-radius: 10px;
+  background: var(--wx-panel, #181818);
+  box-shadow: 0 12px 40px rgb(0 0 0 / 0.5);
+}
+.wx-playon-menu button {
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.wx-playon-menu button:hover {
+  background: rgb(255 255 255 / 0.1);
+}
+
+/* Coming soon: a date down the side, then the picture, title, when and what
+   it's about, with Remind me (kept apart from what can be watched now). */
+.wx-soon {
+  max-width: 980px;
+  margin: 0 auto;
+  padding-top: 90px;
+}
+.wx-soon > h1 {
+  margin-bottom: 4px;
+}
+.wx-soon-item {
+  display: grid;
+  grid-template-columns: 64px 1fr;
+  gap: 18px;
+  margin-top: 34px;
+}
+.wx-soon-date {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 4px;
+  color: var(--wx-dim);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  font-size: 13px;
+}
+.wx-soon-date b {
+  color: var(--wx-text, #fff);
+  font-size: 34px;
+  letter-spacing: 0;
+  line-height: 1.05;
+}
+.wx-soon-pic {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  padding: 0;
+  border: 0;
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--wx-panel);
+  cursor: pointer;
+}
+.wx-soon-pic img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.4s;
+}
+.wx-soon-pic:hover img {
+  transform: scale(1.03);
+}
+.wx-soon-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 14px;
+}
+.wx-soon-head h2 {
+  margin: 0;
+  font-size: 1.5rem;
+}
+.wx-soon-actions {
+  display: flex;
+  gap: 8px;
+}
+.wx-soon-when {
+  margin: 8px 0 4px;
+  font-weight: 600;
+}
+.wx-soon-about {
+  margin: 0;
+  color: var(--wx-dim);
+  line-height: 1.5;
+}
+@media (max-width: 600px) {
+  .wx-soon-item {
+    grid-template-columns: 44px 1fr;
+    gap: 10px;
+  }
+  .wx-soon-date b {
+    font-size: 24px;
+  }
+}
+
+/* A film in theaters now: it plays, and says what to expect. */
+.wx-card-theaters {
+  background: #f5c518;
+  color: #111;
+}
+.wx-theaters {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 0 0;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgb(245 197 24 / 0.16);
+  color: #f5c518;
+  font-size: 14px;
+  font-weight: 600;
 }

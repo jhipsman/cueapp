@@ -15,6 +15,12 @@ import app.cue.tv.SetupActivity
 // PlayerActivity. What isn't native yet (the full Live TV guide, settings)
 // opens in the web view (MainActivity), signed in and on the same profile.
 class HomeActivity : ComponentActivity() {
+    override fun onDestroy() {
+        if (isFinishing) app.cue.tv.ScreenLink.stop()
+        app.cue.tv.ScreenLink.onPlay = null
+        super.onDestroy()
+    }
+
     private lateinit var api: CueApi
     private lateinit var playback: Playback
 
@@ -44,6 +50,11 @@ class HomeActivity : ComponentActivity() {
                 // The player fades in, rather than the TV's own window switch.
                 androidx.core.app.ActivityOptionsCompat.makeCustomAnimation(this, android.R.anim.fade_in, android.R.anim.fade_out),
             )
+        }
+        // Send to TV: a phone can see this TV and send it a title to play.
+        app.cue.tv.ScreenLink.start(this, server) { api.profileToken }
+        app.cue.tv.ScreenLink.onPlay = { t ->
+            playback.playTitle(t.optString("kind"), t.optInt("tmdbId"), t.optInt("season"), t.optInt("episode"))
         }
         setContent {
             CueRoot(

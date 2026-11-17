@@ -120,6 +120,22 @@ func TestProfiles(t *testing.T) {
 		t.Fatalf("PIN not removed: %+v", p)
 	}
 
+	// Age limits: a kids' profile gets one; the main profile can't.
+	pg := "PG"
+	if p, err := r.UpdateProfile(1, kid.ID, watch.ProfileChange{MaxRating: &pg}); err != nil || p.MaxRating != "PG" {
+		t.Fatalf("age limit: %+v, %v", p, err)
+	}
+	if _, err := r.UpdateProfile(1, main.ID, watch.ProfileChange{MaxRating: &pg}); !errors.Is(err, watch.ErrMainAgeLimit) {
+		t.Fatalf("main profile's age limit: %v", err)
+	}
+	odd := "TV-MA"
+	if _, err := r.UpdateProfile(1, kid.ID, watch.ProfileChange{MaxRating: &odd}); !errors.Is(err, watch.ErrBadAgeLimit) {
+		t.Fatalf("unknown age limit: %v", err)
+	}
+	if p, _ := r.UpdateProfile(1, kid.ID, watch.ProfileChange{MaxRating: &none}); p.MaxRating != "" {
+		t.Fatalf("age limit not removed: %+v", p)
+	}
+
 	if err := r.RemoveProfile(1, main.ID); !errors.Is(err, watch.ErrMainProfile) {
 		t.Fatalf("removing the main profile: %v", err)
 	}
