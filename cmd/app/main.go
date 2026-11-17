@@ -189,6 +189,9 @@ func run() error {
 	stopWatchdog := server.StartWatchdog()
 	defer stopWatchdog()
 
+	stopPush := server.StartPush() // phone alerts: new episodes, reminders
+	defer stopPush()
+
 	httpServer := &http.Server{
 		Addr:    fmt.Sprintf(":%d", cfg.Port),
 		Handler: server.Routes(),

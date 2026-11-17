@@ -2428,6 +2428,12 @@ export const api = {
   forgetWatchProgress: (kind: WatchKind, tmdbId: number) => del<null>(`/watch/progress/${kind}/${tmdbId}`),
   // Off Continue Watching (where you were is kept; watching again brings it back).
   hideFromContinue: (kind: WatchKind, tmdbId: number) => del<null>(`/watch/continue/${kind}/${tmdbId}`),
+  // Phone alerts (web push): Cue's key, turning them on and off for this
+  // device, and a test alert.
+  pushKey: () => get<{ key: string }>('/push/key'),
+  pushSubscribe: (endpoint: string) => post<null>('/push/subscribe', { endpoint }),
+  pushUnsubscribe: (endpoint: string) => post<null>('/push/unsubscribe', { endpoint }),
+  pushTest: () => post<null>('/push/test', {}),
   // Send to TV: the household's TVs with Cue open, playing a title on one,
   // and its remote.
   screens: () => get<Screen[]>('/screens'),

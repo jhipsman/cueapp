@@ -6,6 +6,7 @@ import Icon, { type IconName } from '../components/Icon'
 import { useModules } from '../ModulesContext'
 import { Avatar, useProfiles } from './profiles'
 import { usePrefs, type PrefKey } from './prefs'
+import { alertsState, turnAlertsOff, turnAlertsOn, type AlertsState } from './alerts'
 
 // Settings (/watch/settings/{section}): everything an account sets for
 // itself, in categories, as streaming apps lay it out. The server's own
@@ -36,6 +37,7 @@ export default function SettingsPage() {
     { id: 'playback', title: 'Playback', icon: 'play', body: () => <PlaybackSection /> },
     { id: 'privacy', title: 'Privacy', icon: 'eye-off', body: () => <PrivacySection /> },
     { id: 'devices', title: 'TVs & devices', icon: 'tv', body: () => <DevicesSection /> },
+    { id: 'alerts', title: 'Alerts', icon: 'mail', body: () => <AlertsSection /> },
     { id: 'family', title: 'Family', icon: 'heart', owner: true, body: () => <FamilySection /> },
     { id: 'help', title: 'Help & about', icon: 'info', body: () => <HelpSection owner={owner} /> },
   ].filter((s) => !s.owner || owner)
@@ -424,6 +426,65 @@ function DevicesSection() {
           Sign out others
         </button>
       </Row>
+      {msg && <Note ok={msg.ok}>{msg.text}</Note>}
+    </>
+  )
+}
+
+// Alerts on this phone or computer: new episodes of what this profile is
+// watching, and titles it asked to be reminded about once they're out.
+function AlertsSection() {
+  const [state, setState] = useState<AlertsState | null>(null)
+  const [busy, setBusy] = useState(false)
+  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null)
+  useEffect(() => {
+    void alertsState().then(setState)
+  }, [])
+  const run = async (f: () => Promise<AlertsState>) => {
+    setBusy(true)
+    setMsg(null)
+    try {
+      setState(await f())
+    } catch (e) {
+      setMsg({ ok: false, text: errorText(e) })
+    } finally {
+      setBusy(false)
+    }
+  }
+  return (
+    <>
+      <Row title="Alerts on this device" text="A new episode of a show you're watching, and anything you asked to be reminded about once it's out. For this profile, on this phone or computer.">
+        {state === 'on' ? (
+          <button className="wx-btn small" disabled={busy} onClick={() => void run(turnAlertsOff)}>
+            Turn off
+          </button>
+        ) : state === 'off' ? (
+          <button className="wx-btn small play" disabled={busy} onClick={() => void run(turnAlertsOn)}>
+            Turn on
+          </button>
+        ) : null}
+      </Row>
+      {state === 'needs-home-screen' && (
+        <Note ok={false}>On an iPhone or iPad, alerts work in Cue added to your Home Screen: in Safari, press Share, then Add to Home Screen, and open Cue from there.</Note>
+      )}
+      {state === 'blocked' && <Note ok={false}>This browser is set to block Cue's alerts. Allow notifications for this site in its settings, then come back.</Note>}
+      {state === 'unsupported' && <Note ok={false}>This browser can't show alerts from a website.</Note>}
+      {state === 'on' && (
+        <Row title="Send a test" text="An alert to every device with alerts on for this profile, to see that they arrive.">
+          <button
+            className="wx-btn small"
+            disabled={busy}
+            onClick={() =>
+              void api
+                .pushTest()
+                .then(() => setMsg({ ok: true, text: 'Sent. It should arrive in a few seconds.' }))
+                .catch((e) => setMsg({ ok: false, text: errorText(e) }))
+            }
+          >
+            Send a test
+          </button>
+        </Row>
+      )}
       {msg && <Note ok={msg.ok}>{msg.text}</Note>}
     </>
   )

@@ -422,6 +422,16 @@ Every route the server exposes. Routes marked **public** need no sign-in; all ot
 | PUT | `/api/profiles/{id}` | signed in | PUT /api/profiles/{id} {"name"?, "avatar"?, "pin"?} (main profile only; "pin": "" removes it) |
 | POST | `/api/profiles/{id}/select` | signed in | POST /api/profiles/{id}/select {"pin": "1234"}: picks a profile on this device and answers with its token. |
 
+## push
+
+| Method | Path | Access | What it does |
+|---|---|---|---|
+| GET | `/api/push/key` | signed in | GET /api/push/key: the key a browser subscribes with. |
+| POST | `/api/push/pending` | signed in | POST /api/push/pending {"endpoint"}: the alerts waiting for this device (its worker asks when a push wakes it). |
+| POST | `/api/push/subscribe` | signed in | POST /api/push/subscribe {"endpoint"}: alerts on, on this device, for the active profile. |
+| POST | `/api/push/test` | signed in | POST /api/push/test: an alert to this profile's devices now, to see that alerts arrive. |
+| POST | `/api/push/unsubscribe` | signed in | POST /api/push/unsubscribe {"endpoint"}: alerts off on this device. |
+
 ## quality-profiles
 
 | Method | Path | Access | What it does |
@@ -734,4 +744,4 @@ Every route the server exposes. Routes marked **public** need no sign-in; all ot
 | PUT | `/api/watched/settings` | admin | PUT /api/watched/settings {"sync": true, "cleanup": {...}} |
 | POST | `/api/watched/sync` | admin | POST /api/watched/sync: read what's been watched now. |
 
-409 routes.
+414 routes.

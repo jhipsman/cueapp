@@ -172,6 +172,14 @@ Pick something on your phone and play it on the TV. Any Fire TV or Google TV wit
 
 The TVs are the household's: anyone signed in to this Cue sees them, as with watch parties.
 
+## Alerts on your phone
+
+**Settings > Alerts > Turn on** (in Watch, on the phone or computer you want them on): Cue tells that device when a new episode of a show your profile is watching comes out (within three days of it airing), and when something you pressed **Remind me** on is out to stream. Pressing an alert opens the title. **Send a test** checks they arrive.
+
+- **iPhone and iPad**: alerts work in Cue added to the Home Screen (in Safari: Share > Add to Home Screen), opened from there; iOS 16.4 or later.
+- **Private**: the push that wakes your phone goes through your phone's push service (Apple's, Google's or Mozilla's) but carries no text; the phone then asks your own Cue what to say. Cue only ever sends pushes to those services.
+- Each thing is told once per profile, and Cue looks every hour.
+
 ## The apps
 
 - **Fire TV, Google TV, Android TV**: a native app with its own player (every format the TV can decode, 4K HDR and Dolby Vision, Dolby and DTS to your speakers, the TV's refresh rate matched to the film). Install it with Downloader from your server's `/tv.apk`. See [the TV app](../android/README.md). Its Search shows a QR code: scan it with a phone to type or say a search for the TV (a Fire TV's remote microphone belongs to Alexa).
