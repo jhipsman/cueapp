@@ -45,6 +45,9 @@ interface SyncOpts {
   startAt: (sec: number) => void
   // Only the chat (a phone beside a TV): nothing to keep in step.
   chatOnly?: boolean
+  // Moving costs a restart (Cue converting the video as it plays: a jump
+  // starts the conversion again), so only a real difference is worth one.
+  costlySeek?: boolean
 }
 
 export interface Floating {
@@ -70,13 +73,18 @@ export function useParty(o: SyncOpts) {
   const { code, video } = o
 
   // Bring this player in line with the party.
-  const apply = useCallback((s: PartyState, force = false) => {
+  const apply = useCallback((s: PartyState) => {
     const v = opts.current.video
     if (!v) return
     const target = s.pos + (s.playing ? (performance.now() - got.current) / 1000 : 0)
     const here = opts.current.position()
-    // Paused, everyone stops on the same frame; playing, a second or so either way is fine.
-    if (force || Math.abs(here - target) > (s.playing ? 1.5 : 0.25)) {
+    // Paused, everyone stops on the same frame; playing, a second or so
+    // either way is fine. A converted video starts again on every jump, so
+    // it only jumps for a real difference (and never while it's loading).
+    const costly = !!opts.current.costlySeek
+    if (costly && (v.readyState < 2 || v.seeking)) return
+    const slack = costly ? (s.playing ? 8 : 4) : s.playing ? 1.5 : 0.25
+    if (Math.abs(here - target) > slack) {
       applying.current = performance.now() + 1200
       opts.current.seek(target)
     }
@@ -177,10 +185,12 @@ export function useParty(o: SyncOpts) {
     const onPlay = () => mine() && send('play')
     const onPause = () => mine() && !video.ended && send('pause')
     const onSeeked = () => mine() && send('seek')
+    // Once loaded, line up with the party (only if it's really elsewhere:
+    // a converted video's new stream already starts where it was asked).
     const onLoaded = () => {
       loaded()
       const s = stateRef.current
-      if (s) apply(s, true)
+      if (s) apply(s)
     }
     video.addEventListener('loadedmetadata', onLoaded)
     video.addEventListener('play', onPlay)
@@ -200,7 +210,8 @@ export function useParty(o: SyncOpts) {
     const t = window.setInterval(() => {
       const s = stateRef.current
       const v = opts.current.video
-      if (!s || !v || !s.playing || v.paused || performance.now() < applying.current) return
+      // Not while it's buffering or jumping: that would only make it worse.
+      if (!s || !v || !s.playing || v.paused || v.seeking || v.readyState < 3 || performance.now() < applying.current) return
       const target = s.pos + (performance.now() - got.current) / 1000
       if (Math.abs(opts.current.position() - target) > 2.5) apply(s)
     }, 4000)
