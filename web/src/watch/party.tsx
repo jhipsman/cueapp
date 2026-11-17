@@ -69,10 +69,8 @@ export function useParty(o: SyncOpts) {
   const stateRef = useRef<PartyState | null>(null)
   const got = useRef(0) // when the last state arrived (performance.now())
   const applying = useRef(0) // until when the player's own events are ours, not the viewer's
-  // A converted video: how long its last jump took to start playing (it's
-  // aimed that far ahead next time), and when it last jumped by itself.
-  const lag = useRef(10)
-  const jumped = useRef({ at: -Infinity, waiting: false })
+  // A converted video: when it last jumped by itself.
+  const jumped = useRef({ at: -Infinity })
   const opts = useRef(o)
   opts.current = o
   const { code, video } = o
@@ -81,7 +79,9 @@ export function useParty(o: SyncOpts) {
   const apply = useCallback((s: PartyState) => {
     const v = opts.current.video
     if (!v) return
-    const target = s.pos + (s.playing ? (performance.now() - got.current) / 1000 : 0)
+    // Held (waiting for someone's player to load) counts as paused.
+    const going = s.playing && !s.held
+    const target = s.pos + (going ? (performance.now() - got.current) / 1000 : 0)
     const here = opts.current.position()
     // Paused, everyone stops on the same frame; playing, a second or so
     // either way is fine. A converted video starts again on every jump, so
@@ -94,18 +94,22 @@ export function useParty(o: SyncOpts) {
     // each take longer than the gap only starts it over and over.
     const costly = !!opts.current.costlySeek
     if (costly && (v.readyState < 2 || v.seeking)) return
-    const slack = costly ? 20 : s.playing ? 1.5 : 0.25
-    const rested = performance.now() - jumped.current.at > 90_000
+    // Small differences while playing are closed by speed (drift, below),
+    // not by jumping.
+    const slack = costly ? 20 : going ? 4 : 0.25
+    const rested = performance.now() - jumped.current.at > 60_000
     if (Math.abs(here - target) > slack && (!costly || rested)) {
       applying.current = performance.now() + (costly ? 35_000 : 1200)
       if (costly) {
-        jumped.current = { at: performance.now(), waiting: true }
-        opts.current.seek(s.playing ? target + lag.current + 2 : target)
+        // The party waits while it loads (wait/ready), so it aims where
+        // the party is now.
+        jumped.current = { at: performance.now() }
+        opts.current.seek(target)
         return
       }
       opts.current.seek(target)
     }
-    if (s.playing && v.paused) {
+    if (going && v.paused) {
       applying.current = performance.now() + 1200
       // A phone that wasn't tapped yet may refuse to start with sound.
       v.play()
@@ -113,7 +117,7 @@ export function useParty(o: SyncOpts) {
         .catch((e: unknown) => {
           if (e instanceof DOMException && e.name === 'NotAllowedError') setNeedsTap(true)
         })
-    } else if (!s.playing && !v.paused) {
+    } else if (!going && !v.paused) {
       applying.current = performance.now() + 1200
       v.pause()
     }
@@ -222,20 +226,11 @@ export function useParty(o: SyncOpts) {
       const s = stateRef.current
       if (s) apply(s)
     }
-    // How long a converted jump took to start: the next one aims that far ahead.
-    const onPlaying = () => {
-      const j = jumped.current
-      if (!j.waiting) return
-      j.waiting = false
-      lag.current = Math.min(60, Math.max(3, (performance.now() - j.at) / 1000))
-    }
-    video.addEventListener('playing', onPlaying)
     video.addEventListener('loadedmetadata', onLoaded)
     video.addEventListener('play', onPlay)
     video.addEventListener('pause', onPause)
     video.addEventListener('seeked', onSeeked)
     return () => {
-      video.removeEventListener('playing', onPlaying)
       video.removeEventListener('loadedmetadata', onLoaded)
       video.removeEventListener('play', onPlay)
       video.removeEventListener('pause', onPause)
@@ -243,19 +238,81 @@ export function useParty(o: SyncOpts) {
     }
   }, [code, video, client, apply])
 
-  // Drift: a player that fell behind (buffering) catches up quietly.
+  // Drift: a player a little behind or ahead catches up by playing a touch
+  // faster or slower (nobody notices 5%), which needs no jump, so even a
+  // converted video lines up to within a fraction of a second. Only a big
+  // difference is jumped.
   useEffect(() => {
     if (!code) return
     const t = window.setInterval(() => {
       const s = stateRef.current
       const v = opts.current.video
+      if (!v) return
+      const steady = () => {
+        if (v.playbackRate !== 1) v.playbackRate = 1
+      }
       // Not while it's buffering or jumping: that would only make it worse.
-      if (!s || !v || !s.playing || v.paused || v.seeking || v.readyState < 3 || performance.now() < applying.current) return
+      if (!s || !s.playing || s.held || v.paused || v.seeking || v.readyState < 3 || performance.now() < applying.current) return steady()
       const target = s.pos + (performance.now() - got.current) / 1000
-      if (Math.abs(opts.current.position() - target) > 2.5) apply(s)
-    }, 4000)
-    return () => window.clearInterval(t)
+      const off = opts.current.position() - target // above 0: ahead
+      const costly = !!opts.current.costlySeek
+      if (Math.abs(off) > (costly ? 20 : 4)) {
+        steady()
+        apply(s)
+        return
+      }
+      if (Math.abs(off) < 0.2) return steady()
+      // Speeding up a converted video only while it has some made ahead
+      // (else it would just stall).
+      let ahead = 0
+      for (let i = 0; i < v.buffered.length; i++) if (v.buffered.start(i) <= v.currentTime + 0.5) ahead = Math.max(ahead, v.buffered.end(i) - v.currentTime)
+      if (off < 0 && ahead < 3) return steady()
+      const step = Math.abs(off) > 2 && !costly ? 0.1 : 0.05
+      v.playbackRate = off < 0 ? 1 + step : 1 - step
+    }, 1000)
+    return () => {
+      window.clearInterval(t)
+      const v = opts.current.video
+      if (v) v.playbackRate = 1
+    }
   }, [code, apply])
+
+  // Wait for everyone: this player tells the party when it's loading (the
+  // party then holds everyone, for half a minute at most) and when it's
+  // ready again. A blip under a second isn't worth stopping everyone for.
+  useEffect(() => {
+    if (!code || !video || opts.current.chatOnly) return
+    let said = false
+    let timer = 0
+    const tell = (action: 'wait' | 'ready') => {
+      said = action === 'wait'
+      void api.partyState(code, { client, action, pos: opts.current.position() }).catch(() => undefined)
+    }
+    const loading = () => {
+      window.clearTimeout(timer)
+      timer = window.setTimeout(() => {
+        if (!said && video.readyState < 3 && stateRef.current?.playing) tell('wait')
+      }, 800)
+    }
+    const ready = () => {
+      window.clearTimeout(timer)
+      if (said) tell('ready')
+    }
+    // Just joined (or a new stream): loading until it can play.
+    if (video.readyState < 3) tell('wait')
+    video.addEventListener('waiting', loading)
+    video.addEventListener('emptied', loading)
+    video.addEventListener('playing', ready)
+    video.addEventListener('canplay', ready)
+    return () => {
+      window.clearTimeout(timer)
+      video.removeEventListener('waiting', loading)
+      video.removeEventListener('emptied', loading)
+      video.removeEventListener('playing', ready)
+      video.removeEventListener('canplay', ready)
+      if (said) tell('ready')
+    }
+  }, [code, video, client])
 
   // This player moved to another episode (Next episode): the party follows.
   const { kind, tmdbId, season, episode } = o.title
@@ -283,17 +340,19 @@ export function useParty(o: SyncOpts) {
     if (v) void v.play().catch(() => undefined)
   }
   // startPoint is where a converted video should start to meet the party:
-  // where it is now plus the time a conversion takes to get going (counted
-  // as a jump, so it isn't chased again at once). Undefined outside a party.
+  // where it is now (the party waits while it loads; counted as a jump, so
+  // it isn't chased again at once). Undefined outside a party.
   const startPoint = (): number | undefined => {
     const s = stateRef.current
     if (!code || !s) return undefined
-    const now = s.pos + (s.playing ? (performance.now() - got.current) / 1000 : 0)
-    if (!s.playing) return now
-    jumped.current = { at: performance.now(), waiting: true }
-    return now + lag.current
+    const going = s.playing && !s.held
+    const now = s.pos + (going ? (performance.now() - got.current) / 1000 : 0)
+    if (going) jumped.current = { at: performance.now() }
+    return now
   }
-  return { client, state, msgs, floating, problem, chat, react, unread, seen: () => setUnread(0), needsTap, tap, startPoint }
+  // Who the party is waiting for, while it's held.
+  const waitingFor = state?.held ? state.members.filter((m) => m.waiting).map((m) => m.name) : []
+  return { client, state, msgs, floating, problem, chat, react, unread, seen: () => setUnread(0), needsTap, tap, startPoint, waitingFor }
 }
 
 // startParty makes a party for what's playing; answers its code.

@@ -77,7 +77,8 @@ class Playback(
         note = if (v.option > 1) "Trying version ${v.option}…" else "Finding a version…"
         try {
             val path = if (v.kind == "tv") "/api/play/tmdb/tv/${v.id}/${v.season}/${v.episode}" else "/api/play/tmdb/movie/${v.id}"
-            val a = api.obj("$path?option=${v.option}")
+            // In a party: the party's version, the same for everyone.
+            val a = api.obj("$path?option=${v.option}" + (if (v.party.isNotEmpty()) "&party=${v.party}" else ""))
             v.options = maxOf(a.optInt("options", 1), 1)
             if (a.optString("youtube").isNotEmpty()) {
                 if (v.option < v.options) {
@@ -190,9 +191,10 @@ class Playback(
         when (reason) {
             // Next pressed: straight on. The episode ended by itself: the Up
             // next screen, which counts down and plays it (or Back stays).
-            // The party moved to another episode: "CODE|show|season|episode".
-            "party" -> message.split('|').takeIf { it.size == 4 }?.let { p ->
-                playTitle("tv", p[1].toIntOrNull() ?: v.id, p[2].toIntOrNull() ?: 1, p[3].toIntOrNull() ?: 1, null, party = p[0])
+            // The party moved to another episode, or this TV moves to the
+            // party's version: "CODE|id|season|episode" (and "|kind" for a film).
+            "party" -> message.split('|').takeIf { it.size >= 4 }?.let { p ->
+                playTitle(p.getOrNull(4) ?: "tv", p[1].toIntOrNull() ?: v.id, p[2].toIntOrNull() ?: 1, p[3].toIntOrNull() ?: 1, null, party = p[0])
             }
             "next" -> if (v.kind == "tv") {
                 starting = Starting(v.id, "", null, null)

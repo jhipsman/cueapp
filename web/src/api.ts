@@ -230,6 +230,7 @@ export interface PartyMember {
   name: string
   avatar: string
   host: boolean
+  waiting?: boolean // their player is loading: the party waits for them
 }
 export interface PartyTitle {
   kind: 'movie' | 'tv'
@@ -246,6 +247,7 @@ export interface PartyState {
   pos: number
   by?: string
   members: PartyMember[]
+  held?: boolean // playing, but waiting while someone's player loads
 }
 export interface PartyMsg {
   id: number
@@ -2175,7 +2177,7 @@ export const api = {
   startParty: (data: PartyTitle & { pos: number; playing: boolean; client: string }) => post<PartyState>('/party', data),
   getParty: (code: string) => get<PartyState>(`/party/${encodeURIComponent(code)}`),
   joinParty: (code: string, client: string) => post<{ party: PartyState; msgs: PartyMsg[] }>(`/party/${encodeURIComponent(code)}/join`, { client }),
-  partyState: (code: string, data: { client: string; action: 'play' | 'pause' | 'seek' | 'episode'; pos: number; title?: PartyTitle }) =>
+  partyState: (code: string, data: { client: string; action: 'play' | 'pause' | 'seek' | 'episode' | 'wait' | 'ready'; pos: number; title?: PartyTitle }) =>
     post<PartyState>(`/party/${encodeURIComponent(code)}/state`, data),
   partyChat: (code: string, client: string, text: string) => post<{ ok: boolean }>(`/party/${encodeURIComponent(code)}/chat`, { client, text }),
   partyReact: (code: string, client: string, emoji: string) => post<{ ok: boolean }>(`/party/${encodeURIComponent(code)}/react`, { client, emoji }),
@@ -2374,9 +2376,10 @@ export const api = {
   // Watch (the streaming side): any title by TMDB id.
   // web: a browser is playing it (not the TV app), so versions with sound a
   // browser can play come first.
-  playTMDB: (kind: WatchKind, tmdbId: number, season = 0, episode = 0, option = 1, fresh = false, web = false) =>
+  // party: in a watch party, its code (everyone gets the party's version).
+  playTMDB: (kind: WatchKind, tmdbId: number, season = 0, episode = 0, option = 1, fresh = false, web = false, party = '') =>
     get<PlayAnswer>(
-      `/play/tmdb/${kind}/${tmdbId}${kind === 'tv' ? `/${season}/${episode}` : ''}?option=${option}${fresh ? '&fresh=1' : ''}${web ? `&client=web${safari() ? '&safari=1' : ''}` : ''}`,
+      `/play/tmdb/${kind}/${tmdbId}${kind === 'tv' ? `/${season}/${episode}` : ''}?option=${option}${fresh ? '&fresh=1' : ''}${web ? `&client=web${safari() ? '&safari=1' : ''}` : ''}${party ? `&party=${encodeURIComponent(party)}` : ''}`,
     ),
   // prefetchPlay looks a stream up ahead of time, so Play starts at once.
   prefetchPlay: (kind: WatchKind, tmdbId: number, season = 0, episode = 0) =>

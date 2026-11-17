@@ -388,6 +388,10 @@ func (s *Server) servePlay(w http.ResponseWriter, r *http.Request, t playTarget)
 		entry.candidates = browserPictureFirst(entry.candidates, pm != nil, r.URL.Query().Get("safari") == "1")
 		entry.candidates = browserFilesFirst(entry.candidates)
 	}
+	if code := r.URL.Query().Get("party"); code != "" {
+		// In a watch party: the party's version, the same for everyone.
+		entry.candidates = partyVersionFirst(code, entry.candidates, pm != nil)
+	}
 	if forClip(r.Context()) {
 		// Cutting a preview clip, not watching: the lightest version that
 		// looks the same in a 720p clip is several times quicker to cut on

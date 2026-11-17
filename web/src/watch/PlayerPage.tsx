@@ -179,6 +179,8 @@ export default function PlayerPage() {
   const silentSkips = useRef(0)
   const [resumeReady, setResumeReady] = useState(false)
   const loading = useRef(false)
+  // The watch party this player is in, for asking for the party's version.
+  const inParty = useRef(search.get('party') ?? '')
   useDocumentTitle(answer?.title ?? 'Playing')
 
   const load = useCallback(
@@ -187,7 +189,7 @@ export default function PlayerPage() {
       loading.current = true
       setError('')
       try {
-        const a = await api.playTMDB(kind, tmdbId, season, episode, option, fresh, !onTV())
+        const a = await api.playTMDB(kind, tmdbId, season, episode, option, fresh, !onTV(), inParty.current)
         setAnswer(a)
         setConv(null)
         setSkips(null)
@@ -734,6 +736,16 @@ export default function PlayerPage() {
       search.set('party', code)
       setSearch(search, { replace: true })
       setPartyOpen(true)
+      // Everyone plays the party's version (the one every device opens most
+      // easily): when it isn't this one, this player moves to it too, from
+      // the same moment, so all are on the same cut.
+      inParty.current = code
+      const a = await api.playTMDB(kind, tmdbId, season, episode, 1, false, !onTV(), code).catch(() => null)
+      if (a && answer && a.url !== answer.url) {
+        resumeAt.current = (conv?.offset ?? 0) + (v?.currentTime ?? 0)
+        setNote('Switching to the version everyone in the party plays…')
+        void load(1)
+      }
     } catch (e) {
       setNote(e instanceof Error ? e.message : String(e))
     }
@@ -758,6 +770,11 @@ export default function PlayerPage() {
     <div className={`wx-player${partyCode && partyOpen ? ' with-party' : ''}`} ref={shell}>
       {partyCode && partyOpen && <PartyPanel party={party} code={partyCode} onClose={() => setPartyOpen(false)} />}
       {partyCode && <FloatingReactions list={party.floating} />}
+      {partyCode && party.waitingFor.length > 0 && (
+        <div className="wx-party-wait" role="status">
+          <span className="wx-party-wait-dot" /> Waiting for {party.waitingFor.join(', ')}…
+        </div>
+      )}
       {partyCode && party.needsTap && (
         <button type="button" className="wx-party-tap" onClick={party.tap}>
           <Icon name="play" size={22} /> Tap to join the party

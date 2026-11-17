@@ -164,6 +164,9 @@ class PlayerActivity : Activity() {
     private var partyQr: ImageView? = null
     private var partyFloats: FrameLayout? = null
     private var partyButton: TextView? = null
+    private var partyWait: TextView? = null // "Waiting for …", while the party holds
+    private var partyHost = false // this TV started the party
+    private var partyWaitSaid = false // this TV told the party it's loading
     private var reactButton: TextView? = null
     private var reactRow: LinearLayout? = null
 
@@ -273,6 +276,18 @@ class PlayerActivity : Activity() {
             partyFloats = floats
             addView(floats, FrameLayout.LayoutParams(MATCH, MATCH))
             addView(buildPartyPanel(), FrameLayout.LayoutParams(px(290), MATCH, Gravity.END))
+            addView(TextView(this@PlayerActivity).also { partyWait = it }.apply {
+                setTextColor(0xFFFFFFFF.toInt())
+                textSize = 18f
+                setPadding(px(22), px(10), px(22), px(10))
+                background = GradientDrawable().apply {
+                    cornerRadius = px(30).toFloat()
+                    setColor(0xB3000000.toInt())
+                }
+                visibility = View.GONE
+            }, FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.TOP or Gravity.CENTER_HORIZONTAL).apply {
+                topMargin = px(28)
+            })
         }
         setContentView(root)
 
@@ -435,12 +450,31 @@ class PlayerActivity : Activity() {
         party = l
         showPartyPanel(true)
         addPartyLine("Starting a watch party…", event = true)
+        partyHost = true
         l.create(partyTitle(), posSec(), player.playWhenReady) { joined(it) }
     }
 
     private fun joined(state: JSONObject) {
         main.removeCallbacks(partyDrift)
-        main.postDelayed(partyDrift, 4000)
+        main.postDelayed(partyDrift, 1000)
+        // Still loading as it joins: the party waits for it.
+        if (player.playbackState != Player.STATE_READY) {
+            partyWaitSaid = true
+            party?.send("wait", posSec())
+        }
+        // This TV started the party: everyone plays the party's version (the
+        // one every device opens most easily). When that isn't this one, the
+        // TV moves to it, from the same moment, so all are on the same cut.
+        if (partyHost) party?.let { l ->
+            val kind = info.optString("kind")
+            val path = if (kind == "tv") "/api/play/tmdb/tv/${info.optInt("tmdbId")}/${info.optInt("season")}/${info.optInt("episode")}" else "/api/play/tmdb/movie/${info.optInt("tmdbId")}"
+            Thread {
+                val rel = runCatching { l.partyRelease(path) }.getOrDefault("")
+                if (rel.isNotEmpty() && rel != info.optString("release")) main.post {
+                    end("party", "${l.code}|${info.optInt("tmdbId")}|${info.optInt("season")}|${info.optInt("episode")}|$kind")
+                }
+            }.start()
+        }
         reactButton?.visibility = View.VISIBLE
         partyButton?.text = "Party"
         onPartyState(state, first = true)
@@ -466,6 +500,29 @@ class PlayerActivity : Activity() {
                 party?.send("seek", posSec())
             }
         }
+
+        // Wait for everyone: loading for more than a moment while the party
+        // plays tells it to wait (for half a minute at most); ready again
+        // lets it go on.
+        override fun onPlaybackStateChanged(state: Int) {
+            val link = party ?: return
+            main.removeCallbacks(partyLoading)
+            when (state) {
+                Player.STATE_BUFFERING -> main.postDelayed(partyLoading, 800)
+                Player.STATE_READY -> if (partyWaitSaid) {
+                    partyWaitSaid = false
+                    link.send("ready", posSec())
+                }
+            }
+        }
+    }
+
+    private val partyLoading = Runnable {
+        val link = party
+        if (link != null && !partyWaitSaid && player.playbackState == Player.STATE_BUFFERING && partyState?.optBoolean("playing") == true) {
+            partyWaitSaid = true
+            link.send("wait", posSec())
+        }
     }
 
     private fun onPartyState(s: JSONObject, first: Boolean = false) {
@@ -475,6 +532,14 @@ class PlayerActivity : Activity() {
         val members = s.optJSONArray("members")
         val names = (0 until (members?.length() ?: 0)).mapNotNull { members?.optJSONObject(it)?.optString("name") }
         partyHead?.text = "Watch party · ${names.size} watching\n${names.joinToString(", ")}"
+        // Held: who everyone waits for.
+        val waiting = if (s.optBoolean("held")) (0 until (members?.length() ?: 0)).mapNotNull { i ->
+            members?.optJSONObject(i)?.takeIf { it.optBoolean("waiting") }?.optString("name")
+        } else emptyList()
+        partyWait?.let {
+            it.text = "Waiting for ${waiting.joinToString(", ")}…"
+            it.visibility = if (waiting.isEmpty()) View.GONE else View.VISIBLE
+        }
         val t = s.optJSONObject("title") ?: return
         if (isShow && (t.optInt("season") != info.optInt("season") || t.optInt("episode") != info.optInt("episode"))) {
             if (!first) end("party", "${link.code}|${t.optInt("tmdbId")}|${t.optInt("season")}|${t.optInt("episode")}")
@@ -485,11 +550,13 @@ class PlayerActivity : Activity() {
 
     // Brings the player in line with the party.
     private fun applyParty(s: JSONObject) {
-        val playing = s.optBoolean("playing")
+        // Held (waiting for someone's player to load) counts as paused.
+        val playing = s.optBoolean("playing") && !s.optBoolean("held")
         val elapsed = if (playing) SystemClock.elapsedRealtime() - partyGot else 0L
         val target = (s.optDouble("pos", 0.0) * 1000).toLong() + elapsed
         val off = kotlin.math.abs(position() - target)
-        if (off > (if (playing) 1500 else 300)) {
+        // While playing, small differences are closed by speed (partyDrift).
+        if (off > (if (playing) 4000 else 300)) {
             partyApplying = SystemClock.elapsedRealtime() + 1500
             seekToPosition(target)
         }
@@ -499,15 +566,24 @@ class PlayerActivity : Activity() {
         }
     }
 
-    // Drift: a TV that fell behind (buffering) catches up quietly.
+    // Drift: a TV a little behind or ahead catches up by playing a touch
+    // faster or slower (nobody notices 5%), with no jump; only a big
+    // difference is jumped.
     private val partyDrift = object : Runnable {
         override fun run() {
             val s = partyState
-            if (party != null && s != null && s.optBoolean("playing") && player.isPlaying && SystemClock.elapsedRealtime() > partyApplying) {
+            var speed = 1f
+            if (party != null && s != null && s.optBoolean("playing") && !s.optBoolean("held") && player.isPlaying && SystemClock.elapsedRealtime() > partyApplying) {
                 val target = (s.optDouble("pos", 0.0) * 1000).toLong() + (SystemClock.elapsedRealtime() - partyGot)
-                if (kotlin.math.abs(position() - target) > 2500) applyParty(s)
+                val off = position() - target // above 0: ahead
+                val far = kotlin.math.abs(off)
+                when {
+                    far > 4000 -> applyParty(s)
+                    far >= 200 -> speed = if (off < 0) (if (far > 2000) 1.1f else 1.05f) else (if (far > 2000) 0.9f else 0.95f)
+                }
             }
-            main.postDelayed(this, 4000)
+            if (party != null && player.playbackParameters.speed != speed) player.setPlaybackSpeed(speed)
+            main.postDelayed(this, 1000)
         }
     }
 

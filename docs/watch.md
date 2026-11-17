@@ -125,7 +125,10 @@ Without a key, Watch shows TMDB's own score instead.
 Watch something at the same time as someone else in your household, as the old Netflix Party did. In the player, press **Watch party**: a party starts for what's playing, with a chat beside the picture.
 
 - **Joining:** everyone signed in to this Cue sees the party at the top of Home ("Dad is watching Wildwood · Join") and joins with one press, on a TV too, starting at the same moment. On a phone or computer, **Invite** also copies a link to send.
-- **In step:** anyone's play, pause or jump happens for everybody, and the chat says who did it ("Mom paused", "Dad jumped to 1:10"). A player that falls behind while buffering catches up by itself; at the end of an episode the party moves on to the next one together.
+- **In step:** anyone's play, pause or jump happens for everybody, and the chat says who did it ("Mom paused", "Dad jumped to 1:10"). At the end of an episode the party moves on to the next one together.
+- **Within a fraction of a second:** a player a little behind or ahead plays a touch faster or slower (5%, which nobody notices) until it's level, instead of jumping, so even a phone whose video Cue converts lines up. Only a big difference is jumped.
+- **Waiting for everyone:** while someone's player is loading (joining, buffering, after a jump), the party pauses for everyone with "Waiting for Mom…" and plays on together once they're ready. It waits half a minute at most for any one person.
+- **The same version for everyone:** the party picks one version every device plays most easily (Premiumize's MP4 copy when there is one, else one a browser plays as it is), and everyone, the starter too, plays it, so the same moment is at the same second everywhere.
 - **Chat and reactions:** type in the chat, or send a reaction that floats up everyone's picture. On a TV, **React** in the player's controls sends one with the remote, and the party panel shows a QR code that opens the chat on your phone.
 
 Each person plays from their own stream; only the position is shared. Parties live on your own server and end when everyone has left (or Cue restarts).
