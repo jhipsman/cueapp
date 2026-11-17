@@ -10,6 +10,7 @@ const (
 	MarkHidden = "hidden" // off Continue Watching until watched again
 	MarkUp     = "up"     // liked
 	MarkDown   = "down"   // not for me: kept off Home
+	MarkRemind = "remind" // tell me when it's out to stream
 )
 
 // Marks is a profile's marks: "movie:603" → mark → when.
@@ -27,7 +28,7 @@ func (m Marks) Has(kind string, tmdbID int, mark string) (time.Time, bool) {
 // SetMark puts a mark on a title (on) or takes it off. Thumbs up and down
 // replace each other.
 func (r *Repo) SetMark(profileID int64, kind string, tmdbID int, mark string, on bool) error {
-	if mark != MarkHidden && mark != MarkUp && mark != MarkDown {
+	if mark != MarkHidden && mark != MarkUp && mark != MarkDown && mark != MarkRemind {
 		return fmt.Errorf("unknown mark %q", mark)
 	}
 	if mark == MarkUp || mark == MarkDown {
@@ -74,4 +75,31 @@ func (r *Repo) Thumb(profileID int64, kind string, tmdbID int) string {
 	var mark string
 	_ = r.db.QueryRow(`SELECT mark FROM title_marks WHERE profile_id = ? AND kind = ? AND tmdb_id = ? AND mark IN ('up', 'down')`, profileID, kind, tmdbID).Scan(&mark)
 	return mark
+}
+
+// Marked is the titles profileID marked with mark, newest first.
+func (r *Repo) Marked(profileID int64, mark string) ([]MarkedTitle, error) {
+	rows, err := r.db.Query(`SELECT kind, tmdb_id, at FROM title_marks WHERE profile_id = ? AND mark = ? ORDER BY at DESC`, profileID, mark)
+	if err != nil {
+		return nil, fmt.Errorf("read marks: %w", err)
+	}
+	defer rows.Close()
+	var out []MarkedTitle
+	for rows.Next() {
+		var m MarkedTitle
+		var at string
+		if err := rows.Scan(&m.Kind, &m.TMDBID, &at); err != nil {
+			return nil, err
+		}
+		m.At, _ = time.Parse(time.RFC3339Nano, at)
+		out = append(out, m)
+	}
+	return out, rows.Err()
+}
+
+// MarkedTitle is one title with a mark.
+type MarkedTitle struct {
+	Kind   string
+	TMDBID int
+	At     time.Time
 }

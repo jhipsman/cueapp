@@ -284,6 +284,9 @@ export interface WatchCard {
   logoUrl?: string // logo artwork: on the Home banner and title pages ("" when none)
   quiet?: boolean // horror, anime or adult: kept off the banner, previews and screensaver
   soon?: boolean // a film not out to stream yet (only announced, or in cinemas)
+  outDate?: string // on Coming soon: the day it streams, when known
+  reminding?: boolean // this profile asked to be told when it's out
+  outNow?: boolean // on "Out now": a title this profile asked about came out
 }
 // What brings a title's artwork alive: its logo, the main colour of its
 // picture ("r, g, b") and a YouTube trailer id.
@@ -352,6 +355,7 @@ export interface WatchTitle extends WatchCard {
   notOut?: string
   outDate?: string
   thumb?: 'up' | 'down' // this profile's thumb on it
+  reminding?: boolean // this profile asked to be told when it's out
   // The film series it's part of: its films in order, and the next one out.
   collection?: { id: number; name: string; parts: WatchCard[]; next?: WatchCard }
 }
@@ -2414,6 +2418,9 @@ export const api = {
   forgetWatchProgress: (kind: WatchKind, tmdbId: number) => del<null>(`/watch/progress/${kind}/${tmdbId}`),
   // Off Continue Watching (where you were is kept; watching again brings it back).
   hideFromContinue: (kind: WatchKind, tmdbId: number) => del<null>(`/watch/continue/${kind}/${tmdbId}`),
+  // Tell this profile when a title is out to stream (or stop).
+  setRemind: (kind: WatchKind, tmdbId: number, on: boolean) =>
+    on ? put<{ reminding: boolean }>(`/watch/remind/${kind}/${tmdbId}`, {}) : del<{ reminding: boolean }>(`/watch/remind/${kind}/${tmdbId}`),
   // This profile's thumb on a title: up, down ("Not for me": off Home) or none.
   setThumb: (kind: WatchKind, tmdbId: number, thumb: '' | 'up' | 'down') => put<{ thumb: string }>(`/watch/thumb/${kind}/${tmdbId}`, { thumb }),
   addToWatchList: (kind: WatchKind, tmdbId: number) => put<null>(`/watch/list/${kind}/${tmdbId}`),

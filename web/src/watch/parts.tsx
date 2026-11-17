@@ -11,6 +11,15 @@ export function titleHref(c: { kind: string; tmdbId: number }): string {
   return `/watch/${c.kind}/${c.tmdbId}`
 }
 
+// shortDate is "4 Mar" (or "4 Mar 2027" in another year).
+export function shortDate(day: string): string {
+  const d = new Date(`${day}T12:00:00`)
+  if (Number.isNaN(d.getTime())) return day
+  const opts: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'short' }
+  if (d.getFullYear() !== new Date().getFullYear()) opts.year = 'numeric'
+  return d.toLocaleDateString(undefined, opts)
+}
+
 export function playHref(kind: string, tmdbId: number, season?: number, episode?: number): string {
   return kind === 'tv' ? `/watch/play/tv/${tmdbId}/${season ?? 1}/${episode ?? 1}` : `/watch/play/movie/${tmdbId}`
 }
@@ -117,7 +126,8 @@ export function Card({ card, wide }: { card: WatchCard; wide?: boolean }) {
         {wide && ex?.logo && <img className="wx-card-logo" src={ex.logo} alt="" />}
         {wide && code && <span className="wx-chip">{code}</span>}
         {card.new && <span className="wx-card-new">New episode</span>}
-        {card.soon && <span className="wx-card-new wx-card-soon">Coming soon</span>}
+        {card.outNow && <span className="wx-card-new">Out now</span>}
+        {card.soon && <span className="wx-card-new wx-card-soon">{card.outDate ? `Streaming ${shortDate(card.outDate)}` : 'Coming soon'}</span>}
         {card.progress !== undefined && card.progress > 0 && (
           <span className="wx-card-progress">
             <span style={{ width: `${Math.round(card.progress * 100)}%` }} />

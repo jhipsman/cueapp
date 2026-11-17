@@ -163,6 +163,8 @@ var memberRoutes = []string{
 	"DELETE /api/watch/history",
 	"DELETE /api/watch/continue/{kind}/{tmdbId}",
 	"PUT /api/watch/thumb/{kind}/{tmdbId}",
+	"PUT /api/watch/remind/{kind}/{tmdbId}",
+	"DELETE /api/watch/remind/{kind}/{tmdbId}",
 	"GET /api/parties",
 	"POST /api/party",
 	"GET /api/party/{code}",

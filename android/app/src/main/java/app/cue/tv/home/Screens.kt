@@ -828,8 +828,16 @@ fun TitleScreen(api: CueApi, playback: Playback, card: Tile, memory: FocusMemory
                         val resumeTv = c.kind == "tv" && t.resumeSeason != null && t.resumeEpisode != null
                         val started = (t.resumePosition ?: 0.0) > 0
                         val notOut = t.notOut
-                        if (notOut != null) Pill(notOut, icon = app.cue.tv.R.drawable.ic_cue_calendar, modifier = Modifier.focusRequester(playFocus)) {
-                            // Nothing to play yet.
+                        var reminding by remember(t) { mutableStateOf(t.reminding) }
+                        if (notOut != null) {
+                            // Not out yet: Remind me, and when it's coming.
+                            Pill(if (reminding) "Reminding you" else "Remind me", primary = true,
+                                icon = if (reminding) app.cue.tv.R.drawable.ic_cue_check else app.cue.tv.R.drawable.ic_cue_calendar,
+                                modifier = Modifier.focusRequester(playFocus)) {
+                                val next = !reminding
+                                scope.launch { if (runCatching { api.setRemind(c.kind, c.tmdbId, next) }.isSuccess) reminding = next }
+                            }
+                            Pill(notOut) {}
                         } else Pill(
                             if (started) "Resume" else "Play",
                             primary = true,

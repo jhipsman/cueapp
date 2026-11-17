@@ -49,6 +49,12 @@ type watchCard struct {
 	Quiet bool `json:"quiet,omitempty"`
 	// Soon: a film not out to stream yet (only announced, or in cinemas).
 	Soon bool `json:"soon,omitempty"`
+	// OutDate, on Coming soon, is the day it streams ("2025-03-04") when
+	// known; Reminding, that this profile asked to be told; OutNow, on the
+	// "Out now" row, that a title it asked about has come out.
+	OutDate   string `json:"outDate,omitempty"`
+	Reminding bool   `json:"reminding,omitempty"`
+	OutNow    bool   `json:"outNow,omitempty"`
 }
 
 type watchRow struct {
@@ -181,6 +187,7 @@ func (s *Server) handleWatchHome(w http.ResponseWriter, r *http.Request) {
 	tm := s.TMDB()
 
 	shelves := make([]watchRow, len(watchShelves))
+	var pool soonPool
 	var wg sync.WaitGroup
 	for i, sh := range watchShelves {
 		wg.Add(1)
@@ -193,6 +200,7 @@ func (s *Server) handleWatchHome(w http.ResponseWriter, r *http.Request) {
 			// Home's rows are what you can watch now: films not out to
 			// stream yet are left off (they're in Coming soon).
 			s.markSoon(ctx, items)
+			pool.add(items)
 			items = outOnly(items)
 			shelves[i] = watchRow{Key: sh.key, Title: sh.title, Items: items}
 		}(i, sh)
@@ -214,9 +222,18 @@ func (s *Server) handleWatchHome(w http.ResponseWriter, r *http.Request) {
 	if len(newEps) > 0 {
 		home.Rows = append(home.Rows, watchRow{Key: "new-episodes", Title: "New episodes", Items: newEps})
 	}
+	// Titles this profile asked to be told about: out now at the top, still
+	// to come heading Coming soon.
+	outNow, reminded := s.remindedCards(ctx, pid)
+	if len(outNow) > 0 {
+		home.Rows = append([]watchRow{{Key: "out-now", Title: "Out now: you asked to be told", Items: outNow}}, home.Rows...)
+	}
 	if list := s.myListCards(pid); len(list) > 0 {
 		s.markSoon(ctx, list)
 		home.Rows = append(home.Rows, watchRow{Key: "my-list", Title: "My List", Items: list})
+	}
+	if soon := s.comingSoonRow(ctx, reminded, pool.cards); len(soon) > 0 {
+		home.Rows = append(home.Rows, watchRow{Key: "coming-soon", Title: "Coming soon", Items: soon})
 	}
 	// "Because you watched" rows sit among the others, after the first.
 	for i, row := range shelves {
@@ -305,7 +322,7 @@ func (s *Server) handleWatchHome(w http.ResponseWriter, r *http.Request) {
 	var later []previewWant
 	for _, row := range home.Rows {
 		for _, c := range row.Items {
-			if !c.Quiet {
+			if !c.Quiet && !c.Soon {
 				later = append(later, cardPreview(c))
 			}
 		}
@@ -673,6 +690,8 @@ type watchTitle struct {
 	OutDate string `json:"outDate,omitempty"`
 	// Thumb is this profile's thumb on it: "up", "down" or "".
 	Thumb string `json:"thumb,omitempty"`
+	// Reminding: this profile asked to be told when it's out.
+	Reminding bool `json:"reminding,omitempty"`
 	// Collection: the film series it's part of, its films in order, and
 	// the one after this (Next in the series, when it's out).
 	Collection *watchCollection `json:"collection,omitempty"`
@@ -717,6 +736,7 @@ func (s *Server) handleWatchMovie(w http.ResponseWriter, r *http.Request) {
 		filmOutKnown.Store(tmdbID, f)
 		t.Soon, t.NotOut, t.OutDate = !f.out, f.notOutNote(time.Now()), f.home
 	}
+	_, t.Reminding = s.marksOf(pid).Has(watch.KindMovie, tmdbID, watch.MarkRemind)
 	var wg sync.WaitGroup
 	wg.Add(4)
 	go func() { defer wg.Done(); t.Ratings = s.ratingsFor(ctx, d.IMDBID) }()
@@ -795,6 +815,7 @@ func (s *Server) handleWatchShow(w http.ResponseWriter, r *http.Request) {
 			t.NotOut = "Starts " + niceDate(d.FirstAirDate, time.Now())
 		}
 	}
+	_, t.Reminding = s.marksOf(pid).Has(watch.KindTV, tmdbID, watch.MarkRemind)
 
 	var wg sync.WaitGroup
 	wg.Add(3)
@@ -914,6 +935,8 @@ func (s *Server) handlePutWatchProgress(w http.ResponseWriter, r *http.Request) 
 		writeError(w, http.StatusInternalServerError, "Couldn't save where you are.")
 		return
 	}
+	// Watching it answers the reminder.
+	_ = s.WatchRepo.SetMark(pid, req.Kind, req.TMDBID, watch.MarkRemind, false)
 	w.WriteHeader(http.StatusNoContent)
 }
 

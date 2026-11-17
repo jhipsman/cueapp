@@ -699,6 +699,8 @@ Every route the server exposes. Routes marked **public** need no sign-in; all ot
 | DELETE | `/api/watch/progress/{kind}/{tmdbId}` | signed in | DELETE /api/watch/progress/{kind}/{tmdbId}: take it off Continue Watching. |
 | GET | `/api/watch/progress/{kind}/{tmdbId}` | signed in | GET /api/watch/progress/{kind}/{tmdbId}?season=&episode=: where to resume. |
 | GET | `/api/watch/providers/{kind}/{tmdbId}` | signed in | GET /api/watch/providers/{kind}/{tmdbId}?region=US |
+| DELETE | `/api/watch/remind/{kind}/{tmdbId}` | signed in | PUT and DELETE /api/watch/remind/{kind}/{tmdbId}: tell this profile when the title is out to stream (or not any more). |
+| PUT | `/api/watch/remind/{kind}/{tmdbId}` | signed in | PUT and DELETE /api/watch/remind/{kind}/{tmdbId}: tell this profile when the title is out to stream (or not any more). |
 | GET | `/api/watch/remote/{code}` | signed in | GET /api/watch/remote/{code}: the words sent so far ({"q":"","seq":0} before any). |
 | PUT | `/api/watch/remote/{code}` | signed in | PUT /api/watch/remote/{code} {"q"}: the phone's words for the TV. |
 | GET | `/api/watch/search` | signed in | GET /api/watch/search?q=...: movies and shows, best match first. |
@@ -722,4 +724,4 @@ Every route the server exposes. Routes marked **public** need no sign-in; all ot
 | PUT | `/api/watched/settings` | admin | PUT /api/watched/settings {"sync": true, "cleanup": {...}} |
 | POST | `/api/watched/sync` | admin | POST /api/watched/sync: read what's been watched now. |
 
-402 routes.
+404 routes.

@@ -53,7 +53,20 @@ export default function TitlePage({ kind }: { kind: WatchKind }) {
 
   const [thumb, setThumbState] = useState<'' | 'up' | 'down'>('')
   const [offRow, setOffRow] = useState(false)
-  useEffect(() => setThumbState(title?.thumb ?? ''), [title])
+  const [reminding, setReminding] = useState(false)
+  useEffect(() => {
+    setThumbState(title?.thumb ?? '')
+    setReminding(!!title?.reminding)
+  }, [title])
+  async function toggleRemind() {
+    const next = !reminding
+    setReminding(next)
+    try {
+      await api.setRemind(kind, tmdbId, next)
+    } catch {
+      setReminding(!next)
+    }
+  }
   async function thumbIt(t: 'up' | 'down') {
     const next = thumb === t ? '' : t
     const was = thumb
@@ -126,9 +139,14 @@ export default function TitlePage({ kind }: { kind: WatchKind }) {
           )}
           <div className="wx-actions">
             {title.notOut ? (
-              <span className="wx-btn wx-not-out" role="status">
-                <Icon name="calendar" size={20} /> {title.notOut}
-              </span>
+              <>
+                <span className="wx-btn wx-not-out" role="status">
+                  <Icon name="calendar" size={20} /> {title.notOut}
+                </span>
+                <button className="wx-btn play" onClick={() => void toggleRemind()} aria-pressed={reminding}>
+                  <Icon name={reminding ? 'check' : 'clock'} size={20} /> {reminding ? 'Reminding you' : 'Remind me'}
+                </button>
+              </>
             ) : (
               <button className="wx-btn play" onClick={() => navigate(playHref(kind, tmdbId, title.resumeSeason, title.resumeEpisode))}>
                 <Icon name="play" size={22} /> {playLabel}

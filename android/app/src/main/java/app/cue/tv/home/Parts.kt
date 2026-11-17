@@ -200,6 +200,9 @@ fun PosterCard(card: Tile, memory: FocusMemory, memKey: String, wide: Boolean = 
                     }
                 }
                 if (card.isNew) Chip("NEW", Modifier.align(Alignment.TopStart).padding(7.dp), bg = accent, fg = Color.Black)
+                if (card.outNow) Chip("OUT NOW", Modifier.align(Alignment.TopStart).padding(7.dp), bg = accent, fg = Color.Black)
+                if (card.soon) Chip(card.outDate?.let { "STREAMING ${shortDay(it)}" } ?: "COMING SOON", Modifier.align(Alignment.TopStart).padding(7.dp),
+                    bg = Color(0xE6FFFFFF), fg = Color.Black)
                 Sheen(focused)
             }
         }
@@ -310,3 +313,12 @@ fun Modifier.leaveWithArrows(): Modifier {
         }
     }
 }
+
+/** "4 MAR" from "2027-03-04" (with the year when it isn't this one). */
+fun shortDay(day: String): String = runCatching {
+    val d = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US).parse(day)!!
+    val year = java.util.Calendar.getInstance().get(java.util.Calendar.YEAR)
+    val cal = java.util.Calendar.getInstance().apply { time = d }
+    val pattern = if (cal.get(java.util.Calendar.YEAR) == year) "d MMM" else "d MMM yyyy"
+    java.text.SimpleDateFormat(pattern, java.util.Locale.getDefault()).format(d).uppercase()
+}.getOrDefault(day)

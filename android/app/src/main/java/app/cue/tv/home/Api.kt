@@ -197,6 +197,11 @@ class CueApi(ctx: Context, val server: String) {
         request("PUT", "/api/watch/thumb/$kind/$id", JSONObject().put("thumb", thumb))
     }
 
+    /** Tells this profile when a title is out to stream (or stops). */
+    suspend fun setRemind(kind: String, id: Int, on: Boolean) {
+        request(if (on) "PUT" else "DELETE", "/api/watch/remind/$kind/$id")
+    }
+
     /** Takes a title off Continue Watching (where you were is kept). */
     suspend fun hideFromContinue(kind: String, id: Int) {
         request("DELETE", "/api/watch/continue/$kind/$id")
@@ -232,6 +237,11 @@ data class Tile(
     // Horror, anime or adult: kept off the screensaver (the server gives
     // these no preview clip either).
     val quiet: Boolean = false,
+    // Not out to stream yet (Coming soon), the day it streams when known,
+    // and whether a title this profile asked about is out now.
+    val soon: Boolean = false,
+    val outDate: String? = null,
+    val outNow: Boolean = false,
 ) {
     val key get() = "$kind-$tmdbId-${season ?: 0}-${episode ?: 0}"
     // Being watched (Continue Watching, new episodes): its page offers Resume.
@@ -246,6 +256,9 @@ data class Tile(
             // Only the Home banner and title pages carry it ("" there: none).
             if (o.has("logoUrl") || o.has("genres")) o.optString("logoUrl") else null,
             quiet = o.optBoolean("quiet"),
+            soon = o.optBoolean("soon"),
+            outDate = o.str("outDate"),
+            outNow = o.optBoolean("outNow"),
         )
     }
 }
@@ -288,6 +301,8 @@ data class Title(
     val notOut: String? = null,
     // This profile's thumb on it: "up", "down" or "".
     val thumb: String = "",
+    // This profile asked to be told when it's out.
+    val reminding: Boolean = false,
     // The film series it's part of: its name and films in order.
     val seriesName: String? = null,
     val series: List<Tile> = emptyList(),
@@ -305,6 +320,7 @@ data class Title(
                 Ratings.from(o.optJSONObject("ratings")),
                 o.str("notOut"),
                 o.optString("thumb"),
+                o.optBoolean("reminding"),
                 o.optJSONObject("collection")?.optString("name")?.takeIf { it.isNotEmpty() },
                 o.optJSONObject("collection")?.optJSONArray("parts")?.cards() ?: emptyList(),
             )
