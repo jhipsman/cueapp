@@ -535,23 +535,58 @@ class PlayerActivity : Activity() {
         if (partyPanel?.visibility != View.VISIBLE && !event) showPartyPanel(true)
     }
 
+    // A reaction, as in a Teams meeting: it pops up on the picture with who
+    // sent it (a little bounce), drifts up with a gentle sway, and fades away.
     private fun floatReaction(emoji: String, name: String) {
         val layer = partyFloats ?: return
-        val v = TextView(this).apply {
-            text = "$emoji\n$name"
-            gravity = Gravity.CENTER
-            setTextColor(Color.WHITE)
-            size(26f)
-            setShadowLayer(8f, 0f, 2f, Color.BLACK)
+        val v = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.CENTER_HORIZONTAL
+            addView(TextView(this@PlayerActivity).apply {
+                text = emoji
+                size(34f)
+                setShadowLayer(14f, 0f, 4f, 0x73000000)
+            })
+            addView(TextView(this@PlayerActivity).apply {
+                text = name
+                setTextColor(Color.WHITE)
+                size(10f)
+                typeface = Fonts.text(this@PlayerActivity, 700)
+                setPadding(px(9), px(2), px(9), px(3))
+                background = GradientDrawable().apply {
+                    cornerRadius = px(10).toFloat()
+                    setColor(0xB8141418.toInt())
+                }
+            })
         }
         val lp = FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.BOTTOM or Gravity.START).apply {
-            leftMargin = px((80..420).random())
-            bottomMargin = px(140)
+            leftMargin = px((60..380).random())
+            bottomMargin = px(130)
         }
         layer.addView(v, lp)
-        v.scaleX = 0.6f
-        v.scaleY = 0.6f
-        v.animate().translationY(-px(320).toFloat()).scaleX(1f).scaleY(1f).alpha(0f).setDuration(3000).withEndAction { layer.removeView(v) }.start()
+        val sway = if (Math.random() < 0.5) -1f else 1f
+        val rise = px(300).toFloat()
+        val wobble = px(14).toFloat()
+        val pop = android.view.animation.OvershootInterpolator(2.2f)
+        val ease = android.view.animation.DecelerateInterpolator(1.4f)
+        android.animation.ValueAnimator.ofFloat(0f, 1f).apply {
+            duration = 4000
+            addUpdateListener { a ->
+                val t = a.animatedValue as Float
+                val grow = pop.getInterpolation((t / 0.14f).coerceAtMost(1f))
+                v.scaleX = 0.25f + 0.75f * grow
+                v.scaleY = v.scaleX
+                v.translationY = -rise * ease.getInterpolation(t)
+                v.translationX = sway * wobble * kotlin.math.sin(t * 2.4f * Math.PI.toFloat())
+                v.alpha = if (t < 0.7f) (t / 0.06f).coerceAtMost(1f) else 1f - (t - 0.7f) / 0.3f
+            }
+            addListener(object : android.animation.AnimatorListenerAdapter() {
+                override fun onAnimationEnd(animation: android.animation.Animator) {
+                    layer.removeView(v)
+                }
+            })
+            start()
+        }
     }
 
     private fun showPartyPanel(show: Boolean) {

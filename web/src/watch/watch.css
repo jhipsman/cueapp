@@ -5569,37 +5569,88 @@ button.wx-switch.on:hover {
   pointer-events: none;
   overflow: hidden;
 }
-.wx-party-floats span {
+/* One reaction: the outer rises and fades, the middle sways, the emoji
+   pops in with a little bounce (Teams-style). */
+.wx-react {
   position: absolute;
-  bottom: 90px;
+  bottom: 96px;
+  animation: wx-react-rise 4s cubic-bezier(0.25, 0.8, 0.4, 1) forwards;
+}
+.wx-react-sway {
   display: grid;
   justify-items: center;
-  font-size: 2.6rem;
-  animation: wx-float 3.2s ease-out forwards;
+  gap: 4px;
+  animation: wx-react-sway 4s ease-in-out forwards;
 }
-.wx-party-floats small {
-  font-size: 0.7rem;
+.wx-react-emoji {
+  font-size: 3.4rem;
+  line-height: 1;
+  font-weight: 400;
+  filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.45));
+  animation: wx-react-pop 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+.wx-react small {
+  font-size: 0.72rem;
   font-weight: 700;
-  padding: 2px 8px;
+  padding: 3px 10px;
   border-radius: 999px;
-  background: rgba(0, 0, 0, 0.55);
+  background: rgba(20, 20, 24, 0.72);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
   color: #fff;
+  white-space: nowrap;
+  animation: wx-fade-in 0.4s 0.15s both;
 }
-@keyframes wx-float {
+@keyframes wx-react-pop {
   0% {
-    transform: translateY(0) scale(0.6);
+    transform: scale(0.2);
     opacity: 0;
   }
-  12% {
-    transform: translateY(-20px) scale(1.1);
+  100% {
+    transform: scale(1);
     opacity: 1;
   }
-  80% {
+}
+@keyframes wx-react-rise {
+  0% {
+    transform: translateY(24px);
+    opacity: 1;
+  }
+  70% {
     opacity: 1;
   }
   100% {
-    transform: translateY(-46vh) scale(1);
+    transform: translateY(-38vh);
     opacity: 0;
+  }
+}
+@keyframes wx-react-sway {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(calc(var(--sway, 1) * 18px));
+  }
+  60% {
+    transform: translateX(calc(var(--sway, 1) * -14px));
+  }
+  85% {
+    transform: translateX(calc(var(--sway, 1) * 8px));
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .wx-react,
+  .wx-react-sway {
+    animation: wx-react-calm 3s ease-out forwards;
+  }
+  @keyframes wx-react-calm {
+    70% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0;
+    }
   }
 }
 .vx-badge {
@@ -5684,8 +5735,7 @@ button.wx-switch.on:hover {
   animation: wx-pulse 1.6s ease-in-out infinite;
 }
 @media (prefers-reduced-motion: reduce) {
-  .wx-party,
-  .wx-party-floats span {
+  .wx-party {
     animation-duration: 0.01s;
   }
 }

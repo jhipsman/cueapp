@@ -52,6 +52,7 @@ export interface Floating {
   emoji: string
   name: string
   left: number
+  sway: number // which way it drifts: -1 or 1
 }
 
 export function useParty(o: SyncOpts) {
@@ -122,9 +123,9 @@ export function useParty(o: SyncOpts) {
         es.addEventListener('msg', (e) => {
           const m = JSON.parse((e as MessageEvent).data) as PartyMsg
           if (m.kind === 'reaction') {
-            const f = { id: m.id, emoji: m.text, name: m.name ?? '', left: 8 + Math.random() * 30 }
+            const f = { id: m.id, emoji: m.text, name: m.name ?? '', left: 6 + Math.random() * 34, sway: Math.random() < 0.5 ? -1 : 1 }
             setFloating((list) => [...list.slice(-20), f])
-            window.setTimeout(() => setFloating((list) => list.filter((x) => x.id !== f.id)), 3200)
+            window.setTimeout(() => setFloating((list) => list.filter((x) => x.id !== f.id)), 4300)
             return
           }
           setMsgs((list) => (list.some((x) => x.id === m.id) ? list : [...list.slice(-149), m]))
@@ -326,14 +327,17 @@ export function PartyPanel({ party, code, onClose }: { party: ReturnType<typeof 
   )
 }
 
-// Reactions float up the picture, with who sent them.
+// Reactions, as in a Teams meeting: each pops up on the picture with who
+// sent it, drifts up with a gentle sway, and fades away.
 export function FloatingReactions({ list }: { list: Floating[] }) {
   return (
     <div className="wx-party-floats" aria-hidden="true">
       {list.map((f) => (
-        <span key={f.id} style={{ left: `${f.left}%` }}>
-          {f.emoji}
-          <small>{f.name}</small>
+        <span key={f.id} className="wx-react" style={{ left: `${f.left}%`, ['--sway' as string]: f.sway }}>
+          <span className="wx-react-sway">
+            <b className="wx-react-emoji">{f.emoji}</b>
+            <small>{f.name}</small>
+          </span>
         </span>
       ))}
     </div>
