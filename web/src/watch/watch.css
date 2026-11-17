@@ -6007,3 +6007,21 @@ button.wx-switch.on:hover {
     font-size: 24px;
   }
 }
+
+/* A film in theaters now: it plays, and says what to expect. */
+.wx-card-theaters {
+  background: #f5c518;
+  color: #111;
+}
+.wx-theaters {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 0 0;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgb(245 197 24 / 0.16);
+  color: #f5c518;
+  font-size: 14px;
+  font-weight: 600;
+}

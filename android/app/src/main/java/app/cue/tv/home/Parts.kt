@@ -200,6 +200,7 @@ fun PosterCard(card: Tile, memory: FocusMemory, memKey: String, wide: Boolean = 
                     }
                 }
                 if (card.isNew) Chip("NEW", Modifier.align(Alignment.TopStart).padding(7.dp), bg = accent, fg = Color.Black)
+                if (card.inTheaters) Chip("IN THEATERS", Modifier.align(Alignment.TopStart).padding(7.dp), bg = Color(0xFFF5C518), fg = Color.Black)
                 if (card.outNow) Chip("OUT NOW", Modifier.align(Alignment.TopStart).padding(7.dp), bg = accent, fg = Color.Black)
                 if (card.soon) Chip(card.outDate?.let { "Streaming ${shortDay(it)}" } ?: "COMING SOON", Modifier.align(Alignment.TopStart).padding(7.dp),
                     bg = Color(0xE6FFFFFF), fg = Color.Black)

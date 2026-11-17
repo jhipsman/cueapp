@@ -293,7 +293,8 @@ export interface WatchCard {
   new?: boolean // the episode came out in the last two weeks
   logoUrl?: string // logo artwork: on the Home banner and title pages ("" when none)
   quiet?: boolean // horror, anime or adult: kept off the banner, previews and screensaver
-  soon?: boolean // a film not out to stream yet (only announced, or in cinemas)
+  soon?: boolean // a film not released anywhere yet (it's on Coming soon)
+  inTheaters?: boolean // showing in theaters only: it plays, usually as a camera recording
   outDate?: string // on Coming soon: the day it streams, when known
   reminding?: boolean // this profile asked to be told when it's out
   outNow?: boolean // on "Out now": a title this profile asked about came out
@@ -364,6 +365,8 @@ export interface WatchTitle extends WatchCard {
   // March 4th"), instead of Play; outDate is the day it streams.
   notOut?: string
   outDate?: string
+  // In theaters now (it still plays): "In theaters now · streaming March 4th".
+  theaterNote?: string
   thumb?: 'up' | 'down' // this profile's thumb on it
   reminding?: boolean // this profile asked to be told when it's out
   // The film series it's part of: its films in order, and the next one out.

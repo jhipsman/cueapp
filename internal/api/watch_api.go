@@ -47,8 +47,11 @@ type watchCard struct {
 	// Quiet: horror, anime or adult (quiet.go). It's kept off the banner,
 	// the previews and the screensavers.
 	Quiet bool `json:"quiet,omitempty"`
-	// Soon: a film not out to stream yet (only announced, or in cinemas).
-	Soon bool `json:"soon,omitempty"`
+	// Soon: a film not released anywhere yet (it's on Coming soon);
+	// InTheaters: one showing in theaters, not out at home yet (it plays,
+	// usually as a camera recording, and is tagged so).
+	Soon       bool `json:"soon,omitempty"`
+	InTheaters bool `json:"inTheaters,omitempty"`
 	// OutDate, on Coming soon, is the day it streams ("2025-03-04") when
 	// known; Reminding, that this profile asked to be told; OutNow, on the
 	// "Out now" row, that a title it asked about has come out.
@@ -684,6 +687,9 @@ type watchTitle struct {
 	// OutDate is the day it streams, when known.
 	NotOut  string `json:"notOut,omitempty"`
 	OutDate string `json:"outDate,omitempty"`
+	// TheaterNote, for a film in theaters now (it still plays), says so:
+	// "In theaters now · streaming March 4th".
+	TheaterNote string `json:"theaterNote,omitempty"`
 	// Thumb is this profile's thumb on it: "up", "down" or "".
 	Thumb string `json:"thumb,omitempty"`
 	// Reminding: this profile asked to be told when it's out.
@@ -730,7 +736,13 @@ func (s *Server) handleWatchMovie(w http.ResponseWriter, r *http.Request) {
 	if _, inLib, _ := s.MovieRepo.GetByTMDBID(tmdbID); !inLib {
 		f := filmOutOf(d, time.Now())
 		filmOutKnown.Store(tmdbID, f)
-		t.Soon, t.NotOut, t.OutDate = !f.out, f.notOutNote(time.Now()), f.home
+		now := time.Now()
+		switch {
+		case f.inTheaters(now):
+			t.InTheaters, t.TheaterNote, t.OutDate = true, f.theaterNote(now), f.home
+		case !f.out:
+			t.Soon, t.NotOut, t.OutDate = true, f.notOutNote(now), f.home
+		}
 	}
 	_, t.Reminding = s.marksOf(pid).Has(watch.KindMovie, tmdbID, watch.MarkRemind)
 	var wg sync.WaitGroup

@@ -9,12 +9,13 @@ import (
 	"github.com/jhipsman/cueapp/internal/metadata"
 )
 
-// Out to stream: a film just announced, or only in cinemas, has no copy
-// worth watching yet, so Cue doesn't offer to play it. It says when it's
-// coming instead, and keeps it off Home's rows (they're for what you can
-// watch tonight). TMDB's release dates say: a digital, disc or TV release
-// that has happened, or (for older films with none listed) cinemas long
-// enough ago (metadata.Availability).
+// Out to stream. TMDB's release dates say whether a film is out at home (a
+// digital, disc or TV release that has happened, or for older films with
+// none listed, theaters long enough ago: metadata.Availability). A film in
+// theaters now but not out at home still plays (the versions found are
+// usually camera recordings, which Play then takes too), and is tagged "In
+// theaters" everywhere. One not released anywhere yet has nothing to play:
+// it's on Coming soon instead, with the day it streams.
 
 type filmOut struct {
 	out     bool
@@ -48,6 +49,24 @@ func (s *Server) filmOutNow(ctx context.Context, tmdbID int) filmOut {
 	f := filmOutOf(d, time.Now())
 	filmOutKnown.Store(tmdbID, f)
 	return f
+}
+
+// inTheaters: showing in theaters now, not out at home yet.
+func (f filmOut) inTheaters(now time.Time) bool {
+	return !f.out && f.cinemas != "" && f.cinemas <= now.Format("2006-01-02")
+}
+
+// upcoming: not released anywhere yet (nothing to play).
+func (f filmOut) upcoming(now time.Time) bool { return !f.out && !f.inTheaters(now) }
+
+// theaterNote is a film in theaters' tag on its page: "In theaters now ·
+// streaming March 4th".
+func (f filmOut) theaterNote(now time.Time) string {
+	note := "In theaters now"
+	if f.home != "" {
+		note += " · streaming " + niceDate(f.home, now)
+	}
+	return note
 }
 
 func filmOutOf(d *metadata.MovieDetail, now time.Time) filmOut {
@@ -110,8 +129,9 @@ func ordinal(n int) string {
 	return fmt.Sprintf("%d%s", n, suffix)
 }
 
-// markSoon sets Soon on the films among these cards that aren't out to
-// stream yet (a few at a time, for a few seconds at most).
+// markSoon sets Soon on the films among these cards not released anywhere
+// yet, and InTheaters on those showing in theaters only (a few at a time,
+// for a few seconds at most).
 func (s *Server) markSoon(ctx context.Context, cards []watchCard) {
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
@@ -130,7 +150,8 @@ func (s *Server) markSoon(ctx context.Context, cards []watchCard) {
 				return
 			}
 			defer func() { <-slots }()
-			cards[i].Soon = !s.filmOutNow(ctx, cards[i].TMDBID).out
+			f := s.filmOutNow(ctx, cards[i].TMDBID)
+			cards[i].Soon, cards[i].InTheaters = f.upcoming(time.Now()), f.inTheaters(time.Now())
 		}(i)
 	}
 	wg.Wait()

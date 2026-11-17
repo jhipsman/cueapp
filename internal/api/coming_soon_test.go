@@ -51,3 +51,19 @@ func TestNiceDate(t *testing.T) {
 		}
 	}
 }
+
+func TestInTheaters(t *testing.T) {
+	now := time.Date(2026, 11, 17, 12, 0, 0, 0, time.UTC)
+	showing := filmOut{cinemas: "2026-11-07", home: "2027-01-20"}
+	announced := filmOut{cinemas: "2027-05-01"}
+	out := filmOut{out: true, cinemas: "2026-08-01", home: "2026-10-01"}
+	if !showing.inTheaters(now) || showing.upcoming(now) || showing.theaterNote(now) != "In theaters now · streaming January 20th, 2027" {
+		t.Errorf("showing: %v %v %q", showing.inTheaters(now), showing.upcoming(now), showing.theaterNote(now))
+	}
+	if announced.inTheaters(now) || !announced.upcoming(now) {
+		t.Errorf("announced: in theaters %v, upcoming %v", announced.inTheaters(now), announced.upcoming(now))
+	}
+	if out.inTheaters(now) || out.upcoming(now) {
+		t.Errorf("out at home: in theaters %v, upcoming %v", out.inTheaters(now), out.upcoming(now))
+	}
+}

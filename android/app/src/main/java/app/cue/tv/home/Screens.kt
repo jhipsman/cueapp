@@ -817,6 +817,10 @@ fun TitleScreen(api: CueApi, playback: Playback, card: Tile, memory: FocusMemory
                         Text(it, fontSize = 12.sp, color = Color(0xD9FFFFFF), maxLines = 3, overflow = TextOverflow.Ellipsis, lineHeight = 17.sp,
                             modifier = Modifier.rise(170))
                     }
+                    t.theaterNote?.let { note ->
+                        Gap(8.dp)
+                        Text("$note · usually a camera recording for now", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFFF5C518))
+                    }
                     if (t.directors.isNotEmpty()) {
                         Gap(8.dp)
                         Row(Modifier.rise(230)) {
@@ -852,6 +856,11 @@ fun TitleScreen(api: CueApi, playback: Playback, card: Tile, memory: FocusMemory
                             } else {
                                 playback.playTitle("movie", c.tmdbId, 0, 0)
                             }
+                        }
+                        if (t.theaterNote != null) Pill(if (reminding) "Reminding you" else "Remind me when it streams",
+                            icon = if (reminding) app.cue.tv.R.drawable.ic_cue_check else app.cue.tv.R.drawable.ic_cue_calendar) {
+                            val next = !reminding
+                            scope.launch { if (runCatching { api.setRemind(c.kind, c.tmdbId, next) }.isSuccess) reminding = next }
                         }
                         Pill("My List", icon = if (inList) app.cue.tv.R.drawable.ic_cue_check else app.cue.tv.R.drawable.ic_cue_add) {
                             scope.launch {

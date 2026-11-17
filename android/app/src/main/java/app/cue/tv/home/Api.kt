@@ -243,6 +243,7 @@ data class Tile(
     // Not out to stream yet (Coming soon), the day it streams when known,
     // and whether a title this profile asked about is out now.
     val soon: Boolean = false,
+    val inTheaters: Boolean = false,
     val outDate: String? = null,
     val outNow: Boolean = false,
     val reminding: Boolean = false,
@@ -261,6 +262,7 @@ data class Tile(
             if (o.has("logoUrl") || o.has("genres")) o.optString("logoUrl") else null,
             quiet = o.optBoolean("quiet"),
             soon = o.optBoolean("soon"),
+            inTheaters = o.optBoolean("inTheaters"),
             outDate = o.str("outDate"),
             outNow = o.optBoolean("outNow"),
             reminding = o.optBoolean("reminding"),
@@ -308,6 +310,8 @@ data class Title(
     val thumb: String = "",
     // This profile asked to be told when it's out.
     val reminding: Boolean = false,
+    // In theaters now (it still plays): "In theaters now · streaming March 4th".
+    val theaterNote: String? = null,
     // The film series it's part of: its name and films in order.
     val seriesName: String? = null,
     val series: List<Tile> = emptyList(),
@@ -326,6 +330,7 @@ data class Title(
                 o.str("notOut"),
                 o.optString("thumb"),
                 o.optBoolean("reminding"),
+                o.str("theaterNote"),
                 o.optJSONObject("collection")?.optString("name")?.takeIf { it.isNotEmpty() },
                 o.optJSONObject("collection")?.optJSONArray("parts")?.cards() ?: emptyList(),
             )

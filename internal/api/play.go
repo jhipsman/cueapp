@@ -170,6 +170,9 @@ type playTarget struct {
 	series  *library.Series
 	season  int
 	episode int
+	// inTheaters: a film showing in theaters only, for which camera
+	// recordings are allowed (ranked after anything better).
+	inTheaters bool
 }
 
 // playAnswer is what the player gets.
@@ -272,12 +275,17 @@ func (s *Server) handlePlayTMDBMovie(w http.ResponseWriter, r *http.Request) {
 		writeUpstreamError(w, "look the movie up on TMDB", err)
 		return
 	}
-	// Only announced, or in cinemas: there's no copy worth watching yet.
-	if f := filmOutOf(d, time.Now()); !f.out {
-		writeError(w, http.StatusNotFound, fmt.Sprintf("%s isn't out to stream yet (%s).", d.Title, strings.ToLower(f.notOutNote(time.Now())[:1])+f.notOutNote(time.Now())[1:]))
+	// Not released anywhere yet: nothing to play. In theaters only: camera
+	// recordings are let in (they're usually all there is).
+	f := filmOutOf(d, time.Now())
+	if f.upcoming(time.Now()) {
+		note := f.notOutNote(time.Now())
+		writeError(w, http.StatusNotFound, fmt.Sprintf("%s isn't out yet (%s).", d.Title, strings.ToLower(note[:1])+note[1:]))
 		return
 	}
-	s.servePlay(w, r, movieTarget(library.Movie{TMDBID: tmdbID, Title: d.Title, Year: d.Year()}))
+	t := movieTarget(library.Movie{TMDBID: tmdbID, Title: d.Title, Year: d.Year()})
+	t.inTheaters = f.inTheaters(time.Now())
+	s.servePlay(w, r, t)
 }
 
 // GET /api/play/tmdb/tv/{tmdbId}/{season}/{episode}: any episode of any show.
@@ -741,7 +749,8 @@ func indexerFailure(name string, err error) string {
 }
 
 // rankAnyWatchable orders releases with no quality profile: best quality
-// first, then most seeders, leaving out cinema recordings and, for a movie,
+// first, then most seeders, leaving out cinema recordings (unless the film
+// is only in theaters, when they're usually all there is) and, for a movie,
 // releases of another year.
 func rankAnyWatchable(results []indexers.Result, t playTarget) []indexers.Result {
 	type scored struct {
@@ -752,7 +761,7 @@ func rankAnyWatchable(results []indexers.Result, t playTarget) []indexers.Result
 	for _, r := range results {
 		rel := parser.Parse(r.Title)
 		tier := quality.Classify(rel)
-		if tier == quality.TierPreRelease {
+		if tier == quality.TierPreRelease && !t.inTheaters {
 			continue
 		}
 		if t.movie != nil && t.movie.Year != 0 && rel.Year != 0 && rel.Year != t.movie.Year {

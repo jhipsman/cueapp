@@ -136,6 +136,7 @@ export function Card({ card, wide }: { card: WatchCard; wide?: boolean }) {
         {wide && code && <span className="wx-chip">{code}</span>}
         {card.new && <span className="wx-card-new">New episode</span>}
         {card.outNow && <span className="wx-card-new">Out now</span>}
+        {card.inTheaters && <span className="wx-card-new wx-card-theaters">In theaters</span>}
         {card.soon && <span className="wx-card-new wx-card-soon">{card.outDate ? `Streaming ${shortDate(card.outDate)}` : 'Coming soon'}</span>}
         {card.progress !== undefined && card.progress > 0 && (
           <span className="wx-card-progress">

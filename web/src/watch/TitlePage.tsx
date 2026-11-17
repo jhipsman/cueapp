@@ -138,6 +138,11 @@ export default function TitlePage({ kind }: { kind: WatchKind }) {
               <span>{kind === 'tv' ? 'Created by' : 'Directed by'}</span> {title.directors.slice(0, 2).join(', ')}
             </p>
           )}
+          {title.theaterNote && (
+            <p className="wx-theaters" role="note">
+              <Icon name="film" size={16} /> {title.theaterNote}. What's found now is usually a camera recording.
+            </p>
+          )}
           <div className="wx-actions">
             {title.notOut ? (
               <>
@@ -156,6 +161,11 @@ export default function TitlePage({ kind }: { kind: WatchKind }) {
             <button className="wx-btn" onClick={() => void toggleList()} aria-pressed={inList}>
               <Icon name={inList ? 'check' : 'plus'} size={20} strokeWidth={2.5} /> My List
             </button>
+            {title.theaterNote && (
+              <button className="wx-btn" onClick={() => void toggleRemind()} aria-pressed={reminding} title="Tells you when it streams properly">
+                <Icon name={reminding ? 'check' : 'clock'} size={18} /> {reminding ? 'Reminding you' : 'Remind me when it streams'}
+              </button>
+            )}
             {!title.notOut && <PlayOnTV kind={kind} tmdbId={tmdbId} season={title.resumeSeason} episode={title.resumeEpisode} />}
             <button className={`wx-btn wx-round${thumb === 'up' ? ' on' : ''}`} onClick={() => void thumbIt('up')} aria-pressed={thumb === 'up'} title="I like this" aria-label="I like this">
               <Icon name="thumbs-up" size={20} />
