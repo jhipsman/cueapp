@@ -498,7 +498,7 @@ fun avatarColor(avatar: String): Color = when (avatar.substringBefore('/')) {
 
 // ---- The tabs ----
 
-private val tabs = listOf("Home", "Shows", "Movies", "Live TV", "Search", "My List")
+private val tabs = listOf("Home", "Shows", "Movies", "Live TV", "Search", "My List", "Coming soon")
 
 @Composable
 fun MainScreen(api: CueApi, playback: Playback, openWeb: (String) -> Unit, changeServer: () -> Unit, switchProfile: () -> Unit) {
@@ -622,6 +622,7 @@ fun MainScreen(api: CueApi, playback: Playback, openWeb: (String) -> Unit, chang
                     3 -> LiveScreen(api, playback, openWeb)
                     4 -> SearchScreen(api, memories[4], listen = listenNow, listened = { listenNow = false }, onCard = onCard)
                     5 -> MyListScreen(api, memories[5], pageTakesFocus, tookFocus, onCard)
+                    6 -> ComingSoonScreen(api, onCard)
                     else -> ProfileScreen(api, switchProfile, changeServer, openWeb)
                 }
             }
@@ -1253,6 +1254,68 @@ fun PartiesNow(api: CueApi, playback: Playback) {
                     }
                     Text("Join", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color.White)
                 }
+            }
+        }
+    }
+}
+
+// ---- Coming soon ----
+
+// Coming soon: films not out to stream yet, apart from everything you can
+// watch now. Down the side the day it streams; then its picture, name,
+// when, and what it's about, with Remind me (Cue says when it's out) and
+// Info (its page).
+@Composable
+fun ComingSoonScreen(api: CueApi, onCard: (Tile) -> Unit) {
+    var items by remember { mutableStateOf<List<Tile>?>(null) }
+    LaunchedEffect(Unit) { items = runCatching { api.comingSoon() }.getOrDefault(emptyList()) }
+    val list = items
+    when {
+        list == null -> Centered { Text("Loading…", color = Dim) }
+        list.isEmpty() -> Centered { Text("Nothing announced right now.", color = Dim) }
+        else -> LazyColumn(
+            contentPadding = PaddingValues(start = Gutter, end = Gutter, top = 18.dp, bottom = 40.dp),
+            verticalArrangement = Arrangement.spacedBy(26.dp),
+        ) {
+            items(list, key = { it.key }) { c -> ComingSoonItem(api, c, onCard) }
+        }
+    }
+}
+
+@Composable
+private fun ComingSoonItem(api: CueApi, c: Tile, onCard: (Tile) -> Unit) {
+    val scope = rememberCoroutineScope()
+    var reminding by remember(c.key) { mutableStateOf(c.reminding) }
+    val months = listOf("JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC")
+    val parts = c.outDate?.take(10)?.split('-')?.mapNotNull { it.toIntOrNull() }?.takeIf { it.size == 3 }
+    Row(verticalAlignment = Alignment.Top) {
+        Column(Modifier.width(54.dp).padding(top = 4.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            if (parts != null) {
+                Text(months[parts[1] - 1], fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Dim, letterSpacing = 1.sp)
+                Text("${parts[2]}", fontSize = 26.sp, fontWeight = FontWeight.Bold, color = Color.White)
+            } else {
+                Text("SOON", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Dim, letterSpacing = 1.sp)
+            }
+        }
+        HGap(14.dp)
+        Art(c.backdrop, Modifier.width(300.dp).height(169.dp).clip(RoundedCornerShape(10.dp)))
+        HGap(20.dp)
+        Column(Modifier.weight(1f)) {
+            Text(c.title, fontFamily = Type.display(), fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color.White, maxLines = 2)
+            Gap(6.dp)
+            Text(c.outDate?.let { "Streaming ${shortDay(it)}" } ?: "Streaming date not announced yet", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
+            c.overview?.let {
+                Gap(6.dp)
+                Text(it, fontSize = 11.sp, color = Dim, maxLines = 3, overflow = TextOverflow.Ellipsis, lineHeight = 16.sp)
+            }
+            Gap(12.dp)
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                Pill(if (reminding) "Reminding you" else "Remind me", primary = !reminding,
+                    icon = if (reminding) app.cue.tv.R.drawable.ic_cue_check else app.cue.tv.R.drawable.ic_cue_calendar) {
+                    val next = !reminding
+                    scope.launch { if (runCatching { api.setRemind(c.kind, c.tmdbId, next) }.isSuccess) reminding = next }
+                }
+                Pill("Info") { onCard(c) }
             }
         }
     }

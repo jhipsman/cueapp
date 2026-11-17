@@ -360,8 +360,8 @@ export interface WatchTitle extends WatchCard {
   resumeEpisode?: number
   resumePosition?: number // seconds
   more: WatchCard[]
-  // Not out to stream yet: when it's coming ("In cinemas now · streaming
-  // from 4 March"), instead of Play; outDate is the day it streams.
+  // Not out to stream yet: when it's coming ("In theaters now · streaming
+  // March 4th"), instead of Play; outDate is the day it streams.
   notOut?: string
   outDate?: string
   thumb?: 'up' | 'down' // this profile's thumb on it
@@ -2440,6 +2440,8 @@ export const api = {
   screenPlay: (id: string, t: { kind: WatchKind; tmdbId: number; season?: number; episode?: number }) =>
     post<null>(`/screens/${encodeURIComponent(id)}/play`, t),
   screenControl: (id: string, action: RemoteAction, pos = 0) => post<null>(`/screens/${encodeURIComponent(id)}/control`, { action, pos }),
+  // Coming soon: films not out to stream yet, soonest first.
+  comingSoon: () => get<WatchCard[]>('/watch/coming-soon'),
   // Tell this profile when a title is out to stream (or stop).
   setRemind: (kind: WatchKind, tmdbId: number, on: boolean) =>
     on ? put<{ reminding: boolean }>(`/watch/remind/${kind}/${tmdbId}`, {}) : del<{ reminding: boolean }>(`/watch/remind/${kind}/${tmdbId}`),

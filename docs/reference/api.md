@@ -705,6 +705,7 @@ Every route the server exposes. Routes marked **public** need no sign-in; all ot
 
 | Method | Path | Access | What it does |
 |---|---|---|---|
+| GET | `/api/watch/coming-soon` | signed in | GET /api/watch/coming-soon: the Coming soon page. |
 | DELETE | `/api/watch/continue/{kind}/{tmdbId}` | signed in | DELETE /api/watch/continue/{kind}/{tmdbId}: takes a title off Continue Watching. |
 | GET | `/api/watch/extras/{kind}/{tmdbId}` | signed in | GET /api/watch/extras/{kind}/{tmdbId}: a title's logo, the main colour of its picture (for the glow and highlights) and its trailer (for the living banner), ... |
 | DELETE | `/api/watch/history` | signed in | DELETE /api/watch/history: the active profile's Continue Watching and what it has watched, forgotten. |
@@ -744,4 +745,4 @@ Every route the server exposes. Routes marked **public** need no sign-in; all ot
 | PUT | `/api/watched/settings` | admin | PUT /api/watched/settings {"sync": true, "cleanup": {...}} |
 | POST | `/api/watched/sync` | admin | POST /api/watched/sync: read what's been watched now. |
 
-414 routes.
+415 routes.

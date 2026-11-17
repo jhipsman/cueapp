@@ -187,7 +187,6 @@ func (s *Server) handleWatchHome(w http.ResponseWriter, r *http.Request) {
 	tm := s.TMDB()
 
 	shelves := make([]watchRow, len(watchShelves))
-	var pool soonPool
 	var wg sync.WaitGroup
 	for i, sh := range watchShelves {
 		wg.Add(1)
@@ -200,7 +199,6 @@ func (s *Server) handleWatchHome(w http.ResponseWriter, r *http.Request) {
 			// Home's rows are what you can watch now: films not out to
 			// stream yet are left off (they're in Coming soon).
 			s.markSoon(ctx, items)
-			pool.add(items)
 			items = outOnly(items)
 			shelves[i] = watchRow{Key: sh.key, Title: sh.title, Items: items}
 		}(i, sh)
@@ -232,9 +230,7 @@ func (s *Server) handleWatchHome(w http.ResponseWriter, r *http.Request) {
 		s.markSoon(ctx, list)
 		home.Rows = append(home.Rows, watchRow{Key: "my-list", Title: "My List", Items: list})
 	}
-	if soon := s.comingSoonRow(ctx, reminded, pool.cards); len(soon) > 0 {
-		home.Rows = append(home.Rows, watchRow{Key: "coming-soon", Title: "Coming soon", Items: soon})
-	}
+	_ = reminded // still to come: on the Coming soon page, not Home
 	// "Because you watched" rows sit among the others, after the first.
 	for i, row := range shelves {
 		if i == 1 && len(because) > 0 {
@@ -684,7 +680,7 @@ type watchTitle struct {
 	ResumePosition float64     `json:"resumePosition,omitempty"` // seconds
 	More           []watchCard `json:"more"`
 	// NotOut, for a title not out to stream yet, says when it's coming
-	// ("In cinemas now · streaming from 4 March"); its page offers no Play.
+	// ("In theaters now · streaming March 4th"); its page offers no Play.
 	// OutDate is the day it streams, when known.
 	NotOut  string `json:"notOut,omitempty"`
 	OutDate string `json:"outDate,omitempty"`
@@ -747,6 +743,7 @@ func (s *Server) handleWatchMovie(w http.ResponseWriter, r *http.Request) {
 		more, _ := tm.RelatedMovies(ctx, tmdbID, metadata.RelatedRecommended)
 		t.More = movieCards(more)
 		s.markSoon(ctx, t.More)
+		t.More = outOnly(t.More) // what's not out yet is on Coming soon
 		if prof, ok := s.activeProfile(r); ok {
 			t.More = s.ageFiltered(ctx, prof, t.More)
 		}

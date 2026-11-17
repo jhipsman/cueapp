@@ -55,8 +55,8 @@ func filmOutOf(d *metadata.MovieDetail, now time.Time) filmOut {
 	return filmOut{out: out, home: home, cinemas: cinemas, at: now}
 }
 
-// notOutNote is what a film's page says instead of Play: "In cinemas now ·
-// streaming from 4 March", "In cinemas 12 June", "Not out yet".
+// notOutNote is what a film's page says instead of Play: "In theaters now ·
+// streaming March 4th", "In theaters June 12th", "Not out yet".
 func (f filmOut) notOutNote(now time.Time) string {
 	if f.out {
 		return ""
@@ -65,12 +65,12 @@ func (f filmOut) notOutNote(now time.Time) string {
 	var parts []string
 	switch {
 	case f.cinemas != "" && f.cinemas <= today:
-		parts = append(parts, "In cinemas now")
+		parts = append(parts, "In theaters now")
 	case f.cinemas != "":
-		parts = append(parts, "In cinemas "+niceDate(f.cinemas, now))
+		parts = append(parts, "In theaters "+niceDate(f.cinemas, now))
 	}
 	if f.home != "" {
-		parts = append(parts, "streaming from "+niceDate(f.home, now))
+		parts = append(parts, "streaming "+niceDate(f.home, now))
 	}
 	if len(parts) == 0 {
 		return "Not out yet"
@@ -82,16 +82,32 @@ func (f filmOut) notOutNote(now time.Time) string {
 	return note
 }
 
-// niceDate is "4 March", or "4 March 2027" when not this year.
+// niceDate is "March 4th", or "March 4th, 2027" when not this year.
 func niceDate(day string, now time.Time) string {
 	t, err := time.Parse("2006-01-02", day)
 	if err != nil {
 		return day
 	}
 	if t.Year() == now.Year() {
-		return fmt.Sprintf("%d %s", t.Day(), t.Month())
+		return fmt.Sprintf("%s %s", t.Month(), ordinal(t.Day()))
 	}
-	return fmt.Sprintf("%d %s %d", t.Day(), t.Month(), t.Year())
+	return fmt.Sprintf("%s %s, %d", t.Month(), ordinal(t.Day()), t.Year())
+}
+
+// ordinal is "1st", "2nd", "3rd", "4th", "11th", "22nd"...
+func ordinal(n int) string {
+	suffix := "th"
+	if n%100 < 11 || n%100 > 13 {
+		switch n % 10 {
+		case 1:
+			suffix = "st"
+		case 2:
+			suffix = "nd"
+		case 3:
+			suffix = "rd"
+		}
+	}
+	return fmt.Sprintf("%d%s", n, suffix)
 }
 
 // markSoon sets Soon on the films among these cards that aren't out to

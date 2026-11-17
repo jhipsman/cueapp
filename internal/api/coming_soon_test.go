@@ -38,3 +38,16 @@ func TestComingSoonRow(t *testing.T) {
 		t.Fatalf("out date not carried: %+v", row[1])
 	}
 }
+
+func TestNiceDate(t *testing.T) {
+	now := time.Date(2026, 11, 17, 0, 0, 0, 0, time.UTC)
+	for day, want := range map[string]string{
+		"2026-03-04": "March 4th", "2026-06-01": "June 1st", "2026-06-02": "June 2nd", "2026-06-03": "June 3rd",
+		"2026-06-11": "June 11th", "2026-06-12": "June 12th", "2026-06-13": "June 13th", "2026-06-22": "June 22nd",
+		"2027-01-31": "January 31st, 2027",
+	} {
+		if got := niceDate(day, now); got != want {
+			t.Errorf("%s: %q, want %q", day, got, want)
+		}
+	}
+}

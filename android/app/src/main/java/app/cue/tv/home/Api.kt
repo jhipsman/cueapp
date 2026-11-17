@@ -197,6 +197,9 @@ class CueApi(ctx: Context, val server: String) {
         request("PUT", "/api/watch/thumb/$kind/$id", JSONObject().put("thumb", thumb))
     }
 
+    /** Coming soon: films not out to stream yet, soonest first. */
+    suspend fun comingSoon(): List<Tile> = arr("/api/watch/coming-soon").cards()
+
     /** Tells this profile when a title is out to stream (or stops). */
     suspend fun setRemind(kind: String, id: Int, on: Boolean) {
         request(if (on) "PUT" else "DELETE", "/api/watch/remind/$kind/$id")
@@ -242,6 +245,7 @@ data class Tile(
     val soon: Boolean = false,
     val outDate: String? = null,
     val outNow: Boolean = false,
+    val reminding: Boolean = false,
 ) {
     val key get() = "$kind-$tmdbId-${season ?: 0}-${episode ?: 0}"
     // Being watched (Continue Watching, new episodes): its page offers Resume.
@@ -259,6 +263,7 @@ data class Tile(
             soon = o.optBoolean("soon"),
             outDate = o.str("outDate"),
             outNow = o.optBoolean("outNow"),
+            reminding = o.optBoolean("reminding"),
         )
     }
 }

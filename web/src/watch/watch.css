@@ -5919,3 +5919,91 @@ button.wx-switch.on:hover {
 .wx-playon-menu button:hover {
   background: rgb(255 255 255 / 0.1);
 }
+
+/* Coming soon: a date down the side, then the picture, title, when and what
+   it's about, with Remind me (kept apart from what can be watched now). */
+.wx-soon {
+  max-width: 980px;
+  margin: 0 auto;
+  padding-top: 90px;
+}
+.wx-soon > h1 {
+  margin-bottom: 4px;
+}
+.wx-soon-item {
+  display: grid;
+  grid-template-columns: 64px 1fr;
+  gap: 18px;
+  margin-top: 34px;
+}
+.wx-soon-date {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 4px;
+  color: var(--wx-dim);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  font-size: 13px;
+}
+.wx-soon-date b {
+  color: var(--wx-text, #fff);
+  font-size: 34px;
+  letter-spacing: 0;
+  line-height: 1.05;
+}
+.wx-soon-pic {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  padding: 0;
+  border: 0;
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--wx-panel);
+  cursor: pointer;
+}
+.wx-soon-pic img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.4s;
+}
+.wx-soon-pic:hover img {
+  transform: scale(1.03);
+}
+.wx-soon-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 14px;
+}
+.wx-soon-head h2 {
+  margin: 0;
+  font-size: 1.5rem;
+}
+.wx-soon-actions {
+  display: flex;
+  gap: 8px;
+}
+.wx-soon-when {
+  margin: 8px 0 4px;
+  font-weight: 600;
+}
+.wx-soon-about {
+  margin: 0;
+  color: var(--wx-dim);
+  line-height: 1.5;
+}
+@media (max-width: 600px) {
+  .wx-soon-item {
+    grid-template-columns: 44px 1fr;
+    gap: 10px;
+  }
+  .wx-soon-date b {
+    font-size: 24px;
+  }
+}

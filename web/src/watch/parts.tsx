@@ -11,13 +11,22 @@ export function titleHref(c: { kind: string; tmdbId: number }): string {
   return `/watch/${c.kind}/${c.tmdbId}`
 }
 
-// shortDate is "4 Mar" (or "4 Mar 2027" in another year).
+// ordinal is "1st", "2nd", "3rd", "4th", "11th", "22nd"...
+export function ordinal(n: number): string {
+  const t = n % 100
+  const s = t >= 11 && t <= 13 ? 'th' : ({ 1: 'st', 2: 'nd', 3: 'rd' } as Record<number, string>)[n % 10] ?? 'th'
+  return `${n}${s}`
+}
+
+const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+
+// shortDate is "March 4th" (or "March 4th, 2027" in another year).
 export function shortDate(day: string): string {
-  const d = new Date(`${day}T12:00:00`)
-  if (Number.isNaN(d.getTime())) return day
-  const opts: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'short' }
-  if (d.getFullYear() !== new Date().getFullYear()) opts.year = 'numeric'
-  return d.toLocaleDateString(undefined, opts)
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(day)
+  if (!m) return day
+  const [y, mo, d] = [Number(m[1]), Number(m[2]), Number(m[3])]
+  const s = `${MONTHS[mo - 1]} ${ordinal(d)}`
+  return y === new Date().getFullYear() ? s : `${s}, ${y}`
 }
 
 export function playHref(kind: string, tmdbId: number, season?: number, episode?: number): string {

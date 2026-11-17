@@ -3,6 +3,7 @@ import { Link, NavLink, Route, Routes, useLocation, useNavigate, useNavigationTy
 import CueWordmark from '../components/CueWordmark'
 import Screensaver from './Screensaver'
 import TVRemote from './TVRemote'
+import ComingSoon from './ComingSoon'
 import Tour from './Tour'
 import SettingsPage from './SettingsPage'
 import { PartyJoin } from './party'
@@ -85,6 +86,7 @@ export default function WatchApp() {
                 <Route path="search" element={<SearchPage />} />
                 <Route path="settings/:section?" element={<SettingsPage />} />
                 <Route path="tv-remote/:id?" element={<TVRemote />} />
+                <Route path="coming-soon" element={<ComingSoon />} />
                 <Route path="movie/:tmdbId" element={<TitlePage kind="movie" />} />
                 <Route path="tv/:tmdbId" element={<TitlePage kind="tv" />} />
                 <Route path="*" element={<Home />} />
@@ -234,6 +236,10 @@ function PhoneTabs() {
         <Icon name="bookmark" size={20} />
         My List
       </NavLink>
+      <NavLink to="/watch/coming-soon">
+        <Icon name="calendar" size={20} />
+        Soon
+      </NavLink>
     </nav>
   )
 }
@@ -279,6 +285,7 @@ function TopBar() {
         <NavLink to="/watch/shows">Shows</NavLink>
         <NavLink to="/watch/movies">Movies</NavLink>
         <NavLink to="/watch/list">My List</NavLink>
+        <NavLink to="/watch/coming-soon">Coming soon</NavLink>
         {liveTV && <NavLink to="/watch/live">Live TV</NavLink>}
       </div>
       <div className="wx-nav-right">
