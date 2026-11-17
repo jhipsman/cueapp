@@ -478,8 +478,25 @@ export default function PlayerPage() {
   // seekAbs moves to a point in the title (also in a converted video).
   function seekAbs(t: number) {
     ownSeek.current = true
-    if (conv?.stream) setConv({ ...conv, offset: Math.max(0, Math.floor(t)) })
-    else if (video.current) video.current.currentTime = t
+    const v = video.current
+    // A converted video jumps within what's already been made (quick: on an
+    // iPhone the conversion runs well ahead of the picture); only further
+    // than that does it start the conversion again from there.
+    if (conv?.stream && !(v && inConverted(t))) setConv({ ...conv, offset: Math.max(0, Math.floor(t)) })
+    else if (v) v.currentTime = conv?.stream ? t - conv.offset : t
+  }
+
+  // inConverted says whether a point in the title is in the part of the
+  // converted video already made (so the player can go there by itself).
+  function inConverted(t: number): boolean {
+    const v = video.current
+    if (!v || !conv?.stream) return true
+    const at = t - conv.offset
+    if (at < 0) return false
+    for (let i = 0; i < v.seekable.length; i++) {
+      if (v.seekable.start(i) <= at && at <= v.seekable.end(i) - 1) return true
+    }
+    return false
   }
 
   // noteJump gathers the viewer's jumps forward (several presses of +10s
@@ -727,6 +744,7 @@ export default function PlayerPage() {
     position: () => (conv?.offset ?? 0) + (video.current?.currentTime ?? 0),
     seek: (sec) => seekAbs(sec),
     costlySeek: !!conv?.stream,
+    canSeek: (sec) => inConverted(sec),
     follow: (t) => navigate(`${playHref(t.kind, t.tmdbId, t.season, t.episode)}?party=${partyCode}`, { replace: true }),
     startAt: (sec) => {
       resumeAt.current = sec
