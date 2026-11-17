@@ -219,6 +219,9 @@ data class Tile(
     val poster: String?, val backdrop: String?, val rating: Double?, val progress: Double?,
     val season: Int?, val episode: Int?, val episodeTitle: String?, val isNew: Boolean,
     val logo: String? = null,
+    // Horror, anime or adult: kept off the screensaver (the server gives
+    // these no preview clip either).
+    val quiet: Boolean = false,
 ) {
     val key get() = "$kind-$tmdbId-${season ?: 0}-${episode ?: 0}"
     // Being watched (Continue Watching, new episodes): its page offers Resume.
@@ -232,6 +235,7 @@ data class Tile(
             o.int("season"), o.int("episode"), o.str("episodeTitle"), o.optBoolean("new"),
             // Only the Home banner and title pages carry it ("" there: none).
             if (o.has("logoUrl") || o.has("genres")) o.optString("logoUrl") else null,
+            quiet = o.optBoolean("quiet"),
         )
     }
 }

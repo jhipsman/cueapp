@@ -1,0 +1,131 @@
+package api
+
+import (
+	"context"
+	"fmt"
+	"slices"
+	"sync"
+	"time"
+
+	"github.com/jhipsman/cueapp/internal/metadata"
+)
+
+// Quiet titles: horror, anime and adult titles are kept off what plays or
+// shows by itself (Home's banner, the preview clips and the screensavers),
+// so nobody walking past the TV gets a fright. They can still be found,
+// browsed and played like any other title; only nothing pushes them.
+
+const (
+	genreHorror    = 27 // TMDB's movie genre
+	genreAnimation = 16 // movies and shows alike
+)
+
+// quietBy says whether a title with these facts is kept quiet: an adult
+// title, a horror film, or Japanese animation (anime).
+func quietBy(genres []int, language string, countries []string, adult bool, certification string) bool {
+	if adult || certification == "NC-17" {
+		return true
+	}
+	if slices.Contains(genres, genreHorror) {
+		return true
+	}
+	return slices.Contains(genres, genreAnimation) && (language == "ja" || slices.Contains(countries, "JP"))
+}
+
+func genreIDs(ids []int, full []metadata.Genre) []int {
+	out := slices.Clone(ids)
+	for _, g := range full {
+		out = append(out, g.ID)
+	}
+	return out
+}
+
+// quietKnown remembers each title's answer ("movie-603" → true), from list
+// results as cards are made and from TMDB's details otherwise.
+var quietKnown sync.Map
+
+func quietKey(kind string, id int) string { return fmt.Sprintf("%s-%d", kind, id) }
+
+func noteMovieQuiet(m metadata.Movie) bool {
+	q := quietBy(genreIDs(m.GenreIDs, m.Genres), m.OriginalLanguage, nil, m.Adult, "")
+	if len(m.GenreIDs) > 0 || len(m.Genres) > 0 || m.Adult {
+		quietKnown.Store(quietKey("movie", m.TMDBID), q)
+	}
+	return q
+}
+
+func noteShowQuiet(sh metadata.Show) bool {
+	q := quietBy(genreIDs(sh.GenreIDs, sh.Genres), sh.OriginalLanguage, sh.OriginCountry, false, "")
+	if len(sh.GenreIDs) > 0 || len(sh.Genres) > 0 {
+		quietKnown.Store(quietKey("tv", sh.TMDBID), q)
+	}
+	return q
+}
+
+// quietTitle says whether a title is kept quiet, asking TMDB for its details
+// when it isn't known yet. When TMDB can't be asked it isn't (and the answer
+// isn't remembered, so it's asked again next time).
+func (s *Server) quietTitle(ctx context.Context, kind string, id int) bool {
+	if v, ok := quietKnown.Load(quietKey(kind, id)); ok {
+		return v.(bool)
+	}
+	tm := s.TMDB()
+	if tm == nil {
+		return false
+	}
+	var q bool
+	switch kind {
+	case "movie":
+		d, err := tm.GetMovieDetail(ctx, id)
+		if err != nil {
+			return false
+		}
+		q = quietBy(genreIDs(d.GenreIDs, d.Genres), d.OriginalLanguage, nil, d.Adult, d.Certification())
+	case "tv":
+		d, err := tm.GetShowFull(ctx, id)
+		if err != nil {
+			return false
+		}
+		q = quietBy(genreIDs(d.GenreIDs, d.Genres), d.OriginalLanguage, d.OriginCountry, false, "")
+	default:
+		return false
+	}
+	quietKnown.Store(quietKey(kind, id), q)
+	return q
+}
+
+// markQuiet sets Quiet on every card of these rows, looking up (a few at a
+// time, for at most a few seconds) the ones not known yet: titles from your
+// history and your list come without their genres.
+func (s *Server) markQuiet(ctx context.Context, rows []watchRow) {
+	ctx, cancel := context.WithTimeout(ctx, 4*time.Second)
+	defer cancel()
+	type at struct{ row, item int }
+	var mu sync.Mutex
+	var wg sync.WaitGroup
+	slots := make(chan struct{}, 6)
+	for i := range rows {
+		for j := range rows[i].Items {
+			c := rows[i].Items[j]
+			if v, ok := quietKnown.Load(quietKey(c.Kind, c.TMDBID)); ok {
+				rows[i].Items[j].Quiet = v.(bool)
+				continue
+			}
+			wg.Add(1)
+			go func(p at, kind string, id int) {
+				defer wg.Done()
+				select {
+				case slots <- struct{}{}:
+				case <-ctx.Done():
+					return
+				}
+				q := s.quietTitle(ctx, kind, id)
+				<-slots
+				mu.Lock()
+				rows[p.row].Items[p.item].Quiet = q
+				mu.Unlock()
+			}(at{i, j}, c.Kind, c.TMDBID)
+		}
+	}
+	wg.Wait()
+}

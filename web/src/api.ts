@@ -279,6 +279,7 @@ export interface WatchCard {
   episodeTitle?: string
   new?: boolean // the episode came out in the last two weeks
   logoUrl?: string // logo artwork: on the Home banner and title pages ("" when none)
+  quiet?: boolean // horror, anime or adult: kept off the banner, previews and screensaver
 }
 // What brings a title's artwork alive: its logo, the main colour of its
 // picture ("r, g, b") and a YouTube trailer id.

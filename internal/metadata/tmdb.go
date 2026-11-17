@@ -114,6 +114,10 @@ type Movie struct {
 	Popularity   float64 `json:"popularity"`
 	GenreIDs     []int   `json:"genre_ids"`
 	Genres       []Genre `json:"genres"` // only on the single-movie endpoint
+	// The language it was made in ("en", "ja"), and TMDB's flag for adult
+	// (pornographic) titles.
+	OriginalLanguage string `json:"original_language"`
+	Adult            bool   `json:"adult"`
 }
 
 // Year extracts the 4-digit release year from ReleaseDate ("2024-03-01"),

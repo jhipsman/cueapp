@@ -69,7 +69,7 @@ export default function Home({ only }: { only?: WatchKind }) {
     .filter((r) => r.items.length > 0)
   let hero = home.hero
   if (only && hero?.kind !== only) {
-    hero = rows.flatMap((r) => r.items).find((c) => c.backdropUrl && c.overview && c.progress === undefined && !c.episode)
+    hero = rows.flatMap((r) => r.items).find((c) => c.backdropUrl && c.overview && !c.quiet && c.progress === undefined && !c.episode)
   }
   const shown = (tv && spot) || hero
 

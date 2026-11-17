@@ -220,15 +220,14 @@ func topCast(cast []CastMember, n int) []CastMember {
 // appended in the same request.
 type MovieDetail struct {
 	Movie
-	Runtime          int          `json:"runtime"`
-	Tagline          string       `json:"tagline"`
-	Status           string       `json:"status"`
-	OriginalLanguage string       `json:"original_language"`
-	Homepage         string       `json:"homepage"`
-	IMDBID           string       `json:"imdb_id"`
-	Videos           videosBlock  `json:"videos"`
-	Credits          creditsBlock `json:"credits"`
-	ReleaseDates     struct {
+	Runtime      int          `json:"runtime"`
+	Tagline      string       `json:"tagline"`
+	Status       string       `json:"status"`
+	Homepage     string       `json:"homepage"`
+	IMDBID       string       `json:"imdb_id"`
+	Videos       videosBlock  `json:"videos"`
+	Credits      creditsBlock `json:"credits"`
+	ReleaseDates struct {
 		Results []struct {
 			Country      string `json:"iso_3166_1"`
 			ReleaseDates []struct {
@@ -290,7 +289,6 @@ type ShowFull struct {
 	ShowDetail
 	Tagline          string `json:"tagline"`
 	Status           string `json:"status"`
-	OriginalLanguage string `json:"original_language"`
 	Homepage         string `json:"homepage"`
 	NumberOfSeasons  int    `json:"number_of_seasons"`
 	NumberOfEpisodes int    `json:"number_of_episodes"`

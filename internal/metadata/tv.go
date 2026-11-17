@@ -21,6 +21,8 @@ type Show struct {
 	Popularity   float64 `json:"popularity"`
 	GenreIDs     []int   `json:"genre_ids"`
 	Genres       []Genre `json:"genres"` // only on the single-show endpoint
+	// The language it was made in ("en", "ja").
+	OriginalLanguage string `json:"original_language"`
 	// Only on the single-show endpoint: the producing countries ("JP") and
 	// TMDB's kind of show ("Scripted", "Talk Show", "News", ...).
 	OriginCountry []string `json:"origin_country"`

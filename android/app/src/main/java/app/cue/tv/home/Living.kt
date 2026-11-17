@@ -111,7 +111,7 @@ fun saverSlides(home: Home): List<SaverSlide> {
     val seen = HashSet<String>()
     fun add(to: MutableList<SaverSlide>, t: Tile, line: String, detail: String) {
         val k = "${t.kind}-${t.tmdbId}"
-        if (t.backdrop == null || !seen.add(k)) return
+        if (t.backdrop == null || t.quiet || !seen.add(k)) return
         to.add(SaverSlide(t, line, detail))
     }
     val yours = setOf("continue", "new-episodes", "my-list")

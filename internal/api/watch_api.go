@@ -44,6 +44,9 @@ type watchCard struct {
 	// LogoURL is the title's logo artwork, on the Home banner and title
 	// pages only (the TV apps draw it instead of the name).
 	LogoURL string `json:"logoUrl,omitempty"`
+	// Quiet: horror, anime or adult (quiet.go). It's kept off the banner,
+	// the previews and the screensavers.
+	Quiet bool `json:"quiet,omitempty"`
 }
 
 type watchRow struct {
@@ -54,12 +57,14 @@ type watchRow struct {
 
 func movieCard(m metadata.Movie) watchCard {
 	return watchCard{Kind: watch.KindMovie, TMDBID: m.TMDBID, Title: m.Title, Year: m.Year(), Overview: m.Overview,
-		PosterURL: metadata.PosterURL(m.PosterPath), BackdropURL: metadata.BackdropURL(m.BackdropPath), Rating: metadata.RoundRating(m.VoteAverage)}
+		PosterURL: metadata.PosterURL(m.PosterPath), BackdropURL: metadata.BackdropURL(m.BackdropPath), Rating: metadata.RoundRating(m.VoteAverage),
+		Quiet: noteMovieQuiet(m)}
 }
 
 func showCard(sh metadata.Show) watchCard {
 	return watchCard{Kind: watch.KindTV, TMDBID: sh.TMDBID, Title: sh.Name, Year: sh.Year(), Overview: sh.Overview,
-		PosterURL: metadata.PosterURL(sh.PosterPath), BackdropURL: metadata.BackdropURL(sh.BackdropPath), Rating: metadata.RoundRating(sh.VoteAverage)}
+		PosterURL: metadata.PosterURL(sh.PosterPath), BackdropURL: metadata.BackdropURL(sh.BackdropPath), Rating: metadata.RoundRating(sh.VoteAverage),
+		Quiet: noteShowQuiet(sh)}
 }
 
 func movieCards(ms []metadata.Movie) []watchCard {
@@ -218,6 +223,7 @@ func (s *Server) handleWatchHome(w http.ResponseWriter, r *http.Request) {
 			home.Rows = append(home.Rows, row)
 		}
 	}
+	s.markQuiet(ctx, home.Rows)
 	// The banner: something trending this week with artwork, changing
 	// through the day so the page doesn't look the same every visit.
 	for _, row := range shelves {
@@ -226,7 +232,7 @@ func (s *Server) handleWatchHome(w http.ResponseWriter, r *http.Request) {
 		}
 		var withArt []watchCard
 		for _, c := range row.Items {
-			if c.BackdropURL != "" && c.Overview != "" {
+			if c.BackdropURL != "" && c.Overview != "" && !c.Quiet {
 				withArt = append(withArt, c)
 			}
 		}
@@ -250,7 +256,9 @@ func (s *Server) handleWatchHome(w http.ResponseWriter, r *http.Request) {
 		if i == 3 {
 			break
 		}
-		warm = append(warm, cardPreview(c))
+		if !c.Quiet {
+			warm = append(warm, cardPreview(c))
+		}
 	}
 	s.prewarmPreviews(r, warm)
 	// Everything else Home shows is made overnight, while the server is
@@ -258,7 +266,9 @@ func (s *Server) handleWatchHome(w http.ResponseWriter, r *http.Request) {
 	var later []previewWant
 	for _, row := range home.Rows {
 		for _, c := range row.Items {
-			later = append(later, cardPreview(c))
+			if !c.Quiet {
+				later = append(later, cardPreview(c))
+			}
 		}
 	}
 	rememberForTonight(r, later)
