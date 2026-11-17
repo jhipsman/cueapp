@@ -234,6 +234,45 @@ class PlayerActivity : Activity() {
     }
     private val hider = Runnable { if (player.isPlaying) hideControls() }
 
+    // A frozen picture: the sound plays on but no new frame has been shown for
+    // a few seconds (a TV's video decoder that stuck). The player jumps to
+    // where it is, which starts the decoder again; if it keeps happening, it
+    // suggests another version. (Not when tunneled: the TV's chip draws the
+    // frames itself and they aren't counted.)
+    private var frozenFrames = -1
+    private var frozenSince = 0L
+    private val frozenAt = ArrayDeque<Long>()
+    private val freezeWatch = object : Runnable {
+        override fun run() {
+            main.postDelayed(this, 2000)
+            if (!player.isPlaying || player.playbackState != Player.STATE_READY || live || !canChangeRefreshRate()) {
+                frozenFrames = -1
+                return
+            }
+            val counters = player.videoDecoderCounters ?: return
+            counters.ensureUpdated()
+            val rendered = counters.renderedOutputBufferCount
+            val now = SystemClock.elapsedRealtime()
+            if (rendered != frozenFrames) {
+                frozenFrames = rendered
+                frozenSince = now
+                return
+            }
+            if (now - frozenSince < 4000) return
+            // Stuck: start the decoder again where the sound is.
+            frozenFrames = -1
+            frozenAt.addLast(now)
+            while (frozenAt.isNotEmpty() && now - frozenAt.first() > 120_000) frozenAt.removeFirst()
+            partyApplying = now + 1500
+            player.seekTo(player.currentPosition)
+            if (frozenAt.size >= 3) {
+                frozenAt.clear()
+                Toast.makeText(this@PlayerActivity, "The picture keeps freezing with this version. Try Other version.", Toast.LENGTH_LONG).show()
+                if (hasOther) showControls(otherButton)
+            }
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
@@ -467,6 +506,7 @@ class PlayerActivity : Activity() {
         player.playWhenReady = true
         if (!live && !catchup) main.postDelayed(saver, SAVE_EVERY_MS)
         main.post(ticker)
+        main.postDelayed(freezeWatch, 4000)
         showControls()
         // A new title from a phone: this player hands over to Home, which opens it.
         ScreenLink.onPlayInPlayer = { t ->
@@ -620,14 +660,14 @@ class PlayerActivity : Activity() {
     }
 
     // Brings the player in line with the party.
-    private fun applyParty(s: JSONObject) {
+    private fun applyParty(s: JSONObject, jumpFrom: Long = 4000) {
         // Held (waiting for someone's player to load) counts as paused.
         val playing = s.optBoolean("playing") && !s.optBoolean("held")
         val elapsed = if (playing) SystemClock.elapsedRealtime() - partyGot else 0L
         val target = (s.optDouble("pos", 0.0) * 1000).toLong() + elapsed
         val off = kotlin.math.abs(position() - target)
         // While playing, small differences are closed by speed (partyDrift).
-        if (off > (if (playing) 4000 else 300)) {
+        if (off > (if (playing) jumpFrom else 300)) {
             partyApplying = SystemClock.elapsedRealtime() + 1500
             seekToPosition(target)
         }
@@ -649,6 +689,11 @@ class PlayerActivity : Activity() {
                 val off = position() - target // above 0: ahead
                 val far = kotlin.math.abs(off)
                 when {
+                    // With surround sent on as it is (Dolby, DTS to the TV or
+                    // receiver), the sound can't change speed and the picture
+                    // stalls behind it: small jumps instead.
+                    surround && far > 1500 -> applyParty(s, jumpFrom = 1500)
+                    surround -> Unit
                     far > 4000 -> applyParty(s)
                     far >= 200 -> speed = if (off < 0) (if (far > 2000) 1.1f else 1.05f) else (if (far > 2000) 0.9f else 0.95f)
                 }

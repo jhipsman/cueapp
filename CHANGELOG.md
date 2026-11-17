@@ -12,6 +12,7 @@ under [Unreleased]. How releases are cut: [docs/RELEASING.md](docs/RELEASING.md)
 - Releases are signed with a new update key, held only by the project owner. **Update now** installs only releases signed with it.
 
 ### Fixed
+- **Fire TV: the picture could freeze while the sound played on.** The player now notices (no new frame for four seconds while playing) and restarts the TV's video decoder where the sound is; if it keeps happening it suggests Other version. In a watch party, a TV sending surround sound on as it is no longer catches up by changing speed (which that sound can't do, so the picture stalled); it makes small jumps instead.
 - **Next episode on Fire TV and Google TV is seamless**: the player finds the next episode in the background near the end, then moves on in place with a short fade (from Next, the countdown at the credits, or the episode ending), instead of going back to Home and through a second "Finding a version" screen.
 - **Loading on the TV shows the Cue logo**, gently breathing, instead of a spinning blue ring.
 - **Nothing above PG-13 plays by itself**: preview clips, Home's banner and the screensavers now only ever use titles rated up to PG-13 or TV-14 (R, TV-MA, NC-17 and unrated titles never), on top of the horror, anime and adult rules. And a version far from the title's length (another video with the same name) is skipped by Play and never used for a clip.
