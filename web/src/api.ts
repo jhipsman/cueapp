@@ -351,6 +351,7 @@ export interface WatchTitle extends WatchCard {
   // from 4 March"), instead of Play; outDate is the day it streams.
   notOut?: string
   outDate?: string
+  thumb?: 'up' | 'down' // this profile's thumb on it
 }
 export interface WatchEpisode {
   season: number
@@ -2409,6 +2410,10 @@ export const api = {
   saveWatchProgress: (body: { kind: WatchKind; tmdbId: number; season?: number; episode?: number; position: number; duration: number }) =>
     put<null>('/watch/progress', body),
   forgetWatchProgress: (kind: WatchKind, tmdbId: number) => del<null>(`/watch/progress/${kind}/${tmdbId}`),
+  // Off Continue Watching (where you were is kept; watching again brings it back).
+  hideFromContinue: (kind: WatchKind, tmdbId: number) => del<null>(`/watch/continue/${kind}/${tmdbId}`),
+  // This profile's thumb on a title: up, down ("Not for me": off Home) or none.
+  setThumb: (kind: WatchKind, tmdbId: number, thumb: '' | 'up' | 'down') => put<{ thumb: string }>(`/watch/thumb/${kind}/${tmdbId}`, { thumb }),
   addToWatchList: (kind: WatchKind, tmdbId: number) => put<null>(`/watch/list/${kind}/${tmdbId}`),
   removeFromWatchList: (kind: WatchKind, tmdbId: number) => del<null>(`/watch/list/${kind}/${tmdbId}`),
   streamAddons: () => get<StreamAddon[]>('/settings/stream-addons'),

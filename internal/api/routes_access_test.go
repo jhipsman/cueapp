@@ -161,6 +161,8 @@ var memberRoutes = []string{
 	"GET /api/watch/year",
 	"GET /api/watch/preview/{kind}/{tmdbId}",
 	"DELETE /api/watch/history",
+	"DELETE /api/watch/continue/{kind}/{tmdbId}",
+	"PUT /api/watch/thumb/{kind}/{tmdbId}",
 	"GET /api/parties",
 	"POST /api/party",
 	"GET /api/party/{code}",

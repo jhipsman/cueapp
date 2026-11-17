@@ -51,6 +51,28 @@ export default function TitlePage({ kind }: { kind: WatchKind }) {
     }
   }, [kind, tmdbId])
 
+  const [thumb, setThumbState] = useState<'' | 'up' | 'down'>('')
+  const [offRow, setOffRow] = useState(false)
+  useEffect(() => setThumbState(title?.thumb ?? ''), [title])
+  async function thumbIt(t: 'up' | 'down') {
+    const next = thumb === t ? '' : t
+    const was = thumb
+    setThumbState(next)
+    try {
+      await api.setThumb(kind, tmdbId, next)
+    } catch {
+      setThumbState(was)
+    }
+  }
+  async function hideFromRow() {
+    setOffRow(true)
+    try {
+      await api.hideFromContinue(kind, tmdbId)
+    } catch {
+      setOffRow(false)
+    }
+  }
+
   async function toggleList() {
     const next = !inList
     setInList(next)
@@ -115,6 +137,23 @@ export default function TitlePage({ kind }: { kind: WatchKind }) {
             <button className="wx-btn" onClick={() => void toggleList()} aria-pressed={inList}>
               <Icon name={inList ? 'check' : 'plus'} size={20} strokeWidth={2.5} /> My List
             </button>
+            <button className={`wx-btn wx-round${thumb === 'up' ? ' on' : ''}`} onClick={() => void thumbIt('up')} aria-pressed={thumb === 'up'} title="I like this" aria-label="I like this">
+              <Icon name="thumbs-up" size={20} />
+            </button>
+            <button
+              className={`wx-btn wx-round${thumb === 'down' ? ' on' : ''}`}
+              onClick={() => void thumbIt('down')}
+              aria-pressed={thumb === 'down'}
+              title="Not for me: keeps it off Home"
+              aria-label="Not for me"
+            >
+              <Icon name="thumbs-down" size={20} />
+            </button>
+            {(resuming || startedShow) && (
+              <button className="wx-btn" disabled={offRow} onClick={() => void hideFromRow()} title="Where you were is kept">
+                <Icon name={offRow ? 'check' : 'x'} size={18} /> {offRow ? 'Off Continue Watching' : 'Remove from Continue Watching'}
+              </button>
+            )}
           </div>
         </div>
       </header>

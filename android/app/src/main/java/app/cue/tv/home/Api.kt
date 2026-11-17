@@ -192,6 +192,16 @@ class CueApi(ctx: Context, val server: String) {
         request(if (on) "PUT" else "DELETE", "/api/watch/list/$kind/$id")
     }
 
+    /** This profile's thumb on a title: "up", "down" (Not for me: off Home) or "". */
+    suspend fun setThumb(kind: String, id: Int, thumb: String) {
+        request("PUT", "/api/watch/thumb/$kind/$id", JSONObject().put("thumb", thumb))
+    }
+
+    /** Takes a title off Continue Watching (where you were is kept). */
+    suspend fun hideFromContinue(kind: String, id: Int) {
+        request("DELETE", "/api/watch/continue/$kind/$id")
+    }
+
     // ---- Live TV ----
 
     suspend fun channels(): LiveChannels = LiveChannels.from(obj("/api/live/channels"))
@@ -276,6 +286,8 @@ data class Title(
     val more: List<Tile>, val directors: List<String> = emptyList(), val ratings: Ratings? = null,
     // Not out to stream yet: when it's coming, shown instead of Play.
     val notOut: String? = null,
+    // This profile's thumb on it: "up", "down" or "".
+    val thumb: String = "",
 ) {
     companion object {
         fun from(o: JSONObject): Title {
@@ -289,6 +301,7 @@ data class Title(
                 (o.optJSONArray("directors") ?: JSONArray()).let { d -> (0 until d.length()).map { d.getString(it) } },
                 Ratings.from(o.optJSONObject("ratings")),
                 o.str("notOut"),
+                o.optString("thumb"),
             )
         }
     }

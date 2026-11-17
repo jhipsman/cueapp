@@ -5830,3 +5830,15 @@ button.wx-switch.on:hover {
   background: rgb(255 255 255 / 0.85);
   color: #111;
 }
+
+/* Thumbs on a title's page: round, filled once chosen. */
+.wx-btn.wx-round {
+  width: 46px;
+  padding: 0;
+  justify-content: center;
+  border-radius: 50%;
+}
+.wx-btn.wx-round.on {
+  background: #fff;
+  color: #111;
+}

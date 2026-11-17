@@ -685,6 +685,7 @@ Every route the server exposes. Routes marked **public** need no sign-in; all ot
 
 | Method | Path | Access | What it does |
 |---|---|---|---|
+| DELETE | `/api/watch/continue/{kind}/{tmdbId}` | signed in | DELETE /api/watch/continue/{kind}/{tmdbId}: takes a title off Continue Watching. |
 | GET | `/api/watch/extras/{kind}/{tmdbId}` | signed in | GET /api/watch/extras/{kind}/{tmdbId}: a title's logo, the main colour of its picture (for the glow and highlights) and its trailer (for the living banner), ... |
 | DELETE | `/api/watch/history` | signed in | DELETE /api/watch/history: the active profile's Continue Watching and what it has watched, forgotten. |
 | GET | `/api/watch/home` | signed in | GET /api/watch/home: Continue Watching, My List and the shelves. |
@@ -704,6 +705,7 @@ Every route the server exposes. Routes marked **public** need no sign-in; all ot
 | POST | `/api/watch/skips/learn` | signed in | POST /api/watch/skips/learn {"kind","tmdbId","season","segment","start","end","duration"}: the household skipped an intro (start to end) or the credits (pres... |
 | GET | `/api/watch/skips/{kind}/{tmdbId}` | signed in | GET /api/watch/skips/{kind}/{tmdbId}?season=&episode=&duration= |
 | GET | `/api/watch/subtitles/{kind}/{tmdbId}` | signed in | GET /api/watch/subtitles/{kind}/{tmdbId}?season=&episode=&release=&choice= is where the player gets the subtitle: {"url", "label", "choices"}. |
+| PUT | `/api/watch/thumb/{kind}/{tmdbId}` | signed in | PUT /api/watch/thumb/{kind}/{tmdbId} {"thumb":"up"\|"down"\|""}: this profile's thumb on a title. |
 | GET | `/api/watch/tv/{tmdbId}` | signed in | GET /api/watch/tv/{tmdbId} |
 | GET | `/api/watch/tv/{tmdbId}/next` | signed in | GET /api/watch/tv/{tmdbId}/next?season=1&episode=2: the episode to play after that one, for autoplay. |
 | GET | `/api/watch/tv/{tmdbId}/season/{season}` | signed in | GET /api/watch/tv/{tmdbId}/season/{season}: the season's episodes, with thumbnails and how far this account got in each. |
@@ -720,4 +722,4 @@ Every route the server exposes. Routes marked **public** need no sign-in; all ot
 | PUT | `/api/watched/settings` | admin | PUT /api/watched/settings {"sync": true, "cleanup": {...}} |
 | POST | `/api/watched/sync` | admin | POST /api/watched/sync: read what's been watched now. |
 
-400 routes.
+402 routes.

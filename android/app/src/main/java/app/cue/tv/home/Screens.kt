@@ -850,6 +850,22 @@ fun TitleScreen(api: CueApi, playback: Playback, card: Tile, memory: FocusMemory
                                 if (runCatching { api.setInList(c.kind, c.tmdbId, on) }.isSuccess) inList = on
                             }
                         }
+                        // Thumbs: "Not for me" keeps it off Home.
+                        var thumb by remember(t) { mutableStateOf(t.thumb) }
+                        Pill(if (thumb == "up") "Liked" else "Like", icon = if (thumb == "up") app.cue.tv.R.drawable.ic_cue_check else null) {
+                            val next = if (thumb == "up") "" else "up"
+                            scope.launch { if (runCatching { api.setThumb(c.kind, c.tmdbId, next) }.isSuccess) thumb = next }
+                        }
+                        Pill(if (thumb == "down") "Not for me ✓" else "Not for me") {
+                            val next = if (thumb == "down") "" else "down"
+                            scope.launch { if (runCatching { api.setThumb(c.kind, c.tmdbId, next) }.isSuccess) thumb = next }
+                        }
+                        if (started || (c.kind == "tv" && t.resumeEpisode != null && (t.resumeEpisode != 1 || t.resumeSeason != t.seasons.firstOrNull()?.number))) {
+                            var off by remember(t) { mutableStateOf(false) }
+                            Pill(if (off) "Hidden" else "Hide from row") {
+                                scope.launch { if (runCatching { api.hideFromContinue(c.kind, c.tmdbId) }.isSuccess) off = true }
+                            }
+                        }
                     }
                 }
             }

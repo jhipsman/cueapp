@@ -230,6 +230,21 @@ func (s *Server) handleWatchHome(w http.ResponseWriter, r *http.Request) {
 			home.Rows = append(home.Rows, row)
 		}
 	}
+	// Titles marked "not for me" stay off the rows (My List aside).
+	if marks, err := s.WatchRepo.Marks(pid); err == nil && len(marks) > 0 {
+		for i, row := range home.Rows {
+			if row.Key == "my-list" {
+				continue
+			}
+			kept := row.Items[:0:0]
+			for _, c := range row.Items {
+				if _, down := marks.Has(c.Kind, c.TMDBID, watch.MarkDown); !down {
+					kept = append(kept, c)
+				}
+			}
+			home.Rows[i].Items = kept
+		}
+	}
 	// A kids' profile sees only what its age limit allows.
 	if prof, ok := s.activeProfile(r); ok && prof.MaxRating != "" {
 		kept := home.Rows[:0]
@@ -240,7 +255,6 @@ func (s *Server) handleWatchHome(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 		home.Rows = kept
-		shelves = kept
 		cont = nil
 		for _, row := range kept {
 			if row.Key == "continue" {
@@ -251,7 +265,7 @@ func (s *Server) handleWatchHome(w http.ResponseWriter, r *http.Request) {
 	s.markQuiet(ctx, home.Rows)
 	// The banner: something trending this week with artwork, changing
 	// through the day so the page doesn't look the same every visit.
-	for _, row := range shelves {
+	for _, row := range home.Rows {
 		if row.Key != "trending-movies" && row.Key != "trending-tv" {
 			continue
 		}
@@ -321,8 +335,13 @@ func (s *Server) continueWatching(ctx context.Context, userID int64) []watchCard
 		slog.Warn("watch: continue watching", "err", err)
 		return nil
 	}
+	marks, _ := s.WatchRepo.Marks(userID)
 	out := []watchCard{}
 	for _, p := range recent {
+		// Taken off the row, and not watched since.
+		if at, hidden := marks.Has(p.Kind, p.TMDBID, watch.MarkHidden); hidden && !p.UpdatedAt.After(at) {
+			continue
+		}
 		c := watchCard{Kind: p.Kind, TMDBID: p.TMDBID, Title: p.Title, PosterURL: metadata.PosterURL(p.PosterPath),
 			BackdropURL: metadata.BackdropURL(p.BackdropPath), Season: p.Season, Episode: p.Episode, EpisodeTitle: p.EpisodeTitle}
 		if p.Finished() {
@@ -372,8 +391,18 @@ func (s *Server) becauseYouWatched(ctx context.Context, pid int64) []watchRow {
 	for _, p := range recent {
 		watched[fmt.Sprintf("%s:%d", p.Kind, p.TMDBID)] = true
 	}
+	// What you liked comes first; what wasn't for you isn't a reason.
+	marks, _ := s.WatchRepo.Marks(pid)
+	sort.SliceStable(recent, func(i, j int) bool {
+		_, ui := marks.Has(recent[i].Kind, recent[i].TMDBID, watch.MarkUp)
+		_, uj := marks.Has(recent[j].Kind, recent[j].TMDBID, watch.MarkUp)
+		return ui && !uj
+	})
 	var picks []watch.Progress
 	for _, p := range recent {
+		if _, down := marks.Has(p.Kind, p.TMDBID, watch.MarkDown); down {
+			continue
+		}
 		if len(picks) == 2 {
 			break
 		}
@@ -404,7 +433,8 @@ func (s *Server) becauseYouWatched(ctx context.Context, pid int64) []watchRow {
 			}
 			var keep []watchCard
 			for _, c := range cards {
-				if !watched[fmt.Sprintf("%s:%d", c.Kind, c.TMDBID)] {
+				_, down := marks.Has(c.Kind, c.TMDBID, watch.MarkDown)
+				if !watched[fmt.Sprintf("%s:%d", c.Kind, c.TMDBID)] && !down {
 					keep = append(keep, c)
 				}
 			}
@@ -641,6 +671,8 @@ type watchTitle struct {
 	// OutDate is the day it streams, when known.
 	NotOut  string `json:"notOut,omitempty"`
 	OutDate string `json:"outDate,omitempty"`
+	// Thumb is this profile's thumb on it: "up", "down" or "".
+	Thumb string `json:"thumb,omitempty"`
 }
 
 // GET /api/watch/movie/{tmdbId}
@@ -666,7 +698,7 @@ func (s *Server) handleWatchMovie(w http.ResponseWriter, r *http.Request) {
 	}
 	t := watchTitle{watchCard: movieCard(d.Movie), Tagline: d.Tagline, Runtime: d.Runtime, Genres: genreNames(d.Genres),
 		Certification: d.Certification(), Cast: castNames(d.Cast(10)), Directors: d.Directors(), IMDbID: d.IMDBID,
-		InList: s.WatchRepo.InList(pid, watch.KindMovie, tmdbID)}
+		InList: s.WatchRepo.InList(pid, watch.KindMovie, tmdbID), Thumb: s.WatchRepo.Thumb(pid, watch.KindMovie, tmdbID)}
 	if p, ok, _ := s.WatchRepo.GetProgress(pid, watch.KindMovie, tmdbID, 0, 0); ok && !p.Finished() {
 		t.ResumePosition = p.Position
 	}
@@ -715,7 +747,7 @@ func (s *Server) handleWatchShow(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	t := watchTitle{watchCard: showCard(d.Show), Tagline: d.Tagline, Genres: genreNames(d.Genres), Cast: castNames(d.Cast(10)),
-		Directors: d.Creators(), IMDbID: d.ExternalIDs.IMDBID, InList: s.WatchRepo.InList(pid, watch.KindTV, tmdbID)}
+		Directors: d.Creators(), IMDbID: d.ExternalIDs.IMDBID, InList: s.WatchRepo.InList(pid, watch.KindTV, tmdbID), Thumb: s.WatchRepo.Thumb(pid, watch.KindTV, tmdbID)}
 	for _, n := range d.Networks {
 		t.Networks = append(t.Networks, n.Name)
 	}
@@ -1179,4 +1211,57 @@ func (s *Server) handleWatchYear(w http.ResponseWriter, r *http.Request) {
 		a.TopMovie = &m
 	}
 	writeJSON(w, http.StatusOK, a)
+}
+
+// DELETE /api/watch/continue/{kind}/{tmdbId}: takes a title off Continue
+// Watching. Where you were is kept (and your year in Cue still counts it);
+// watching it again brings it back.
+func (s *Server) handleHideFromContinue(w http.ResponseWriter, r *http.Request) {
+	pid, ok := s.watchProfile(w, r)
+	if !ok {
+		return
+	}
+	kind, tmdbID, ok := watchKind(w, r)
+	if !ok {
+		return
+	}
+	if err := s.WatchRepo.SetMark(pid, kind, tmdbID, watch.MarkHidden, true); err != nil {
+		slog.Warn("watch: hide from continue", "err", err)
+		writeError(w, http.StatusInternalServerError, "Couldn't take it off the row.")
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
+// PUT /api/watch/thumb/{kind}/{tmdbId} {"thumb":"up"|"down"|""}: this
+// profile's thumb on a title. Up makes it a reason for "Because you
+// watched"; down ("Not for me") keeps it off Home's rows.
+func (s *Server) handlePutThumb(w http.ResponseWriter, r *http.Request) {
+	pid, ok := s.watchProfile(w, r)
+	if !ok {
+		return
+	}
+	kind, tmdbID, ok := watchKind(w, r)
+	if !ok {
+		return
+	}
+	var req struct {
+		Thumb string `json:"thumb"`
+	}
+	if err := decodeJSON(r, &req); err != nil || (req.Thumb != "" && req.Thumb != watch.MarkUp && req.Thumb != watch.MarkDown) {
+		writeError(w, http.StatusBadRequest, `A thumb is "up", "down" or "".`)
+		return
+	}
+	var err error
+	if req.Thumb == "" {
+		err = s.WatchRepo.SetMark(pid, kind, tmdbID, watch.MarkUp, false) // clears either
+	} else {
+		err = s.WatchRepo.SetMark(pid, kind, tmdbID, req.Thumb, true)
+	}
+	if err != nil {
+		slog.Warn("watch: thumb", "err", err)
+		writeError(w, http.StatusInternalServerError, "Couldn't save that.")
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]string{"thumb": req.Thumb})
 }
