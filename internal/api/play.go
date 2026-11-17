@@ -269,6 +269,11 @@ func (s *Server) handlePlayTMDBMovie(w http.ResponseWriter, r *http.Request) {
 		writeUpstreamError(w, "look the movie up on TMDB", err)
 		return
 	}
+	// Only announced, or in cinemas: there's no copy worth watching yet.
+	if f := filmOutOf(d, time.Now()); !f.out {
+		writeError(w, http.StatusNotFound, fmt.Sprintf("%s isn't out to stream yet (%s).", d.Title, strings.ToLower(f.notOutNote(time.Now())[:1])+f.notOutNote(time.Now())[1:]))
+		return
+	}
 	s.servePlay(w, r, movieTarget(library.Movie{TMDBID: tmdbID, Title: d.Title, Year: d.Year()}))
 }
 

@@ -117,6 +117,7 @@ export function Card({ card, wide }: { card: WatchCard; wide?: boolean }) {
         {wide && ex?.logo && <img className="wx-card-logo" src={ex.logo} alt="" />}
         {wide && code && <span className="wx-chip">{code}</span>}
         {card.new && <span className="wx-card-new">New episode</span>}
+        {card.soon && <span className="wx-card-new wx-card-soon">Coming soon</span>}
         {card.progress !== undefined && card.progress > 0 && (
           <span className="wx-card-progress">
             <span style={{ width: `${Math.round(card.progress * 100)}%` }} />

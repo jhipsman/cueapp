@@ -47,6 +47,8 @@ type watchCard struct {
 	// Quiet: horror, anime or adult (quiet.go). It's kept off the banner,
 	// the previews and the screensavers.
 	Quiet bool `json:"quiet,omitempty"`
+	// Soon: a film not out to stream yet (only announced, or in cinemas).
+	Soon bool `json:"soon,omitempty"`
 }
 
 type watchRow struct {
@@ -188,6 +190,10 @@ func (s *Server) handleWatchHome(w http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				slog.Info("watch: home row", "row", sh.key, "err", err)
 			}
+			// Home's rows are what you can watch now: films not out to
+			// stream yet are left off (they're in Coming soon).
+			s.markSoon(ctx, items)
+			items = outOnly(items)
 			shelves[i] = watchRow{Key: sh.key, Title: sh.title, Items: items}
 		}(i, sh)
 	}
@@ -209,6 +215,7 @@ func (s *Server) handleWatchHome(w http.ResponseWriter, r *http.Request) {
 		home.Rows = append(home.Rows, watchRow{Key: "new-episodes", Title: "New episodes", Items: newEps})
 	}
 	if list := s.myListCards(pid); len(list) > 0 {
+		s.markSoon(ctx, list)
 		home.Rows = append(home.Rows, watchRow{Key: "my-list", Title: "My List", Items: list})
 	}
 	// "Because you watched" rows sit among the others, after the first.
@@ -608,6 +615,11 @@ type watchTitle struct {
 	ResumeEpisode  int         `json:"resumeEpisode,omitempty"`
 	ResumePosition float64     `json:"resumePosition,omitempty"` // seconds
 	More           []watchCard `json:"more"`
+	// NotOut, for a title not out to stream yet, says when it's coming
+	// ("In cinemas now · streaming from 4 March"); its page offers no Play.
+	// OutDate is the day it streams, when known.
+	NotOut  string `json:"notOut,omitempty"`
+	OutDate string `json:"outDate,omitempty"`
 }
 
 // GET /api/watch/movie/{tmdbId}
@@ -634,6 +646,11 @@ func (s *Server) handleWatchMovie(w http.ResponseWriter, r *http.Request) {
 	if p, ok, _ := s.WatchRepo.GetProgress(pid, watch.KindMovie, tmdbID, 0, 0); ok && !p.Finished() {
 		t.ResumePosition = p.Position
 	}
+	if _, inLib, _ := s.MovieRepo.GetByTMDBID(tmdbID); !inLib {
+		f := filmOutOf(d, time.Now())
+		filmOutKnown.Store(tmdbID, f)
+		t.Soon, t.NotOut, t.OutDate = !f.out, f.notOutNote(time.Now()), f.home
+	}
 	var wg sync.WaitGroup
 	wg.Add(3)
 	go func() { defer wg.Done(); t.Ratings = s.ratingsFor(ctx, d.IMDBID) }()
@@ -642,6 +659,7 @@ func (s *Server) handleWatchMovie(w http.ResponseWriter, r *http.Request) {
 		defer wg.Done()
 		more, _ := tm.RelatedMovies(ctx, tmdbID, metadata.RelatedRecommended)
 		t.More = movieCards(more)
+		s.markSoon(ctx, t.More)
 	}()
 	wg.Wait()
 	alsoTonight(r, t.More, 8)
@@ -695,6 +713,14 @@ func (s *Server) handleWatchShow(w http.ResponseWriter, r *http.Request) {
 	}
 	if t.ResumeEpisode == 0 && len(t.Seasons) > 0 {
 		t.ResumeSeason, t.ResumeEpisode = t.Seasons[0].Number, 1
+	}
+	// A show that hasn't started yet.
+	if !aired(d.FirstAirDate) {
+		t.Soon, t.OutDate = true, d.FirstAirDate
+		t.NotOut = "Not out yet"
+		if d.FirstAirDate != "" {
+			t.NotOut = "Starts " + niceDate(d.FirstAirDate, time.Now())
+		}
 	}
 
 	var wg sync.WaitGroup
@@ -752,6 +778,7 @@ func (s *Server) handleWatchSearch(w http.ResponseWriter, r *http.Request) {
 		out = append(out, watchCard{Kind: m.MediaType, TMDBID: m.ID, Title: m.DisplayTitle(), Year: m.Year(), Overview: m.Overview,
 			PosterURL: metadata.PosterURL(m.PosterPath), BackdropURL: metadata.BackdropURL(m.BackdropPath), Rating: metadata.RoundRating(m.VoteAverage)})
 	}
+	s.markSoon(r.Context(), out) // films not out yet show "Coming soon"
 	writeJSON(w, http.StatusOK, out)
 }
 

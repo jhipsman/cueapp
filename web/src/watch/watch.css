@@ -5817,3 +5817,15 @@ button.wx-switch.on:hover {
     opacity: 1;
   }
 }
+
+/* A title not out to stream yet: when it's coming, where Play would be. */
+.wx-btn.wx-not-out {
+  cursor: default;
+  background: rgb(255 255 255 / 0.12);
+  color: var(--wx-text, #fff);
+  font-weight: 600;
+}
+.wx-card-soon {
+  background: rgb(255 255 255 / 0.85);
+  color: #111;
+}

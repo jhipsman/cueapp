@@ -282,6 +282,7 @@ export interface WatchCard {
   new?: boolean // the episode came out in the last two weeks
   logoUrl?: string // logo artwork: on the Home banner and title pages ("" when none)
   quiet?: boolean // horror, anime or adult: kept off the banner, previews and screensaver
+  soon?: boolean // a film not out to stream yet (only announced, or in cinemas)
 }
 // What brings a title's artwork alive: its logo, the main colour of its
 // picture ("r, g, b") and a YouTube trailer id.
@@ -345,6 +346,10 @@ export interface WatchTitle extends WatchCard {
   resumeEpisode?: number
   resumePosition?: number // seconds
   more: WatchCard[]
+  // Not out to stream yet: when it's coming ("In cinemas now · streaming
+  // from 4 March"), instead of Play; outDate is the day it streams.
+  notOut?: string
+  outDate?: string
 }
 export interface WatchEpisode {
   season: number

@@ -827,7 +827,10 @@ fun TitleScreen(api: CueApi, playback: Playback, card: Tile, memory: FocusMemory
                     Row(Modifier.rise(290), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         val resumeTv = c.kind == "tv" && t.resumeSeason != null && t.resumeEpisode != null
                         val started = (t.resumePosition ?: 0.0) > 0
-                        Pill(
+                        val notOut = t.notOut
+                        if (notOut != null) Pill(notOut, icon = app.cue.tv.R.drawable.ic_cue_calendar, modifier = Modifier.focusRequester(playFocus)) {
+                            // Nothing to play yet.
+                        } else Pill(
                             if (started) "Resume" else "Play",
                             primary = true,
                             small = if (resumeTv) epCode(t.resumeSeason, t.resumeEpisode) else null,

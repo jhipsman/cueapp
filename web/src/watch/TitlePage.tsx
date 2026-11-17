@@ -103,9 +103,15 @@ export default function TitlePage({ kind }: { kind: WatchKind }) {
             </p>
           )}
           <div className="wx-actions">
-            <button className="wx-btn play" onClick={() => navigate(playHref(kind, tmdbId, title.resumeSeason, title.resumeEpisode))}>
-              <Icon name="play" size={22} /> {playLabel}
-            </button>
+            {title.notOut ? (
+              <span className="wx-btn wx-not-out" role="status">
+                <Icon name="calendar" size={20} /> {title.notOut}
+              </span>
+            ) : (
+              <button className="wx-btn play" onClick={() => navigate(playHref(kind, tmdbId, title.resumeSeason, title.resumeEpisode))}>
+                <Icon name="play" size={22} /> {playLabel}
+              </button>
+            )}
             <button className="wx-btn" onClick={() => void toggleList()} aria-pressed={inList}>
               <Icon name={inList ? 'check' : 'plus'} size={20} strokeWidth={2.5} /> My List
             </button>

@@ -274,6 +274,8 @@ data class Title(
     val card: Tile, val tagline: String?, val runtime: Int?, val genres: List<String>, val certification: String?,
     val seasons: List<Season>, val inList: Boolean, val resumeSeason: Int?, val resumeEpisode: Int?, val resumePosition: Double?,
     val more: List<Tile>, val directors: List<String> = emptyList(), val ratings: Ratings? = null,
+    // Not out to stream yet: when it's coming, shown instead of Play.
+    val notOut: String? = null,
 ) {
     companion object {
         fun from(o: JSONObject): Title {
@@ -286,6 +288,7 @@ data class Title(
                 (o.optJSONArray("more") ?: JSONArray()).cards(),
                 (o.optJSONArray("directors") ?: JSONArray()).let { d -> (0 until d.length()).map { d.getString(it) } },
                 Ratings.from(o.optJSONObject("ratings")),
+                o.str("notOut"),
             )
         }
     }
