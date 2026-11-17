@@ -39,6 +39,7 @@ Cue works like Netflix for a household: one sign-in, then **Who's watching?** an
 - **Next episode.** At the end of an episode a card offers the next one and plays it after 10 seconds.
 - **Remove from Continue Watching.** On the title's page (**Hide from row** on a TV): it leaves the row, but where you were is kept and your year in Cue still counts it. Watching it again brings it back.
 - **Thumbs.** 👍 on a title's page makes it count for **Because you watched**; 👎 (**Not for me**) keeps it off Home's rows for that profile (search still finds it). Press it again to take it back.
+- **Film series.** A film that's part of a series (Harry Potter, The Matrix...) shows the whole series in order on its page, and when it ends the player offers **Next in the series**.
 - **My List.** The **+** on a title's page saves it to My List, its own row on Home and its own page. This is separate from your library: adding to My List downloads nothing.
 
 The library manager (downloads, quality, settings) stays one click away: **Manage** in the top bar.

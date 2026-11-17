@@ -885,6 +885,12 @@ fun TitleScreen(api: CueApi, playback: Playback, card: Tile, memory: FocusMemory
                     }
                 }
             }
+            // The film series it's part of, in order.
+            if (t.series.size > 1) {
+                item {
+                    CardRow(Shelf("series", t.seriesName ?: "In this series", t.series), memory) { m -> openTitle(m) }
+                }
+            }
             if (t.more.isNotEmpty()) {
                 item {
                     CardRow(Shelf("more", "More Like This", t.more.take(18)), memory) { m -> openTitle(m) }

@@ -673,6 +673,16 @@ type watchTitle struct {
 	OutDate string `json:"outDate,omitempty"`
 	// Thumb is this profile's thumb on it: "up", "down" or "".
 	Thumb string `json:"thumb,omitempty"`
+	// Collection: the film series it's part of, its films in order, and
+	// the one after this (Next in the series, when it's out).
+	Collection *watchCollection `json:"collection,omitempty"`
+}
+
+type watchCollection struct {
+	ID    int         `json:"id"`
+	Name  string      `json:"name"`
+	Parts []watchCard `json:"parts"`
+	Next  *watchCard  `json:"next,omitempty"`
 }
 
 // GET /api/watch/movie/{tmdbId}
@@ -708,9 +718,10 @@ func (s *Server) handleWatchMovie(w http.ResponseWriter, r *http.Request) {
 		t.Soon, t.NotOut, t.OutDate = !f.out, f.notOutNote(time.Now()), f.home
 	}
 	var wg sync.WaitGroup
-	wg.Add(3)
+	wg.Add(4)
 	go func() { defer wg.Done(); t.Ratings = s.ratingsFor(ctx, d.IMDBID) }()
 	go func() { defer wg.Done(); t.LogoURL, _ = tm.Logo(ctx, watch.KindMovie, tmdbID) }()
+	go func() { defer wg.Done(); t.Collection = s.filmSeries(r, d.BelongsToCollection, tmdbID) }()
 	go func() {
 		defer wg.Done()
 		more, _ := tm.RelatedMovies(ctx, tmdbID, metadata.RelatedRecommended)
@@ -1264,4 +1275,30 @@ func (s *Server) handlePutThumb(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]string{"thumb": req.Thumb})
+}
+
+// filmSeries is the series a film is in (the films in release order, those
+// above a kids' profile's limit left out), or nil.
+func (s *Server) filmSeries(r *http.Request, ref *metadata.CollectionRef, tmdbID int) *watchCollection {
+	if ref == nil || ref.ID <= 0 {
+		return nil
+	}
+	ctx := r.Context()
+	col, err := s.TMDB().GetCollection(ctx, ref.ID)
+	if err != nil || len(col.Parts) < 2 {
+		return nil
+	}
+	parts := movieCards(col.Parts)
+	s.markSoon(ctx, parts)
+	if prof, ok := s.activeProfile(r); ok {
+		parts = s.ageFiltered(ctx, prof, parts)
+	}
+	out := &watchCollection{ID: col.ID, Name: col.Name, Parts: parts}
+	for i, c := range parts {
+		if c.TMDBID == tmdbID && i+1 < len(parts) && !parts[i+1].Soon {
+			next := parts[i+1]
+			out.Next = &next
+		}
+	}
+	return out
 }

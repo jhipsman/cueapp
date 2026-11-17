@@ -288,6 +288,9 @@ data class Title(
     val notOut: String? = null,
     // This profile's thumb on it: "up", "down" or "".
     val thumb: String = "",
+    // The film series it's part of: its name and films in order.
+    val seriesName: String? = null,
+    val series: List<Tile> = emptyList(),
 ) {
     companion object {
         fun from(o: JSONObject): Title {
@@ -302,6 +305,8 @@ data class Title(
                 Ratings.from(o.optJSONObject("ratings")),
                 o.str("notOut"),
                 o.optString("thumb"),
+                o.optJSONObject("collection")?.optString("name")?.takeIf { it.isNotEmpty() },
+                o.optJSONObject("collection")?.optJSONArray("parts")?.cards() ?: emptyList(),
             )
         }
     }

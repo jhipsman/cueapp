@@ -1,7 +1,7 @@
 import { usePrefs } from './prefs'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
-import { api, browserCantOpen, profileToken, type PlayAnswer, type WatchEpisode, type WatchSkips } from '../api'
+import { api, browserCantOpen, profileToken, type PlayAnswer, type WatchCard, type WatchEpisode, type WatchSkips } from '../api'
 import Icon from '../components/Icon'
 import { useDocumentTitle } from '../documentTitle'
 import { epCode, playHref, Spinner } from './parts'
@@ -156,6 +156,8 @@ export default function PlayerPage() {
   // The next episode's card, offered at the credits; it only counts down
   // (and plays by itself) once this episode has really ended.
   const [offerNext, setOfferNext] = useState(false)
+  // A film that's part of a series: the next one, offered at the end.
+  const [nextFilm, setNextFilm] = useState<WatchCard | null>(null)
   const skipSeen = useRef({ key: '', at: 0 })
   const [wokeAt, setWokeAt] = useState(0)
   useEffect(() => {
@@ -214,6 +216,7 @@ export default function PlayerPage() {
     setNext(null)
     setCountdown(null)
     setOfferNext(false)
+    setNextFilm(null)
     setNote('')
     resumeAt.current = 0
     silentSkips.current = 0
@@ -567,6 +570,13 @@ export default function PlayerPage() {
   // With Settings > Playback > Autoplay off, it's only offered.
   function onEnded() {
     save()
+    if (kind === 'movie') {
+      api
+        .watchTitle('movie', tmdbId)
+        .then((t) => setNextFilm(t.collection?.next ?? null))
+        .catch(() => undefined)
+      return
+    }
     if (kind !== 'tv') return
     const after = () => (prefs.on('autoplayNext') ? setCountdown(NEXT_COUNTDOWN) : setOfferNext(true))
     if (next) {
@@ -1021,6 +1031,27 @@ export default function PlayerPage() {
         <button className="wx-skip" onClick={() => seekAbs(shownSkip.to)}>
           {shownSkip.label} <Icon name="skip-forward" size={18} fill="currentColor" />
         </button>
+      )}
+
+      {nextFilm && (
+        <div className="wx-next">
+          {nextFilm.backdropUrl && <img src={nextFilm.backdropUrl} alt="" />}
+          <div className="wx-next-body">
+            <small>Next in the series</small>
+            <div style={{ fontWeight: 700 }}>
+              {nextFilm.title}
+              {nextFilm.year ? ` (${nextFilm.year})` : ''}
+            </div>
+            <div className="wx-next-actions">
+              <button className="wx-btn play small" onClick={() => navigate(withParty(playHref('movie', nextFilm.tmdbId)), { replace: true })}>
+                <Icon name="play" size={16} /> Play
+              </button>
+              <button className="wx-btn small" onClick={() => setNextFilm(null)}>
+                Hide
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {next && (countdown !== null || offerNext) && (

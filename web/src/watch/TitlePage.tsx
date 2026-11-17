@@ -187,6 +187,8 @@ export default function TitlePage({ kind }: { kind: WatchKind }) {
           <Episodes tmdbId={tmdbId} seasons={title.seasons} season={season} onSeason={setSeason} />
         )}
 
+        {title.collection && <Row title={title.collection.name} items={title.collection.parts} />}
+
         {title.more.length > 0 && onTV() && <Row title="More like this" items={title.more.slice(0, 18)} />}
         {title.more.length > 0 && !onTV() && (
           <>

@@ -352,6 +352,8 @@ export interface WatchTitle extends WatchCard {
   notOut?: string
   outDate?: string
   thumb?: 'up' | 'down' // this profile's thumb on it
+  // The film series it's part of: its films in order, and the next one out.
+  collection?: { id: number; name: string; parts: WatchCard[]; next?: WatchCard }
 }
 export interface WatchEpisode {
   season: number
