@@ -2491,6 +2491,14 @@ export const api = {
   putIPTV: (body: { server: string; username?: string; password?: string }) => put<IPTVSettings>('/settings/iptv', body),
   getOMDb: () => get<{ set: boolean }>('/settings/omdb'),
   putOMDb: (apiKey: string) => put<{ set: boolean }>('/settings/omdb', { apiKey }),
+  // Where a conversion asked to start at t really begins (a copied picture
+  // starts at the keyframe before t, the sound with it). stream is the
+  // conversion's address (stream or HLS).
+  convertStart: (stream: string, t: number) => {
+    const q = stream.includes('?') ? stream.slice(stream.indexOf('?') + 1) : ''
+    const hls = stream.includes('/convert/hls') ? '&hls=1' : ''
+    return get<{ start: number }>(`/play/convert/start?${q}&t=${t.toFixed(2)}${hls}`).then((r) => r.start)
+  },
   convertProbe: (token: string) =>
     get<{ duration: number; copyVideo: boolean; stream: string; hls: string; hevc?: boolean }>(`/play/convert?u=${encodeURIComponent(token)}`)
       // Safari plays a stream being made only as HLS, and plays HEVC itself

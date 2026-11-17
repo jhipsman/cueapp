@@ -5376,10 +5376,12 @@ button.wx-switch.on:hover {
   right: 0;
   bottom: 0;
   z-index: 40;
-  width: 340px;
+  width: 280px;
   display: flex;
   flex-direction: column;
-  background: rgba(14, 15, 19, 0.97);
+  font-size: 0.9rem;
+  background: rgba(14, 15, 19, 0.92);
+  backdrop-filter: blur(10px);
   border-left: 1px solid rgba(255, 255, 255, 0.08);
   animation: wx-party-in 0.4s var(--wx-settle) backwards;
 }
@@ -5392,8 +5394,8 @@ button.wx-switch.on:hover {
 @media (min-width: 900px) {
   .wx-player.with-party > video,
   .wx-player.with-party > .vx {
-    right: 340px;
-    width: calc(100% - 340px);
+    right: 280px;
+    width: calc(100% - 280px);
   }
   .wx-player.with-party > video {
     position: absolute;
@@ -5402,12 +5404,32 @@ button.wx-switch.on:hover {
     height: 100%;
   }
 }
-@media (max-width: 899px) {
+/* A phone held sideways: a slim strip at the side. */
+@media (max-width: 899px) and (orientation: landscape) {
+  .wx-party {
+    width: 220px;
+    font-size: 0.82rem;
+  }
+  .wx-player.with-party > video,
+  .wx-player.with-party > .vx {
+    right: 220px;
+    width: calc(100% - 220px);
+  }
+  .wx-player.with-party > video {
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+  }
+}
+/* A phone held upright: a short sheet under the picture. */
+@media (max-width: 899px) and (orientation: portrait) {
   .wx-party {
     top: auto;
     left: 0;
     width: auto;
-    height: 52%;
+    height: 34%;
+    font-size: 0.85rem;
     border-left: 0;
     border-top: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 18px 18px 0 0;
@@ -5421,7 +5443,7 @@ button.wx-switch.on:hover {
   }
   .wx-player.with-party > video,
   .wx-player.with-party > .vx {
-    height: 48%;
+    height: 66%;
     bottom: auto;
   }
   .wx-player.with-party > video {
@@ -5435,7 +5457,7 @@ button.wx-switch.on:hover {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 16px 10px;
+  padding: 10px 12px 6px;
 }
 .wx-party header div {
   display: grid;
@@ -5460,25 +5482,25 @@ button.wx-switch.on:hover {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 6px;
-  padding: 0 16px 10px;
+  gap: 4px;
+  padding: 0 12px 6px;
 }
 .wx-party-invite {
   display: inline-flex;
   align-items: center;
   gap: 4px;
   margin-left: auto;
-  padding: 6px 12px;
+  padding: 4px 10px;
   border: 0;
   border-radius: 999px;
   background: var(--wx-accent);
   color: var(--wx-accent-text);
-  font: 600 0.82rem inherit;
+  font: 600 0.75rem inherit;
   font-family: inherit;
   cursor: pointer;
 }
 .wx-party-tip {
-  margin: 0 16px 8px;
+  margin: 0 12px 6px;
   color: var(--wx-dim);
   font-size: 0.78rem;
   line-height: 1.4;
@@ -5486,10 +5508,10 @@ button.wx-switch.on:hover {
 .wx-party-msgs {
   flex: 1;
   overflow-y: auto;
-  padding: 8px 16px;
+  padding: 6px 12px;
   display: grid;
   align-content: start;
-  gap: 10px;
+  gap: 6px;
   border-top: 1px solid rgba(255, 255, 255, 0.06);
 }
 .wx-party-event {
@@ -5515,14 +5537,14 @@ button.wx-switch.on:hover {
 .wx-party-reacts {
   display: flex;
   justify-content: space-between;
-  padding: 6px 10px;
+  padding: 4px 8px;
   border-top: 1px solid rgba(255, 255, 255, 0.06);
 }
 .wx-party-reacts button {
   border: 0;
   background: none;
-  font-size: 1.3rem;
-  padding: 4px;
+  font-size: 1.05rem;
+  padding: 2px;
   border-radius: 8px;
   cursor: pointer;
   transition: transform 0.2s var(--wx-settle);
@@ -5536,13 +5558,13 @@ button.wx-switch.on:hover {
 }
 .wx-party-say {
   display: flex;
-  gap: 8px;
-  padding: 10px 12px 14px;
+  gap: 6px;
+  padding: 6px 10px 10px;
 }
 .wx-party-say input {
   flex: 1;
   min-width: 0;
-  padding: 10px 14px;
+  padding: 7px 12px;
   border-radius: 999px;
   border: 1px solid rgba(255, 255, 255, 0.14);
   background: rgba(255, 255, 255, 0.06);
@@ -5551,7 +5573,7 @@ button.wx-switch.on:hover {
 }
 .wx-party-say button {
   border: 0;
-  width: 40px;
+  width: 32px;
   border-radius: 50%;
   display: grid;
   place-items: center;

@@ -370,7 +370,11 @@ class PlayerActivity : Activity() {
             val floats = FrameLayout(this@PlayerActivity)
             partyFloats = floats
             addView(floats, FrameLayout.LayoutParams(MATCH, MATCH))
-            addView(buildPartyPanel(), FrameLayout.LayoutParams(px(290), MATCH, Gravity.END))
+            // The party: a small card in the top corner, not a strip down the side.
+            addView(buildPartyPanel(), FrameLayout.LayoutParams(px(200), ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.TOP or Gravity.END).apply {
+                topMargin = px(16)
+                marginEnd = px(16)
+            })
             addView(TextView(this@PlayerActivity).also { partyWait = it }.apply {
                 setTextColor(0xFFFFFFFF.toInt())
                 textSize = 18f
@@ -590,7 +594,7 @@ class PlayerActivity : Activity() {
         partyButton?.text = "Party"
         onPartyState(state, first = true)
         party?.let { l ->
-            partyQr?.setImageBitmap(app.cue.tv.home.qrBitmap("$server/watch/party/${l.code}?chat=1", px(150)))
+            partyQr?.setImageBitmap(app.cue.tv.home.qrBitmap("$server/watch/party/${l.code}?chat=1", px(92)))
             // This TV moved on to another episode (Next): the party follows.
             val t = state.optJSONObject("title")
             if (isShow && t != null && (t.optInt("season") != info.optInt("season") || t.optInt("episode") != info.optInt("episode"))) {
@@ -717,14 +721,15 @@ class PlayerActivity : Activity() {
         lines.addView(TextView(this).apply {
             this.text = text
             setTextColor(if (event) 0xFFA6A8AE.toInt() else Color.WHITE)
-            size(if (event) 11f else 13f)
+            size(if (event) 8.5f else 10f)
             typeface = Fonts.text(this@PlayerActivity, if (event) 400 else 500)
-            setPadding(0, px(4), 0, px(4))
+            maxLines = 3
+            setPadding(0, px(2), 0, px(2))
             alpha = 0f
             animate().alpha(1f).setDuration(250).start()
         })
-        while (lines.childCount > 8) lines.removeViewAt(0)
-        if (partyPanel?.visibility != View.VISIBLE && !event) showPartyPanel(true)
+        while (lines.childCount > 4) lines.removeViewAt(0)
+        if (!event || partyPanel?.visibility == View.VISIBLE) showPartyPanel(true)
     }
 
     // A reaction, as in a Teams meeting: it pops up on the picture with who
@@ -781,8 +786,13 @@ class PlayerActivity : Activity() {
         }
     }
 
+    // The card shows for a few seconds on news (a chat line, someone joining)
+    // and while the controls are up, then gets out of the way.
+    private val partyHide = Runnable { if (player.isPlaying && !controlsShowing()) showPartyPanel(false) }
     private fun showPartyPanel(show: Boolean) {
         partyPanel?.let { showSoftly(it, show) }
+        main.removeCallbacks(partyHide)
+        if (show) main.postDelayed(partyHide, 8000)
     }
 
     // The party's panel, at the right: who's watching, the last few lines of
@@ -791,25 +801,33 @@ class PlayerActivity : Activity() {
     private fun buildPartyPanel(): View = LinearLayout(this).also { partyPanel = it }.apply {
         orientation = LinearLayout.VERTICAL
         visibility = View.GONE
-        setPadding(px(18), px(24), px(18), px(24))
-        background = GradientDrawable(GradientDrawable.Orientation.RIGHT_LEFT, intArrayOf(0xE60B0C0F.toInt(), 0x990B0C0F.toInt()))
+        setPadding(px(11), px(9), px(11), px(10))
+        background = GradientDrawable().apply {
+            cornerRadius = px(12).toFloat()
+            setColor(0xCC0B0C0F.toInt())
+        }
         addView(TextView(this@PlayerActivity).also { partyHead = it }.apply {
             text = "Watch party"
             setTextColor(Color.WHITE)
-            size(14f)
-            typeface = Fonts.display(this@PlayerActivity)
+            size(10f)
+            typeface = Fonts.text(this@PlayerActivity, 600)
+            maxLines = 2
         })
         addView(LinearLayout(this@PlayerActivity).also { partyLines = it }.apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(0, px(12), 0, px(12))
-        }, LinearLayout.LayoutParams(MATCH, 0, 1f))
-        addView(ImageView(this@PlayerActivity).also { partyQr = it }, LinearLayout.LayoutParams(px(110), px(110)))
-        addView(TextView(this@PlayerActivity).apply {
-            text = "Chat from your phone: scan this"
-            setTextColor(0xFFA6A8AE.toInt())
-            size(11f)
-            typeface = Fonts.text(this@PlayerActivity)
-            setPadding(0, px(6), 0, 0)
+            setPadding(0, px(4), 0, px(6))
+        }, LinearLayout.LayoutParams(MATCH, ViewGroup.LayoutParams.WRAP_CONTENT))
+        addView(LinearLayout(this@PlayerActivity).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            addView(ImageView(this@PlayerActivity).also { partyQr = it }, LinearLayout.LayoutParams(px(46), px(46)))
+            addView(TextView(this@PlayerActivity).apply {
+                text = "Scan to chat\nfrom your phone"
+                setTextColor(0xFFA6A8AE.toInt())
+                size(8f)
+                typeface = Fonts.text(this@PlayerActivity)
+                setPadding(px(8), 0, 0, 0)
+            })
         })
     }
 
