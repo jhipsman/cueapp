@@ -5842,3 +5842,80 @@ button.wx-switch.on:hover {
   background: #fff;
   color: #111;
 }
+
+/* The phone's TV remote (Send to TV). */
+.wx-remote {
+  max-width: 520px;
+  margin: 0 auto;
+  padding-top: 90px;
+  text-align: center;
+}
+.wx-remote h1 {
+  margin: 8px 0 4px;
+}
+.wx-remote-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 16px;
+}
+.wx-remote-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 28px 0 22px;
+  font-variant-numeric: tabular-nums;
+  font-size: 14px;
+}
+.wx-remote-bar input {
+  flex: 1;
+  accent-color: var(--wx-accent, #e50914);
+}
+.wx-remote-keys {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 22px;
+  margin-bottom: 24px;
+}
+.wx-remote-keys .wx-round {
+  width: 64px;
+  height: 64px;
+  font-weight: 700;
+}
+.wx-btn.wx-remote-main {
+  width: 84px;
+  height: 84px;
+  border-radius: 50%;
+  justify-content: center;
+  padding: 0;
+}
+.wx-playon {
+  position: relative;
+  display: inline-flex;
+}
+.wx-playon-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  min-width: 180px;
+  padding: 6px;
+  border-radius: 10px;
+  background: var(--wx-panel, #181818);
+  box-shadow: 0 12px 40px rgb(0 0 0 / 0.5);
+}
+.wx-playon-menu button {
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.wx-playon-menu button:hover {
+  background: rgb(255 255 255 / 0.1);
+}

@@ -23,6 +23,7 @@ under [Unreleased]. How releases are cut: [docs/RELEASING.md](docs/RELEASING.md)
 - **No sound in the web player, and versions flicking past one after another**: when a browser shows a version's picture but can't play its sound (Dolby, DTS, TrueHD), Cue now keeps the picture exactly as it is and converts only the sound, from the same moment. Before, it converted only plain H.264 pictures and otherwise jumped to the next version, which usually had the same sound, so it cycled. **No sound? Fix it** in Versions does the same.
 
 ### Added
+- **Send to TV**: a title's page on a phone or computer has **Play on TV** for any Fire TV or Google TV with Cue open; the TV starts it, and the phone becomes its remote (play, pause, back 10 s, forward 30 s, jump, stop). **TV remote** in the avatar menu.
 - **Coming soon and Remind me**: a Coming soon row on Home (films on their way, with the day they stream), and **Remind me** on any title not out yet: it heads Coming soon, then shows under **Out now** at the top of Home once it's out, until you play it. Web and TV apps.
 - **Film series in order**: a film's page shows the series it belongs to (from TMDB's collections), in release order, on the web and TV apps; at the end of a film the web player offers **Next in the series**.
 - **Remove from Continue Watching** and **thumbs**: a title's page can take it off Continue Watching (where you were is kept; watching again brings it back), and a thumb up or down per profile: up makes it a reason for Because you watched, down ("Not for me") keeps it off Home. Web and TV apps.

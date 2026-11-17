@@ -174,6 +174,14 @@ class Playback(
     // How the player ended: reason (ended, next, other, nosound, error, back,
     // channel-up, channel-down, channel), where it was, and a message.
     fun ended(reason: String, position: Long, message: String) {
+        // Sent from a phone while something played: "kind|id|season|episode".
+        if (reason == "remote-play") {
+            message.split('|').takeIf { it.size == 4 }?.let { p ->
+                val id = p[1].toIntOrNull() ?: return
+                playTitle(p[0], id, p[2].toIntOrNull() ?: 0, p[3].toIntOrNull() ?: 0)
+            }
+            return
+        }
         live?.let { ch ->
             val list = liveList
             val i = list.indexOfFirst { it.id == ch.id }

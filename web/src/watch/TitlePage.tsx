@@ -2,6 +2,7 @@ import { usePrefs } from './prefs'
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { api, type WatchEpisode, type WatchKind, type WatchTitle } from '../api'
+import { useScreens } from './TVRemote'
 import Icon from '../components/Icon'
 import { useDocumentTitle } from '../documentTitle'
 import FreeElsewhere from './FreeElsewhere'
@@ -155,6 +156,7 @@ export default function TitlePage({ kind }: { kind: WatchKind }) {
             <button className="wx-btn" onClick={() => void toggleList()} aria-pressed={inList}>
               <Icon name={inList ? 'check' : 'plus'} size={20} strokeWidth={2.5} /> My List
             </button>
+            {!title.notOut && <PlayOnTV kind={kind} tmdbId={tmdbId} season={title.resumeSeason} episode={title.resumeEpisode} />}
             <button className={`wx-btn wx-round${thumb === 'up' ? ' on' : ''}`} onClick={() => void thumbIt('up')} aria-pressed={thumb === 'up'} title="I like this" aria-label="I like this">
               <Icon name="thumbs-up" size={20} />
             </button>
@@ -296,5 +298,41 @@ function Episodes({
         ))}
       </div>
     </>
+  )
+}
+
+// PlayOnTV sends the title to a household TV with Cue open (asking which,
+// when there are several), then opens the remote. Only shown while a TV is on.
+function PlayOnTV({ kind, tmdbId, season, episode }: { kind: WatchKind; tmdbId: number; season?: number; episode?: number }) {
+  const screens = useScreens(5000)
+  const navigate = useNavigate()
+  const [picking, setPicking] = useState(false)
+  const [error, setError] = useState('')
+  if (onTV() || !screens || screens.length === 0) return null
+  const send = async (id: string) => {
+    setError('')
+    try {
+      await api.screenPlay(id, { kind, tmdbId, season, episode })
+      navigate(`/watch/tv-remote/${id}`)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e))
+    }
+  }
+  return (
+    <span className="wx-playon">
+      <button className="wx-btn" onClick={() => (screens.length === 1 ? void send(screens[0].id) : setPicking((p) => !p))}>
+        <Icon name="tv" size={20} /> {screens.length === 1 ? `Play on ${screens[0].name}` : 'Play on TV'}
+      </button>
+      {picking && (
+        <span className="wx-playon-menu">
+          {screens.map((s) => (
+            <button key={s.id} onClick={() => void send(s.id)}>
+              {s.name}
+            </button>
+          ))}
+        </span>
+      )}
+      {error && <span className="wx-error">{error}</span>}
+    </span>
   )
 }

@@ -166,6 +166,12 @@ Things to know:
 - Channels the provider lists without a guide id show "No guide for this channel" and still play.
 - Your login is stored encrypted, and stream addresses that hold the password never reach the browser.
 
+## Send to TV
+
+Pick something on your phone and play it on the TV. Any Fire TV or Google TV with Cue open shows up: a title's page then has **Play on Living room TV** (or **Play on TV** to choose, when there are several), and the TV starts it, from where that TV's profile stopped. Your phone becomes its remote: what's playing, play and pause, back 10 seconds, forward 30, a time bar to jump with, and stop. **TV remote** in the avatar menu opens it any time. A TV's name is its device name (Fire TV: Settings > My Fire TV > About).
+
+The TVs are the household's: anyone signed in to this Cue sees them, as with watch parties.
+
 ## The apps
 
 - **Fire TV, Google TV, Android TV**: a native app with its own player (every format the TV can decode, 4K HDR and Dolby Vision, Dolby and DTS to your speakers, the TV's refresh rate matched to the film). Install it with Downloader from your server's `/tv.apk`. See [the TV app](../android/README.md). Its Search shows a QR code: scan it with a phone to type or say a search for the TV (a Fire TV's remote microphone belongs to Alexa).

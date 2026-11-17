@@ -468,6 +468,16 @@ Every route the server exposes. Routes marked **public** need no sign-in; all ot
 | POST | `/api/requests/{id}/approve` | admin | POST /api/requests/{id}/approve: add the title as the person asked. |
 | POST | `/api/requests/{id}/decline` | admin | POST /api/requests/{id}/decline {"note": "..."} |
 
+## screens
+
+| Method | Path | Access | What it does |
+|---|---|---|---|
+| GET | `/api/screens` | signed in | GET /api/screens: the household's TVs that are on, with what each shows. |
+| GET | `/api/screens/listen` | signed in | GET /api/screens/listen?id=&name=: a TV's line (SSE): "play" {kind, tmdbId, season, episode, from} and "control" {action, pos}. |
+| POST | `/api/screens/{id}/control` | signed in | POST /api/screens/{id}/control {action: play\|pause\|back\|forward\|seek\|stop, pos}. |
+| POST | `/api/screens/{id}/play` | signed in | POST /api/screens/{id}/play {kind, tmdbId, season, episode}: the TV plays it. |
+| POST | `/api/screens/{id}/state` | signed in | POST /api/screens/{id}/state {kind, tmdbId, season, episode, title, pos, duration, playing}: what the TV is showing (it says so on every change, and every fe... |
+
 ## scripts
 
 | Method | Path | Access | What it does |
@@ -724,4 +734,4 @@ Every route the server exposes. Routes marked **public** need no sign-in; all ot
 | PUT | `/api/watched/settings` | admin | PUT /api/watched/settings {"sync": true, "cleanup": {...}} |
 | POST | `/api/watched/sync` | admin | POST /api/watched/sync: read what's been watched now. |
 
-404 routes.
+409 routes.

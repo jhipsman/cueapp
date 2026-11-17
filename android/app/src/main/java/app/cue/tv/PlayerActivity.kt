@@ -192,6 +192,47 @@ class PlayerActivity : Activity() {
             main.postDelayed(this, 300)
         }
     }
+
+    // Send to TV: what's playing goes to Cue (for the phone's remote) every
+    // few seconds and on every change.
+    private var reported = 0L
+    private fun reportScreen(force: Boolean = false) {
+        if (live) return
+        val now = SystemClock.elapsedRealtime()
+        if (!force && now - reported < 5000) return
+        reported = now
+        val dur = player.duration.let { if (it == C.TIME_UNSET || it < 0) 0.0 else it / 1000.0 }
+        ScreenLink.report(JSONObject()
+            .put("kind", info.optString("kind"))
+            .put("tmdbId", info.optInt("tmdbId"))
+            .put("season", info.optInt("season"))
+            .put("episode", info.optInt("episode"))
+            .put("title", info.optString("title"))
+            .put("pos", position() / 1000.0)
+            .put("duration", dur)
+            .put("playing", player.playWhenReady))
+    }
+    private val screenTicker = object : Runnable {
+        override fun run() {
+            reportScreen()
+            main.postDelayed(this, 5000)
+        }
+    }
+
+    // A phone's remote.
+    private fun onRemote(c: JSONObject) {
+        if (live) return
+        when (c.optString("action")) {
+            "play" -> player.playWhenReady = true
+            "pause" -> player.playWhenReady = false
+            "back" -> seekToPosition(maxOf(0L, position() - 10_000))
+            "forward" -> seekToPosition(position() + 30_000)
+            "seek" -> seekToPosition((c.optDouble("pos", 0.0) * 1000).toLong())
+            "stop" -> end("back")
+        }
+        showControls()
+        reportScreen(force = true)
+    }
     private val hider = Runnable { if (player.isPlaying) hideControls() }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -408,6 +449,17 @@ class PlayerActivity : Activity() {
         if (!live && !catchup) main.postDelayed(saver, SAVE_EVERY_MS)
         main.post(ticker)
         showControls()
+        // A new title from a phone: this player hands over to Home, which opens it.
+        ScreenLink.onPlayInPlayer = { t ->
+            end("remote-play", "${t.optString("kind")}|${t.optInt("tmdbId")}|${t.optInt("season")}|${t.optInt("episode")}")
+        }
+        if (!live) {
+            ScreenLink.onControl = { onRemote(it) }
+            player.addListener(object : Player.Listener {
+                override fun onIsPlayingChanged(isPlaying: Boolean) = reportScreen(force = true)
+            })
+            main.post(screenTicker)
+        }
         if (!live && !catchup) {
             player.addListener(partyListener)
             info.optString("party").takeIf { it.isNotEmpty() }?.let { joinParty(it) }
@@ -2224,6 +2276,9 @@ class PlayerActivity : Activity() {
     }
 
     override fun onDestroy() {
+        ScreenLink.onControl = null
+        ScreenLink.onPlayInPlayer = null
+        if (!live) ScreenLink.report(JSONObject().put("playing", false)) // back on Home
         party?.close()
         main.removeCallbacksAndMessages(null)
         player.release()

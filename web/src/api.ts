@@ -250,6 +250,16 @@ export interface PartyState {
   members: PartyMember[]
   held?: boolean // playing, but waiting while someone's player loads
 }
+// A household TV with Cue open (Send to TV), and what it's showing.
+export interface Screen {
+  id: string
+  name: string
+  profile?: string
+  online: boolean
+  now: { kind?: WatchKind; tmdbId?: number; season?: number; episode?: number; title?: string; pos?: number; duration?: number; playing: boolean; at?: number }
+}
+export type RemoteAction = 'play' | 'pause' | 'back' | 'forward' | 'seek' | 'stop'
+
 export interface PartyMsg {
   id: number
   kind: 'chat' | 'event' | 'reaction'
@@ -2418,6 +2428,12 @@ export const api = {
   forgetWatchProgress: (kind: WatchKind, tmdbId: number) => del<null>(`/watch/progress/${kind}/${tmdbId}`),
   // Off Continue Watching (where you were is kept; watching again brings it back).
   hideFromContinue: (kind: WatchKind, tmdbId: number) => del<null>(`/watch/continue/${kind}/${tmdbId}`),
+  // Send to TV: the household's TVs with Cue open, playing a title on one,
+  // and its remote.
+  screens: () => get<Screen[]>('/screens'),
+  screenPlay: (id: string, t: { kind: WatchKind; tmdbId: number; season?: number; episode?: number }) =>
+    post<null>(`/screens/${encodeURIComponent(id)}/play`, t),
+  screenControl: (id: string, action: RemoteAction, pos = 0) => post<null>(`/screens/${encodeURIComponent(id)}/control`, { action, pos }),
   // Tell this profile when a title is out to stream (or stop).
   setRemind: (kind: WatchKind, tmdbId: number, on: boolean) =>
     on ? put<{ reminding: boolean }>(`/watch/remind/${kind}/${tmdbId}`, {}) : del<{ reminding: boolean }>(`/watch/remind/${kind}/${tmdbId}`),
