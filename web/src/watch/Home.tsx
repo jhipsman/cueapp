@@ -1,3 +1,4 @@
+import { PartiesNow } from './party'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api, type WatchCard, type WatchHome, type WatchKind } from '../api'
@@ -79,6 +80,7 @@ export default function Home({ only }: { only?: WatchKind }) {
       {shown && <Banner card={shown} featured={shown === hero} />}
       <div className="wx-rows" style={shown ? undefined : { marginTop: 90 }}>
         {!only && <SetupCard />}
+        {!only && <PartiesNow />}
         <SpotlightContext.Provider value={tv ? onSpot : null}>
           {rows.map((r) => (
             <Row key={r.key} title={r.title} items={r.items} wide={r.key === 'continue' || r.key === 'new-episodes'} />

@@ -4,6 +4,7 @@ import CueWordmark from '../components/CueWordmark'
 import Screensaver from './Screensaver'
 import Tour from './Tour'
 import SettingsPage from './SettingsPage'
+import { PartyJoin } from './party'
 import { AccountPrefsProvider } from './prefs'
 import YearPage from './YearPage'
 import RemoteSearch from './RemoteSearch'
@@ -66,6 +67,7 @@ export default function WatchApp() {
         <Route path="play/movie/:tmdbId" element={<PlayerPage />} />
         <Route path="play/tv/:tmdbId/:season/:episode" element={<PlayerPage />} />
         <Route path="live/play/:id" element={<LivePlayer />} />
+        <Route path="party/:code" element={<PartyJoin />} />
         <Route
           path="*"
           element={

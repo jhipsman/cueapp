@@ -45,23 +45,25 @@ class Playback(
         val u = upNext ?: return
         upNext = null
         starting = Starting(u.showId, u.show, u.backdrop, u.episode)
-        playTitle("tv", u.showId, u.episode.season, u.episode.episode, 0.0)
+        playTitle("tv", u.showId, u.episode.season, u.episode.episode, 0.0, party = upNextParty)
     }
 
     fun dismissUpNext() {
         upNext = null
     }
 
-    private data class Vod(val kind: String, val id: Int, val season: Int, val episode: Int, var option: Int = 1, var options: Int = 1, var silent: Int = 0)
+    private data class Vod(val kind: String, val id: Int, val season: Int, val episode: Int, var option: Int = 1, var options: Int = 1, var silent: Int = 0, var party: String = "")
 
     private var vod: Vod? = null
+    private var upNextParty = ""
     private var live: Channel? = null
     private var liveList: List<Channel> = emptyList()
 
     fun play(card: Tile) = playTitle(card.kind, card.tmdbId, card.season ?: 1, card.episode ?: 1)
 
-    fun playTitle(kind: String, id: Int, season: Int, episode: Int, startSec: Double? = null) {
-        val v = Vod(kind, id, if (kind == "tv") season else 0, if (kind == "tv") episode else 0)
+    // party: a watch party's code (joined from Home, or carried on to the next episode).
+    fun playTitle(kind: String, id: Int, season: Int, episode: Int, startSec: Double? = null, party: String = "") {
+        val v = Vod(kind, id, if (kind == "tv") season else 0, if (kind == "tv") episode else 0, party = party)
         vod = v
         live = null
         startJob = scope.launch { openVod(v, startSec) }
@@ -87,7 +89,10 @@ class Playback(
                 return
             }
             var start = startSec ?: 0.0
-            if (startSec == null) {
+            if (startSec == null && v.party.isNotEmpty()) {
+                // A party: start where it is now.
+                start = runCatching { api.obj("/api/party/${v.party}").optDouble("pos", 0.0) }.getOrDefault(0.0)
+            } else if (startSec == null) {
                 val p = runCatching { api.obj("/api/watch/progress/${v.kind}/${v.id}?season=${v.season}&episode=${v.episode}") }.getOrNull()
                 if (p != null && !p.optBoolean("finished") && p.optDouble("position", 0.0) > 30) start = p.optDouble("position")
             }
@@ -118,6 +123,7 @@ class Playback(
                 .put("backdrop", backdrop)
                 .put("thumbs", a.optString("thumbs"))
                 .put("release", a.optString("release"))
+                .put("party", v.party)
             note = ""
             starting = null
             open(json.toString())
@@ -184,6 +190,10 @@ class Playback(
         when (reason) {
             // Next pressed: straight on. The episode ended by itself: the Up
             // next screen, which counts down and plays it (or Back stays).
+            // The party moved to another episode: "CODE|show|season|episode".
+            "party" -> message.split('|').takeIf { it.size == 4 }?.let { p ->
+                playTitle("tv", p[1].toIntOrNull() ?: v.id, p[2].toIntOrNull() ?: 1, p[3].toIntOrNull() ?: 1, null, party = p[0])
+            }
             "next" -> if (v.kind == "tv") {
                 starting = Starting(v.id, "", null, null)
                 startJob = scope.launch {
@@ -191,7 +201,7 @@ class Playback(
                         val n = api.next(v.id, v.season, v.episode)
                         val show = runCatching { api.title("tv", v.id).card }.getOrNull()
                         starting = Starting(v.id, show?.title ?: "", show?.backdrop, n)
-                        playTitle("tv", v.id, n.season, n.episode, 0.0)
+                        playTitle("tv", v.id, n.season, n.episode, 0.0, party = message)
                     } catch (e: kotlinx.coroutines.CancellationException) {
                         throw e
                     } catch (e: Exception) {
@@ -200,6 +210,7 @@ class Playback(
                 }
             }
             "ended" -> if (v.kind == "tv") {
+                upNextParty = message // a party carries on to the next episode
                 // Covered while the next one is looked up, then the Up next screen.
                 starting = Starting(v.id, "", null, null)
                 startJob = scope.launch {

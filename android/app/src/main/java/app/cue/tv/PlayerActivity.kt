@@ -16,6 +16,7 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.os.SystemClock
 import android.util.TypedValue
 import android.view.Gravity
 import android.view.Display
@@ -152,6 +153,20 @@ class PlayerActivity : Activity() {
     private val guideHider = Runnable { hideGuide() }
     private var subsAsking = false
 
+    // A watch party (PartyLink): where the party is, and this TV's place in it.
+    private var party: PartyLink? = null
+    private var partyState: JSONObject? = null
+    private var partyGot = 0L // when partyState arrived (elapsedRealtime)
+    private var partyApplying = 0L // until then, play/pause/seek events are the party's, not the viewer's
+    private var partyPanel: LinearLayout? = null
+    private var partyHead: TextView? = null
+    private var partyLines: LinearLayout? = null
+    private var partyQr: ImageView? = null
+    private var partyFloats: FrameLayout? = null
+    private var partyButton: TextView? = null
+    private var reactButton: TextView? = null
+    private var reactRow: LinearLayout? = null
+
     // Sizes follow the screen, not the TV's density or font-size setting
     // (Google TV boxes differ there): 1 unit is 1/960 of the screen's width.
     private val dp by lazy { screenUnit(this) }
@@ -254,6 +269,10 @@ class PlayerActivity : Activity() {
                 marginEnd = px(48)
                 bottomMargin = px(150)
             })
+            val floats = FrameLayout(this@PlayerActivity)
+            partyFloats = floats
+            addView(floats, FrameLayout.LayoutParams(MATCH, MATCH))
+            addView(buildPartyPanel(), FrameLayout.LayoutParams(px(290), MATCH, Gravity.END))
         }
         setContentView(root)
 
@@ -265,7 +284,7 @@ class PlayerActivity : Activity() {
                 }
                 spinner.visibility = if (state == Player.STATE_BUFFERING) View.VISIBLE else View.GONE
                 if (state == Player.STATE_ENDED) {
-                    if (live) end("error", "The channel stopped.") else end("ended")
+                    if (live) end("error", "The channel stopped.") else end("ended", party?.code ?: "")
                 }
             }
 
@@ -374,6 +393,224 @@ class PlayerActivity : Activity() {
         if (!live && !catchup) main.postDelayed(saver, SAVE_EVERY_MS)
         main.post(ticker)
         showControls()
+        if (!live && !catchup) {
+            player.addListener(partyListener)
+            info.optString("party").takeIf { it.isNotEmpty() }?.let { joinParty(it) }
+        }
+    }
+
+    // ---- Watch party ----
+
+    private fun partyTitle(): JSONObject = JSONObject()
+        .put("kind", info.optString("kind"))
+        .put("tmdbId", info.optInt("tmdbId"))
+        .put("season", info.optInt("season"))
+        .put("episode", info.optInt("episode"))
+        .put("title", info.optString("title"))
+
+    private fun posSec(): Double = position() / 1000.0
+
+    private fun partyLink(code: String) = PartyLink(server, info.optString("token"), code,
+        onState = { onPartyState(it) },
+        onMsg = { onPartyMsg(it) },
+        onProblem = { msg -> addPartyLine(msg, event = true) },
+    )
+
+    private fun joinParty(code: String) {
+        val link = partyLink(code)
+        party = link
+        showPartyPanel(true)
+        link.start { joined(it) }
+    }
+
+    // The Watch party button: start one (the household sees it on Home), or
+    // show and hide its panel.
+    private fun partyPressed() {
+        val link = party
+        if (link != null) {
+            showPartyPanel(partyPanel?.visibility != View.VISIBLE)
+            return
+        }
+        val l = partyLink("")
+        party = l
+        showPartyPanel(true)
+        addPartyLine("Starting a watch party…", event = true)
+        l.create(partyTitle(), posSec(), player.playWhenReady) { joined(it) }
+    }
+
+    private fun joined(state: JSONObject) {
+        main.removeCallbacks(partyDrift)
+        main.postDelayed(partyDrift, 4000)
+        reactButton?.visibility = View.VISIBLE
+        partyButton?.text = "Party"
+        onPartyState(state, first = true)
+        party?.let { l ->
+            partyQr?.setImageBitmap(app.cue.tv.home.qrBitmap("$server/watch/party/${l.code}?chat=1", px(150)))
+            // This TV moved on to another episode (Next): the party follows.
+            val t = state.optJSONObject("title")
+            if (isShow && t != null && (t.optInt("season") != info.optInt("season") || t.optInt("episode") != info.optInt("episode"))) {
+                Thread { runCatching { l.sendEpisode(partyTitle()) } }.start()
+            }
+        }
+    }
+
+    private val partyListener = object : Player.Listener {
+        override fun onPlayWhenReadyChanged(playWhenReady: Boolean, reason: Int) {
+            if (reason == Player.PLAY_WHEN_READY_CHANGE_REASON_USER_REQUEST && SystemClock.elapsedRealtime() > partyApplying) {
+                party?.send(if (playWhenReady) "play" else "pause", posSec())
+            }
+        }
+
+        override fun onPositionDiscontinuity(oldPosition: Player.PositionInfo, newPosition: Player.PositionInfo, reason: Int) {
+            if (reason == Player.DISCONTINUITY_REASON_SEEK && SystemClock.elapsedRealtime() > partyApplying) {
+                party?.send("seek", posSec())
+            }
+        }
+    }
+
+    private fun onPartyState(s: JSONObject, first: Boolean = false) {
+        val link = party ?: return
+        partyState = s
+        partyGot = SystemClock.elapsedRealtime()
+        val members = s.optJSONArray("members")
+        val names = (0 until (members?.length() ?: 0)).mapNotNull { members?.optJSONObject(it)?.optString("name") }
+        partyHead?.text = "Watch party · ${names.size} watching\n${names.joinToString(", ")}"
+        val t = s.optJSONObject("title") ?: return
+        if (isShow && (t.optInt("season") != info.optInt("season") || t.optInt("episode") != info.optInt("episode"))) {
+            if (!first) end("party", "${link.code}|${t.optInt("tmdbId")}|${t.optInt("season")}|${t.optInt("episode")}")
+            return
+        }
+        if (first || s.optString("by") != link.client) applyParty(s)
+    }
+
+    // Brings the player in line with the party.
+    private fun applyParty(s: JSONObject) {
+        val playing = s.optBoolean("playing")
+        val elapsed = if (playing) SystemClock.elapsedRealtime() - partyGot else 0L
+        val target = (s.optDouble("pos", 0.0) * 1000).toLong() + elapsed
+        val off = kotlin.math.abs(position() - target)
+        if (off > (if (playing) 1500 else 300)) {
+            partyApplying = SystemClock.elapsedRealtime() + 1500
+            seekToPosition(target)
+        }
+        if (player.playWhenReady != playing) {
+            partyApplying = SystemClock.elapsedRealtime() + 1500
+            player.playWhenReady = playing
+        }
+    }
+
+    // Drift: a TV that fell behind (buffering) catches up quietly.
+    private val partyDrift = object : Runnable {
+        override fun run() {
+            val s = partyState
+            if (party != null && s != null && s.optBoolean("playing") && player.isPlaying && SystemClock.elapsedRealtime() > partyApplying) {
+                val target = (s.optDouble("pos", 0.0) * 1000).toLong() + (SystemClock.elapsedRealtime() - partyGot)
+                if (kotlin.math.abs(position() - target) > 2500) applyParty(s)
+            }
+            main.postDelayed(this, 4000)
+        }
+    }
+
+    private fun onPartyMsg(m: JSONObject) {
+        val text = m.optString("text")
+        when (m.optString("kind")) {
+            "reaction" -> floatReaction(text, m.optString("name"))
+            "event" -> addPartyLine(text, event = true)
+            else -> addPartyLine("${m.optString("name")}: $text", event = false)
+        }
+    }
+
+    private fun addPartyLine(text: String, event: Boolean) {
+        val lines = partyLines ?: return
+        lines.addView(TextView(this).apply {
+            this.text = text
+            setTextColor(if (event) 0xFFA6A8AE.toInt() else Color.WHITE)
+            size(if (event) 11f else 13f)
+            typeface = Fonts.text(this@PlayerActivity, if (event) 400 else 500)
+            setPadding(0, px(4), 0, px(4))
+            alpha = 0f
+            animate().alpha(1f).setDuration(250).start()
+        })
+        while (lines.childCount > 8) lines.removeViewAt(0)
+        if (partyPanel?.visibility != View.VISIBLE && !event) showPartyPanel(true)
+    }
+
+    private fun floatReaction(emoji: String, name: String) {
+        val layer = partyFloats ?: return
+        val v = TextView(this).apply {
+            text = "$emoji\n$name"
+            gravity = Gravity.CENTER
+            setTextColor(Color.WHITE)
+            size(26f)
+            setShadowLayer(8f, 0f, 2f, Color.BLACK)
+        }
+        val lp = FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.BOTTOM or Gravity.START).apply {
+            leftMargin = px((80..420).random())
+            bottomMargin = px(140)
+        }
+        layer.addView(v, lp)
+        v.scaleX = 0.6f
+        v.scaleY = 0.6f
+        v.animate().translationY(-px(320).toFloat()).scaleX(1f).scaleY(1f).alpha(0f).setDuration(3000).withEndAction { layer.removeView(v) }.start()
+    }
+
+    private fun showPartyPanel(show: Boolean) {
+        partyPanel?.let { showSoftly(it, show) }
+    }
+
+    // The party's panel, at the right: who's watching, the last few lines of
+    // the chat, and a QR code that opens the chat on a phone (typing with a
+    // remote is no fun).
+    private fun buildPartyPanel(): View = LinearLayout(this).also { partyPanel = it }.apply {
+        orientation = LinearLayout.VERTICAL
+        visibility = View.GONE
+        setPadding(px(18), px(24), px(18), px(24))
+        background = GradientDrawable(GradientDrawable.Orientation.RIGHT_LEFT, intArrayOf(0xE60B0C0F.toInt(), 0x990B0C0F.toInt()))
+        addView(TextView(this@PlayerActivity).also { partyHead = it }.apply {
+            text = "Watch party"
+            setTextColor(Color.WHITE)
+            size(14f)
+            typeface = Fonts.display(this@PlayerActivity)
+        })
+        addView(LinearLayout(this@PlayerActivity).also { partyLines = it }.apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(0, px(12), 0, px(12))
+        }, LinearLayout.LayoutParams(MATCH, 0, 1f))
+        addView(ImageView(this@PlayerActivity).also { partyQr = it }, LinearLayout.LayoutParams(px(110), px(110)))
+        addView(TextView(this@PlayerActivity).apply {
+            text = "Chat from your phone: scan this"
+            setTextColor(0xFFA6A8AE.toInt())
+            size(11f)
+            typeface = Fonts.text(this@PlayerActivity)
+            setPadding(0, px(6), 0, 0)
+        })
+    }
+
+    // React: a row of reactions under the controls, for the remote.
+    private fun showReactions() {
+        val row = reactRow ?: return
+        val show = row.visibility != View.VISIBLE
+        row.visibility = if (show) View.VISIBLE else View.GONE
+        if (show) row.getChildAt(0)?.requestFocus()
+        showControls()
+    }
+
+    private fun emojiPill(e: String): TextView = TextView(this).apply {
+        text = e
+        size(18f)
+        gravity = Gravity.CENTER
+        setPadding(px(10), px(4), px(10), px(4))
+        background = StateListDrawable().apply {
+            addState(intArrayOf(android.R.attr.state_focused), GradientDrawable().apply {
+                cornerRadius = px(17).toFloat()
+                setColor(Color.WHITE)
+            })
+            addState(intArrayOf(), GradientDrawable().apply { setColor(Color.TRANSPARENT) })
+        }
+        isFocusable = true
+        isFocusableInTouchMode = true
+        setOnClickListener { party?.react(e) }
+        layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, px(40)).apply { marginEnd = px(4) }
     }
 
     // ---- The controls ----
@@ -461,11 +698,18 @@ class PlayerActivity : Activity() {
             if (isShow && !live && !catchup) {
                 nextButton = pill("Next episode", R.drawable.ic_cue_next) {
                     learnCredits()
-                    end("next")
+                    end("next", party?.code ?: "")
                 }.also { addView(it) }
             }
             if (hasOther && !live && !catchup) {
                 otherButton = iconPill("Other version", R.drawable.ic_cue_versions) { end("other") }.also { addView(it) }
+            }
+            if (!live && !catchup) {
+                partyButton = iconPill("Watch party", R.drawable.ic_cue_party) { partyPressed() }.also { addView(it) }
+                reactButton = iconPill("React", R.drawable.ic_cue_react) { showReactions() }.also {
+                    it.visibility = View.GONE
+                    addView(it)
+                }
             }
             addView(iconPill("Audio", R.drawable.ic_cue_audio) { chooseTrack(C.TRACK_TYPE_AUDIO, "Audio") })
             addView(iconPill("Subtitles", R.drawable.ic_cue_subtitles) { subtitlesPressed() })
@@ -481,6 +725,13 @@ class PlayerActivity : Activity() {
             }
             addView(timeRow)
             addView(buttons)
+            addView(LinearLayout(this@PlayerActivity).also { reactRow = it }.apply {
+                orientation = LinearLayout.HORIZONTAL
+                gravity = Gravity.CENTER
+                visibility = View.GONE
+                setPadding(0, px(6), 0, 0)
+                PartyLink.REACTIONS.forEach { addView(emojiPill(it)) }
+            })
         }
         // A soft shade behind the panel, so it reads over a bright picture.
         val shade = View(this).apply {
@@ -1832,6 +2083,7 @@ class PlayerActivity : Activity() {
     private fun end(reason: String, message: String = "") {
         if (finished) return
         finished = true
+        party?.close()
         saveProgress()
         val dur = player.duration.let { if (it == C.TIME_UNSET) 0 else it / 1000 }
         setResult(
@@ -1861,6 +2113,7 @@ class PlayerActivity : Activity() {
     }
 
     override fun onDestroy() {
+        party?.close()
         main.removeCallbacksAndMessages(null)
         player.release()
         super.onDestroy()

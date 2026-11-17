@@ -526,6 +526,16 @@ func (s *Server) protectedRoutes() *routeTable {
 	play.HandleFunc("GET /api/watch/progress/{kind}/{tmdbId}", s.handleGetWatchProgress)
 	play.HandleFunc("DELETE /api/watch/progress/{kind}/{tmdbId}", s.handleForgetWatchProgress)
 	play.HandleFunc("DELETE /api/watch/history", s.handleClearWatchHistory)
+	// Watch parties (party.go): watching together, in step, with a chat.
+	play.HandleFunc("GET /api/parties", s.handleListParties)
+	play.HandleFunc("POST /api/party", s.handleStartParty)
+	play.HandleFunc("GET /api/party/{code}", s.handleGetParty)
+	play.HandleFunc("POST /api/party/{code}/join", s.handleJoinParty)
+	play.HandleFunc("GET /api/party/{code}/events", s.handlePartyEvents)
+	play.HandleFunc("POST /api/party/{code}/state", s.handlePartyState)
+	play.HandleFunc("POST /api/party/{code}/chat", s.handlePartyChat)
+	play.HandleFunc("POST /api/party/{code}/react", s.handlePartyReact)
+	play.HandleFunc("POST /api/party/{code}/leave", s.handleLeaveParty)
 	play.HandleFunc("PUT /api/watch/list/{kind}/{tmdbId}", s.handleAddToWatchList)
 	play.HandleFunc("DELETE /api/watch/list/{kind}/{tmdbId}", s.handleRemoveFromWatchList)
 	// Live TV (live.go).

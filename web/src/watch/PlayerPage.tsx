@@ -1,6 +1,6 @@
 import { usePrefs } from './prefs'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { api, profileToken, type PlayAnswer, type WatchEpisode, type WatchSkips } from '../api'
 import Icon from '../components/Icon'
 import { useDocumentTitle } from '../documentTitle'
@@ -11,6 +11,7 @@ import { onTV, type TVPlayerResult } from './tv'
 import VideoControls from './VideoControls'
 import FreeElsewhere from './FreeElsewhere'
 import YouTubePlayer from './YouTubePlayer'
+import { FloatingReactions, PartyPanel, startParty, useParty } from './party'
 
 // How often where you are is saved while playing, and how long the "Next
 // episode" card counts down before playing it.
@@ -98,6 +99,11 @@ export default function PlayerPage() {
   const params = useParams()
   const navigate = useNavigate()
   const prefs = usePrefs()
+  // A watch party (party.tsx): ?party=CODE in the address.
+  const [search, setSearch] = useSearchParams()
+  const partyCode = search.get('party')
+  const withParty = (href: string) => (partyCode ? `${href}?party=${partyCode}` : href)
+  const [partyOpen, setPartyOpen] = useState(!!partyCode)
   // Leaving fades the picture to black first, then the page you came from
   // slides back in (as on the TV).
   const shell = useRef<HTMLDivElement>(null)
@@ -212,7 +218,8 @@ export default function PlayerPage() {
     api
       .watchProgress(kind, tmdbId, season, episode)
       .then((p) => {
-        if (!p.finished && p.position > 30) resumeAt.current = p.position
+        // In a party, the party says where to start.
+        if (!p.finished && p.position > 30 && !partyCode) resumeAt.current = p.position
       })
       .catch(() => undefined)
       .finally(() => setResumeReady(true))
@@ -262,7 +269,7 @@ export default function PlayerPage() {
         if (kind !== 'tv') return navigate(-1)
         api
           .watchNext(tmdbId, season, episode)
-          .then((n) => navigate(playHref('tv', tmdbId, n.season, n.episode), { replace: true }))
+          .then((n) => navigate(withParty(playHref('tv', tmdbId, n.season, n.episode)), { replace: true }))
           .catch(() => navigate(-1))
         return
       }
@@ -373,7 +380,7 @@ export default function PlayerPage() {
   useEffect(() => {
     if (countdown === null || !next) return
     if (countdown <= 0) {
-      navigate(playHref('tv', tmdbId, next.season, next.episode), { replace: true })
+      navigate(withParty(playHref('tv', tmdbId, next.season, next.episode)), { replace: true })
       return
     }
     const t = setTimeout(() => setCountdown((c) => (c === null ? null : c - 1)), 1000)
@@ -688,10 +695,37 @@ export default function PlayerPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [src, error])
 
+  const party = useParty({
+    code: partyCode,
+    video: videoEl,
+    title: { kind, tmdbId, season: kind === 'tv' ? season : undefined, episode: kind === 'tv' ? episode : undefined, title: answer?.title ?? '', option: answer?.option },
+    position: () => (conv?.offset ?? 0) + (video.current?.currentTime ?? 0),
+    seek: (sec) => seekAbs(sec),
+    follow: (t) => navigate(`${playHref(t.kind, t.tmdbId, t.season, t.episode)}?party=${partyCode}`, { replace: true }),
+    startAt: (sec) => {
+      resumeAt.current = sec
+    },
+  })
+  async function beginParty() {
+    const v = video.current
+    try {
+      const code = await startParty(
+        { kind, tmdbId, season: kind === 'tv' ? season : undefined, episode: kind === 'tv' ? episode : undefined, title: answer?.title ?? '', option: answer?.option },
+        (conv?.offset ?? 0) + (v?.currentTime ?? 0),
+        !!v && !v.paused,
+      )
+      search.set('party', code)
+      setSearch(search, { replace: true })
+      setPartyOpen(true)
+    } catch (e) {
+      setNote(e instanceof Error ? e.message : String(e))
+    }
+  }
+
   const nextEpisode = () =>
     api
       .watchNext(tmdbId, season, episode)
-      .then((n) => navigate(playHref('tv', tmdbId, n.season, n.episode), { replace: true }))
+      .then((n) => navigate(withParty(playHref('tv', tmdbId, n.season, n.episode)), { replace: true }))
       .catch(() => setNote('That was the latest episode.'))
 
   // Skip intro: shown as the intro starts, gone after a few seconds, back
@@ -704,7 +738,9 @@ export default function PlayerPage() {
   const yt = answer && !error ? answer.youtube : undefined
   const playing = answer && !error && !onTV() && !yt
   return (
-    <div className="wx-player" ref={shell}>
+    <div className={`wx-player${partyCode && partyOpen ? ' with-party' : ''}`} ref={shell}>
+      {partyCode && partyOpen && <PartyPanel party={party} code={partyCode} onClose={() => setPartyOpen(false)} />}
+      {partyCode && <FloatingReactions list={party.floating} />}
       {!playing && !yt && (
         <div className="wx-player-top">
           <button className="wx-round" onClick={() => leave()} aria-label="Back">
@@ -844,7 +880,19 @@ export default function PlayerPage() {
               ],
             }}
             actions={
-              kind === 'tv' ? (
+              <>
+                {!onTV() && (
+                  <button
+                    className={`vx-text-btn${partyCode ? ' lit' : ''}`}
+                    onClick={() => (partyCode ? setPartyOpen((o) => !o) : void beginParty())}
+                    aria-label={partyCode ? 'Watch party chat' : 'Start a watch party'}
+                  >
+                    <Icon name="users" size={20} />
+                    <span>{partyCode ? 'Party' : 'Watch party'}</span>
+                    {partyCode && !partyOpen && party.unread > 0 && <i className="vx-badge">{party.unread}</i>}
+                  </button>
+                )}
+                {kind === 'tv' ? (
                 <button
                   className="vx-text-btn"
                   onClick={() => {
@@ -859,7 +907,8 @@ export default function PlayerPage() {
                   <Icon name="skip-forward" size={22} fill="currentColor" />
                   <span>Next episode</span>
                 </button>
-              ) : undefined
+                ) : null}
+              </>
             }
             menu={{
               label: 'Versions',
