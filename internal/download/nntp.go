@@ -6,6 +6,7 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
+	"io"
 	"net"
 	"strconv"
 	"strings"
@@ -125,11 +126,16 @@ func (c *NNTPConn) FetchBody(messageID string) ([]byte, error) {
 	return c.readDotTerminated()
 }
 
-// Quit says goodbye and closes the connection. It never waits long for the
-// server's answer, and always closes.
+// Quit says goodbye, waits (briefly) for the server to hang up, and closes
+// the connection. Waiting matters: a provider counts a connection until it
+// has seen it end, so a place given back before then can be refused to the
+// next connection with "too many connections". It never waits long, and
+// always closes.
 func (c *NNTPConn) Quit() error {
-	c.conn.SetDeadline(time.Now().Add(5 * time.Second)) //nolint:errcheck
-	_, _ = c.conn.Write([]byte("QUIT\r\n"))
+	c.conn.SetDeadline(time.Now().Add(2 * time.Second)) //nolint:errcheck
+	if _, err := c.conn.Write([]byte("QUIT\r\n")); err == nil {
+		_, _ = io.Copy(io.Discard, c.reader) // its "205" and whatever was unread, until it closes
+	}
 	return c.conn.Close()
 }
 

@@ -24,6 +24,7 @@ type limitedNNTP struct {
 	port int
 
 	max       int           // connections allowed at once; 0 means no limit
+	slowLeave time.Duration // how long it takes to notice a connection ended
 	refuseNth map[int]bool  // 1-based numbers of accepted connections to refuse once
 	message   string        // the refusal, default "502 Too many connections."
 	atGreet   bool          // refuse in the greeting instead of at sign-in
@@ -90,6 +91,7 @@ func (s *limitedNNTP) enter() (ok bool) {
 }
 
 func (s *limitedNNTP) leave(wasAllowed bool) {
+	time.Sleep(s.slowLeave) // a busy provider counts it a little longer
 	s.mu.Lock()
 	s.active--
 	if wasAllowed {
@@ -354,7 +356,9 @@ func TestConnectionsAreClosedWhenADownloadIsCancelled(t *testing.T) {
 func TestTwoDownloadsShareOneLoginsConnections(t *testing.T) {
 	fastGate(t)
 	nzbA, articlesA, fullA := bigNZB(50)
-	srv := newLimitedNNTP(t, &limitedNNTP{max: 4, bodyDelay: 3 * time.Millisecond}, articlesA)
+	// The provider takes a moment to count a connection as ended (as a busy
+	// one does): a place handed on before it hung up would be refused.
+	srv := newLimitedNNTP(t, &limitedNNTP{max: 4, bodyDelay: 3 * time.Millisecond, slowLeave: 30 * time.Millisecond}, articlesA)
 	cfg := ClientConfig{Host: srv.addr, Port: srv.port, Username: "shared", Password: "x", Connections: 4}
 
 	var wg sync.WaitGroup
@@ -371,12 +375,11 @@ func TestTwoDownloadsShareOneLoginsConnections(t *testing.T) {
 		}()
 	}
 	wg.Wait()
-	// The provider may briefly still count a connection that was just closed,
-	// so one or two refusals are not the downloads going over the limit. What
-	// matters: they never had more than 4 working at once, they did not fight
-	// for places, and the limit was not lowered by mistake.
+	// A place is given back only once the provider has hung up, so it never
+	// refuses one: they never had more than 4 working at once, they did not
+	// fight for places, and the limit was not lowered by mistake.
 	_, refused, _ := srv.stats()
-	if refused > 2 {
+	if refused > 0 {
 		t.Errorf("the provider refused %d connections: the downloads went over its limit", refused)
 	}
 	if peak := srv.workingPeak(); peak > 4 {
