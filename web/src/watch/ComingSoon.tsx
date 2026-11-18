@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { api, type WatchCard } from '../api'
+import { useNavigate, useSearchParams } from 'react-router-dom'
+import { api, type WatchCard, type WeekEpisode } from '../api'
+import { Pills, ThisWeek, type KindFilter } from './browse'
 import Icon from '../components/Icon'
 import { shortDate, titleHref } from './parts'
 
@@ -31,12 +32,20 @@ export default function ComingSoon() {
   const [items, setItems] = useState<WatchCard[] | null>(null)
   const [error, setError] = useState('')
   const navigate = useNavigate()
+  const [params, setParams] = useSearchParams()
+  const kind = (params.get('show') as KindFilter | null) ?? 'all'
+  const [week, setWeek] = useState<WeekEpisode[]>([])
   useEffect(() => {
     api
       .comingSoon()
       .then(setItems)
       .catch((e) => setError(e instanceof Error ? e.message : String(e)))
+    api
+      .thisWeek()
+      .then((w) => setWeek(w ?? []))
+      .catch(() => undefined)
   }, [])
+  const films = (items ?? []).filter((c) => kind === 'all' || c.kind === kind)
 
   const toggle = async (c: WatchCard) => {
     const next = !c.reminding
@@ -50,12 +59,20 @@ export default function ComingSoon() {
 
   return (
     <div className="wx-page wx-soon">
-      <h1>Coming soon</h1>
-      <p className="wx-dim">Films on their way. Press Remind me and Cue tells you the day you can watch.</p>
+      <div className="wx-search-top">
+        <h1>Coming soon</h1>
+        <Pills value={kind} onChange={(k) => setParams(k === 'all' ? {} : { show: k }, { replace: true })} />
+      </div>
+      <p className="wx-dim">
+        {kind === 'tv' ? 'New episodes of the shows you watch, by day.' : 'On their way. Press Remind me and Cue tells you the day you can watch.'}
+      </p>
       {error && <p className="wx-error">{error}</p>}
-      {items === null && !error && <div className="wx-soon-item wx-skeleton" style={{ height: 260 }} />}
-      {items?.length === 0 && <p className="wx-dim">Nothing announced right now.</p>}
-      {items?.map((c) => (
+      {kind !== 'movie' && <ThisWeek items={week} />}
+      {kind === 'tv' && week.length === 0 && <p className="wx-dim">No new episodes of your shows in the next two weeks.</p>}
+      {items === null && !error && kind !== 'tv' && <div className="wx-soon-item wx-skeleton" style={{ height: 260 }} />}
+      {items !== null && films.length === 0 && kind !== 'tv' && <p className="wx-dim">Nothing announced right now.</p>}
+      {kind !== 'tv' && week.length > 0 && films.length > 0 && <h2 className="wx-soon-sub">Films on their way</h2>}
+      {kind !== 'tv' && films.map((c) => (
         <article className="wx-soon-item" key={`${c.kind}-${c.tmdbId}`}>
           <DateBlock day={c.outDate} />
           <div className="wx-soon-body">

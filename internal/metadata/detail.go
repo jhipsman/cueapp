@@ -370,6 +370,13 @@ type ShowFull struct {
 		Episode int    `json:"episode_number"`
 		Name    string `json:"name"`
 	} `json:"last_episode_to_air"`
+	// NextEpisodeToAir is the next episode announced, if any.
+	NextEpisodeToAir *struct {
+		AirDate string `json:"air_date"`
+		Season  int    `json:"season_number"`
+		Episode int    `json:"episode_number"`
+		Name    string `json:"name"`
+	} `json:"next_episode_to_air"`
 	Networks []struct {
 		Name string `json:"name"`
 	} `json:"networks"`

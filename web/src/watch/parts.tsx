@@ -143,10 +143,90 @@ export function Card({ card, wide }: { card: WatchCard; wide?: boolean }) {
             <span style={{ width: `${Math.round(card.progress * 100)}%` }} />
           </span>
         )}
+        {hot && !wide && !onTV() && <QuickActions card={card} />}
       </span>
       <span className="wx-card-name">{card.title}</span>
       {wide && card.episodeTitle && <span className="wx-card-sub">{card.episodeTitle}</span>}
+      {wide && card.recap && (
+        <span className="wx-card-recap" title={card.recap}>
+          <b>Previously:</b> {card.recap}
+        </span>
+      )}
     </button>
+  )
+}
+
+// QuickActions: pointed at with a mouse, a poster shows Play, My List, a
+// thumb and More info along its foot (fading in after a moment, watch.css),
+// so a title can be started or saved without opening its page. They're
+// inside the card's button, so they're spans that stop the press from
+// opening the page too; a keyboard opens the page, where they all are.
+function QuickActions({ card }: { card: WatchCard }) {
+  const navigate = useNavigate()
+  const [listed, setListed] = useState(false)
+  const [liked, setLiked] = useState(false)
+  const [note, setNote] = useState('')
+  const act = (e: { stopPropagation: () => void; preventDefault: () => void }, f: () => void) => {
+    e.stopPropagation()
+    e.preventDefault()
+    f()
+  }
+  const flash = (s: string) => {
+    setNote(s)
+    window.setTimeout(() => setNote(''), 1600)
+  }
+  const resumes = card.progress !== undefined || !!card.episode
+  const items: { key: string; label: string; icon: 'play' | 'plus' | 'check' | 'thumbs-up' | 'chevron-down'; on?: boolean; run: () => void }[] = [
+    {
+      key: 'play',
+      label: resumes ? 'Resume' : 'Play',
+      icon: 'play',
+      run: () => navigate(resumes ? playHref(card.kind, card.tmdbId, card.season, card.episode) : playHref(card.kind, card.tmdbId, 1, 1)),
+    },
+    {
+      key: 'list',
+      label: listed ? 'Remove from My List' : 'Add to My List',
+      icon: listed ? 'check' : 'plus',
+      on: listed,
+      run: () => {
+        const next = !listed
+        setListed(next)
+        flash(next ? 'On My List' : 'Off My List')
+        void (next ? api.addToWatchList(card.kind, card.tmdbId) : api.removeFromWatchList(card.kind, card.tmdbId)).catch(() => setListed(!next))
+      },
+    },
+    {
+      key: 'like',
+      label: liked ? 'Remove the thumb' : 'I like this',
+      icon: 'thumbs-up',
+      on: liked,
+      run: () => {
+        const next = !liked
+        setLiked(next)
+        flash(next ? 'More like this' : 'Thumb removed')
+        void api.setThumb(card.kind, card.tmdbId, next ? 'up' : '').catch(() => setLiked(!next))
+      },
+    },
+    { key: 'info', label: 'More info', icon: 'chevron-down', run: () => navigate(titleHref(card)) },
+  ]
+  return (
+    <span className="wx-quick">
+      {note && <span className="wx-quick-note">{note}</span>}
+      {items.map((it) => (
+        <span
+          key={it.key}
+          role="button"
+          tabIndex={-1}
+          title={it.label}
+          aria-label={it.label}
+          className={`wx-quick-b ${it.key}${it.on ? ' on' : ''}`}
+          onClick={(e) => act(e, it.run)}
+          onKeyDown={(e) => e.key === 'Enter' && act(e, it.run)}
+        >
+          <Icon name={it.icon} size={it.key === 'play' ? 16 : 15} fill={it.key === 'play' || (it.key === 'like' && it.on) ? 'currentColor' : 'none'} />
+        </span>
+      ))}
+    </span>
   )
 }
 
@@ -228,7 +308,7 @@ export function TitleMark({ title, logo }: { title: string; logo: string | undef
 }
 
 // Row is a titled strip that scrolls sideways, with arrows on hover.
-export function Row({ title, items, wide }: { title: string; items: WatchCard[]; wide?: boolean }) {
+export function Row({ title, items, wide, rowKey }: { title: string; items: WatchCard[]; wide?: boolean; rowKey?: string }) {
   const strip = useRef<HTMLDivElement>(null)
   const scroll = (dir: number) => {
     const el = strip.current
@@ -236,7 +316,7 @@ export function Row({ title, items, wide }: { title: string; items: WatchCard[];
   }
   if (items.length === 0) return null
   return (
-    <section className="wx-row">
+    <section className="wx-row" data-row={rowKey}>
       <h2>{title}</h2>
       <div className="wx-row-strip">
         <button className="wx-row-arrow left" onClick={() => scroll(-1)} aria-label={`Scroll ${title} left`}>

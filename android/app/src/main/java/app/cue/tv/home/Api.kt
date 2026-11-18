@@ -179,6 +179,8 @@ class CueApi(ctx: Context, val server: String) {
 
     suspend fun home(): Home = Home.from(obj("/api/watch/home"))
     suspend fun search(q: String): List<Tile> = arr("/api/watch/search?q=${q(q)}").cards()
+    /** A genre's most popular films or shows (Search's genre tabs). */
+    suspend fun genre(kind: String, id: Int): List<Tile> = arr("/api/watch/genre?kind=$kind&genre=$id").cards()
     /** What a phone has typed for this TV's search (code from the QR), and its count. */
     suspend fun remoteSearch(code: String): Pair<String, Int> = obj("/api/watch/remote/$code").let { it.optString("q") to it.optInt("seq") }
     suspend fun title(kind: String, id: Int): Title = Title.from(obj("/api/watch/$kind/$id"))
@@ -199,6 +201,12 @@ class CueApi(ctx: Context, val server: String) {
 
     /** Coming soon: films not out to stream yet, soonest first. */
     suspend fun comingSoon(): List<Tile> = arr("/api/watch/coming-soon").cards()
+
+    /** This week: the next episodes of shows this profile watches, with the day each airs. */
+    suspend fun thisWeek(): List<Pair<Tile, String>> {
+        val a = arr("/api/watch/this-week")
+        return (0 until a.length()).map { val o = a.getJSONObject(it); Tile.from(o) to o.optString("airDate") }
+    }
 
     /** Tells this profile when a title is out to stream (or stops). */
     suspend fun setRemind(kind: String, id: Int, on: Boolean) {
@@ -247,6 +255,8 @@ data class Tile(
     val outDate: String? = null,
     val outNow: Boolean = false,
     val reminding: Boolean = false,
+    // Continue Watching, away from the show a while: what happened last time.
+    val recap: String? = null,
 ) {
     val key get() = "$kind-$tmdbId-${season ?: 0}-${episode ?: 0}"
     // Being watched (Continue Watching, new episodes): its page offers Resume.
@@ -266,13 +276,14 @@ data class Tile(
             outDate = o.str("outDate"),
             outNow = o.optBoolean("outNow"),
             reminding = o.optBoolean("reminding"),
+            recap = o.str("recap"),
         )
     }
 }
 
 data class Shelf(val key: String, val title: String, val items: List<Tile>)
 
-data class Home(val hero: Tile?, val rows: List<Shelf>) {
+data class Home(val hero: Tile?, val rows: List<Shelf>, val top10: List<TopList> = emptyList()) {
     companion object {
         fun from(o: JSONObject): Home {
             val rows = o.optJSONArray("rows") ?: JSONArray()
@@ -282,6 +293,7 @@ data class Home(val hero: Tile?, val rows: List<Shelf>) {
                     val r = rows.getJSONObject(it)
                     Shelf(r.optString("key"), r.optString("title"), (r.optJSONArray("items") ?: JSONArray()).cards())
                 },
+                topLists(o),
             )
         }
     }

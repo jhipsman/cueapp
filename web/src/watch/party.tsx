@@ -527,7 +527,7 @@ export function PartiesNow() {
   }, [])
   if (list.length === 0) return null
   return (
-    <section className="wx-parties" aria-label="Watch parties">
+    <section className="wx-parties" aria-label="Watch parties" data-row="parties">
       {list.map((p) => {
         const what = p.title.kind === 'tv' && p.title.season ? `${p.title.title} · S${p.title.season}:E${p.title.episode}` : p.title.title
         return (

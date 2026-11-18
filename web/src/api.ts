@@ -298,6 +298,7 @@ export interface WatchCard {
   outDate?: string // on Coming soon: the day it streams, when known
   reminding?: boolean // this profile asked to be told when it's out
   outNow?: boolean // on "Out now": a title this profile asked about came out
+  recap?: string // Continue Watching, away a while: what happened last time
 }
 // What brings a title's artwork alive: its logo, the main colour of its
 // picture ("r, g, b") and a YouTube trailer id.
@@ -338,6 +339,37 @@ export interface WatchRow {
 export interface WatchHome {
   hero?: WatchCard
   rows: WatchRow[]
+  top10?: TopList[] // what's most watched on each streaming service now
+}
+// A streaming service's top 10 right now.
+export interface TopList {
+  key: string // netflix, prime, appletv, disney, hulu, max, peacock, paramount
+  name: string
+  items: WatchCard[]
+}
+// An episode of a show you follow coming out soon (Coming soon, This week).
+export interface WeekEpisode extends WatchCard {
+  airDate: string // YYYY-MM-DD
+}
+// Report a problem: what someone said was wrong with a title, and the
+// owner's answer.
+export type ReportProblem = 'sound' | 'subtitles' | 'picture' | 'wrong' | 'buffering' | 'other'
+export interface WatchReport {
+  id: number
+  who: string
+  avatar: string
+  kind: WatchKind
+  tmdbId: number
+  season?: number
+  episode?: number
+  title: string
+  release?: string
+  problem: ReportProblem
+  note?: string
+  status: 'open' | 'fixed' | 'wontfix'
+  reply?: string
+  createdAt: string
+  updatedAt: string
 }
 export interface WatchRatings {
   imdb?: string
@@ -2447,6 +2479,25 @@ export const api = {
   markWrongVersion: (t: { kind: WatchKind; tmdbId: number; season: number; episode: number; release: string }) => post<null>('/play/wrong', t),
   // Coming soon: films not out to stream yet, soonest first.
   comingSoon: () => get<WatchCard[]>('/watch/coming-soon'),
+  // This week: the next episodes of shows this profile follows, by day.
+  thisWeek: () => get<WeekEpisode[]>('/watch/this-week'),
+  // A genre's most popular films or shows (Search's genre tiles).
+  watchGenre: (kind: WatchKind, genre: number) => get<WatchCard[]>(`/watch/genre?kind=${kind}&genre=${genre}`),
+  // Report a problem with a title; the owner answers.
+  addReport: (r: {
+    kind: WatchKind
+    tmdbId: number
+    season?: number
+    episode?: number
+    title: string
+    release?: string
+    problem: ReportProblem
+    note?: string
+  }) => post<WatchReport>('/reports', r),
+  reports: () => get<{ reports: WatchReport[]; open: number; owner: boolean }>('/reports'),
+  reportNews: () => get<WatchReport[]>('/reports/news'),
+  resolveReport: (id: number, status: 'fixed' | 'wontfix', reply: string, wrongVideo = false) =>
+    post<WatchReport>(`/reports/${id}/resolve`, { status, reply, wrongVideo }),
   // Tell this profile when a title is out to stream (or stop).
   setRemind: (kind: WatchKind, tmdbId: number, on: boolean) =>
     on ? put<{ reminding: boolean }>(`/watch/remind/${kind}/${tmdbId}`, {}) : del<{ reminding: boolean }>(`/watch/remind/${kind}/${tmdbId}`),

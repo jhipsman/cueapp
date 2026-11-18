@@ -315,6 +315,23 @@ fun Modifier.leaveWithArrows(): Modifier {
     }
 }
 
+/** "Today", "Tomorrow" or "Friday" for a day in the next week, else "March 4th". */
+fun dayName(day: String): String = runCatching {
+    val (y, m, d) = day.take(10).split('-').map { it.toInt() }
+    val at = java.util.Calendar.getInstance().apply { clear(); set(y, m - 1, d) }
+    val today = java.util.Calendar.getInstance().apply {
+        set(java.util.Calendar.HOUR_OF_DAY, 0); set(java.util.Calendar.MINUTE, 0); set(java.util.Calendar.SECOND, 0); set(java.util.Calendar.MILLISECOND, 0)
+    }
+    val diff = Math.round((at.timeInMillis - today.timeInMillis) / 86_400_000.0).toInt()
+    val days = listOf("Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday")
+    when {
+        diff == 0 -> "Today"
+        diff == 1 -> "Tomorrow"
+        diff in 2..6 -> days[at.get(java.util.Calendar.DAY_OF_WEEK) - 1]
+        else -> shortDay(day)
+    }
+}.getOrDefault(day)
+
 /** "March 4th" from "2027-03-04" ("March 4th, 2027" when not this year). */
 fun shortDay(day: String): String = runCatching {
     val (y, m, d) = day.take(10).split('-').map { it.toInt() }

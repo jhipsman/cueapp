@@ -58,6 +58,9 @@ type watchCard struct {
 	OutDate   string `json:"outDate,omitempty"`
 	Reminding bool   `json:"reminding,omitempty"`
 	OutNow    bool   `json:"outNow,omitempty"`
+	// Recap, on Continue Watching for a show not watched in a few weeks:
+	// what happened in the last episode seen ("Previously…").
+	Recap string `json:"recap,omitempty"`
 }
 
 type watchRow struct {
@@ -177,6 +180,8 @@ var watchShelves = []watchShelf{
 type watchHome struct {
 	Hero *watchCard `json:"hero,omitempty"`
 	Rows []watchRow `json:"rows"`
+	// Top10 is the Top 10 on each streaming service (top10.go).
+	Top10 []topList `json:"top10,omitempty"`
 }
 
 // GET /api/watch/home: Continue Watching, My List and the shelves.
@@ -206,6 +211,19 @@ func (s *Server) handleWatchHome(w http.ResponseWriter, r *http.Request) {
 			shelves[i] = watchRow{Key: sh.key, Title: sh.title, Items: items}
 		}(i, sh)
 	}
+	var top []topList
+	var kids []watchRow
+	prof, hasProf := s.activeProfile(r)
+	young := hasProf && kidsProfile(prof.MaxRating)
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		if young {
+			kids = s.kidsRows(ctx, tm)
+		} else {
+			top = s.top10(ctx, tm)
+		}
+	}()
 	cont := s.continueWatching(ctx, pid)
 	var because []watchRow
 	var newEps []watchCard
@@ -234,6 +252,14 @@ func (s *Server) handleWatchHome(w http.ResponseWriter, r *http.Request) {
 		home.Rows = append(home.Rows, watchRow{Key: "my-list", Title: "My List", Items: list})
 	}
 	_ = reminded // still to come: on the Coming soon page, not Home
+	// A young child's profile: its own rows first, after what it's watching.
+	if young {
+		for _, row := range kids {
+			if len(row.Items) > 0 {
+				home.Rows = append(home.Rows, row)
+			}
+		}
+	}
 	// "Because you watched" rows sit among the others, after the first.
 	for i, row := range shelves {
 		if i == 1 && len(because) > 0 {
@@ -278,6 +304,17 @@ func (s *Server) handleWatchHome(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}
+	// The Top 10s get the same care as the rows: a kids' profile's limit.
+	if prof, ok := s.activeProfile(r); ok && prof.MaxRating != "" {
+		kept := top[:0]
+		for _, l := range top {
+			if l.Items = s.ageFiltered(ctx, prof, l.Items); len(l.Items) > 0 {
+				kept = append(kept, l)
+			}
+		}
+		top = kept
+	}
+	home.Top10 = top
 	s.markQuiet(ctx, home.Rows)
 	// The banner: something trending this week with artwork, changing
 	// through the day so the page doesn't look the same every visit.
@@ -372,6 +409,15 @@ func (s *Server) continueWatching(ctx context.Context, userID int64) []watchCard
 			c.New = recentlyAired(next.AirDate, 14)
 		} else {
 			c.Progress = p.Fraction()
+		}
+		// Away a while: what happened last time. The last episode seen to
+		// the end (the one before, while one's half-watched).
+		if p.Kind == watch.KindTV && time.Since(p.UpdatedAt) > recapAfter {
+			last := p.Episode
+			if !p.Finished() {
+				last--
+			}
+			c.Recap = s.episodeRecap(ctx, p.TMDBID, p.Season, last)
 		}
 		out = append(out, c)
 	}
@@ -557,6 +603,29 @@ func recentlyAired(date string, days int) bool {
 // aired says a TMDB air date ("2024-03-01") is today or earlier.
 func aired(date string) bool {
 	return date != "" && date <= time.Now().Format("2006-01-02")
+}
+
+// recapAfter is how long away from a show before its card says what
+// happened last time.
+const recapAfter = 21 * 24 * time.Hour
+
+// episodeRecap is an episode's story ("" when it isn't known or there's no
+// such episode).
+func (s *Server) episodeRecap(ctx context.Context, tmdbID, season, episode int) string {
+	tm := s.TMDB()
+	if tm == nil || episode < 1 {
+		return ""
+	}
+	eps, err := tm.GetSeasonCached(ctx, tmdbID, season)
+	if err != nil {
+		return ""
+	}
+	for _, e := range eps {
+		if e.Episode == episode {
+			return e.Overview
+		}
+	}
+	return ""
 }
 
 // nextEpisode is the aired episode after season/episode: the next one in

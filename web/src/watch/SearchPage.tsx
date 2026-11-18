@@ -8,6 +8,7 @@ import { Card } from "./parts";
 import { useProfiles } from "./profiles";
 import { useReminders } from "./reminders";
 import Icon from "../components/Icon";
+import { GenreTiles, Pills, useGenre, type KindFilter } from "./browse";
 
 const hhmm = (s: string) =>
   new Date(s).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
@@ -37,7 +38,16 @@ function when(h: LiveHit): string {
 // TV set up, games and shows on now and coming up, and channels by name.
 // The search box is in the top bar.
 export default function SearchPage() {
-  const [params] = useSearchParams();
+  const [params, setParams] = useSearchParams();
+  const genre = params.get("genre") ?? "";
+  const kind = (params.get("kind") as KindFilter | null) ?? "all";
+  const setKind = (k: KindFilter) => {
+    const next = new URLSearchParams(params);
+    if (k === "all") next.delete("kind");
+    else next.set("kind", k);
+    setParams(next, { replace: true });
+  };
+  const byGenre = useGenre(genre, kind);
   const navigate = useNavigate();
   const liveTV = useProfiles().data?.liveTV ?? false;
   const reminders = useReminders();
@@ -67,7 +77,7 @@ export default function SearchPage() {
       setError(e instanceof Error ? e.message : String(e));
     }
   }
-  useDocumentTitle(q ? `Search: ${q}` : "Search");
+  useDocumentTitle(q ? `Search: ${q}` : genre ? genre : "Search");
 
   useEffect(() => {
     if (!q.trim()) return;
@@ -94,7 +104,8 @@ export default function SearchPage() {
     };
   }, [q, liveTV]);
 
-  const items = results?.items ?? [];
+  const found = results?.q === q ? results.items : [];
+  const items = kind === "all" ? found : found.filter((c) => c.kind === kind);
   const hits = live?.q === q ? live.hits : [];
   const shows = hits.filter((h) => h.show);
   const onNow = shows.filter((h) => h.onNow);
@@ -151,11 +162,53 @@ export default function SearchPage() {
     </div>
   );
 
+  // Nothing typed: the genres, or a genre's titles.
+  if (!q.trim()) {
+    return (
+      <div className="wx-page wx-search-home">
+        <div className="wx-search-top">
+          {genre ? (
+            <h1>
+              <button className="wx-linkish" onClick={() => navigate(kind === "all" ? "/watch/search" : `/watch/search?kind=${kind}`)} aria-label="Back to genres">
+                <Icon name="chevron-left" size={22} />
+              </button>
+              {genre}
+            </h1>
+          ) : (
+            <h1>Search</h1>
+          )}
+          <Pills value={kind} onChange={setKind} />
+        </div>
+        {!genre && <p className="wx-dim">Type a title, an actor or a channel above, or start from a genre.</p>}
+        {!genre && <GenreTiles kind={kind} />}
+        {genre && byGenre.error && <p className="wx-error">{byGenre.error}</p>}
+        {genre && byGenre.items === null && <div className="wx-grid">{Array.from({ length: 12 }, (_, i) => <div key={i} className="wx-card wx-skeleton" style={{ aspectRatio: "2 / 3" }} />)}</div>}
+        {genre && byGenre.items && (
+          <div className="wx-grid">
+            {byGenre.items.map((c) => (
+              <Card key={`${c.kind}-${c.tmdbId}`} card={c} />
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="wx-page">
       {error && <p className="wx-error">{error}</p>}
+      {results?.q === q && found.length > 0 && (
+        <div className="wx-search-top">
+          <h1>Results for “{q}”</h1>
+          <Pills
+            value={kind}
+            onChange={setKind}
+            counts={{ all: found.length, movie: found.filter((c) => c.kind === "movie").length, tv: found.filter((c) => c.kind === "tv").length }}
+          />
+        </div>
+      )}
       {done && items.length === 0 && hits.length === 0 && (
-        <p className="wx-dim">Nothing found for “{q}”.</p>
+        <p className="wx-dim">Nothing found for “{q}”{kind !== "all" ? ` in ${kind === "movie" ? "movies" : "shows"}` : ""}.</p>
       )}
 
       {liveTV && q.trim() && (shows.length > 0 || following) && (

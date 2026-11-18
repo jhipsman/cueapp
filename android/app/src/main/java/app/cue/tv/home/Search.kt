@@ -6,6 +6,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
@@ -51,6 +52,15 @@ import kotlinx.coroutines.delay
 // A Fire TV keeps its remote's microphone for Alexa, so the phone is how Cue
 // hears you there: scan the code, then type or say it on the phone, and the
 // words show up here (the server passes them along, /api/watch/remote).
+
+// Genres to browse before anything's typed: TMDB's ids for films and shows.
+private data class Genre(val name: String, val movie: Int?, val tv: Int?)
+private val GENRES = listOf(
+    Genre("Action", 28, 10759), Genre("Comedy", 35, 35), Genre("Drama", 18, 18), Genre("Sci-Fi", 878, 10765),
+    Genre("Family", 10751, 10751), Genre("Animation", 16, 16), Genre("Crime", 80, 80), Genre("Mystery", 9648, 9648),
+    Genre("Thriller", 53, null), Genre("Romance", 10749, null), Genre("Documentary", 99, 99), Genre("Reality", null, 10764),
+    Genre("Kids", 10751, 10762), Genre("Fantasy", 14, 10765), Genre("Western", 37, 37),
+)
 
 private const val ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789" // no 0/O, 1/I/L
 
@@ -101,6 +111,16 @@ fun SearchScreen(api: CueApi, memory: FocusMemory, listen: Boolean = false, list
             api.home().rows.filter { it.key.startsWith("trending") }.flatMap { it.items }.distinctBy { it.key }.take(24)
         }.getOrDefault(emptyList())
     }
+    // A genre picked from the tabs: its films and shows, mixed.
+    var genre by remember { mutableStateOf<Genre?>(null) }
+    var genreItems by remember { mutableStateOf<List<Tile>>(emptyList()) }
+    LaunchedEffect(genre) {
+        val g = genre ?: return@LaunchedEffect
+        genreItems = emptyList()
+        val films = g.movie?.let { runCatching { api.genre("movie", it) }.getOrDefault(emptyList()) } ?: emptyList()
+        val shows = g.tv?.let { runCatching { api.genre("tv", it) }.getOrDefault(emptyList()) } ?: emptyList()
+        genreItems = (0 until maxOf(films.size, shows.size)).flatMap { i -> listOfNotNull(films.getOrNull(i), shows.getOrNull(i)) }
+    }
     var results by remember { mutableStateOf<List<Tile>?>(null) }
     LaunchedEffect(query) {
         val q = query.trim()
@@ -150,7 +170,9 @@ fun SearchScreen(api: CueApi, memory: FocusMemory, listen: Boolean = false, list
         Column(Modifier.weight(1f).fillMaxHeight().padding(top = 26.dp)) {
             val shown = results
             val q = query.trim()
+            val g = genre
             val heading = when {
+                shown == null && g != null -> g.name
                 shown == null -> "Popular right now"
                 shown.isEmpty() -> "Nothing matches “$q”"
                 else -> "Results for “$q”"
@@ -159,7 +181,17 @@ fun SearchScreen(api: CueApi, memory: FocusMemory, listen: Boolean = false, list
             if (shown != null && shown.isEmpty()) {
                 Text("Try fewer words, or another spelling.", fontSize = 13.sp, color = Dim, modifier = Modifier.padding(start = 4.dp, top = 6.dp))
             }
-            PosterGrid(shown ?: popular, memory, if (shown == null) "popular" else "search", open, sidePadding = 4.dp)
+            if (shown == null) {
+                androidx.compose.foundation.lazy.LazyRow(
+                    contentPadding = PaddingValues(start = 4.dp, end = Gutter, top = 10.dp, bottom = 2.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    item { ChoiceTab("Popular", selected = g == null) { genre = null } }
+                    items(GENRES.size) { i -> ChoiceTab(GENRES[i].name, selected = g == GENRES[i]) { genre = GENRES[i] } }
+                }
+            }
+            PosterGrid(shown ?: if (g != null) genreItems else popular, memory,
+                if (shown != null) "search" else g?.let { "genre-${it.name}" } ?: "popular", open, sidePadding = 4.dp)
         }
     }
 }

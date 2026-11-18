@@ -471,6 +471,15 @@ Every route the server exposes. Routes marked **public** need no sign-in; all ot
 | GET | `/api/rename` | admin |  |
 | POST | `/api/rename` | admin | renames the chosen files, working out the new name again so it matches the preview. |
 
+## reports
+
+| Method | Path | Access | What it does |
+|---|---|---|---|
+| GET | `/api/reports` | signed in | GET /api/reports: every report for the owner (open first); your own for everyone else. |
+| POST | `/api/reports` | signed in | POST /api/reports {kind, tmdbId, season, episode, title, release, problem, note} |
+| GET | `/api/reports/news` | signed in | GET /api/reports/news: answers to this profile's reports it hasn't seen (shown once, on Home). |
+| POST | `/api/reports/{id}/resolve` | admin | POST /api/reports/{id}/resolve {status: fixed\|wontfix, reply, wrongVideo}: the owner's answer. |
+
 ## requests
 
 | Method | Path | Access | What it does |
@@ -710,6 +719,7 @@ Every route the server exposes. Routes marked **public** need no sign-in; all ot
 | GET | `/api/watch/coming-soon` | signed in | GET /api/watch/coming-soon: the Coming soon page. |
 | DELETE | `/api/watch/continue/{kind}/{tmdbId}` | signed in | DELETE /api/watch/continue/{kind}/{tmdbId}: takes a title off Continue Watching. |
 | GET | `/api/watch/extras/{kind}/{tmdbId}` | signed in | GET /api/watch/extras/{kind}/{tmdbId}: a title's logo, the main colour of its picture (for the glow and highlights) and its trailer (for the living banner), ... |
+| GET | `/api/watch/genre` | signed in | GET /api/watch/genre?kind=movie\|tv&genre=ID&page=N |
 | DELETE | `/api/watch/history` | signed in | DELETE /api/watch/history: the active profile's Continue Watching and what it has watched, forgotten. |
 | GET | `/api/watch/home` | signed in | GET /api/watch/home: Continue Watching, My List and the shelves. |
 | DELETE | `/api/watch/list/{kind}/{tmdbId}` | signed in | DELETE /api/watch/list/{kind}/{tmdbId} |
@@ -730,6 +740,7 @@ Every route the server exposes. Routes marked **public** need no sign-in; all ot
 | POST | `/api/watch/skips/learn` | signed in | POST /api/watch/skips/learn {"kind","tmdbId","season","segment","start","end","duration"}: the household skipped an intro (start to end) or the credits (pres... |
 | GET | `/api/watch/skips/{kind}/{tmdbId}` | signed in | GET /api/watch/skips/{kind}/{tmdbId}?season=&episode=&duration= |
 | GET | `/api/watch/subtitles/{kind}/{tmdbId}` | signed in | GET /api/watch/subtitles/{kind}/{tmdbId}?season=&episode=&release=&choice= is where the player gets the subtitle: {"url", "label", "choices"}. |
+| GET | `/api/watch/this-week` | signed in | GET /api/watch/this-week |
 | PUT | `/api/watch/thumb/{kind}/{tmdbId}` | signed in | PUT /api/watch/thumb/{kind}/{tmdbId} {"thumb":"up"\|"down"\|""}: this profile's thumb on a title. |
 | GET | `/api/watch/tv/{tmdbId}` | signed in | GET /api/watch/tv/{tmdbId} |
 | GET | `/api/watch/tv/{tmdbId}/next` | signed in | GET /api/watch/tv/{tmdbId}/next?season=1&episode=2: the episode to play after that one, for autoplay. |
@@ -747,4 +758,4 @@ Every route the server exposes. Routes marked **public** need no sign-in; all ot
 | PUT | `/api/watched/settings` | admin | PUT /api/watched/settings {"sync": true, "cleanup": {...}} |
 | POST | `/api/watched/sync` | admin | POST /api/watched/sync: read what's been watched now. |
 
-417 routes.
+423 routes.

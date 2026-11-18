@@ -5,6 +5,7 @@ import { api, browserCantOpen, profileToken, type PlayAnswer, type WatchCard, ty
 import Icon from '../components/Icon'
 import { useDocumentTitle } from '../documentTitle'
 import { epCode, playHref, Spinner } from './parts'
+import { ReportSheet } from './reports'
 import { loadSubsPrefs, saveSubsPrefs, type SubsPrefs } from './subsPrefs'
 import { savedTheme } from './theme'
 import { onTV, type TVPlayerResult } from './tv'
@@ -95,6 +96,11 @@ function CopyLink({ url }: { url: string }) {
   )
 }
 
+// Episodes played on by themselves in a row with nobody pressing anything
+// (kept across episodes: each opens this page again).
+let autoInARow = 0
+const STILL_WATCHING_AFTER = 3
+
 export default function PlayerPage() {
   const params = useParams()
   const navigate = useNavigate()
@@ -151,8 +157,10 @@ export default function PlayerPage() {
   const [subsNote, setSubsNote] = useState('')
   const [error, setError] = useState('')
   const [note, setNote] = useState('')
+  const [reporting, setReporting] = useState(false)
   const [next, setNext] = useState<WatchEpisode | null>(null)
   const [countdown, setCountdown] = useState<number | null>(null)
+  const [stillWatching, setStillWatching] = useState(false)
   // The next episode's card, offered at the credits; it only counts down
   // (and plays by itself) once this episode has really ended.
   const [offerNext, setOfferNext] = useState(false)
@@ -215,6 +223,7 @@ export default function PlayerPage() {
     setAnswer(null)
     setNext(null)
     setCountdown(null)
+    setStillWatching(false)
     setOfferNext(false)
     setNextFilm(null)
     setNote('')
@@ -383,10 +392,23 @@ export default function PlayerPage() {
     return () => window.removeEventListener('keydown', onKey)
   }, [leave])
 
+  // Anyone pressing a key or touching the player: the "Still watching?"
+  // count starts again.
+  useEffect(() => {
+    const here = () => (autoInARow = 0)
+    window.addEventListener('keydown', here)
+    window.addEventListener('pointerdown', here)
+    return () => {
+      window.removeEventListener('keydown', here)
+      window.removeEventListener('pointerdown', here)
+    }
+  }, [])
+
   // The next-episode countdown.
   useEffect(() => {
     if (countdown === null || !next) return
     if (countdown <= 0) {
+      autoInARow++
       navigate(withParty(playHref('tv', tmdbId, next.season, next.episode)), { replace: true })
       return
     }
@@ -603,7 +625,17 @@ export default function PlayerPage() {
       return
     }
     if (kind !== 'tv') return
-    const after = () => (prefs.on('autoplayNext') ? setCountdown(NEXT_COUNTDOWN) : setOfferNext(true))
+    // After three episodes in a row with nobody there, ask instead of
+    // playing a fourth (not in a watch party: the party decides).
+    const after = () => {
+      if (autoInARow >= STILL_WATCHING_AFTER && !partyCode) {
+        setStillWatching(true)
+        setOfferNext(true)
+        return
+      }
+      if (prefs.on('autoplayNext')) setCountdown(NEXT_COUNTDOWN)
+      else setOfferNext(true)
+    }
     if (next) {
       after()
       return
@@ -1071,10 +1103,28 @@ export default function PlayerPage() {
                     ]
                   : []),
                 { label: 'Search again', hint: 'Look for versions afresh', onClick: () => void load(1, true) },
+                {
+                  label: 'Report a problem',
+                  hint: 'Sound, subtitles, the picture… the owner hears about it',
+                  onClick: () => {
+                    video.current?.pause()
+                    setReporting(true)
+                  },
+                },
               ],
             }}
           />
         </>
+      )}
+
+      {reporting && answer && (
+        <ReportSheet
+          of={{ kind, tmdbId, season: kind === 'tv' ? season : 0, episode: kind === 'tv' ? episode : 0, title: answer.title, release: answer.release }}
+          onClose={(sent) => {
+            setReporting(false)
+            if (sent) setNote('Sent. The owner will look at it, and you’ll hear back.')
+          }}
+        />
       )}
 
       {playing && shownSkip && (
@@ -1108,7 +1158,7 @@ export default function PlayerPage() {
         <div className="wx-next">
           {next.stillUrl && <img src={next.stillUrl} alt="" />}
           <div className="wx-next-body">
-            <small>{countdown !== null ? `Next episode in ${countdown}s` : 'Up next'}</small>
+            <small>{countdown !== null ? `Next episode in ${countdown}s` : stillWatching ? 'Still watching?' : 'Up next'}</small>
             <div style={{ fontWeight: 700 }}>
               {epCode(next.season, next.episode)} {next.title}
             </div>

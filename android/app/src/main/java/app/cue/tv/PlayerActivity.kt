@@ -962,6 +962,7 @@ class PlayerActivity : Activity() {
                 }
             }
             addView(iconPill("Audio", R.drawable.ic_cue_audio) { chooseTrack(C.TRACK_TYPE_AUDIO, "Audio") })
+            if (!live && !catchup) addView(iconPill("Report", R.drawable.ic_cue_flag) { reportProblem() })
             addView(iconPill("Subtitles", R.drawable.ic_cue_subtitles) { subtitlesPressed() })
             soundButton = iconPill(soundLabel(), R.drawable.ic_cue_audio) { setSurround(!surround) }.also { addView(it) }
         }
@@ -1488,6 +1489,8 @@ class PlayerActivity : Activity() {
 
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
         val code = event.keyCode
+        // Someone's there: the "Still watching?" count starts again.
+        if (event.action == KeyEvent.ACTION_DOWN) autoInARow = 0
         // Any key but OK stops the next episode's countdown.
         if (event.action == KeyEvent.ACTION_DOWN && countdownLeft >= 0 &&
             code != KeyEvent.KEYCODE_DPAD_CENTER && code != KeyEvent.KEYCODE_ENTER) {
@@ -1711,6 +1714,13 @@ class PlayerActivity : Activity() {
             val next = nextButton ?: return
             if (countdownLeft <= 0) {
                 countdownLeft = -1
+                // Three episodes in a row with nobody touching the remote:
+                // ask before a fourth, so it doesn't play all night.
+                if (autoInARow >= STILL_WATCHING_AFTER && party == null) {
+                    askStillWatching()
+                    return
+                }
+                autoInARow++
                 goNext()
                 return
             }
@@ -1793,6 +1803,27 @@ class PlayerActivity : Activity() {
     }
 
     // goNext plays the next episode: here when it's ready, else through Home.
+    // "Still watching?": the picture stops, and OK carries on with the next
+    // episode; Back or Stop goes back to Home.
+    private fun askStillWatching() {
+        player.playWhenReady = false
+        android.app.AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert)
+            .setTitle("Still watching?")
+            .setMessage(info.optString("title").ifEmpty { "The next episode is ready." })
+            .setPositiveButton("Keep watching") { d, _ ->
+                d.dismiss()
+                autoInARow = 0
+                goNext()
+            }
+            .setNegativeButton("Stop") { d, _ ->
+                d.dismiss()
+                end("back")
+            }
+            .setCancelable(true)
+            .setOnCancelListener { end("back") }
+            .show()
+    }
+
     private fun goNext() {
         val j = nextReady
         if (j == null) {
@@ -2386,6 +2417,31 @@ class PlayerActivity : Activity() {
         }.start()
     }
 
+    // Report a problem: what's wrong, in one press; the owner hears about it
+    // (and answers in Watch), and whoever reported it hears back.
+    private fun reportProblem() {
+        main.removeCallbacks(hider)
+        val keys = listOf("sound", "subtitles", "picture", "wrong", "buffering", "other")
+        val labels = arrayOf("No sound, or it's out of step", "Subtitles missing or out of step", "Picture blurry, frozen or squashed",
+            "Wrong video (not this title or episode)", "Keeps stopping to load", "Something else")
+        android.app.AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert)
+            .setTitle("What's wrong?")
+            .setItems(labels) { d, which ->
+                d.dismiss()
+                postJson("/api/reports", JSONObject()
+                    .put("kind", info.optString("kind"))
+                    .put("tmdbId", info.optInt("tmdbId"))
+                    .put("season", info.optInt("season"))
+                    .put("episode", info.optInt("episode"))
+                    .put("title", info.optString("title"))
+                    .put("release", info.optString("release"))
+                    .put("problem", keys[which]))
+                Toast.makeText(this, "Sent. The owner will look at it, and you'll hear back.", Toast.LENGTH_LONG).show()
+            }
+            .setOnDismissListener { scheduleHide() }
+            .show()
+    }
+
     // postJson sends something to Cue as this profile, in the background.
     private fun postJson(path: String, body: JSONObject) {
         if (server.isEmpty()) return
@@ -2490,6 +2546,10 @@ class PlayerActivity : Activity() {
     }
 
     companion object {
+        // Episodes played on by themselves in a row, with no key pressed
+        // (kept across players: the next episode can open a new one).
+        @JvmStatic var autoInARow = 0
+        const val STILL_WATCHING_AFTER = 3
         const val EXTRA_JSON = "json"
         const val EXTRA_SERVER = "server"
         const val RESULT_REASON = "reason"

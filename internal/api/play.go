@@ -266,6 +266,7 @@ func (s *Server) handlePlayTMDBMovie(w http.ResponseWriter, r *http.Request) {
 	if s.ageBlocked(w, r, "movie", tmdbID) {
 		return
 	}
+	s.noteVersionMove(r, "movie", tmdbID, 0, 0)
 	if m, ok, err := s.MovieRepo.GetByTMDBID(tmdbID); err == nil && ok {
 		s.servePlay(w, r, movieTarget(m))
 		return
@@ -300,6 +301,7 @@ func (s *Server) handlePlayTMDBEpisode(w http.ResponseWriter, r *http.Request) {
 	if s.ageBlocked(w, r, "tv", tmdbID) {
 		return
 	}
+	s.noteVersionMove(r, "tv", tmdbID, season, episode)
 	if series, ok, err := s.MovieRepo.GetSeriesByTMDBID(tmdbID); err == nil && ok {
 		s.servePlay(w, r, episodeTarget(series, season, episode))
 		return

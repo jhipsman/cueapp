@@ -250,3 +250,27 @@ func (c *Client) TVList(ctx context.Context, list string, page int) (*ShowPage, 
 	}
 	return nil, fmt.Errorf("unknown discover list %q", list)
 }
+
+// OnService is what's most popular right now on a streaming service (its
+// TMDB provider id, or several joined with "|"), in a region ("US"): one
+// page of films or shows included with a subscription.
+func (c *Client) OnServiceMovies(ctx context.Context, providers, region string) (*MoviePage, error) {
+	return c.moviePage(ctx, "/discover/movie", onServiceParams(providers, region))
+}
+
+// OnServiceShows is OnServiceMovies for shows.
+func (c *Client) OnServiceShows(ctx context.Context, providers, region string) (*ShowPage, error) {
+	return c.showPage(ctx, "/discover/tv", onServiceParams(providers, region))
+}
+
+func onServiceParams(providers, region string) url.Values {
+	return url.Values{
+		"include_adult": {"false"}, "language": {"en-US"},
+		"with_watch_providers":          {providers},
+		"watch_region":                  {region},
+		"with_watch_monetization_types": {"flatrate"},
+		"sort_by":                       {"popularity.desc"},
+		"vote_count.gte":                {"20"},
+		"page":                          {"1"},
+	}
+}
