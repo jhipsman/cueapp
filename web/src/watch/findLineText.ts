@@ -19,8 +19,11 @@ export function parseCues(src: string): Cue[] {
     const text = lines
       .slice(i + 1)
       .join(' ')
-      .replace(/<[^>]+>/g, '')
-      .replace(/\{[^}]+\}/g, '')
+      // Formatting tags (<i>, <font>) and ASS codes ({\an8}) off; then any
+      // < or > left (a broken or nested tag) too, so no tag can survive.
+      .replace(/<[^>]*>/g, '')
+      .replace(/[<>]/g, '')
+      .replace(/\{[^}]*\}/g, '')
       .replace(/\s+/g, ' ')
       .trim()
     if (!isNaN(start) && text) out.push({ start, text })

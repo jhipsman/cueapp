@@ -24,4 +24,10 @@ be with you.`
   assert.equal(matchCues(cues, 'LOOKING kid').length, 1)
   assert.equal(matchCues(cues, 'back kid').length, 0)
   assert.equal(matchCues(cues, '   ').length, 0)
+  // A nested or broken tag leaves no < or > behind.
+  const odd = parseCues(`WEBVTT
+
+00:00:01.000 --> 00:00:02.000
+<scr<i>ipt>alert(1)</script> Hello`)
+  assert.equal(odd[0].text.includes('<') || odd[0].text.includes('>'), false)
 })
