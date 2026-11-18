@@ -230,6 +230,9 @@ func parseScoreboard(sb scoreboard, l League) []Game {
 			if g.State == "pre" {
 				team.Score = ""
 			}
+			if team.Logo == "" {
+				team.Logo = LogoURL(l, team)
+			}
 			if t.HomeAway == "home" {
 				g.Home = team
 			} else {
@@ -341,6 +344,8 @@ func (c *Client) Teams(ctx context.Context, l League) ([]Team, error) {
 				tm := Team{ID: t.Team.ID, Name: t.Team.DisplayName, Short: t.Team.ShortDisplayName, Abbr: t.Team.Abbreviation, Color: t.Team.Color}
 				if len(t.Team.Logos) > 0 {
 					tm.Logo = t.Team.Logos[0].Href
+				} else {
+					tm.Logo = LogoURL(l, tm)
 				}
 				teams = append(teams, tm)
 			}
@@ -431,4 +436,28 @@ func ChannelWords(network string) []string {
 		return a
 	}
 	return []string{n}
+}
+
+// LogoURL is a team's logo on ESPN's image server when the scoreboard
+// leaves it out: the pro leagues file logos by team abbreviation, college
+// and soccer by team id.
+func LogoURL(l League, t Team) string {
+	sport := strings.SplitN(l.Path, "/", 2)[1]
+	switch l.Key {
+	case "nfl", "nba", "mlb", "nhl", "wnba":
+		if t.Abbr == "" {
+			return ""
+		}
+		return "https://a.espncdn.com/i/teamlogos/" + sport + "/500/" + strings.ToLower(t.Abbr) + ".png"
+	case "cfb", "cbb":
+		if t.ID == "" {
+			return ""
+		}
+		return "https://a.espncdn.com/i/teamlogos/ncaa/500/" + t.ID + ".png"
+	default: // soccer
+		if t.ID == "" {
+			return ""
+		}
+		return "https://a.espncdn.com/i/teamlogos/soccer/500/" + t.ID + ".png"
+	}
 }

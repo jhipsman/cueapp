@@ -69,6 +69,8 @@ export function useParty(o: SyncOpts) {
   const [problem, setProblem] = useState('')
   const [unread, setUnread] = useState(0)
   const [needsTap, setNeedsTap] = useState(false)
+  // The episode this player last moved on from, and when.
+  const left = useRef<{ season: number; episode: number; at: number } | null>(null)
   const stateRef = useRef<PartyState | null>(null)
   const got = useRef(0) // when the last state arrived (performance.now())
   const applying = useRef(0) // until when the player's own events are ours, not the viewer's
@@ -152,6 +154,11 @@ export function useParty(o: SyncOpts) {
           setState(s)
           const t = opts.current.title
           if (opts.current.chatOnly) return
+          // Word still naming the episode this player just moved on from
+          // (sent before the party heard about Next): not a reason to go
+          // back to it, which would play the same episode over again.
+          const l = left.current
+          if (l && performance.now() - l.at < 15000 && s.title.tmdbId === t.tmdbId && (s.title.season ?? 0) === l.season && (s.title.episode ?? 0) === l.episode) return
           if (s.title.tmdbId !== t.tmdbId || (s.title.season ?? 0) !== (t.season ?? 0) || (s.title.episode ?? 0) !== (t.episode ?? 0)) {
             opts.current.follow(s.title)
             return
@@ -325,6 +332,9 @@ export function useParty(o: SyncOpts) {
     const s = stateRef.current
     if (!code || !s || kind !== 'tv' || opts.current.chatOnly) return
     if ((s.title.season ?? 0) !== season || (s.title.episode ?? 0) !== episode) {
+      // Remember the episode left, so a late word about it doesn't pull
+      // this player back (see the state handler).
+      if (s.title.tmdbId === tmdbId) left.current = { season: s.title.season ?? 0, episode: s.title.episode ?? 0, at: performance.now() }
       void api
         .partyState(code, { client, action: 'episode', pos: 0, title: opts.current.title })
         .then((ns) => {

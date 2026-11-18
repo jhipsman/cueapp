@@ -68,6 +68,10 @@ func TestScoreboard(t *testing.T) {
 	if !wild.Postseason || wild.Note != "NFC Wild Card" || wild.Home.Score != "" || len(wild.Networks) != 1 || wild.Networks[0] != "FOX" {
 		t.Fatalf("wild card: %+v", wild)
 	}
+	// A team the scoreboard gives no logo gets ESPN's usual address.
+	if wild.Home.Logo != "https://a.espncdn.com/i/teamlogos/nfl/500/dal.png" || live.Home.Logo != "https://a.espncdn.com/kc.png" {
+		t.Fatalf("logos: %q %q", wild.Home.Logo, live.Home.Logo)
+	}
 	if games[2].Networks[0] != "Prime Video" || ChannelWords("Prime Video") != nil {
 		t.Fatal("streaming-only game")
 	}

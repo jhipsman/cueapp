@@ -223,8 +223,8 @@ class CueApi(ctx: Context, val server: String) {
     // ---- Live TV ----
 
     suspend fun channels(): LiveChannels = LiveChannels.from(obj("/api/live/channels"))
-    /** Sports: the channels with games on now or soon (the next big game first), and a line about that game. */
-    suspend fun sports(): Pair<List<String>, String?> {
+    /** Sports: the channels with games on now or soon (the next big game first), and that game. */
+    suspend fun sports(): SportsInfo {
         val o = obj("/api/live/sports")
         val ids = mutableListOf<String>()
         o.optJSONObject("big")?.optJSONObject("channel")?.optString("id")?.takeIf { it.isNotEmpty() }?.let { ids.add(it) }
@@ -232,23 +232,19 @@ class CueApi(ctx: Context, val server: String) {
             val a = o.optJSONArray(k) ?: continue
             for (i in 0 until a.length()) a.getJSONObject(i).optJSONObject("channel")?.optString("id")?.takeIf { it.isNotEmpty() }?.let { if (it !in ids) ids.add(it) }
         }
-        val b = o.optJSONObject("big") ?: return ids to null
+        val b = o.optJSONObject("big") ?: return SportsInfo(ids, null)
         val live = b.optBoolean("onNow")
         val where = b.optJSONObject("channel")?.optString("name")?.takeIf { it.isNotEmpty() } ?: b.str("streaming")?.let { "on $it" } ?: ""
-        val line = if (o.optString("source") == "espn") {
-            // ESPN: the teams and score, or when it starts.
-            val away = b.optJSONObject("away")
-            val home = b.optJSONObject("home")
-            val a = away?.optString("short")?.ifEmpty { away.optString("name") }.orEmpty()
-            val h = home?.optString("short")?.ifEmpty { home.optString("name") }.orEmpty()
-            val game = if (live) "$a ${away?.optString("score").orEmpty()} – $h ${home?.optString("score").orEmpty()} · ${b.optString("detail")}"
-            else "$a at $h · ${shortTime(b.optString("start"))}"
-            (if (live) "● Live: " else if (b.optBoolean("favorite")) "★ Your team: " else "Next big game: ") + game + (if (where.isNotEmpty()) " · $where" else "")
-        } else {
+        if (o.optString("source") != "espn") {
             val title = b.optJSONObject("show")?.optString("title").orEmpty()
-            if (title.isEmpty()) null else (if (live) "Live now: " else "Next big game: ") + title + (if (where.isNotEmpty()) " · $where" else "")
+            return SportsInfo(ids, if (title.isEmpty()) null else BigGame(
+                tag = if (live) "LIVE NOW" else "NEXT BIG GAME", away = null, home = null, title = title, detail = where, live = live))
         }
-        return ids to line
+        fun side(t: JSONObject?) = t?.let { GameSide(it.optString("short").ifEmpty { it.optString("name") }, it.str("logo"), it.optString("score"), it.optString("record")) }
+        val tag = (if (live) "LIVE" else if (b.optBoolean("favorite")) "YOUR TEAM" else "NEXT BIG GAME") + " · " + b.optString("leagueName") +
+            (b.str("note")?.let { " · $it" } ?: "")
+        val detail = listOf(if (live) b.optString("detail") else shortTime(b.optString("start")), where).filter { it.isNotEmpty() }.joinToString(" · ")
+        return SportsInfo(ids, BigGame(tag, side(b.optJSONObject("away")), side(b.optJSONObject("home")), b.optString("title"), detail, live))
     }
     suspend fun livePlay(id: String): JSONObject = obj("/api/live/play/${URLEncoder.encode(id, "UTF-8").replace("+", "%20")}")
     suspend fun setFavorite(id: String, on: Boolean) {
@@ -383,6 +379,10 @@ data class Title(
         }
     }
 }
+
+data class GameSide(val name: String, val logo: String?, val score: String, val record: String)
+data class BigGame(val tag: String, val away: GameSide?, val home: GameSide?, val title: String, val detail: String, val live: Boolean)
+data class SportsInfo(val channels: List<String>, val big: BigGame?)
 
 /** "Sun 1:00 PM" from an ISO time, in the TV's time zone. */
 fun shortTime(iso: String): String = runCatching {

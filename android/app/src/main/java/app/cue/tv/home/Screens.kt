@@ -1021,8 +1021,14 @@ fun LiveScreen(api: CueApi, playback: Playback, openWeb: (String) -> Unit) {
     var problem by remember { mutableStateOf("") }
     var group by remember { mutableStateOf("") }
     // Sports: the channels with games, the next big game first.
-    var sports by remember { mutableStateOf<Pair<List<String>, String?>>(emptyList<String>() to null) }
-    LaunchedEffect(Unit) { sports = runCatching { api.sports() }.getOrDefault(emptyList<String>() to null) }
+    var sports by remember { mutableStateOf(SportsInfo(emptyList(), null)) }
+    LaunchedEffect(Unit) {
+        // Scores change: read again every minute while Live TV is open.
+        while (true) {
+            runCatching { api.sports() }.getOrNull()?.let { sports = it }
+            delay(60_000)
+        }
+    }
     LaunchedEffect(Unit) {
         try {
             val l = api.channels()
@@ -1042,7 +1048,7 @@ fun LiveScreen(api: CueApi, playback: Playback, openWeb: (String) -> Unit) {
         return
     }
     val groups = buildList {
-        if (sports.first.isNotEmpty()) add("sports" to "Sports")
+        if (sports.channels.isNotEmpty() || sports.big != null) add("sports" to "Sports")
         if (l.channels.any { it.favorite }) add("★" to "Favorites")
         add("*" to "All channels")
         val used = l.channels.map { it.category }.toSet()
@@ -1050,7 +1056,7 @@ fun LiveScreen(api: CueApi, playback: Playback, openWeb: (String) -> Unit) {
     }
     val byId = remember(l) { l.channels.associateBy { it.id } }
     val shown = when (group) {
-        "sports" -> sports.first.mapNotNull { byId[it] }
+        "sports" -> sports.channels.mapNotNull { byId[it] }
         "★" -> l.channels.filter { it.favorite }
         "*", "" -> l.channels
         else -> l.channels.filter { it.category == group }
@@ -1073,11 +1079,8 @@ fun LiveScreen(api: CueApi, playback: Playback, openWeb: (String) -> Unit) {
         CompositionLocalProvider(LocalBringIntoViewSpec provides PivotSpec) {
             LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(start = 20.dp, end = Gutter, top = 6.dp, bottom = 60.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                val big = sports.second
-                if (group == "sports" && big != null) item(key = "big") {
-                    Text(big, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = LocalAccent.current, maxLines = 1, overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.padding(start = 4.dp, bottom = 2.dp))
-                }
+                val big = sports.big
+                if (group == "sports" && big != null) item(key = "big") { BigGameCard(big) }
                 items(shown.take(400), key = { it.id }) { ch ->
                     ChannelCard(api, ch, onFocus = { spot = ch }) { playback.playLive(ch, shown) }
                 }
@@ -1405,5 +1408,46 @@ fun PersonCard(p: CastPerson, selected: Boolean, onClick: () -> Unit) {
         }
         Text(p.name, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = Color.White, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 8.dp))
         p.character?.let { Text(it, fontSize = 10.sp, color = Dim, maxLines = 1, overflow = TextOverflow.Ellipsis) }
+    }
+}
+
+// The next big game at the top of Sports: both teams' logos, names, records
+// and the score (live) or kickoff time, and the channel.
+@Composable
+fun BigGameCard(g: BigGame) {
+    val shape = RoundedCornerShape(PanelCorner)
+    Column(
+        Modifier.fillMaxWidth().clip(shape).background(Color(0x991B1D22)).border(1.dp, Color(0x1FFFFFFF), shape).padding(horizontal = 20.dp, vertical = 14.dp),
+    ) {
+        Text(g.tag, fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.5.sp, color = if (g.live) Color(0xFFFF5A6E) else LocalAccent.current)
+        Gap(8.dp)
+        if (g.away != null && g.home != null) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                GameSideView(g.away, Modifier.weight(1f))
+                Text(if (g.live) "–" else "at", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Dim, modifier = Modifier.padding(horizontal = 14.dp))
+                GameSideView(g.home, Modifier.weight(1f))
+            }
+        } else {
+            Text(g.title, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.White, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        }
+        Gap(6.dp)
+        Text(g.detail, fontSize = 12.sp, color = if (g.live) Color(0xFFFF5A6E) else Dim, maxLines = 1, overflow = TextOverflow.Ellipsis)
+    }
+}
+
+@Composable
+private fun GameSideView(s: GameSide, modifier: Modifier = Modifier) {
+    Row(modifier, verticalAlignment = Alignment.CenterVertically) {
+        Box(Modifier.size(44.dp), contentAlignment = Alignment.Center) {
+            if (s.logo != null) coil.compose.AsyncImage(model = s.logo, contentDescription = s.name,
+                contentScale = androidx.compose.ui.layout.ContentScale.Fit, modifier = Modifier.fillMaxSize())
+            else Text(s.name.take(3).uppercase(), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White)
+        }
+        HGap(10.dp)
+        Column(Modifier.weight(1f)) {
+            Text(s.name, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color.White, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            if (s.record.isNotEmpty()) Text(s.record, fontSize = 10.sp, color = Dim)
+        }
+        if (s.score.isNotEmpty()) Text(s.score, fontSize = 22.sp, fontWeight = FontWeight.Black, color = Color.White, modifier = Modifier.padding(start = 8.dp))
     }
 }

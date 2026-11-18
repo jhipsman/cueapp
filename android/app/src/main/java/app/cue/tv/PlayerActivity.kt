@@ -164,6 +164,10 @@ class PlayerActivity : Activity() {
     // Listen on phone: the sound plays on a phone (joined through a watch
     // party, picture hidden there) and the TV goes quiet.
     private var listenMode = false
+    // The episode this TV last moved on from in place, and when (a party's
+    // late word about it is ignored for a moment).
+    private var leftEpisode: Pair<Int, Int>? = null
+    private var leftAt = 0L
     private var listenButton: TextView? = null
     // Volume boost: Android's loudness enhancer on the player's sound, about
     // twice as loud (for quiet films and soft dialogue).
@@ -665,6 +669,12 @@ class PlayerActivity : Activity() {
             it.visibility = if (waiting.isEmpty()) View.GONE else View.VISIBLE
         }
         val t = s.optJSONObject("title") ?: return
+        // Word still naming the episode this TV just moved on from (sent
+        // before the party heard about Next): not a reason to go back to it,
+        // which played the same episode over again.
+        val l = leftEpisode
+        if (l != null && SystemClock.elapsedRealtime() - leftAt < 15_000 &&
+            t.optInt("season") == l.first && t.optInt("episode") == l.second) return
         if (isShow && (t.optInt("season") != info.optInt("season") || t.optInt("episode") != info.optInt("episode"))) {
             if (!first) end("party", "${link.code}|${t.optInt("tmdbId")}|${t.optInt("season")}|${t.optInt("episode")}")
             return
@@ -1851,6 +1861,8 @@ class PlayerActivity : Activity() {
         val veil = View(this).apply { setBackgroundColor(Color.BLACK); alpha = 0f }
         (video.parent as? FrameLayout)?.addView(veil, FrameLayout.LayoutParams(MATCH, MATCH))
         veil.animate().alpha(1f).setDuration(220).withEndAction {
+            leftEpisode = info.optInt("season") to info.optInt("episode")
+            leftAt = SystemClock.elapsedRealtime()
             info = j
             introStart = 0; introEnd = 0; recapStart = 0; recapEnd = 0; creditsStart = 0; creditsFromEnd = 0
             skipTo = 0
