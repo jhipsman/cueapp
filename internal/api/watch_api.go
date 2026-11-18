@@ -260,7 +260,14 @@ func (s *Server) handleWatchHome(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}
-	// "Because you watched" rows sit among the others, after the first.
+	// "Because you watched" rows sit among the others, after the first. A
+	// young child's Home leaves the general rows out: what's trending or
+	// popular is chosen for grown-ups (Seinfeld, Doctor Who are TV-PG), so
+	// its own rows above take their place.
+	if young {
+		shelves = nil
+		because = nil
+	}
 	for i, row := range shelves {
 		if i == 1 && len(because) > 0 {
 			home.Rows = append(home.Rows, because[0])
@@ -316,6 +323,26 @@ func (s *Server) handleWatchHome(w http.ResponseWriter, r *http.Request) {
 	}
 	home.Top10 = top
 	s.markQuiet(ctx, home.Rows)
+	// Nothing quiet (anime, horror, unrated) offered to a young child, only
+	// what it's already watching or saved.
+	if young {
+		kept := home.Rows[:0]
+		for _, row := range home.Rows {
+			if row.Key != "continue" && row.Key != "my-list" && row.Key != "new-episodes" {
+				items := row.Items[:0:0]
+				for _, c := range row.Items {
+					if !c.Quiet {
+						items = append(items, c)
+					}
+				}
+				row.Items = items
+			}
+			if len(row.Items) > 0 {
+				kept = append(kept, row)
+			}
+		}
+		home.Rows = kept
+	}
 	// The banner: something trending this week with artwork, changing
 	// through the day so the page doesn't look the same every visit.
 	for _, row := range home.Rows {
@@ -739,6 +766,7 @@ type watchTitle struct {
 	Genres        []string      `json:"genres"`
 	Certification string        `json:"certification,omitempty"`
 	Cast          []string      `json:"cast"`
+	People        []watchPerson `json:"people,omitempty"`    // the cast with photos: each opens their page
 	Directors     []string      `json:"directors,omitempty"` // or the show's creators
 	Networks      []string      `json:"networks,omitempty"`
 	Seasons       []watchSeason `json:"seasons,omitempty"`
@@ -797,7 +825,7 @@ func (s *Server) handleWatchMovie(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	t := watchTitle{watchCard: movieCard(d.Movie), Tagline: d.Tagline, Runtime: d.Runtime, Genres: genreNames(d.Genres),
-		Certification: d.Certification(), Cast: castNames(d.Cast(10)), Directors: d.Directors(), IMDbID: d.IMDBID,
+		Certification: d.Certification(), Cast: castNames(d.Cast(10)), People: castPeople(d.Cast(15)), Directors: d.Directors(), IMDbID: d.IMDBID,
 		InList: s.WatchRepo.InList(pid, watch.KindMovie, tmdbID), Thumb: s.WatchRepo.Thumb(pid, watch.KindMovie, tmdbID)}
 	if p, ok, _ := s.WatchRepo.GetProgress(pid, watch.KindMovie, tmdbID, 0, 0); ok && !p.Finished() {
 		t.ResumePosition = p.Position
@@ -855,7 +883,7 @@ func (s *Server) handleWatchShow(w http.ResponseWriter, r *http.Request) {
 		writeUpstreamError(w, "load the show from TMDB", err)
 		return
 	}
-	t := watchTitle{watchCard: showCard(d.Show), Tagline: d.Tagline, Genres: genreNames(d.Genres), Cast: castNames(d.Cast(10)),
+	t := watchTitle{watchCard: showCard(d.Show), Tagline: d.Tagline, Genres: genreNames(d.Genres), Cast: castNames(d.Cast(10)), People: castPeople(d.Cast(15)),
 		Directors: d.Creators(), IMDbID: d.ExternalIDs.IMDBID, InList: s.WatchRepo.InList(pid, watch.KindTV, tmdbID), Thumb: s.WatchRepo.Thumb(pid, watch.KindTV, tmdbID)}
 	for _, n := range d.Networks {
 		t.Networks = append(t.Networks, n.Name)

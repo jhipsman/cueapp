@@ -274,3 +274,62 @@ func onServiceParams(providers, region string) url.Values {
 		"page":                          {"1"},
 	}
 }
+
+// TopQuery narrows a Top 10: on a streaming service (TMDB provider ids,
+// "|" for several; "" for any), streaming in a country ("US"), of a genre
+// (TMDB's id for films or shows), from a decade (1990 for the 1990s; 0 for
+// any). The most popular first; for a past decade, the most voted for (the
+// classics, not what happens to be trending).
+type TopQuery struct {
+	Providers string
+	Region    string
+	Genre     int
+	Decade    int
+	// MaxRuntime keeps films (or episodes) at most this many minutes; 0 for any.
+	MaxRuntime int
+	// MinRating keeps titles TMDB's users rate at least this (out of 10).
+	MinRating float64
+}
+
+func (q TopQuery) params(dateField string) url.Values {
+	v := url.Values{
+		"include_adult": {"false"}, "language": {"en-US"},
+		"sort_by": {"popularity.desc"}, "vote_count.gte": {"40"}, "page": {"1"},
+	}
+	region := q.Region
+	if region == "" {
+		region = "US"
+	}
+	v.Set("watch_region", region)
+	v.Set("with_watch_monetization_types", "flatrate|free|ads")
+	if q.Providers != "" {
+		v.Set("with_watch_providers", q.Providers)
+	}
+	if q.Genre > 0 {
+		v.Set("with_genres", fmt.Sprint(q.Genre))
+	}
+	if q.MaxRuntime > 0 {
+		v.Set("with_runtime.lte", fmt.Sprint(q.MaxRuntime))
+		v.Set("with_runtime.gte", "20")
+	}
+	if q.MinRating > 0 {
+		v.Set("vote_average.gte", fmt.Sprintf("%.1f", q.MinRating))
+		v.Set("vote_count.gte", "200")
+	}
+	if q.Decade >= 1900 {
+		v.Set(dateField+".gte", fmt.Sprintf("%d-01-01", q.Decade))
+		v.Set(dateField+".lte", fmt.Sprintf("%d-12-31", q.Decade+9))
+		v.Set("sort_by", "vote_count.desc")
+	}
+	return v
+}
+
+// TopMovies is one page of films matching q.
+func (c *Client) TopMovies(ctx context.Context, q TopQuery) (*MoviePage, error) {
+	return c.moviePage(ctx, "/discover/movie", q.params("primary_release_date"))
+}
+
+// TopShows is one page of shows matching q.
+func (c *Client) TopShows(ctx context.Context, q TopQuery) (*ShowPage, error) {
+	return c.showPage(ctx, "/discover/tv", q.params("first_air_date"))
+}

@@ -10,7 +10,7 @@ const contentSecurityPolicy = "default-src 'self'; " +
 	"script-src 'self'; " +
 	// blob: styles and fonts are an EPUB's own, unpacked by the reader.
 	"style-src 'self' 'unsafe-inline' blob:; " +
-	"img-src 'self' data: blob: https://image.tmdb.org https://coverartarchive.org https://archive.org https://*.archive.org https://covers.openlibrary.org; " +
+	"img-src 'self' data: blob: https://image.tmdb.org https://coverartarchive.org https://archive.org https://*.archive.org https://covers.openlibrary.org https://a.espncdn.com; " +
 	"font-src 'self' blob:; " +
 	// https: lets the player stream straight from Premiumize, whose files
 	// are served from changing CDN hosts.

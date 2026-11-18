@@ -6393,11 +6393,23 @@ button.wx-switch.on:hover {
   background: var(--wx-panel);
   flex: 0 0 auto;
 }
+.wx-week-day {
+  min-width: 0;
+}
+.wx-week-ep {
+  overflow: hidden;
+}
 .wx-week-txt {
   display: flex;
   flex-direction: column;
   gap: 3px;
   min-width: 0;
+  flex: 1;
+}
+.wx-week-txt b {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .wx-week-txt small {
   color: rgba(255, 255, 255, 0.6);
@@ -6596,4 +6608,1025 @@ button.wx-switch.on:hover {
 .wx-card-recap b {
   color: rgba(255, 255, 255, 0.85);
   font-weight: 600;
+}
+
+/* ---- Cast row and person pages */
+.wx-cast h2 {
+  margin-top: 30px;
+}
+.wx-cast-scroll {
+  display: flex;
+  gap: 14px;
+  overflow-x: auto;
+  padding: 4px 2px 12px;
+  scrollbar-width: none;
+}
+.wx-cast-p {
+  flex: 0 0 auto;
+  width: 120px;
+  border: 0;
+  background: none;
+  color: inherit;
+  text-align: left;
+  padding: 0;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.wx-cast-pic {
+  width: 120px;
+  aspect-ratio: 5 / 6;
+  border-radius: 14px;
+  overflow: hidden;
+  background: var(--wx-panel);
+  display: grid;
+  place-items: center;
+  font-size: 2rem;
+  font-weight: 800;
+  color: rgba(255, 255, 255, 0.4);
+  transition:
+    transform 0.15s,
+    box-shadow 0.15s;
+}
+.wx-cast-pic img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.wx-cast-p:hover .wx-cast-pic,
+.wx-cast-p:focus-visible .wx-cast-pic {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.45);
+}
+.wx-cast-p b {
+  font-size: 0.88rem;
+  margin-top: 6px;
+}
+.wx-cast-p small {
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 0.78rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.wx-person-head {
+  display: flex;
+  gap: 28px;
+  align-items: flex-start;
+  margin-bottom: 28px;
+  max-width: 980px;
+}
+.wx-person-head h1 {
+  margin: 4px 0 6px;
+  font-size: 2.2rem;
+}
+.wx-person-pic {
+  flex: 0 0 auto;
+  width: 180px;
+  aspect-ratio: 2 / 3;
+  border-radius: 16px;
+  overflow: hidden;
+  background: var(--wx-panel);
+  display: grid;
+  place-items: center;
+  font-size: 3rem;
+  font-weight: 800;
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.5);
+}
+.wx-person-pic img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.wx-person-bio {
+  line-height: 1.55;
+  color: rgba(255, 255, 255, 0.82);
+  display: -webkit-box;
+  -webkit-line-clamp: 5;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.wx-person-bio.open {
+  display: block;
+}
+.wx-person-credit small {
+  display: block;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.75rem;
+  margin: -4px 2px 8px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+@media (max-width: 640px) {
+  .wx-person-head {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 14px;
+  }
+  .wx-person-pic {
+    width: 140px;
+  }
+  .wx-cast-p,
+  .wx-cast-pic {
+    width: 96px;
+  }
+}
+
+/* ---- Top 10 page */
+.wx-top-all {
+  border: 0;
+  background: none;
+  color: var(--wx-accent);
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 0.85rem;
+  order: 3;
+}
+.wx-toppage h1 {
+  font-size: 1.9rem;
+  margin: 0 0 14px;
+}
+.wx-top-filters {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 26px;
+}
+.wx-top-selects {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.wx-top-selects select {
+  background: rgba(255, 255, 255, 0.07);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 999px;
+  padding: 7px 14px;
+  font: inherit;
+  font-size: 0.9rem;
+}
+.wx-top-selects option {
+  background: #1b1d22;
+}
+.wx-top-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 20px 10px;
+}
+.wx-top-grid .wx-top-item .wx-card {
+  width: clamp(120px, 12vw, 160px);
+}
+.wx-top-cell {
+  height: 260px;
+  border-radius: 8px;
+}
+@media (max-width: 640px) {
+  .wx-top-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .wx-top-grid .wx-top-item .wx-card {
+    width: 100px;
+  }
+}
+
+/* ---- Networks and decades on the Films and Series homes */
+.wx-networks {
+  margin: 0 var(--wx-gutter) 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.wx-network-row {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.wx-network,
+.wx-decade {
+  flex: 0 0 auto;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  padding: 14px 22px;
+  font-weight: 800;
+  font-size: 1rem;
+  color: #fff;
+  cursor: pointer;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.03));
+  backdrop-filter: blur(10px);
+  transition: transform 0.15s;
+}
+.wx-network:hover,
+.wx-decade:hover {
+  transform: translateY(-2px);
+}
+.wx-network.netflix { background: linear-gradient(135deg, #e50914, #8a0610); }
+.wx-network.prime { background: linear-gradient(135deg, #1a98ff, #0b4d8c); }
+.wx-network.appletv { background: linear-gradient(135deg, #3a3a3c, #111); }
+.wx-network.disney { background: linear-gradient(135deg, #113ccf, #0a1f6b); }
+.wx-network.hulu { background: linear-gradient(135deg, #1ce783, #0d7a44); color: #04210f; }
+.wx-network.max { background: linear-gradient(135deg, #002be7, #6a00ff); }
+.wx-network.peacock { background: linear-gradient(135deg, #222, #000); }
+.wx-network.paramount { background: linear-gradient(135deg, #0064ff, #00297a); }
+.wx-decade {
+  padding: 8px 16px;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+/* ---- Liquid glass: frosted, see-through surfaces with a bright rim (the top
+   bar once scrolled, menus, the phone's tab bar and sheets). */
+.glass {
+  background: rgba(28, 30, 36, 0.42) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.04),
+    0 12px 36px rgba(0, 0, 0, 0.45);
+}
+.wx-nav.glass {
+  border: 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
+}
+.wx-menu-list {
+  background: rgba(28, 30, 36, 0.55);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  backdrop-filter: blur(24px) saturate(180%);
+  border-radius: 16px;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.2),
+    0 16px 40px rgba(0, 0, 0, 0.5);
+}
+.wx-more-wrap {
+  position: relative;
+}
+.wx-more {
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  opacity: 0.85;
+}
+.wx-allmenu {
+  position: absolute;
+  top: calc(100% + 14px);
+  left: -20px;
+  width: min(640px, 92vw);
+  border-radius: 22px;
+  padding: 18px;
+  z-index: 40;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  animation: wx-pop 0.18s ease-out;
+}
+.wx-allmenu h3 {
+  font-size: 0.7rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.5);
+  margin: 0 0 8px 6px;
+}
+.wx-allmenu-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.wx-allmenu button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 0;
+  background: transparent;
+  color: #fff;
+  text-align: left;
+  padding: 8px 8px;
+  border-radius: 12px;
+  cursor: pointer;
+  font: inherit;
+}
+.wx-allmenu button:hover,
+.wx-allmenu button:focus-visible {
+  background: rgba(255, 255, 255, 0.1);
+}
+.wx-allmenu b {
+  display: block;
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+.wx-allmenu small {
+  display: block;
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.55);
+}
+.wx-allmenu-ic {
+  flex: 0 0 auto;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  background: rgba(255, 255, 255, 0.1);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18);
+}
+@keyframes wx-pop {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.98);
+  }
+}
+.wx-allmenu-shade {
+  position: fixed;
+  inset: 0;
+  z-index: 38;
+  background: rgba(0, 0, 0, 0.35);
+}
+.wx-allmenu.sheet {
+  position: fixed;
+  left: 10px;
+  right: 10px;
+  top: auto;
+  bottom: calc(86px + env(safe-area-inset-bottom));
+  width: auto;
+  grid-template-columns: 1fr;
+  max-height: 70vh;
+  overflow-y: auto;
+  border-radius: 28px;
+  animation: wx-sheet 0.24s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+}
+.wx-allmenu.sheet .wx-allmenu-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+.wx-allmenu-grip {
+  display: block;
+  width: 40px;
+  height: 5px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.3);
+  margin: -6px auto 2px;
+}
+@keyframes wx-sheet {
+  from {
+    opacity: 0;
+    transform: translateY(30px) scale(0.97);
+  }
+}
+.wx-tabs button {
+  border: 0;
+  background: none;
+  font: inherit;
+}
+@media (max-width: 640px) {
+  /* The phone's tab bar floats: a frosted pill above the bottom edge. */
+  .wx-tabs.glass {
+    inset: auto 10px calc(10px + env(safe-area-inset-bottom)) 10px;
+    padding: 6px;
+    border-radius: 30px;
+  }
+  .wx-tabs a,
+  .wx-tabs button {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: 6px 0;
+    border-radius: 22px;
+    font-size: 0.66rem;
+    color: var(--wx-dim);
+    transition:
+      background 0.2s,
+      color 0.2s;
+  }
+  .wx-tabs a.active,
+  .wx-tabs button.active {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.14);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  }
+  .wx {
+    padding-bottom: calc(86px + env(safe-area-inset-bottom));
+  }
+  .wx-more-wrap {
+    display: none;
+  }
+  /* Cards, sheets and panels on a phone pick up the same glass edge. */
+  .wx-greet-tile,
+  .wx-news-item,
+  .wx-week-ep,
+  .wx-report {
+    -webkit-backdrop-filter: blur(18px) saturate(160%);
+    backdrop-filter: blur(18px) saturate(160%);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  }
+}
+
+/* ---- Ask Cue */
+.wx-ask-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  background: linear-gradient(135deg, rgba(var(--wx-accent-rgb), 0.55), rgba(140, 90, 255, 0.55));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.35),
+    0 4px 18px rgba(var(--wx-accent-rgb), 0.35);
+  flex: 0 0 auto;
+}
+.wx-ask {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding-bottom: 220px;
+}
+.wx-ask-head {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  margin-bottom: 20px;
+}
+.wx-ask-head h1 {
+  margin: 0;
+}
+.wx-ask-orb {
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.5), rgba(var(--wx-accent-rgb), 0.8) 40%, rgba(130, 80, 255, 0.9));
+  box-shadow: 0 0 30px rgba(var(--wx-accent-rgb), 0.45);
+  animation: wx-orb 4s ease-in-out infinite;
+}
+@keyframes wx-orb {
+  50% {
+    box-shadow: 0 0 46px rgba(130, 80, 255, 0.55);
+    transform: scale(1.05);
+  }
+}
+.wx-ask-off {
+  border-radius: 16px;
+  padding: 14px 18px;
+  margin-bottom: 16px;
+}
+.wx-ask-hi {
+  font-size: 1.4rem;
+  font-weight: 700;
+  margin: 30px 0;
+}
+.wx-ask-chat {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.wx-ask-turn {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.wx-ask-turn.user {
+  align-items: flex-end;
+}
+.wx-ask-bubble {
+  max-width: min(640px, 88%);
+  padding: 12px 16px;
+  border-radius: 20px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+.wx-ask-turn.user .wx-ask-bubble {
+  background: rgba(var(--wx-accent-rgb), 0.85);
+  color: #04110f;
+  font-weight: 600;
+  border-bottom-right-radius: 6px;
+}
+.wx-ask-turn.assistant .wx-ask-bubble {
+  border-bottom-left-radius: 6px;
+}
+.wx-ask-results h3 {
+  margin: 4px 0 10px;
+  font-size: 1.05rem;
+}
+.wx-ask-typing {
+  display: flex;
+  gap: 5px;
+  width: fit-content;
+}
+.wx-ask-typing i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.7);
+  animation: wx-dot 1.2s infinite;
+}
+.wx-ask-typing i:nth-child(2) {
+  animation-delay: 0.15s;
+}
+.wx-ask-typing i:nth-child(3) {
+  animation-delay: 0.3s;
+}
+@keyframes wx-dot {
+  0%,
+  60%,
+  100% {
+    opacity: 0.3;
+    transform: none;
+  }
+  30% {
+    opacity: 1;
+    transform: translateY(-4px);
+  }
+}
+.wx-ask-bar {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: 18px;
+  width: min(860px, calc(100% - 32px));
+  border-radius: 26px;
+  padding: 10px;
+  z-index: 25;
+}
+.wx-ask-ideas {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding: 2px 2px 10px;
+}
+.wx-ask-ideas button {
+  flex: 0 0 auto;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+  border-radius: 999px;
+  padding: 7px 14px;
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+.wx-ask-ideas button:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.14);
+}
+.wx-ask-input {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.wx-ask-input input {
+  flex: 1;
+  min-width: 0;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(0, 0, 0, 0.25);
+  color: #fff;
+  border-radius: 999px;
+  padding: 12px 18px;
+  font: inherit;
+}
+.wx-ask-mic,
+.wx-ask-send {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 0;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.1);
+}
+.wx-ask-send {
+  background: #fff;
+  color: #000;
+}
+.wx-ask-send:disabled {
+  opacity: 0.4;
+}
+.wx-ask-mic.on {
+  background: #ef476f;
+  animation: wx-orb 1.4s infinite;
+}
+@media (max-width: 640px) {
+  .wx-ask-bar {
+    bottom: calc(86px + env(safe-area-inset-bottom));
+    width: calc(100% - 20px);
+  }
+  .wx-ask {
+    padding-bottom: 280px;
+  }
+}
+
+/* ---- Find a line, and Listen on phone */
+.wx-findline {
+  position: absolute;
+  top: 70px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(560px, calc(100% - 24px));
+  max-height: 60vh;
+  display: flex;
+  flex-direction: column;
+  border-radius: 20px;
+  padding: 12px;
+  z-index: 50;
+}
+.wx-findline-top {
+  display: flex;
+  gap: 8px;
+}
+.wx-findline input {
+  flex: 1;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(0, 0, 0, 0.3);
+  color: #fff;
+  border-radius: 999px;
+  padding: 10px 16px;
+  font: inherit;
+}
+.wx-findline-hits {
+  overflow-y: auto;
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+}
+.wx-findline-hits button {
+  display: flex;
+  gap: 12px;
+  text-align: left;
+  border: 0;
+  background: none;
+  color: #fff;
+  padding: 9px 10px;
+  border-radius: 10px;
+  cursor: pointer;
+  font: inherit;
+  line-height: 1.4;
+}
+.wx-findline-hits button:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+.wx-findline-hits span {
+  flex: 0 0 auto;
+  color: var(--wx-accent);
+  font-variant-numeric: tabular-nums;
+  min-width: 54px;
+}
+.wx-player.listen-only video {
+  opacity: 0;
+}
+.wx-listen-card {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  text-align: center;
+  padding: 24px;
+  color: #fff;
+  background: radial-gradient(circle at 50% 40%, rgba(var(--wx-accent-rgb), 0.25), #000 70%);
+  pointer-events: none;
+  z-index: 1;
+}
+.wx-listen-card b {
+  font-size: 1.4rem;
+}
+.wx-listen-card span {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+/* ---- Sports on Live TV */
+.wx-sports {
+  margin: 22px 0 10px;
+}
+.wx-sports h2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 12px;
+}
+.wx-sports h3 {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: rgba(255, 255, 255, 0.55);
+  margin: 16px 0 8px;
+}
+.wx-sports-big {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  text-align: left;
+  color: #fff;
+  border-radius: 22px;
+  padding: 22px 24px;
+  cursor: pointer;
+  background: linear-gradient(120deg, rgba(var(--wx-accent-rgb), 0.35), rgba(30, 30, 40, 0.5) 60%) !important;
+}
+.wx-sports-big b {
+  font-size: clamp(1.3rem, 3vw, 2rem);
+  line-height: 1.2;
+}
+.wx-sports-big.live .wx-sports-tag {
+  color: #ff5a6e;
+}
+.wx-sports-tag {
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  color: var(--wx-accent);
+}
+.wx-sports-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: rgba(255, 255, 255, 0.75);
+}
+.wx-sports-meta img,
+.wx-sports-meta svg {
+  max-height: 22px;
+  max-width: 48px;
+}
+.wx-sports-row {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding-bottom: 6px;
+}
+.wx-sports-game {
+  flex: 0 0 auto;
+  width: 230px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-align: left;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
+  color: #fff;
+  border-radius: 14px;
+  padding: 12px 14px;
+  cursor: pointer;
+}
+.wx-sports-game:hover,
+.wx-sports-game:focus-visible {
+  background: rgba(255, 255, 255, 0.1);
+}
+.wx-sports-game.live {
+  border-color: rgba(255, 90, 110, 0.5);
+}
+.wx-sports-game b {
+  font-size: 0.95rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.wx-sports-game small {
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 0.75rem;
+}
+.wx-sports-game.live .wx-sports-when {
+  color: #ff5a6e;
+}
+.wx-sports-logo {
+  height: 24px;
+  display: flex;
+  align-items: center;
+}
+.wx-sports-logo img {
+  max-height: 24px;
+  max-width: 60px;
+}
+
+/* Layout fixes: More sits on the links' line; the phone sheet's two columns
+   share the width; pills keep their own size in a column. */
+.wx-more-wrap {
+  display: inline-flex;
+  align-items: center;
+}
+.wx-more {
+  font-size: inherit;
+  line-height: inherit;
+  padding: 0;
+  color: inherit;
+}
+.wx-links {
+  align-items: center;
+}
+.wx-allmenu.sheet .wx-allmenu-grid {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+.wx-allmenu button {
+  min-width: 0;
+}
+.wx-allmenu button > span:last-child {
+  min-width: 0;
+}
+.wx-allmenu b,
+.wx-allmenu small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.wx-top-filters .wx-pills {
+  align-self: flex-start;
+}
+.wx-allmenu:not(.sheet) {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+/* ---- Sports from ESPN: teams, scores, the team picker */
+.wx-sports-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.wx-sports-head h2 {
+  margin: 0;
+}
+.wx-sports-matchup {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex-wrap: wrap;
+  width: 100%;
+}
+.wx-sports-big .wx-sports-team img {
+  width: 56px;
+  height: 56px;
+}
+.wx-sports-big .wx-sports-tname b {
+  font-size: clamp(1.1rem, 2.4vw, 1.6rem);
+}
+.wx-sports-big .wx-sports-score {
+  font-size: 2rem;
+}
+.wx-sports-at {
+  font-weight: 800;
+  color: rgba(255, 255, 255, 0.6);
+}
+.wx-sports-big.live .wx-sports-at {
+  color: #ff5a6e;
+}
+.wx-sports-foot {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  color: rgba(255, 255, 255, 0.8);
+  margin-top: 4px;
+}
+.wx-sports-team {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.wx-sports-team img {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  flex: 0 0 auto;
+}
+.wx-sports-abbr {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.12);
+  display: grid;
+  place-items: center;
+  font-size: 0.6rem;
+  font-weight: 800;
+  flex: 0 0 auto;
+}
+.wx-sports-tname {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+.wx-sports-tname b {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.wx-sports-tname small {
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.5);
+}
+.wx-sports-score {
+  font-weight: 800;
+  font-size: 1.1rem;
+  font-variant-numeric: tabular-nums;
+}
+.wx-sports-team.won .wx-sports-score {
+  color: var(--wx-accent);
+}
+.wx-sports-game .wx-sports-team {
+  width: 100%;
+}
+.wx-sports-game:disabled {
+  cursor: default;
+  opacity: 0.85;
+}
+.wx-sports-game.fav {
+  border-color: rgba(255, 209, 102, 0.55);
+}
+.wx-sports-league {
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+.wx-sports-where {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.6);
+}
+.wx-sports-where img {
+  max-height: 16px;
+  max-width: 40px;
+}
+.wx-sports-credit {
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.35);
+  margin: 8px 0 0;
+}
+.wx-teampick {
+  width: min(760px, 100%);
+  max-height: 85vh;
+  overflow-y: auto;
+  border-radius: 22px;
+  padding: 20px;
+}
+.wx-teampick-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.wx-teampick-head h2 {
+  margin: 0;
+}
+.wx-teampick-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 8px;
+  margin-top: 14px;
+}
+.wx-teampick-team {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+  color: #fff;
+  border-radius: 12px;
+  padding: 8px 10px;
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  font-size: 0.88rem;
+}
+.wx-teampick-team img {
+  width: 30px;
+  height: 30px;
+  object-fit: contain;
+}
+.wx-teampick-team span {
+  flex: 1;
+}
+.wx-teampick-team.on {
+  border-color: var(--wx-accent);
+  background: rgba(var(--wx-accent-rgb), 0.15);
+}
+
+.wx-sports-where > :first-child {
+  flex: 0 0 auto;
+  width: 40px;
+  height: 18px;
+  font-size: 0.55rem;
+  overflow: hidden;
+}
+.wx-sports-where {
+  white-space: nowrap;
+  min-width: 0;
 }

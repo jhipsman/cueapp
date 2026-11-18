@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -54,5 +55,24 @@ func TestWeekAheadOnlyOnFriday(t *testing.T) {
 	}
 	if !kidsProfile("PG") || !kidsProfile("TV-Y7") || kidsProfile("PG-13") || kidsProfile("") {
 		t.Fatal("kidsProfile")
+	}
+}
+
+func TestTopPageTitle(t *testing.T) {
+	s := &Server{}
+	for q, want := range map[string]string{
+		"": "Top 10 titles",
+		"?kind=movie&genre=Comedy&decade=1990&service=netflix&country=CA": "Top 10 Comedy films of the 1990s on Netflix in Canada",
+		"?kind=tv&country=XX&decade=1995":                                 "Top 10 shows",
+	} {
+		rec := httptest.NewRecorder()
+		s.handleWatchTop(rec, httptest.NewRequest("GET", "/api/watch/top"+q, nil))
+		var p struct {
+			Title    string `json:"title"`
+			Services []any  `json:"services"`
+		}
+		if err := json.Unmarshal(rec.Body.Bytes(), &p); err != nil || p.Title != want || len(p.Services) != len(topServices) {
+			t.Errorf("%q: %q (%v), want %q", q, p.Title, err, want)
+		}
 	}
 }

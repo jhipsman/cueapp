@@ -64,3 +64,22 @@ export const TRAKT_COPY: ServiceCopy = {
   fieldLabel: 'Trakt client ID',
   placeholder: 'Client ID',
 }
+
+export const ANTHROPIC_COPY: ServiceCopy = {
+  title: 'Ask Cue (Claude)',
+  required: false,
+  blurb: (
+    <>
+      Ask Cue is an assistant on every screen: say what you're in the mood for ("something funny for tonight, under two hours") or ask about a film, a show or an actor, and it answers with titles you can play.
+      It uses Claude, Anthropic's AI, with your own key. Normal family use costs a few dollars a month at most; you only pay for what's asked.
+    </>
+  ),
+  without: 'Ask Cue stays off.',
+  steps: [
+    <>Sign in or sign up at {link('https://console.anthropic.com', 'console.anthropic.com')} and add a little credit under <strong>Billing</strong>.</>,
+    <>Open <strong>API keys</strong>, press <strong>Create key</strong> and name it "Cue".</>,
+    <>Copy the key (it starts with <code>sk-ant-</code>) and paste it below.</>,
+  ],
+  fieldLabel: 'Claude API key',
+  placeholder: 'sk-ant-…',
+}

@@ -29,6 +29,10 @@ import { Avatar, ProfilesProvider, useProfiles } from './profiles'
 import { RemindersProvider } from './reminders'
 import { useModules } from '../ModulesContext'
 import { useAuth } from '../AuthContext'
+import AllMenu from './AllMenu'
+import AskPage from './AskPage'
+import TopPage from './TopPage'
+import PersonPage from './PersonPage'
 import ReportsPage, { useOpenReports } from './reports'
 import { api, isAdmin } from '../api'
 import { installTVNavigation, onTV, refocusSoon } from './tv'
@@ -89,6 +93,9 @@ export default function WatchApp() {
                 <Route path="tv-remote/:id?" element={<TVRemote />} />
                 <Route path="coming-soon" element={<ComingSoon />} />
                 <Route path="reports" element={<ReportsPage />} />
+                <Route path="person/:id" element={<PersonPage />} />
+                <Route path="top" element={<TopPage />} />
+                <Route path="ask" element={<AskPage />} />
                 <Route path="movie/:tmdbId" element={<TitlePage kind="movie" />} />
                 <Route path="tv/:tmdbId" element={<TitlePage kind="tv" />} />
                 <Route path="*" element={<Home />} />
@@ -219,8 +226,11 @@ function ProfileMenu() {
 // (the top bar keeps only the logo, search and the profile).
 function PhoneTabs() {
   const liveTV = useProfiles().data?.liveTV ?? false
+  const [more, setMore] = useState(false)
   return (
-    <nav className="wx-tabs" aria-label="Sections">
+    <>
+    {more && <AllMenu sheet onClose={() => setMore(false)} />}
+    <nav className="wx-tabs glass" aria-label="Sections">
       <NavLink to="/watch" end>
         <Icon name="grid" size={20} />
         Home
@@ -243,11 +253,12 @@ function PhoneTabs() {
         <Icon name="bookmark" size={20} />
         My List
       </NavLink>
-      <NavLink to="/watch/coming-soon">
-        <Icon name="calendar" size={20} />
-        Soon
-      </NavLink>
+      <button className={more ? 'active' : ''} onClick={() => setMore((m) => !m)} aria-expanded={more}>
+        <Icon name="menu" size={20} />
+        More
+      </button>
     </nav>
+    </>
   )
 }
 
@@ -258,6 +269,7 @@ function TopBar() {
   const [solid, setSolid] = useState(false)
   const liveTV = useProfiles().data?.liveTV ?? false
   const [q, setQ] = useState(location.pathname.endsWith('/search') ? (params.get('q') ?? '') : '')
+  const [more, setMore] = useState(false)
 
   useEffect(() => {
     const onScroll = () => setSolid(window.scrollY > 40)
@@ -284,7 +296,7 @@ function TopBar() {
   }, [q])
 
   return (
-    <nav className={`wx-nav${solid ? ' solid' : ''}`}>
+    <nav className={`wx-nav${solid ? ' solid glass' : ''}`}>
       <Link to="/watch" className="wx-brand" aria-label="Cue home">
         <CueWordmark />
       </Link>
@@ -297,8 +309,17 @@ function TopBar() {
         <NavLink to="/watch/list">My List</NavLink>
         <NavLink to="/watch/coming-soon">Coming soon</NavLink>
         {liveTV && <NavLink to="/watch/live">Live TV</NavLink>}
+        <span className="wx-more-wrap">
+          <button className="wx-more" onClick={() => setMore((m) => !m)} aria-expanded={more}>
+            More <Icon name="chevron-down" size={14} />
+          </button>
+          {more && <AllMenu onClose={() => setMore(false)} />}
+        </span>
       </div>
       <div className="wx-nav-right">
+        <NavLink to="/watch/ask" className="wx-ask-btn" aria-label="Ask Cue" title="Ask Cue">
+          <Icon name="sparkles" size={18} />
+        </NavLink>
         <label className="wx-search">
           <Icon name="search" size={16} />
           <input

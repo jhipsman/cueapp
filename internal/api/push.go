@@ -252,6 +252,8 @@ func (s *Server) queueNews(ctx context.Context, pid int64) int {
 	if tm == nil || !tm.HasAPIKey() {
 		return 0
 	}
+	// A favorite team's game about to start.
+	s.kickoffAlerts(ctx, pid, tell)
 	// Friday's look at the week ahead on this profile's shows.
 	if key, title, body, ok := s.weekAhead(ctx, pid, time.Now()); ok {
 		tell(key, title, body, "/watch/coming-soon?show=tv")

@@ -184,6 +184,8 @@ class CueApi(ctx: Context, val server: String) {
     /** What a phone has typed for this TV's search (code from the QR), and its count. */
     suspend fun remoteSearch(code: String): Pair<String, Int> = obj("/api/watch/remote/$code").let { it.optString("q") to it.optInt("seq") }
     suspend fun title(kind: String, id: Int): Title = Title.from(obj("/api/watch/$kind/$id"))
+    /** What a person has been in (their name, and the titles, most popular first). */
+    suspend fun personCredits(id: Int): List<Tile> = (obj("/api/watch/person/$id").optJSONArray("credits") ?: JSONArray()).cards()
     suspend fun season(id: Int, n: Int): List<Episode> {
         val a = arr("/api/watch/tv/$id/season/$n")
         return (0 until a.length()).map { Episode.from(a.getJSONObject(it)) }
@@ -221,6 +223,29 @@ class CueApi(ctx: Context, val server: String) {
     // ---- Live TV ----
 
     suspend fun channels(): LiveChannels = LiveChannels.from(obj("/api/live/channels"))
+    /** Sports: the channels with games on now or soon (the next big game first), and that game. */
+    suspend fun sports(): SportsInfo {
+        val o = obj("/api/live/sports")
+        val ids = mutableListOf<String>()
+        o.optJSONObject("big")?.optJSONObject("channel")?.optString("id")?.takeIf { it.isNotEmpty() }?.let { ids.add(it) }
+        for (k in listOf("now", "soon")) {
+            val a = o.optJSONArray(k) ?: continue
+            for (i in 0 until a.length()) a.getJSONObject(i).optJSONObject("channel")?.optString("id")?.takeIf { it.isNotEmpty() }?.let { if (it !in ids) ids.add(it) }
+        }
+        val b = o.optJSONObject("big") ?: return SportsInfo(ids, null)
+        val live = b.optBoolean("onNow")
+        val where = b.optJSONObject("channel")?.optString("name")?.takeIf { it.isNotEmpty() } ?: b.str("streaming")?.let { "on $it" } ?: ""
+        if (o.optString("source") != "espn") {
+            val title = b.optJSONObject("show")?.optString("title").orEmpty()
+            return SportsInfo(ids, if (title.isEmpty()) null else BigGame(
+                tag = if (live) "LIVE NOW" else "NEXT BIG GAME", away = null, home = null, title = title, detail = where, live = live))
+        }
+        fun side(t: JSONObject?) = t?.let { GameSide(it.optString("short").ifEmpty { it.optString("name") }, it.str("logo"), it.optString("score"), it.optString("record")) }
+        val tag = (if (live) "LIVE" else if (b.optBoolean("favorite")) "YOUR TEAM" else "NEXT BIG GAME") + " · " + b.optString("leagueName") +
+            (b.str("note")?.let { " · $it" } ?: "")
+        val detail = listOf(if (live) b.optString("detail") else shortTime(b.optString("start")), where).filter { it.isNotEmpty() }.joinToString(" · ")
+        return SportsInfo(ids, BigGame(tag, side(b.optJSONObject("away")), side(b.optJSONObject("home")), b.optString("title"), detail, live))
+    }
     suspend fun livePlay(id: String): JSONObject = obj("/api/live/play/${URLEncoder.encode(id, "UTF-8").replace("+", "%20")}")
     suspend fun setFavorite(id: String, on: Boolean) {
         request(if (on) "PUT" else "DELETE", "/api/live/favorites/${URLEncoder.encode(id, "UTF-8").replace("+", "%20")}")
@@ -327,6 +352,8 @@ data class Title(
     // The film series it's part of: its name and films in order.
     val seriesName: String? = null,
     val series: List<Tile> = emptyList(),
+    // The cast with photos: picking one shows what else they're in.
+    val people: List<CastPerson> = emptyList(),
 ) {
     companion object {
         fun from(o: JSONObject): Title {
@@ -345,10 +372,28 @@ data class Title(
                 o.str("theaterNote"),
                 o.optJSONObject("collection")?.optString("name")?.takeIf { it.isNotEmpty() },
                 o.optJSONObject("collection")?.optJSONArray("parts")?.cards() ?: emptyList(),
+                (o.optJSONArray("people") ?: JSONArray()).let { a ->
+                    (0 until a.length()).map { a.getJSONObject(it) }.map { CastPerson(it.optInt("id"), it.optString("name"), it.str("character"), it.str("photo")) }
+                },
             )
         }
     }
 }
+
+data class GameSide(val name: String, val logo: String?, val score: String, val record: String)
+data class BigGame(val tag: String, val away: GameSide?, val home: GameSide?, val title: String, val detail: String, val live: Boolean)
+data class SportsInfo(val channels: List<String>, val big: BigGame?)
+
+/** "Sun 1:00 PM" from an ISO time, in the TV's time zone. */
+fun shortTime(iso: String): String = runCatching {
+    // The server's times are UTC ("2026-11-22T18:00:00Z"); minSdk 23 has no
+    // pattern letter for an offset, so the Z is matched as text.
+    val f = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", java.util.Locale.US).apply { timeZone = java.util.TimeZone.getTimeZone("UTC") }
+    val d = f.parse(iso.take(19)) ?: return iso
+    java.text.SimpleDateFormat("EEE h:mm a", java.util.Locale.US).format(d)
+}.getOrDefault(iso)
+
+data class CastPerson(val id: Int, val name: String, val character: String?, val photo: String?)
 
 data class Episode(
     val season: Int, val episode: Int, val title: String, val overview: String?, val still: String?,

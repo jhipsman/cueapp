@@ -1,7 +1,7 @@
 import { usePrefs } from './prefs'
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { api, type WatchEpisode, type WatchKind, type WatchTitle } from '../api'
+import { api, type WatchEpisode, type WatchKind, type WatchPerson, type WatchTitle } from '../api'
 import { useScreens } from './TVRemote'
 import Icon from '../components/Icon'
 import { useDocumentTitle } from '../documentTitle'
@@ -191,7 +191,7 @@ export default function TitlePage({ kind }: { kind: WatchKind }) {
       <div className="wx-page" style={{ paddingTop: 10 }}>
         <div className="wx-facts">
           <div>
-            {title.cast.length > 0 && (
+            {title.cast.length > 0 && !title.people?.length && (
               <p>
                 <span>Cast: </span>
                 {title.cast.slice(0, 6).join(', ')}
@@ -212,6 +212,8 @@ export default function TitlePage({ kind }: { kind: WatchKind }) {
             <FreeElsewhere kind={kind} tmdbId={tmdbId} label="Also free on" subscriptions />
           </div>
         </div>
+
+        {title.people && title.people.length > 0 && <CastRow people={title.people} />}
 
         {kind === 'tv' && title.seasons && title.seasons.length > 0 && season !== null && (
           <Episodes tmdbId={tmdbId} seasons={title.seasons} season={season} onSeason={setSeason} />
@@ -344,5 +346,24 @@ function PlayOnTV({ kind, tmdbId, season, episode }: { kind: WatchKind; tmdbId: 
       )}
       {error && <span className="wx-error">{error}</span>}
     </span>
+  )
+}
+
+// CastRow: the cast's photos; each opens what else they're in.
+function CastRow({ people }: { people: WatchPerson[] }) {
+  const navigate = useNavigate()
+  return (
+    <section className="wx-cast">
+      <h2>Cast</h2>
+      <div className="wx-cast-scroll">
+        {people.map((p) => (
+          <button key={p.id} className="wx-cast-p" onClick={() => navigate(`/watch/person/${p.id}`)}>
+            <span className="wx-cast-pic">{p.photo ? <img src={p.photo} alt="" loading="lazy" /> : <span>{p.name.slice(0, 1)}</span>}</span>
+            <b>{p.name}</b>
+            {p.character && <small>{p.character}</small>}
+          </button>
+        ))}
+      </div>
+    </section>
   )
 }

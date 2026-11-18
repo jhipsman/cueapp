@@ -128,6 +128,7 @@ type Trailer struct {
 
 // CastMember is one billed actor.
 type CastMember struct {
+	ID          int    `json:"id"`
 	Name        string `json:"name"`
 	Character   string `json:"character"`
 	ProfilePath string `json:"profile_path"`

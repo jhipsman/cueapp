@@ -161,6 +161,18 @@ class PlayerActivity : Activity() {
     private var partyHead: TextView? = null
     private var partyLines: LinearLayout? = null
     private var partyQr: ImageView? = null
+    // Listen on phone: the sound plays on a phone (joined through a watch
+    // party, picture hidden there) and the TV goes quiet.
+    private var listenMode = false
+    // The episode this TV last moved on from in place, and when (a party's
+    // late word about it is ignored for a moment).
+    private var leftEpisode: Pair<Int, Int>? = null
+    private var leftAt = 0L
+    private var listenButton: TextView? = null
+    // Volume boost: Android's loudness enhancer on the player's sound, about
+    // twice as loud (for quiet films and soft dialogue).
+    private var booster: android.media.audiofx.LoudnessEnhancer? = null
+    private var boostButton: TextView? = null
     private var partyFloats: FrameLayout? = null
     private var partyButton: TextView? = null
     private var partyWait: TextView? = null // "Waiting for …", while the party holds
@@ -595,6 +607,7 @@ class PlayerActivity : Activity() {
         onPartyState(state, first = true)
         party?.let { l ->
             partyQr?.setImageBitmap(app.cue.tv.home.qrBitmap("$server/watch/party/${l.code}?chat=1", px(92)))
+            if (listenMode) showListenQr(l.code)
             // This TV moved on to another episode (Next): the party follows.
             val t = state.optJSONObject("title")
             if (isShow && t != null && (t.optInt("season") != info.optInt("season") || t.optInt("episode") != info.optInt("episode"))) {
@@ -656,6 +669,12 @@ class PlayerActivity : Activity() {
             it.visibility = if (waiting.isEmpty()) View.GONE else View.VISIBLE
         }
         val t = s.optJSONObject("title") ?: return
+        // Word still naming the episode this TV just moved on from (sent
+        // before the party heard about Next): not a reason to go back to it,
+        // which played the same episode over again.
+        val l = leftEpisode
+        if (l != null && SystemClock.elapsedRealtime() - leftAt < 15_000 &&
+            t.optInt("season") == l.first && t.optInt("episode") == l.second) return
         if (isShow && (t.optInt("season") != info.optInt("season") || t.optInt("episode") != info.optInt("episode"))) {
             if (!first) end("party", "${link.code}|${t.optInt("tmdbId")}|${t.optInt("season")}|${t.optInt("episode")}")
             return
@@ -962,6 +981,8 @@ class PlayerActivity : Activity() {
                 }
             }
             addView(iconPill("Audio", R.drawable.ic_cue_audio) { chooseTrack(C.TRACK_TYPE_AUDIO, "Audio") })
+            if (!live && !catchup) listenButton = iconPill("Listen on phone", R.drawable.ic_cue_audio) { listenOnPhone() }.also { addView(it) }
+            boostButton = iconPill("Volume boost", R.drawable.ic_cue_audio) { toggleBoost() }.also { addView(it) }
             if (!live && !catchup) addView(iconPill("Report", R.drawable.ic_cue_flag) { reportProblem() })
             addView(iconPill("Subtitles", R.drawable.ic_cue_subtitles) { subtitlesPressed() })
             soundButton = iconPill(soundLabel(), R.drawable.ic_cue_audio) { setSurround(!surround) }.also { addView(it) }
@@ -1840,6 +1861,8 @@ class PlayerActivity : Activity() {
         val veil = View(this).apply { setBackgroundColor(Color.BLACK); alpha = 0f }
         (video.parent as? FrameLayout)?.addView(veil, FrameLayout.LayoutParams(MATCH, MATCH))
         veil.animate().alpha(1f).setDuration(220).withEndAction {
+            leftEpisode = info.optInt("season") to info.optInt("episode")
+            leftAt = SystemClock.elapsedRealtime()
             info = j
             introStart = 0; introEnd = 0; recapStart = 0; recapEnd = 0; creditsStart = 0; creditsFromEnd = 0
             skipTo = 0
@@ -2442,6 +2465,60 @@ class PlayerActivity : Activity() {
             .show()
     }
 
+    // Listen on phone: a party carries the sound to a phone (in sync, the
+    // picture hidden there) and the TV goes quiet; pressed again, the sound
+    // comes back to the TV.
+    private fun listenOnPhone() {
+        if (listenMode) {
+            listenMode = false
+            player.volume = 1f
+            listenButton?.tag = "Listen on phone"
+            Toast.makeText(this, "The sound is back on the TV.", Toast.LENGTH_SHORT).show()
+            return
+        }
+        listenMode = true
+        player.volume = 0f
+        listenButton?.tag = "Sound back on TV"
+        val l = party
+        if (l == null) partyPressed() else showListenQr(l.code)
+    }
+
+    private fun toggleBoost() {
+        val on = booster == null
+        if (on) {
+            booster = if (player.audioSessionId == C.AUDIO_SESSION_ID_UNSET) null else runCatching {
+                android.media.audiofx.LoudnessEnhancer(player.audioSessionId).apply {
+                    setTargetGain(600) // millibels: about twice as loud
+                    enabled = true
+                }
+            }.getOrNull()
+            if (booster == null) {
+                Toast.makeText(this, "This TV can't boost the volume.", Toast.LENGTH_SHORT).show()
+                return
+            }
+        } else {
+            runCatching { booster?.release() }
+            booster = null
+        }
+        boostButton?.tag = if (on) "Boost on" else "Volume boost"
+        Toast.makeText(this, if (on) "Volume boost on" else "Volume boost off", Toast.LENGTH_SHORT).show()
+    }
+
+    private fun showListenQr(code: String) {
+        main.removeCallbacks(hider)
+        val qr = ImageView(this).apply {
+            setImageBitmap(app.cue.tv.home.qrBitmap("$server/watch/party/$code?listen=1", px(220)))
+            setPadding(px(16), px(16), px(16), px(16))
+        }
+        android.app.AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert)
+            .setTitle("Listen on your phone")
+            .setMessage("Scan with your phone's camera and put headphones on. The sound plays there, in step with the picture, and the TV stays quiet.")
+            .setView(qr)
+            .setPositiveButton("Done") { d, _ -> d.dismiss() }
+            .setOnDismissListener { scheduleHide() }
+            .show()
+    }
+
     // postJson sends something to Cue as this profile, in the background.
     private fun postJson(path: String, body: JSONObject) {
         if (server.isEmpty()) return
@@ -2505,6 +2582,7 @@ class PlayerActivity : Activity() {
     private fun end(reason: String, message: String = "") {
         if (finished) return
         finished = true
+        runCatching { booster?.release() }
         party?.close()
         saveProgress()
         val dur = player.duration.let { if (it == C.TIME_UNSET) 0 else it / 1000 }

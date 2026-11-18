@@ -37,6 +37,7 @@ export function TopTen({ lists, only }: { lists: TopList[]; only?: WatchKind }) 
   const shown = lists.map((l) => ({ ...l, items: only ? l.items.filter((c) => c.kind === only) : l.items })).filter((l) => l.items.length > 0)
   const [key, setKey] = useState(shown[0]?.key ?? '')
   const strip = useRef<HTMLDivElement>(null)
+  const navigate = useNavigate()
   const list = shown.find((l) => l.key === key) ?? shown[0]
   useEffect(() => {
     strip.current?.scrollTo({ left: 0 })
@@ -46,6 +47,9 @@ export function TopTen({ lists, only }: { lists: TopList[]; only?: WatchKind }) 
     <section className="wx-row wx-top">
       <div className="wx-top-head">
         <h2>Top 10 on {list.name} today</h2>
+        <button className="wx-top-all" onClick={() => navigate(`/watch/top?service=${list.key}${only ? `&kind=${only}` : ''}`)}>
+          See all ›
+        </button>
         <div className="wx-top-tabs" role="tablist" aria-label="Streaming service">
           {shown.map((l) => (
             <button key={l.key} role="tab" aria-selected={l.key === list.key} className={`wx-top-tab ${l.key}${l.key === list.key ? ' on' : ''}`} onClick={() => setKey(l.key)}>
@@ -239,7 +243,7 @@ export function ThisWeek({ items }: { items: WeekEpisode[] }) {
           <div className="wx-week-day" key={day}>
             <h3>{dayName(day)}</h3>
             {eps.map((e) => (
-              <button className="wx-week-ep" key={`${e.tmdbId}-${e.season}-${e.episode}`} onClick={() => navigate(titleHref(e))}>
+              <button className="wx-week-ep" key={`${e.tmdbId}-${e.season}-${e.episode}`} title={e.title} onClick={() => navigate(titleHref(e))}>
                 {e.backdropUrl || e.posterUrl ? <img src={(e.backdropUrl || e.posterUrl)!.replace(/\/t\/p\/w\d+\//, '/t/p/w300/')} alt="" loading="lazy" /> : <span />}
                 <span className="wx-week-txt">
                   <b>{e.title}</b>
@@ -251,6 +255,32 @@ export function ThisWeek({ items }: { items: WeekEpisode[] }) {
               </button>
             ))}
           </div>
+        ))}
+      </div>
+    </section>
+  )
+}
+
+// ---- Networks and decades (the Films and Series homes): each opens the
+// Top 10 page for it.
+
+export function NetworkStrip({ kind, services }: { kind: WatchKind; services: { key: string; name: string }[] }) {
+  const navigate = useNavigate()
+  const what = kind === 'movie' ? 'films' : 'shows'
+  return (
+    <section className="wx-networks" aria-label={`Browse ${what}`}>
+      <div className="wx-network-row">
+        {services.map((s) => (
+          <button key={s.key} className={`wx-network ${s.key}`} onClick={() => navigate(`/watch/top?service=${s.key}&kind=${kind}`)}>
+            {s.name}
+          </button>
+        ))}
+      </div>
+      <div className="wx-network-row decades">
+        {[2020, 2010, 2000, 1990, 1980, 1970].map((d) => (
+          <button key={d} className="wx-decade" onClick={() => navigate(`/watch/top?decade=${d}&kind=${kind}`)}>
+            {d}s
+          </button>
         ))}
       </div>
     </section>

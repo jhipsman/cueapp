@@ -73,7 +73,10 @@ type settingsPayload struct {
 	// Phase 4 subtitles module.
 	// A pointer so that sending "" (clear my own key, go back to the one that
 	// ships with the app) is different from leaving the field out.
-	OpenSubtitlesAPIKey    *string `json:"openSubtitlesApiKey,omitempty"`
+	OpenSubtitlesAPIKey *string `json:"openSubtitlesApiKey,omitempty"`
+	// Ask Cue's Claude API key (write-only; HasAnthropicAPIKey says whether one is saved).
+	AnthropicAPIKey        *string `json:"anthropicApiKey,omitempty"`
+	HasAnthropicAPIKey     bool    `json:"hasAnthropicApiKey"`
 	HasOpenSubtitlesAPIKey bool    `json:"hasOpenSubtitlesApiKey"`
 
 	// Optional OpenSubtitles.com account (raises the daily download limit).
@@ -275,6 +278,7 @@ func (s *Server) handleGetSettings(w http.ResponseWriter, r *http.Request) {
 		SubtitleUpgrade:          &subtitleUpgrade,
 		SubtitlesEnabled:         &subtitlesOn,
 		HasOpenSubtitlesAPIKey:   s.Subtitles().HasAPIKey(),
+		HasAnthropicAPIKey:       s.anthropicKey() != "",
 		HasOpenSubtitlesAccount:  s.Subtitles().HasCredentials(),
 		OpenSubtitlesAccountName: osUser,
 		TMDBKeyBuiltIn:           s.builtin.TMDB != "",
@@ -499,6 +503,12 @@ func (s *Server) handlePutSettings(w http.ResponseWriter, r *http.Request) {
 			pass, _ = s.Settings.Get(settings.KeyOpenSubtitlesPassword)
 		}
 		if err := s.SetOpenSubtitlesAccount(user, pass); err != nil {
+			writeError(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+	}
+	if req.AnthropicAPIKey != nil {
+		if err := s.Settings.Set(settings.KeyAnthropicAPIKey, strings.TrimSpace(*req.AnthropicAPIKey), true); err != nil {
 			writeError(w, http.StatusInternalServerError, err.Error())
 			return
 		}

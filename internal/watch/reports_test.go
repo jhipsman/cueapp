@@ -65,3 +65,29 @@ func TestReports(t *testing.T) {
 		t.Fatalf("missing report: %v", err)
 	}
 }
+
+func TestFavoriteTeams(t *testing.T) {
+	db, err := store.Open(filepath.Join(t.TempDir(), "app.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+	if _, err := db.Exec(`INSERT INTO users (id, username, password_hash) VALUES (1, 'a', 'x')`); err != nil {
+		t.Fatal(err)
+	}
+	r := watch.NewRepo(db)
+	p, _ := r.Profiles(1, "A")
+	pid := p[0].ID
+	bills := watch.FavoriteTeam{League: "nfl", TeamID: "2", Name: "Buffalo Bills"}
+	if err := r.SetFavoriteTeam(pid, bills, true); err != nil {
+		t.Fatal(err)
+	}
+	_ = r.SetFavoriteTeam(pid, bills, true) // again: no duplicate
+	if l, _ := r.FavoriteTeams(pid); len(l) != 1 || l[0].Name != "Buffalo Bills" {
+		t.Fatalf("teams %+v", l)
+	}
+	_ = r.SetFavoriteTeam(pid, bills, false)
+	if l, _ := r.FavoriteTeams(pid); len(l) != 0 {
+		t.Fatal("not removed")
+	}
+}
