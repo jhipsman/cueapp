@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"log/slog"
+	"math"
 	"net/http"
 	"strconv"
 	"sync"
@@ -56,7 +57,7 @@ func (s *Server) handleWatchSkips(w http.ResponseWriter, r *http.Request) {
 	// same files, where TheIntroDB's times may be for another cut.
 	if kind == watch.KindTV {
 		if m, ok, err := s.WatchRepo.SkipMarkFor(kind, tmdbID, season, "intro"); err == nil && ok {
-			out.Intro = &introdb.Segment{Start: m.Start, End: m.End}
+			out.Intro = &introdb.Segment{Start: learnedIntroStart(m.Start, m.End), End: m.End}
 			out.Source = "learned"
 		}
 	}
@@ -129,6 +130,13 @@ func (s *Server) handleLearnSkip(w http.ResponseWriter, r *http.Request) {
 	var err error
 	switch {
 	case req.Segment == "intro" && req.Kind == watch.KindTV && req.Start >= 0 && req.Start < 480 && req.End-req.Start >= 15 && req.End-req.Start <= 200:
+		// A jump over the intro starts wherever the viewer was when they
+		// jumped, often part-way through it. The same intro learned again
+		// keeps the earliest start seen, so Skip intro creeps back to where
+		// the intro really begins.
+		if m, ok, err := s.WatchRepo.SkipMarkFor(req.Kind, req.TMDBID, req.Season, "intro"); err == nil && ok && math.Abs(m.End-req.End) <= 8 {
+			req.Start = math.Min(req.Start, m.Start)
+		}
 		err = s.WatchRepo.SetSkipMark(req.Kind, req.TMDBID, req.Season, "intro", req.Start, req.End)
 	case req.Segment == "credits" && req.Duration > 0 && req.Duration-req.Start >= 15 && req.Duration-req.Start <= 900 &&
 		(req.Kind != watch.KindTV || req.Duration-req.Start <= maxEpisodeCredits):
@@ -142,4 +150,13 @@ func (s *Server) handleLearnSkip(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
+}
+
+// learnedIntroStart is when Skip intro shows for a learned intro. What was
+// learned is where a jump over it started, which is often part-way through
+// the intro (the viewer watched a little, then skipped), so the button
+// shows at least 50 seconds before the intro ends: most opening sequences
+// are shorter, and it never shows before the episode starts.
+func learnedIntroStart(start, end float64) float64 {
+	return math.Max(0, math.Min(start, end-50))
 }

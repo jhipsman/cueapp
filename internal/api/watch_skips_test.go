@@ -70,3 +70,15 @@ func TestSkipsLearnedFromTheHousehold(t *testing.T) {
 		t.Fatalf("an old 9-minute mark is still used: %+v", a)
 	}
 }
+
+func TestLearnedIntroStart(t *testing.T) {
+	for _, c := range []struct{ start, end, want float64 }{
+		{105, 120, 70}, // jumped near the end: shows from 50 s before
+		{40, 120, 40},  // learned from the start: as learned
+		{20, 45, 0},    // never before the episode starts
+	} {
+		if got := learnedIntroStart(c.start, c.end); got != c.want {
+			t.Errorf("learned %.0f-%.0f: shows from %.0f, want %.0f", c.start, c.end, got, c.want)
+		}
+	}
+}
