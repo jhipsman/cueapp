@@ -77,6 +77,7 @@ type settingsPayload struct {
 	// Ask Cue's Claude API key (write-only; HasAnthropicAPIKey says whether one is saved).
 	AnthropicAPIKey        *string `json:"anthropicApiKey,omitempty"`
 	HasAnthropicAPIKey     bool    `json:"hasAnthropicApiKey"`
+	AskModel               *string `json:"askModel,omitempty"` // Ask Cue's model: haiku or opus
 	HasOpenSubtitlesAPIKey bool    `json:"hasOpenSubtitlesApiKey"`
 
 	// Optional OpenSubtitles.com account (raises the daily download limit).
@@ -204,6 +205,10 @@ func (s *Server) containerFolders() *containerFolders {
 // never logged/exposed in plaintext beyond what's needed); HasTMDBAPIKey
 // tells the UI whether one is already configured.
 func (s *Server) handleGetSettings(w http.ResponseWriter, r *http.Request) {
+	askModelName := "haiku"
+	if s.askModel() == askModelOpus {
+		askModelName = "opus"
+	}
 	moviesPath := s.moviesRoot()
 	downloadsPath := s.downloadsRoot()
 	namingPreset, _ := s.Settings.Get(settings.KeyNamingPreset)
@@ -279,6 +284,7 @@ func (s *Server) handleGetSettings(w http.ResponseWriter, r *http.Request) {
 		SubtitlesEnabled:         &subtitlesOn,
 		HasOpenSubtitlesAPIKey:   s.Subtitles().HasAPIKey(),
 		HasAnthropicAPIKey:       s.anthropicKey() != "",
+		AskModel:                 &askModelName,
 		HasOpenSubtitlesAccount:  s.Subtitles().HasCredentials(),
 		OpenSubtitlesAccountName: osUser,
 		TMDBKeyBuiltIn:           s.builtin.TMDB != "",
@@ -503,6 +509,17 @@ func (s *Server) handlePutSettings(w http.ResponseWriter, r *http.Request) {
 			pass, _ = s.Settings.Get(settings.KeyOpenSubtitlesPassword)
 		}
 		if err := s.SetOpenSubtitlesAccount(user, pass); err != nil {
+			writeError(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+	}
+	if req.AskModel != nil {
+		m := strings.TrimSpace(*req.AskModel)
+		if m != "haiku" && m != "opus" {
+			writeError(w, http.StatusBadRequest, `Ask Cue's model is "haiku" or "opus".`)
+			return
+		}
+		if err := s.Settings.Set(settings.KeyAnthropicModel, m, false); err != nil {
 			writeError(w, http.StatusInternalServerError, err.Error())
 			return
 		}
