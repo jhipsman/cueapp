@@ -23,7 +23,8 @@ export function useAllItems(): { group: string; items: Item[] }[] {
         { label: 'My List', to: '/watch/list', icon: 'bookmark' },
         { label: 'Coming soon', to: '/watch/coming-soon', icon: 'calendar', hint: 'New episodes and films on their way' },
         { label: 'Top 10', to: '/watch/top', icon: 'star', hint: 'By service, country, genre or decade' },
-        ...(liveTV ? [{ label: 'Live TV and Sports', to: '/watch/live', icon: 'activity' as IconName }] : []),
+        { label: 'Sports', to: '/watch/sports', icon: 'activity', hint: 'Live scores, the next big game, your teams' },
+        ...(liveTV ? [{ label: 'Live TV', to: '/watch/live', icon: 'tv' as IconName }] : []),
       ],
     },
     {

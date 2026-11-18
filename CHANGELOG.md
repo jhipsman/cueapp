@@ -12,6 +12,7 @@ under [Unreleased]. How releases are cut: [docs/RELEASING.md](docs/RELEASING.md)
 - Releases are signed with a new update key, held only by the project owner. **Update now** installs only releases signed with it.
 
 ### Fixed
+- **Sports couldn't be found without Live TV**: it lived inside Live TV, which only shows with a TV provider set up. Sports is now its own section: **Sports** in the top bar (and More on a phone) on the web, a **Sports** tab on Fire TV / Google TV and on Apple TV. Without a TV provider it shows the games and scores; with one, picking a game plays the channel it's on.
 - **Next episode on the TV played the same episode again** (from the second Next on, or when an episode ended). During the short fade into the next episode the old one was still loaded and near its end, so the TV prepared the episode it was about to play as the one after it. Nothing is prepared during the change now, and a prepared next episode is only kept while the episode it follows is the one playing.
 - **Next episode played the same episode again in a watch party.** Right after Next, the party could still be saying the old episode for a moment, and the player "followed the party" back to it. The TV and browser now ignore word of the episode they just left for a few seconds.
 - **Team logos**: Sports shows each team's logo on the web (ESPN's image server is now allowed) and on the TV's Sports banner, with the score; a team ESPN's scoreboard gives no logo gets its usual logo from ESPN.

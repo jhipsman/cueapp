@@ -498,7 +498,7 @@ fun avatarColor(avatar: String): Color = when (avatar.substringBefore('/')) {
 
 // ---- The tabs ----
 
-private val tabs = listOf("Home", "Shows", "Movies", "Live TV", "Search", "My List", "Coming soon")
+private val tabs = listOf("Home", "Shows", "Movies", "Live TV", "Search", "My List", "Coming soon", "Sports")
 
 @Composable
 fun MainScreen(api: CueApi, playback: Playback, openWeb: (String) -> Unit, changeServer: () -> Unit, switchProfile: () -> Unit) {
@@ -623,6 +623,7 @@ fun MainScreen(api: CueApi, playback: Playback, openWeb: (String) -> Unit, chang
                     4 -> SearchScreen(api, memories[4], listen = listenNow, listened = { listenNow = false }, onCard = onCard)
                     5 -> MyListScreen(api, memories[5], pageTakesFocus, tookFocus, onCard)
                     6 -> ComingSoonScreen(api, onCard)
+                    7 -> SportsScreen(api, playback)
                     else -> ProfileScreen(api, switchProfile, changeServer, openWeb)
                 }
             }
@@ -1449,5 +1450,104 @@ private fun GameSideView(s: GameSide, modifier: Modifier = Modifier) {
             if (s.record.isNotEmpty()) Text(s.record, fontSize = 10.sp, color = Dim)
         }
         if (s.score.isNotEmpty()) Text(s.score, fontSize = 22.sp, fontWeight = FontWeight.Black, color = Color.White, modifier = Modifier.padding(start = 8.dp))
+    }
+}
+
+// ---- Sports ----
+
+// Sports: the next big game on top, then games on now and coming up, with
+// the teams' logos and the score or kickoff time (from ESPN). It needs no TV
+// provider; with Live TV set up, picking a game plays the channel it's on.
+@Composable
+fun SportsScreen(api: CueApi, playback: Playback) {
+    var board by remember { mutableStateOf<SportsBoard?>(null) }
+    var channels by remember { mutableStateOf<List<Channel>>(emptyList()) }
+    var note by remember { mutableStateOf("") }
+    LaunchedEffect(Unit) {
+        channels = runCatching { api.channels() }.getOrNull()?.takeIf { it.configured }?.channels ?: emptyList()
+        while (true) {
+            runCatching { api.sportsBoard() }.onSuccess { board = it }.onFailure { if (board == null) note = it.message ?: "Couldn't load the games." }
+            delay(60_000)
+        }
+    }
+    val b = board
+    if (b == null) {
+        Centered { Text(note.ifEmpty { "Loading the games…" }, color = Dim) }
+        return
+    }
+    if (b.big == null && b.now.isEmpty() && b.soon.isEmpty()) {
+        Centered { Text("No games on now or in the next day.", color = Dim) }
+        return
+    }
+    val byId = remember(channels) { channels.associateBy { it.id } }
+    val withGames = remember(b, channels) { (listOfNotNull(b.big) + b.now + b.soon).mapNotNull { g -> g.channelId?.let { byId[it] } }.distinctBy { it.id } }
+    val watch: (GameRow) -> Unit = { g ->
+        val ch = g.channelId?.let { byId[it] }
+        if (ch != null) playback.playLive(ch, withGames.ifEmpty { listOf(ch) })
+        else note = if (g.where.startsWith("On ")) "${g.away.name} at ${g.home.name} is ${g.where.lowercase().replaceFirstChar { it.uppercase() }}." else "This game isn't on any of your channels."
+    }
+    LazyColumn(contentPadding = PaddingValues(top = 18.dp, bottom = 60.dp), verticalArrangement = Arrangement.spacedBy(18.dp)) {
+        b.big?.let { g ->
+            item(key = "big") {
+                Box(Modifier.padding(horizontal = Gutter)) {
+                    Card(onClick = { watch(g) }, shape = CardDefaults.shape(RoundedCornerShape(PanelCorner)), scale = CardDefaults.scale(focusedScale = 1.02f),
+                        colors = CardDefaults.colors(containerColor = Color.Transparent, focusedContainerColor = Color.Transparent),
+                        border = CardDefaults.border(focusedBorder = Border(BorderStroke(2.dp, LocalAccent.current), shape = RoundedCornerShape(PanelCorner)))) {
+                        BigGameCard(BigGame(
+                            (if (g.live) "LIVE" else if (g.favorite) "YOUR TEAM" else "NEXT BIG GAME") + " · " + g.league,
+                            g.away, g.home, "", listOf(g.detail, g.where).filter { it.isNotEmpty() }.joinToString(" · "), g.live))
+                    }
+                }
+            }
+        }
+        if (note.isNotEmpty()) item(key = "note") { Text(note, color = Dim, fontSize = 12.sp, modifier = Modifier.padding(horizontal = Gutter)) }
+        for ((label, list) in listOf("On now" to b.now, "Coming up" to b.soon)) {
+            if (list.isEmpty()) continue
+            item(key = label) {
+                Column {
+                    Text(label.uppercase(), fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.5.sp, color = Dim, modifier = Modifier.padding(start = Gutter + 2.dp))
+                    LazyRow(Modifier.focusRestorer(), contentPadding = PaddingValues(horizontal = Gutter, vertical = 12.dp), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                        items(list, key = { it.key }) { g -> GameCard(g) { watch(g) } }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun GameCard(g: GameRow, onClick: () -> Unit) {
+    val shape = RoundedCornerShape(CardCorner)
+    val red = Color(0xFFFF5A6E)
+    Card(
+        onClick = onClick,
+        modifier = Modifier.width(250.dp),
+        shape = CardDefaults.shape(shape),
+        scale = CardDefaults.scale(focusedScale = 1.05f),
+        colors = CardDefaults.colors(containerColor = Color(0x991B1D22), focusedContainerColor = Color(0xCC2A2D33)),
+        border = CardDefaults.border(
+            border = Border(BorderStroke(1.dp, if (g.live) red.copy(alpha = 0.5f) else if (g.favorite) Color(0x8CFFD166) else Color(0x1FFFFFFF)), shape = shape),
+            focusedBorder = Border(BorderStroke(2.dp, LocalAccent.current), shape = shape),
+        ),
+    ) {
+        Column(Modifier.padding(14.dp)) {
+            Text((if (g.favorite) "★ " else "") + g.league, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Dim, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Gap(8.dp)
+            for (side in listOf(g.away, g.home)) {
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 3.dp)) {
+                    Box(Modifier.size(26.dp), contentAlignment = Alignment.Center) {
+                        if (side.logo != null) coil.compose.AsyncImage(model = side.logo, contentDescription = side.name,
+                            contentScale = androidx.compose.ui.layout.ContentScale.Fit, modifier = Modifier.fillMaxSize())
+                        else Text(side.name.take(3).uppercase(), fontSize = 9.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                    }
+                    HGap(8.dp)
+                    Text(side.name, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Color.White, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+                    if (side.score.isNotEmpty()) Text(side.score, fontSize = 15.sp, fontWeight = FontWeight.Black, color = Color.White)
+                }
+            }
+            Gap(6.dp)
+            Text(g.detail, fontSize = 11.sp, color = if (g.live) red else Dim, maxLines = 1)
+            if (g.where.isNotEmpty()) Text(g.where, fontSize = 10.sp, color = Dim, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        }
     }
 }

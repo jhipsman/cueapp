@@ -16,6 +16,8 @@ struct MainTabs: View {
                 .tabItem { Label("Movies", systemImage: "film") }
             LiveView()
                 .tabItem { Label("Live TV", systemImage: "dot.radiowaves.left.and.right") }
+            SportsView()
+                .tabItem { Label("Sports", systemImage: "sportscourt") }
             BrowseStack { SearchView() }
                 .tabItem { Label("Search", systemImage: "magnifyingglass") }
             BrowseStack { MyListView() }

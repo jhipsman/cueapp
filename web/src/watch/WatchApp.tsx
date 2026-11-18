@@ -30,6 +30,7 @@ import { RemindersProvider } from './reminders'
 import { useModules } from '../ModulesContext'
 import { useAuth } from '../AuthContext'
 import AllMenu from './AllMenu'
+import { SportsPage } from './SportsHub'
 import AskPage from './AskPage'
 import TopPage from './TopPage'
 import PersonPage from './PersonPage'
@@ -96,6 +97,7 @@ export default function WatchApp() {
                 <Route path="person/:id" element={<PersonPage />} />
                 <Route path="top" element={<TopPage />} />
                 <Route path="ask" element={<AskPage />} />
+                <Route path="sports" element={<SportsPage />} />
                 <Route path="movie/:tmdbId" element={<TitlePage kind="movie" />} />
                 <Route path="tv/:tmdbId" element={<TitlePage kind="tv" />} />
                 <Route path="*" element={<Home />} />
@@ -308,6 +310,7 @@ function TopBar() {
         <NavLink to="/watch/movies">Movies</NavLink>
         <NavLink to="/watch/list">My List</NavLink>
         <NavLink to="/watch/coming-soon">Coming soon</NavLink>
+        <NavLink to="/watch/sports">Sports</NavLink>
         {liveTV && <NavLink to="/watch/live">Live TV</NavLink>}
         <span className="wx-more-wrap">
           <button className="wx-more" onClick={() => setMore((m) => !m)} aria-expanded={more}>
