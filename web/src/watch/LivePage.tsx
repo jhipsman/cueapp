@@ -3,6 +3,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { api, profileToken, type LiveChannel, type LiveChannels, type LivePlay, type LiveProgramme } from '../api'
 import Icon from '../components/Icon'
 import { useDocumentTitle } from '../documentTitle'
+import SportsHub from './SportsHub'
 import ChannelLogo from './ChannelLogo'
 import { recentChannels, rememberChannel, useLiveStream } from './liveStream'
 import { useReminders } from './reminders'
@@ -612,6 +613,9 @@ export default function LivePage() {
           )}
         </div>
       </section>
+
+      {/* Sports: the next big game, and what's on now and coming up. */}
+      {!browserFull && <SportsHub />}
 
       <div className="wx-live-body">
         {/* The groups: a side menu (on a phone, a picker). */}

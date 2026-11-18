@@ -688,11 +688,13 @@ fun HomeScreen(api: CueApi, only: String?, memory: FocusMemory, takeFocus: Boole
         CompositionLocalProvider(LocalBringIntoViewSpec provides rememberRowsSpec()) {
             LazyColumn(state = listState, contentPadding = PaddingValues(top = 10.dp, bottom = 120.dp)) {
                 if (only == null && playback != null) item(key = "parties") { PartiesNow(api, playback) }
+                // The Movies and Shows tabs open with their own Top 10.
+                if (only != null && h.top10.isNotEmpty()) item(key = "top10-first") { TopTenRow(h.top10, only, memory, onFocus = { spot = it }, onClick = onCard) }
                 // The Top 10 comes after what you're watching (or the first row).
                 val topAt = maxOf(0, rows.count { it.key == "continue" || it.key == "new-episodes" || it.key == "out-now" } - 1)
                 rows.forEachIndexed { i, r ->
                     item(key = r.key) { CardRow(r, memory, onFocus = { spot = it }, onClick = onCard) }
-                    if (i == topAt && h.top10.isNotEmpty()) item(key = "top10") { TopTenRow(h.top10, only, memory, onFocus = { spot = it }, onClick = onCard) }
+                    if (only == null && i == topAt && h.top10.isNotEmpty()) item(key = "top10") { TopTenRow(h.top10, only, memory, onFocus = { spot = it }, onClick = onCard) }
                 }
             }
         }
@@ -907,6 +909,28 @@ fun TitleScreen(api: CueApi, playback: Playback, card: Tile, memory: FocusMemory
                     }
                 }
             }
+            // The cast: picking someone shows what else they're in, just below.
+            if (t.people.isNotEmpty()) {
+                item {
+                    var picked by remember(t) { mutableStateOf<CastPerson?>(null) }
+                    var withThem by remember(t) { mutableStateOf<List<Tile>>(emptyList()) }
+                    LaunchedEffect(picked?.id) {
+                        val p = picked ?: return@LaunchedEffect
+                        withThem = emptyList()
+                        withThem = runCatching { api.personCredits(p.id) }.getOrDefault(emptyList()).filter { it.key != c.key }
+                    }
+                    Column {
+                        Text("Cast", fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = Color(0xF2FFFFFF), modifier = Modifier.padding(start = Gutter + 2.dp, top = 6.dp))
+                        LazyRow(Modifier.focusRestorer(), contentPadding = PaddingValues(horizontal = Gutter, vertical = 14.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                            items(t.people, key = { it.id }) { p -> PersonCard(p, selected = picked?.id == p.id) { picked = p } }
+                        }
+                        val p = picked
+                        if (p != null && withThem.isNotEmpty()) {
+                            CardRow(Shelf("person-${p.id}", "More with ${p.name}", withThem.take(24)), memory) { m -> openTitle(m) }
+                        }
+                    }
+                }
+            }
             // The film series it's part of, in order.
             if (t.series.size > 1) {
                 item {
@@ -996,6 +1020,9 @@ fun LiveScreen(api: CueApi, playback: Playback, openWeb: (String) -> Unit) {
     var live by remember { mutableStateOf<LiveChannels?>(null) }
     var problem by remember { mutableStateOf("") }
     var group by remember { mutableStateOf("") }
+    // Sports: the channels with games, the next big game first.
+    var sports by remember { mutableStateOf<Pair<List<String>, String?>>(emptyList<String>() to null) }
+    LaunchedEffect(Unit) { sports = runCatching { api.sports() }.getOrDefault(emptyList<String>() to null) }
     LaunchedEffect(Unit) {
         try {
             val l = api.channels()
@@ -1015,12 +1042,15 @@ fun LiveScreen(api: CueApi, playback: Playback, openWeb: (String) -> Unit) {
         return
     }
     val groups = buildList {
+        if (sports.first.isNotEmpty()) add("sports" to "Sports")
         if (l.channels.any { it.favorite }) add("★" to "Favorites")
         add("*" to "All channels")
         val used = l.channels.map { it.category }.toSet()
         addAll(l.groups.filter { it.first in used })
     }
+    val byId = remember(l) { l.channels.associateBy { it.id } }
     val shown = when (group) {
+        "sports" -> sports.first.mapNotNull { byId[it] }
         "★" -> l.channels.filter { it.favorite }
         "*", "" -> l.channels
         else -> l.channels.filter { it.category == group }
@@ -1043,6 +1073,11 @@ fun LiveScreen(api: CueApi, playback: Playback, openWeb: (String) -> Unit) {
         CompositionLocalProvider(LocalBringIntoViewSpec provides PivotSpec) {
             LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(start = 20.dp, end = Gutter, top = 6.dp, bottom = 60.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                val big = sports.second
+                if (group == "sports" && big != null) item(key = "big") {
+                    Text(big, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = LocalAccent.current, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.padding(start = 4.dp, bottom = 2.dp))
+                }
                 items(shown.take(400), key = { it.id }) { ch ->
                     ChannelCard(api, ch, onFocus = { spot = ch }) { playback.playLive(ch, shown) }
                 }
@@ -1341,5 +1376,34 @@ private fun ComingSoonItem(api: CueApi, c: Tile, onCard: (Tile) -> Unit) {
                 Pill("Info") { onCard(c) }
             }
         }
+    }
+}
+
+// A cast member: their photo, name and part. Selected, it's ringed in the
+// accent colour (their titles show in the row below).
+@Composable
+fun PersonCard(p: CastPerson, selected: Boolean, onClick: () -> Unit) {
+    val accent = LocalAccent.current
+    var focused by remember { mutableStateOf(false) }
+    val shape = RoundedCornerShape(14.dp)
+    Column(Modifier.width(96.dp).zIndex(if (focused) 1f else 0f)) {
+        Card(
+            onClick = onClick,
+            modifier = Modifier.size(96.dp, 116.dp).lift(focused, 1.08f, shape).onFocusChanged { focused = it.isFocused },
+            shape = CardDefaults.shape(shape),
+            scale = CardDefaults.scale(focusedScale = 1f),
+            border = CardDefaults.border(
+                border = if (selected) Border(BorderStroke(2.dp, accent), shape = shape) else Border.None,
+                focusedBorder = Border(BorderStroke(if (selected) 2.dp else 1.dp, if (selected) accent else Color(0x59FFFFFF)), shape = shape),
+            ),
+        ) {
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                if (p.photo != null) Art(p.photo, Modifier.fillMaxSize(), p.name)
+                else Text(p.name.take(1), fontSize = 30.sp, fontWeight = FontWeight.Bold, color = Dim)
+                Sheen(focused)
+            }
+        }
+        Text(p.name, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = Color.White, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 8.dp))
+        p.character?.let { Text(it, fontSize = 10.sp, color = Dim, maxLines = 1, overflow = TextOverflow.Ellipsis) }
     }
 }

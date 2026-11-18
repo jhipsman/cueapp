@@ -482,13 +482,15 @@ export function PartyJoin() {
   const navigate = useNavigate()
   const [problem, setProblem] = useState('')
   const chatOnly = new URLSearchParams(location.search).get('chat') === '1'
+  // From the TV's Listen on phone: the phone plays the sound, picture hidden.
+  const listen = new URLSearchParams(location.search).get('listen') === '1'
   useEffect(() => {
     if (chatOnly) return
     api
       .getParty(code)
-      .then((s) => navigate(`${playHref(s.title.kind, s.title.tmdbId, s.title.season, s.title.episode)}?party=${s.code}`, { replace: true }))
+      .then((s) => navigate(`${playHref(s.title.kind, s.title.tmdbId, s.title.season, s.title.episode)}?party=${s.code}${listen ? '&listen=1' : ''}`, { replace: true }))
       .catch((e) => setProblem(e instanceof Error ? e.message : String(e)))
-  }, [code, navigate, chatOnly])
+  }, [code, navigate, chatOnly, listen])
   if (chatOnly) return <PartyChatOnly code={code.toUpperCase()} />
   return (
     <div className="wx-party-join">

@@ -36,6 +36,15 @@ under [Unreleased]. How releases are cut: [docs/RELEASING.md](docs/RELEASING.md)
 - **No sound in the web player, and versions flicking past one after another**: when a browser shows a version's picture but can't play its sound (Dolby, DTS, TrueHD), Cue now keeps the picture exactly as it is and converts only the sound, from the same moment. Before, it converted only plain H.264 pictures and otherwise jumped to the next version, which usually had the same sound, so it cycled. **No sound? Fix it** in Versions does the same.
 
 ### Added
+- **Ask Cue**: an assistant (the sparkle in the top bar, and More › Ask Cue). Say what you're in the mood for ("something funny for tonight, under two hours") or ask about a film, a show or a person, and it answers with posters you can play; "play Dune" plays it. It only offers titles from Cue's own lists, so a kids' profile only hears about what it may watch. It uses Claude with the owner's own key (Settings › Movie info › Ask Cue); without a key it stays off.
+- **Cast and people**: a title's page shows its cast with photos; each opens their page (photo, story, and everything else they're in, playable). On the TV, picking someone shows "More with them" under the cast.
+- **Top 10 for anything**: a Top 10 page (More › Top 10, or See all on Home's Top 10) by service, country, genre and decade, with the big numbers. The Movies and Shows tabs open with their own Top 10, then a strip of services and decades (web and TV).
+- **The liquid glass look**: frosted, see-through surfaces with a bright edge: a floating tab bar on phones, the top bar once you scroll, menus and sheets.
+- **A menu that names everything**: More (in the top bar, and the last tab on a phone) lists every section and tool: Coming soon, Top 10, Ask Cue, Your year, Reports, TV remote, Settings.
+- **Find a line**: Versions › Find a line in the player: type words someone says and jump to that moment (from the subtitles).
+- **Volume boost** up to twice as loud: on the TV (Volume boost in the player), and in a browser when Cue converts the video.
+- **Listen on phone**: on the TV, Listen on phone shows a QR code; scan it and the sound plays on the phone, in step with the picture (headphones, late at night), while the TV stays quiet. Press it again for the sound back on the TV.
+- **Sports on Live TV**: the next big game on top (an NFL game beats an NBA one, sooner beats later), then games on now and coming up in the next day, found in the TV guide; a Sports group on the TV.
 - **Still watching?** After three episodes in a row play on by themselves with nobody pressing anything, the player asks before the fourth (TV and web), so a show doesn't play all night. Not in a watch party.
 - **Cue notices problems nobody reports**: when two people (or three plays) move off a title's first version within a week, Cue files a report about it itself and alerts the owner.
 - **Previously…**: on Continue Watching, a show you haven't watched for three weeks says what happened in the last episode you saw (under the card on the web, in the banner on the TV).

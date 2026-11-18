@@ -5,7 +5,7 @@ import { api, type WatchCard, type WatchHome, type WatchKind } from '../api'
 import Icon from '../components/Icon'
 import SetupCard from './SetupCard'
 import { ReportNews } from './reports'
-import { Greeting, TopTen } from './browse'
+import { Greeting, NetworkStrip, TopTen } from './browse'
 import { useDocumentTitle } from '../documentTitle'
 import { Ambient, epCode, playHref, Row, SpotlightContext, TitleMark, titleHref, useExtras, useTint } from './parts'
 import { Frames, PreviewVideo, useFrames, usePreview } from './living'
@@ -85,6 +85,9 @@ export default function Home({ only }: { only?: WatchKind }) {
       <div className="wx-rows" style={shown ? undefined : { marginTop: 90 }}>
         {!only && <SetupCard />}
         {!only && !tv && <Greeting home={home} />}
+        {/* The Films and Series homes: their own Top 10 first, then the networks. */}
+        {only && home.top10 && <TopTen lists={home.top10} only={only} />}
+        {only && !tv && home.top10 && <NetworkStrip kind={only} services={home.top10.map((l) => ({ key: l.key, name: l.name }))} />}
         {!only && <ReportNews />}
         {!only && <PartiesNow />}
         <SpotlightContext.Provider value={tv ? onSpot : null}>
@@ -92,7 +95,7 @@ export default function Home({ only }: { only?: WatchKind }) {
             <Fragment key={r.key}>
               <Row rowKey={r.key} title={r.title} items={r.items} wide={r.key === 'continue' || r.key === 'new-episodes'} />
               {/* The Top 10 comes after what you're watching (or the first row). */}
-              {home.top10 && i === topAt && <TopTen lists={home.top10} only={only} />}
+              {home.top10 && !only && i === topAt && <TopTen lists={home.top10} only={only} />}
             </Fragment>
           ))}
         </SpotlightContext.Provider>

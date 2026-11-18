@@ -6,6 +6,7 @@ import Icon from '../components/Icon'
 import { useDocumentTitle } from '../documentTitle'
 import { epCode, playHref, Spinner } from './parts'
 import { ReportSheet } from './reports'
+import { FindLine } from './findLine'
 import { loadSubsPrefs, saveSubsPrefs, type SubsPrefs } from './subsPrefs'
 import { savedTheme } from './theme'
 import { onTV, type TVPlayerResult } from './tv'
@@ -158,6 +159,12 @@ export default function PlayerPage() {
   const [error, setError] = useState('')
   const [note, setNote] = useState('')
   const [reporting, setReporting] = useState(false)
+  const [finding, setFinding] = useState(false)
+  // Volume boost (up to 200%): the sound through a gain stage. A browser
+  // only lets a page boost a video it serves itself (Cue's own stream or a
+  // converted one), not one straight from elsewhere.
+  const [boost, setBoost] = useState(false)
+  const gain = useRef<{ ctx: AudioContext; node: GainNode } | null>(null)
   const [next, setNext] = useState<WatchEpisode | null>(null)
   const [countdown, setCountdown] = useState<number | null>(null)
   const [stillWatching, setStillWatching] = useState(false)
@@ -760,6 +767,28 @@ export default function PlayerPage() {
     // Once it's known where to start (where you stopped).
     if (convertFirst && resumeReady) startConvert('This version needs converting for this browser…')
   }, [convertFirst, answer, resumeReady]) // eslint-disable-line react-hooks/exhaustive-deps
+  // Listen on phone (from the TV): sound only, the picture hidden.
+  const listenOnly = search.get('listen') === '1'
+  const sameOrigin = (u: string) => {
+    try {
+      return new URL(u, location.href).origin === location.origin
+    } catch {
+      return false
+    }
+  }
+  const setVolumeBoost = (on: boolean) => {
+    const v = video.current
+    if (!v) return
+    if (!gain.current) {
+      const ctx = new AudioContext()
+      const node = ctx.createGain()
+      ctx.createMediaElementSource(v).connect(node).connect(ctx.destination)
+      gain.current = { ctx, node }
+    }
+    void gain.current.ctx.resume()
+    gain.current.node.gain.value = on ? 2 : 1
+    setBoost(on)
+  }
   const src = answer
     ? convertFirst && !conv
       ? ''
@@ -839,7 +868,14 @@ export default function PlayerPage() {
   const yt = answer && !error ? answer.youtube : undefined
   const playing = answer && !error && !onTV() && !yt
   return (
-    <div className={`wx-player${partyCode && partyOpen ? ' with-party' : ''}`} ref={shell}>
+    <div className={`wx-player${partyCode && partyOpen ? ' with-party' : ''}${listenOnly ? ' listen-only' : ''}`} ref={shell}>
+      {listenOnly && answer && (
+        <div className="wx-listen-card">
+          <Icon name="headphones" size={44} />
+          <b>{answer.title}</b>
+          <span>The sound is playing here, in step with the TV.</span>
+        </div>
+      )}
       {partyCode && partyOpen && <PartyPanel party={party} code={partyCode} onClose={() => setPartyOpen(false)} />}
       {partyCode && <FloatingReactions list={party.floating} />}
       {partyCode && party.waitingFor.length > 0 && (
@@ -1104,6 +1140,21 @@ export default function PlayerPage() {
                   : []),
                 { label: 'Search again', hint: 'Look for versions afresh', onClick: () => void load(1, true) },
                 {
+                  label: 'Find a line',
+                  hint: 'Type words someone says and jump there',
+                  onClick: () => setFinding(true),
+                },
+                ...(!onTV()
+                  ? [
+                      {
+                        label: boost ? 'Volume boost: on (200%)' : 'Volume boost (200%)',
+                        hint: src && sameOrigin(src) ? 'For quiet films and noisy rooms' : 'Works when Cue converts the video (No sound? Fix it)',
+                        disabled: !(src && sameOrigin(src)),
+                        onClick: () => setVolumeBoost(!boost),
+                      },
+                    ]
+                  : []),
+                {
                   label: 'Report a problem',
                   hint: 'Sound, subtitles, the picture… the owner hears about it',
                   onClick: () => {
@@ -1115,6 +1166,19 @@ export default function PlayerPage() {
             }}
           />
         </>
+      )}
+
+      {finding && answer && (
+        <FindLine
+          subtitleUrl={async () => {
+            if (subs) return subs.url
+            const r = await api.watchSubtitles(kind, tmdbId, season, episode, answer.release)
+            setSubs(r)
+            return r.url
+          }}
+          onJump={(t) => seekAbs(t)}
+          onClose={() => setFinding(false)}
+        />
       )}
 
       {reporting && answer && (

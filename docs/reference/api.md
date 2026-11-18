@@ -233,6 +233,7 @@ Every route the server exposes. Routes marked **public** need no sign-in; all ot
 | GET | `/api/live/reminders` | signed in | GET /api/live/reminders: this profile's reminders, soonest first, each with its channel. |
 | PUT | `/api/live/reminders` | signed in | PUT /api/live/reminders {channelId, start, stop, title}: remind this profile when a show starts. |
 | GET | `/api/live/search` | signed in | GET /api/live/search?q=: what's on now and coming up whose title (or description) has every word searched for, and channels named that way. |
+| GET | `/api/live/sports` | signed in | GET /api/live/sports: {now: [...], soon: [...], big: game} |
 
 ## manual-import
 
@@ -716,6 +717,8 @@ Every route the server exposes. Routes marked **public** need no sign-in; all ot
 
 | Method | Path | Access | What it does |
 |---|---|---|---|
+| GET | `/api/watch/ask` | signed in | GET /api/watch/ask: whether Ask Cue is set up. |
+| POST | `/api/watch/ask` | signed in | POST /api/watch/ask {messages: [{role, text}]}: the conversation so far, the last turn the person's; the answer and the titles to show. |
 | GET | `/api/watch/coming-soon` | signed in | GET /api/watch/coming-soon: the Coming soon page. |
 | DELETE | `/api/watch/continue/{kind}/{tmdbId}` | signed in | DELETE /api/watch/continue/{kind}/{tmdbId}: takes a title off Continue Watching. |
 | GET | `/api/watch/extras/{kind}/{tmdbId}` | signed in | GET /api/watch/extras/{kind}/{tmdbId}: a title's logo, the main colour of its picture (for the glow and highlights) and its trailer (for the living banner), ... |
@@ -726,6 +729,7 @@ Every route the server exposes. Routes marked **public** need no sign-in; all ot
 | PUT | `/api/watch/list/{kind}/{tmdbId}` | signed in | PUT /api/watch/list/{kind}/{tmdbId} |
 | GET | `/api/watch/logo/{kind}/{tmdbId}` | signed in | GET /api/watch/logo/{kind}/{tmdbId}: a title's logo artwork, for the TV apps' banner as the highlight moves along a row. |
 | GET | `/api/watch/movie/{tmdbId}` | signed in | GET /api/watch/movie/{tmdbId} |
+| GET | `/api/watch/person/{id}` | signed in | GET /api/watch/person/{id} |
 | GET | `/api/watch/preview-file/{name}` | signed in | GET /api/watch/preview-file/{name}: a made clip. |
 | GET | `/api/watch/preview/{kind}/{tmdbId}` | signed in | GET /api/watch/preview/{kind}/{tmdbId}?season=&episode=[&ready=1]: the clip's address when it's made ({"url"}); otherwise it's started and the answer is {"pe... |
 | PUT | `/api/watch/progress` | signed in | PUT /api/watch/progress {"kind","tmdbId","season","episode","position","duration"}: the player saves where it is every few seconds. |
@@ -742,6 +746,7 @@ Every route the server exposes. Routes marked **public** need no sign-in; all ot
 | GET | `/api/watch/subtitles/{kind}/{tmdbId}` | signed in | GET /api/watch/subtitles/{kind}/{tmdbId}?season=&episode=&release=&choice= is where the player gets the subtitle: {"url", "label", "choices"}. |
 | GET | `/api/watch/this-week` | signed in | GET /api/watch/this-week |
 | PUT | `/api/watch/thumb/{kind}/{tmdbId}` | signed in | PUT /api/watch/thumb/{kind}/{tmdbId} {"thumb":"up"\|"down"\|""}: this profile's thumb on a title. |
+| GET | `/api/watch/top` | signed in | GET /api/watch/top?kind=all\|movie\|tv&service=netflix&country=US&genre=Comedy&decade=1990 |
 | GET | `/api/watch/tv/{tmdbId}` | signed in | GET /api/watch/tv/{tmdbId} |
 | GET | `/api/watch/tv/{tmdbId}/next` | signed in | GET /api/watch/tv/{tmdbId}/next?season=1&episode=2: the episode to play after that one, for autoplay. |
 | GET | `/api/watch/tv/{tmdbId}/season/{season}` | signed in | GET /api/watch/tv/{tmdbId}/season/{season}: the season's episodes, with thumbnails and how far this account got in each. |
@@ -758,4 +763,4 @@ Every route the server exposes. Routes marked **public** need no sign-in; all ot
 | PUT | `/api/watched/settings` | admin | PUT /api/watched/settings {"sync": true, "cleanup": {...}} |
 | POST | `/api/watched/sync` | admin | POST /api/watched/sync: read what's been watched now. |
 
-423 routes.
+428 routes.

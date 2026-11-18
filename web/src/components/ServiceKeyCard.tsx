@@ -5,12 +5,13 @@ import TestButton from './TestButton'
 import { FieldError, FormProblem, useValidation } from '../useValidation'
 import { apiKey as apiKeyCheck, firstError, required as requiredCheck } from '../validate'
 
-export type KeyService = 'tmdb' | 'opensubtitles' | 'trakt'
+export type KeyService = 'tmdb' | 'opensubtitles' | 'trakt' | 'anthropic'
 
-const FIELD: Record<KeyService, 'tmdbApiKey' | 'openSubtitlesApiKey' | 'traktClientId'> = {
+const FIELD: Record<KeyService, 'tmdbApiKey' | 'openSubtitlesApiKey' | 'traktClientId' | 'anthropicApiKey'> = {
   tmdb: 'tmdbApiKey',
   opensubtitles: 'openSubtitlesApiKey',
   trakt: 'traktClientId',
+  anthropic: 'anthropicApiKey',
 }
 
 // One card per third-party service Cue can use: what it is, what stops

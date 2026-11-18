@@ -110,6 +110,16 @@ func (s *Server) handleTestService(w http.ResponseWriter, r *http.Request) {
 	defer cancel()
 
 	switch req.Service {
+	case "anthropic":
+		key := req.Key
+		if key == "" {
+			key = s.anthropicKey()
+		}
+		if key == "" {
+			writeJSON(w, http.StatusOK, connTestResult{Message: "Enter a Claude API key first."})
+			return
+		}
+		writeJSON(w, http.StatusOK, testAnthropicKey(ctx, key))
 	case "tmdb":
 		client := s.TMDB()
 		if req.Key != "" {
@@ -156,7 +166,7 @@ func (s *Server) handleTestService(w http.ResponseWriter, r *http.Request) {
 			writeJSON(w, http.StatusOK, connTestResult{Message: plainerror.Message(err)})
 		}
 	default:
-		writeError(w, http.StatusBadRequest, `Choose which service to test: "tmdb", "opensubtitles" or "trakt".`)
+		writeError(w, http.StatusBadRequest, `Choose which service to test: "tmdb", "opensubtitles", "trakt" or "anthropic".`)
 	}
 }
 

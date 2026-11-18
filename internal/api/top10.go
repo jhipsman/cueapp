@@ -2,8 +2,13 @@ package api
 
 import (
 	"context"
+	"fmt"
+	"net/http"
 	"sort"
+	"strconv"
+	"strings"
 	"sync"
+	"time"
 
 	"github.com/jhipsman/cueapp/internal/metadata"
 )
@@ -83,4 +88,141 @@ func (s *Server) top10(ctx context.Context, tm *metadata.Client) []topList {
 		}
 	}
 	return kept
+}
+
+// ---- The Top 10 page: any service, country, genre or decade.
+
+// topGenres maps the genre names Watch shows to TMDB's ids for films and
+// shows (0: none of that kind).
+var topGenres = map[string][2]int{
+	"Action": {28, 10759}, "Comedy": {35, 35}, "Drama": {18, 18}, "Sci-Fi": {878, 10765}, "Family": {10751, 10751},
+	"Animation": {16, 16}, "Crime": {80, 80}, "Mystery": {9648, 9648}, "Thriller": {53, 0}, "Romance": {10749, 0},
+	"Documentary": {99, 99}, "Reality": {0, 10764}, "Kids": {10751, 10762}, "Fantasy": {14, 10765},
+	"History & War": {10752, 10768}, "Western": {37, 37},
+}
+
+// topCountries are the countries the page offers (where TMDB knows what's
+// streaming), by code.
+var topCountries = map[string]string{
+	"US": "United States", "GB": "United Kingdom", "CA": "Canada", "AU": "Australia", "IE": "Ireland",
+	"DE": "Germany", "FR": "France", "ES": "Spain", "IT": "Italy", "NL": "Netherlands", "BR": "Brazil",
+	"MX": "Mexico", "IN": "India", "JP": "Japan", "KR": "South Korea",
+}
+
+type topPage struct {
+	Title     string            `json:"title"`
+	Items     []watchCard       `json:"items"`
+	Services  []topList         `json:"services"` // the choices: key and name (no items)
+	Genres    []string          `json:"genres"`
+	Countries map[string]string `json:"countries"`
+}
+
+// GET /api/watch/top?kind=all|movie|tv&service=netflix&country=US&genre=Comedy&decade=1990
+func (s *Server) handleWatchTop(w http.ResponseWriter, r *http.Request) {
+	qv := r.URL.Query()
+	kind := qv.Get("kind")
+	if kind != "movie" && kind != "tv" {
+		kind = "all"
+	}
+	country := strings.ToUpper(qv.Get("country"))
+	if _, ok := topCountries[country]; !ok {
+		country = "US"
+	}
+	q := metadata.TopQuery{Region: country}
+	title := "Top 10"
+	var svcName string
+	if key := qv.Get("service"); key != "" {
+		for _, svc := range topServices {
+			if svc.Key == key {
+				q.Providers, svcName = svc.providers, svc.Name
+			}
+		}
+	}
+	genre := qv.Get("genre")
+	ids, hasGenre := topGenres[genre]
+	decade, _ := strconv.Atoi(qv.Get("decade"))
+	if decade < 1920 || decade > time.Now().Year() || decade%10 != 0 {
+		decade = 0
+	}
+	q.Decade = decade
+	// "Top 10 Comedy films of the 1990s on Netflix in Canada"
+	what := map[string]string{"all": "titles", "movie": "films", "tv": "shows"}[kind]
+	if hasGenre {
+		what = genre + " " + what
+	}
+	title += " " + what
+	if decade > 0 {
+		title += fmt.Sprintf(" of the %ds", decade)
+	}
+	if svcName != "" {
+		title += " on " + svcName
+	}
+	if country != "US" {
+		title += " in " + topCountries[country]
+	}
+	page := topPage{Title: title, Items: []watchCard{}, Countries: topCountries}
+	for _, svc := range topServices {
+		page.Services = append(page.Services, topList{Key: svc.Key, Name: svc.Name})
+	}
+	for g := range topGenres {
+		page.Genres = append(page.Genres, g)
+	}
+	sort.Strings(page.Genres)
+	tm := s.TMDB()
+	if tm == nil || !tm.HasAPIKey() {
+		writeJSON(w, http.StatusOK, page)
+		return
+	}
+	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+	defer cancel()
+	var all []scored
+	if kind != "tv" && (!hasGenre || ids[0] > 0) {
+		mq := q
+		if hasGenre {
+			mq.Genre = ids[0]
+		}
+		if p, err := tm.TopMovies(ctx, mq); err == nil {
+			for i, m := range p.Results {
+				all = append(all, scored{movieCard(m), rankScore(i, m.Popularity, decade)})
+			}
+		}
+	}
+	if kind != "movie" && (!hasGenre || ids[1] > 0) {
+		sq := q
+		if hasGenre {
+			sq.Genre = ids[1]
+		}
+		if p, err := tm.TopShows(ctx, sq); err == nil {
+			for i, sh := range p.Results {
+				all = append(all, scored{showCard(sh), rankScore(i, sh.Popularity, decade)})
+			}
+		}
+	}
+	sort.SliceStable(all, func(a, b int) bool { return all[a].pop > all[b].pop })
+	var items []watchCard
+	for _, x := range all {
+		if x.card.PosterURL != "" {
+			items = append(items, x.card)
+		}
+	}
+	if prof, ok := s.activeProfile(r); ok && prof.MaxRating != "" {
+		items = s.ageFiltered(ctx, prof, items)
+	}
+	if len(items) > 10 {
+		items = items[:10]
+	}
+	if items != nil {
+		page.Items = items
+	}
+	writeJSON(w, http.StatusOK, page)
+}
+
+// rankScore orders films and shows together: by popularity now, or for a
+// past decade (sorted by votes, whose numbers don't compare across films
+// and shows) by place in each list.
+func rankScore(place int, pop float64, decade int) float64 {
+	if decade > 0 {
+		return float64(1000 - place)
+	}
+	return pop
 }

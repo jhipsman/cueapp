@@ -341,6 +341,21 @@ export interface WatchHome {
   rows: WatchRow[]
   top10?: TopList[] // what's most watched on each streaming service now
 }
+// Someone in a title's cast (GET /watch/person/{id} for their page).
+export interface WatchPerson {
+  id: number
+  name: string
+  character?: string
+  photo?: string
+}
+export interface WatchPersonPage extends WatchPerson {
+  biography?: string
+  born?: string
+  died?: string
+  birthplace?: string
+  knownFor?: string
+  credits: WatchCard[] // what else they're in (role in episodeTitle), most popular first
+}
 // A streaming service's top 10 right now.
 export interface TopList {
   key: string // netflix, prime, appletv, disney, hulu, max, peacock, paramount
@@ -383,6 +398,7 @@ export interface WatchTitle extends WatchCard {
   genres: string[]
   certification?: string
   cast: string[]
+  people?: WatchPerson[] // the cast with photos, each opening their page
   directors?: string[]
   networks?: string[]
   seasons?: { number: number; name: string; episodes: number }[]
@@ -749,6 +765,8 @@ export interface Settings {
   episodeNameFormat?: string
   hasTmdbApiKey: boolean
   traktClientId?: string
+  anthropicApiKey?: string // Ask Cue's Claude key (write-only)
+  hasAnthropicApiKey?: boolean
   hasTraktClientId: boolean
   onboardingDone: boolean
   torrentListenPort?: string
@@ -2481,6 +2499,22 @@ export const api = {
   comingSoon: () => get<WatchCard[]>('/watch/coming-soon'),
   // This week: the next episodes of shows this profile follows, by day.
   thisWeek: () => get<WeekEpisode[]>('/watch/this-week'),
+  watchPerson: (id: number) => get<WatchPersonPage>(`/watch/person/${id}`),
+  // Ask Cue: whether it's set up, and a turn of the conversation.
+  askStatus: () => get<{ ready: boolean }>('/watch/ask'),
+  ask: (messages: { role: 'user' | 'assistant'; text: string }[]) =>
+    post<{
+      reply: string
+      heading?: string
+      cards: WatchCard[]
+      play?: { kind: WatchKind; tmdbId: number; season?: number; episode?: number }
+      open?: { kind: WatchKind; tmdbId: number }
+    }>('/watch/ask', { messages }),
+  // A Top 10 for any service, country, genre or decade.
+  watchTop: (q: { kind?: string; service?: string; country?: string; genre?: string; decade?: number }) =>
+    get<{ title: string; items: WatchCard[]; services: { key: string; name: string }[]; genres: string[]; countries: Record<string, string> }>(
+      `/watch/top?${new URLSearchParams(Object.entries(q).filter(([, v]) => v !== undefined && v !== '' && v !== 0).map(([k, v]) => [k, String(v)])).toString()}`,
+    ),
   // A genre's most popular films or shows (Search's genre tiles).
   watchGenre: (kind: WatchKind, genre: number) => get<WatchCard[]>(`/watch/genre?kind=${kind}&genre=${genre}`),
   // Report a problem with a title; the owner answers.
@@ -2522,6 +2556,8 @@ export const api = {
     get<LiveGuide>(`/live/guide?ids=${encodeURIComponent(ids.join(','))}&from=${Math.floor(from / 1000)}&hours=${hours}`),
   setLiveFavorite: (id: string, on: boolean) =>
     on ? put<{ favorite: boolean }>(`/live/favorites/${encodeURIComponent(id)}`) : del<{ favorite: boolean }>(`/live/favorites/${encodeURIComponent(id)}`),
+  // Sports on Live TV: games on now and in the next day, the next big game first.
+  liveSports: () => get<{ now: (LiveHit & { league?: string })[]; soon: (LiveHit & { league?: string })[]; big?: LiveHit & { league?: string } }>('/live/sports'),
   liveSearch: (q: string) => get<{ hits: LiveHit[]; guideReady?: boolean }>(`/live/search?q=${encodeURIComponent(q)}`),
   liveCatchup: (id: string, start: number, stop: number) =>
     get<LivePlay>(`/live/catchup/${encodeURIComponent(id)}?start=${Math.floor(start / 1000)}&stop=${Math.floor(stop / 1000)}`),
@@ -2749,7 +2785,7 @@ export const api = {
   tmdbSearch: (kind: 'movie' | 'tv', q: string) =>
     get<ImportCandidate[]>(`/tmdb/search?kind=${kind}&q=${encodeURIComponent(q)}`),
 
-  testService: (data: { service: 'tmdb' | 'opensubtitles' | 'trakt'; key?: string; username?: string; password?: string }) =>
+  testService: (data: { service: 'tmdb' | 'opensubtitles' | 'trakt' | 'anthropic'; key?: string; username?: string; password?: string }) =>
     post<{ ok: boolean; message: string }>('/settings/test-service', data),
   createFolder: (path: string) => post<FolderCheck>('/settings/folder-create', { path }),
   folderCheck: (path: string) => get<FolderCheck>(`/settings/folder-check?path=${encodeURIComponent(path)}`),
