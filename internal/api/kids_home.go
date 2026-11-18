@@ -25,6 +25,8 @@ var kidsShelves = []struct {
 	{"kids-family", "Family films", "movie", 10751},
 	{"kids-animated", "Animated films", "movie", 16},
 	{"kids-shows", "Kids' shows", "tv", 10762},
+	{"kids-family-shows", "Family shows", "tv", 10751},
+	{"kids-cartoons", "Cartoons", "tv", 16},
 }
 
 // kidsRows loads the kids' rows (most popular first), each kept to what the

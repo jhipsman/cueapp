@@ -239,7 +239,7 @@ export function ThisWeek({ items }: { items: WeekEpisode[] }) {
           <div className="wx-week-day" key={day}>
             <h3>{dayName(day)}</h3>
             {eps.map((e) => (
-              <button className="wx-week-ep" key={`${e.tmdbId}-${e.season}-${e.episode}`} onClick={() => navigate(titleHref(e))}>
+              <button className="wx-week-ep" key={`${e.tmdbId}-${e.season}-${e.episode}`} title={e.title} onClick={() => navigate(titleHref(e))}>
                 {e.backdropUrl || e.posterUrl ? <img src={(e.backdropUrl || e.posterUrl)!.replace(/\/t\/p\/w\d+\//, '/t/p/w300/')} alt="" loading="lazy" /> : <span />}
                 <span className="wx-week-txt">
                   <b>{e.title}</b>

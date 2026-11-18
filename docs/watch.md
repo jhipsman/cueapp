@@ -46,7 +46,7 @@ Cue works like Netflix for a household: one sign-in, then **Who's watching?** an
 - **Still watching?** After three episodes in a row play on by themselves with no key pressed, the player asks before the next one. Not in a watch party.
 - **Cue notices problems.** When two people, or three plays, switch away from a title's first version in a week, Cue files a report about it itself (in Reports, marked "Noticed by Cue") and alerts the owner.
 - **Previously…** A show you haven't watched in three weeks says on Continue Watching what happened in the last episode you saw.
-- **Kids' Home.** A profile with an age limit of PG (or TV-PG) or lower gets rows of family films, animated films and kids' shows near the top, and no Top 10s.
+- **Kids' Home.** A profile with an age limit of PG (or TV-PG) or lower gets its own Home: what it's watching and its list, then family films, animated films, kids' shows, family shows and cartoons. The general trending, popular and genre rows, the Top 10s and anything quiet (anime, horror) are left off.
 - **Friday's week ahead.** With alerts on, Friday brings one alert listing the new episodes coming that week on your shows.
 - **Press Play.** Cue picks a version by the profile's [Streaming quality](#streaming-quality) and it starts. If one won't start, the next one is tried by itself. Once the picture has played, Cue never changes the version on its own: if the stream drops, it picks up where it was (twice at most), and then **Other version** in the player is yours to press.
 - **Pick up where you stopped.** Where you are is saved every 15 seconds, per account. Play on a title you started says **Resume**; on a show it goes to the episode you're on, or the next one.

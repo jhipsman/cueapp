@@ -6393,11 +6393,23 @@ button.wx-switch.on:hover {
   background: var(--wx-panel);
   flex: 0 0 auto;
 }
+.wx-week-day {
+  min-width: 0;
+}
+.wx-week-ep {
+  overflow: hidden;
+}
 .wx-week-txt {
   display: flex;
   flex-direction: column;
   gap: 3px;
   min-width: 0;
+  flex: 1;
+}
+.wx-week-txt b {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .wx-week-txt small {
   color: rgba(255, 255, 255, 0.6);

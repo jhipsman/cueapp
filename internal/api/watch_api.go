@@ -260,7 +260,14 @@ func (s *Server) handleWatchHome(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}
-	// "Because you watched" rows sit among the others, after the first.
+	// "Because you watched" rows sit among the others, after the first. A
+	// young child's Home leaves the general rows out: what's trending or
+	// popular is chosen for grown-ups (Seinfeld, Doctor Who are TV-PG), so
+	// its own rows above take their place.
+	if young {
+		shelves = nil
+		because = nil
+	}
 	for i, row := range shelves {
 		if i == 1 && len(because) > 0 {
 			home.Rows = append(home.Rows, because[0])
@@ -316,6 +323,26 @@ func (s *Server) handleWatchHome(w http.ResponseWriter, r *http.Request) {
 	}
 	home.Top10 = top
 	s.markQuiet(ctx, home.Rows)
+	// Nothing quiet (anime, horror, unrated) offered to a young child, only
+	// what it's already watching or saved.
+	if young {
+		kept := home.Rows[:0]
+		for _, row := range home.Rows {
+			if row.Key != "continue" && row.Key != "my-list" && row.Key != "new-episodes" {
+				items := row.Items[:0:0]
+				for _, c := range row.Items {
+					if !c.Quiet {
+						items = append(items, c)
+					}
+				}
+				row.Items = items
+			}
+			if len(row.Items) > 0 {
+				kept = append(kept, row)
+			}
+		}
+		home.Rows = kept
+	}
 	// The banner: something trending this week with artwork, changing
 	// through the day so the page doesn't look the same every visit.
 	for _, row := range home.Rows {
