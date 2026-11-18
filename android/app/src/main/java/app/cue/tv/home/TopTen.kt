@@ -1,3 +1,8 @@
+@file:OptIn(
+    androidx.compose.ui.ExperimentalComposeUiApi::class,
+    androidx.compose.foundation.ExperimentalFoundationApi::class,
+)
+
 package app.cue.tv.home
 
 import androidx.compose.foundation.gestures.LocalBringIntoViewSpec
