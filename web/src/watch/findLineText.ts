@@ -16,17 +16,28 @@ export function parseCues(src: string): Cue[] {
     const i = lines.findIndex((l) => l.includes('-->'))
     if (i < 0) continue
     const start = time(lines[i].split('-->')[0])
-    const text = lines
-      .slice(i + 1)
-      .join(' ')
-      // Formatting tags (<i>, <font>) and ASS codes ({\an8}) off; then any
-      // < or > left (a broken or nested tag) too, so no tag can survive.
-      .replace(/<[^>]*>/g, '')
-      .replace(/[<>]/g, '')
-      .replace(/\{[^}]*\}/g, '')
+    const text = plainText(lines.slice(i + 1).join(' '))
       .replace(/\s+/g, ' ')
       .trim()
     if (!isNaN(start) && text) out.push({ start, text })
+  }
+  return out
+}
+
+// plainText is a subtitle line without its formatting: everything between
+// < and > (tags like <i> and <font>) or { and } (ASS codes like {\an8})
+// is dropped, and so is any stray < or >, nested or broken tags included,
+// so what's left can't hold a tag.
+export function plainText(s: string): string {
+  let out = ''
+  let inTag = 0
+  let inCode = false
+  for (const ch of s) {
+    if (ch === '<') inTag++
+    else if (ch === '>') inTag = Math.max(0, inTag - 1)
+    else if (ch === '{') inCode = true
+    else if (ch === '}') inCode = false
+    else if (inTag === 0 && !inCode) out += ch
   }
   return out
 }
