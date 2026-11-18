@@ -530,6 +530,12 @@ func (s *Server) protectedRoutes() *routeTable {
 	play.HandleFunc("DELETE /api/watch/continue/{kind}/{tmdbId}", s.handleHideFromContinue)
 	play.HandleFunc("PUT /api/watch/thumb/{kind}/{tmdbId}", s.handlePutThumb)
 	play.HandleFunc("GET /api/watch/coming-soon", s.handleComingSoon)
+	play.HandleFunc("GET /api/watch/this-week", s.handleThisWeek)
+	play.HandleFunc("GET /api/watch/genre", s.handleWatchGenre)
+	play.HandleFunc("POST /api/reports", s.handleAddReport)
+	play.HandleFunc("GET /api/reports", s.handleListReports)
+	play.HandleFunc("GET /api/reports/news", s.handleReportNews)
+	admin.HandleFunc("POST /api/reports/{id}/resolve", s.handleResolveReport)
 	play.HandleFunc("PUT /api/watch/remind/{kind}/{tmdbId}", s.handleRemind)
 	play.HandleFunc("DELETE /api/watch/remind/{kind}/{tmdbId}", s.handleRemind)
 	// Watch parties (party.go): watching together, in step, with a chat.

@@ -29,6 +29,7 @@ import { Avatar, ProfilesProvider, useProfiles } from './profiles'
 import { RemindersProvider } from './reminders'
 import { useModules } from '../ModulesContext'
 import { useAuth } from '../AuthContext'
+import ReportsPage, { useOpenReports } from './reports'
 import { api, isAdmin } from '../api'
 import { installTVNavigation, onTV, refocusSoon } from './tv'
 import './watch.css'
@@ -87,6 +88,7 @@ export default function WatchApp() {
                 <Route path="settings/:section?" element={<SettingsPage />} />
                 <Route path="tv-remote/:id?" element={<TVRemote />} />
                 <Route path="coming-soon" element={<ComingSoon />} />
+                <Route path="reports" element={<ReportsPage />} />
                 <Route path="movie/:tmdbId" element={<TitlePage kind="movie" />} />
                 <Route path="tv/:tmdbId" element={<TitlePage kind="tv" />} />
                 <Route path="*" element={<Home />} />
@@ -154,6 +156,7 @@ function ProfileMenu() {
   const navigate = useNavigate()
   const [open, setOpen] = useState(false)
   const wrap = useRef<HTMLDivElement>(null)
+  const waiting = useOpenReports(!!active?.main && admin)
   // Closes on Escape (focus back on the avatar) or a click anywhere else.
   useEffect(() => {
     if (!open) return
@@ -189,6 +192,7 @@ function ProfileMenu() {
     <div className="wx-menu" ref={wrap}>
       <button className="wx-menu-button" onClick={() => setOpen((o) => !o)} aria-expanded={open} aria-label={`Profile: ${active.name}`}>
         <Avatar profile={active} size={34} />
+        {waiting > 0 && <span className="wx-menu-badge" aria-label={`${waiting} reports waiting`}>{waiting}</span>}
       </button>
       {open && (
         <div className="wx-menu-list">
@@ -199,6 +203,9 @@ function ProfileMenu() {
           {!onTV() && <button onClick={() => navigate('/watch/tv-remote')}>TV remote</button>}
           <button onClick={() => navigate('/watch/settings')}>Settings</button>
           {owner && <button onClick={() => navigate('/watch/profiles')}>Manage profiles</button>}
+          <button onClick={() => navigate('/watch/reports')}>
+            Reports{waiting > 0 ? ` (${waiting})` : ''}
+          </button>
           {onTV() && <button onClick={() => window.CueTV?.changeServer()}>Change server</button>}
           {owner && admin && <button onClick={() => navigate(streamingOnly ? '/settings/streaming' : '/')}>{streamingOnly ? 'Server settings' : 'Server and library'}</button>}
           <button onClick={() => void signOut()}>Sign out</button>
@@ -259,14 +266,17 @@ function TopBar() {
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
-  // Search as you type, after a short pause.
+  // Search as you type, after a short pause. Emptied, the box goes back to
+  // the genres (Search with nothing typed).
+  const typed = useRef(false)
   useEffect(() => {
     const term = q.trim()
     const onSearch = location.pathname.endsWith('/search')
     if (!term) {
-      if (onSearch) navigate('/watch', { replace: true })
+      if (onSearch && typed.current) navigate('/watch/search', { replace: true })
       return
     }
+    typed.current = true
     const t = setTimeout(() => navigate(`/watch/search?q=${encodeURIComponent(term)}`, { replace: onSearch }), 350)
     return () => clearTimeout(t)
     // Only the typed text should start a search.
@@ -291,7 +301,13 @@ function TopBar() {
       <div className="wx-nav-right">
         <label className="wx-search">
           <Icon name="search" size={16} />
-          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Titles, people, genres" aria-label="Search" />
+          <input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            onFocus={() => !location.pathname.endsWith('/search') && navigate('/watch/search')}
+            placeholder="Titles, people, genres"
+            aria-label="Search"
+          />
         </label>
         <ProfileMenu />
       </div>

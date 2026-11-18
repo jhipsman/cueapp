@@ -1,9 +1,11 @@
 import { PartiesNow } from './party'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { Fragment, useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api, type WatchCard, type WatchHome, type WatchKind } from '../api'
 import Icon from '../components/Icon'
 import SetupCard from './SetupCard'
+import { ReportNews } from './reports'
+import { Greeting, TopTen } from './browse'
 import { useDocumentTitle } from '../documentTitle'
 import { Ambient, epCode, playHref, Row, SpotlightContext, TitleMark, titleHref, useExtras, useTint } from './parts'
 import { Frames, PreviewVideo, useFrames, usePreview } from './living'
@@ -72,6 +74,8 @@ export default function Home({ only }: { only?: WatchKind }) {
     hero = rows.flatMap((r) => r.items).find((c) => c.backdropUrl && c.overview && !c.quiet && c.progress === undefined && !c.episode)
   }
   const shown = (tv && spot) || hero
+  // The Top 10 goes after Continue Watching and new episodes.
+  const topAt = Math.max(0, rows.filter((r) => r.key === 'continue' || r.key === 'new-episodes' || r.key === 'out-now').length - 1)
 
   return (
     <div className={tv ? 'wx-tvhome' : 'wx-home'}>
@@ -80,10 +84,16 @@ export default function Home({ only }: { only?: WatchKind }) {
       {shown && <Banner card={shown} featured={shown === hero} />}
       <div className="wx-rows" style={shown ? undefined : { marginTop: 90 }}>
         {!only && <SetupCard />}
+        {!only && !tv && <Greeting home={home} />}
+        {!only && <ReportNews />}
         {!only && <PartiesNow />}
         <SpotlightContext.Provider value={tv ? onSpot : null}>
-          {rows.map((r) => (
-            <Row key={r.key} title={r.title} items={r.items} wide={r.key === 'continue' || r.key === 'new-episodes'} />
+          {rows.map((r, i) => (
+            <Fragment key={r.key}>
+              <Row rowKey={r.key} title={r.title} items={r.items} wide={r.key === 'continue' || r.key === 'new-episodes'} />
+              {/* The Top 10 comes after what you're watching (or the first row). */}
+              {home.top10 && i === topAt && <TopTen lists={home.top10} only={only} />}
+            </Fragment>
           ))}
         </SpotlightContext.Provider>
         {rows.length === 0 && (

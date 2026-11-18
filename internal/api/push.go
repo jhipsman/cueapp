@@ -252,6 +252,10 @@ func (s *Server) queueNews(ctx context.Context, pid int64) int {
 	if tm == nil || !tm.HasAPIKey() {
 		return 0
 	}
+	// Friday's look at the week ahead on this profile's shows.
+	if key, title, body, ok := s.weekAhead(ctx, pid, time.Now()); ok {
+		tell(key, title, body, "/watch/coming-soon?show=tv")
+	}
 	cont := s.continueWatching(ctx, pid)
 	cands := append([]watchCard{}, cont...)
 	cands = append(cands, s.newEpisodes(ctx, pid, cont)...)

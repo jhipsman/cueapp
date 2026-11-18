@@ -688,8 +688,11 @@ fun HomeScreen(api: CueApi, only: String?, memory: FocusMemory, takeFocus: Boole
         CompositionLocalProvider(LocalBringIntoViewSpec provides rememberRowsSpec()) {
             LazyColumn(state = listState, contentPadding = PaddingValues(top = 10.dp, bottom = 120.dp)) {
                 if (only == null && playback != null) item(key = "parties") { PartiesNow(api, playback) }
-                items(rows, key = { it.key }) { r ->
-                    CardRow(r, memory, onFocus = { spot = it }, onClick = onCard)
+                // The Top 10 comes after what you're watching (or the first row).
+                val topAt = maxOf(0, rows.count { it.key == "continue" || it.key == "new-episodes" || it.key == "out-now" } - 1)
+                rows.forEachIndexed { i, r ->
+                    item(key = r.key) { CardRow(r, memory, onFocus = { spot = it }, onClick = onCard) }
+                    if (i == topAt && h.top10.isNotEmpty()) item(key = "top10") { TopTenRow(h.top10, only, memory, onFocus = { spot = it }, onClick = onCard) }
                 }
             }
         }
@@ -718,9 +721,10 @@ fun Banner(api: CueApi, c: Tile) {
                 TitleMark(cc.title, logo, maxWidth = 300.dp, maxHeight = 90.dp, fontSize = 32.sp)
                 Gap(10.dp)
                 FactsRow(cc, extra = listOfNotNull(if (cc.kind == "tv") "Series" else "Movie", epCode(cc.season, cc.episode)))
-                cc.overview?.let {
+                // Away from a show a while: what happened last time instead.
+                (cc.recap?.let { "Previously: $it" } ?: cc.overview)?.let {
                     Gap(6.dp)
-                    Text(it, fontSize = 12.sp, color = Color(0xD9FFFFFF), maxLines = 2, overflow = TextOverflow.Ellipsis, lineHeight = 16.sp)
+                    Text(it, fontSize = 12.sp, color = Color(0xD9FFFFFF), maxLines = if (cc.recap != null) 3 else 2, overflow = TextOverflow.Ellipsis, lineHeight = 16.sp)
                 }
             }
         }
@@ -1277,16 +1281,26 @@ fun PartiesNow(api: CueApi, playback: Playback) {
 @Composable
 fun ComingSoonScreen(api: CueApi, onCard: (Tile) -> Unit) {
     var items by remember { mutableStateOf<List<Tile>?>(null) }
+    // New episodes of the shows you watch, coming in the next two weeks:
+    // a row at the top, each card saying the day.
+    var week by remember { mutableStateOf<List<Tile>>(emptyList()) }
+    val memory = remember { FocusMemory() }
     LaunchedEffect(Unit) { items = runCatching { api.comingSoon() }.getOrDefault(emptyList()) }
+    LaunchedEffect(Unit) {
+        week = runCatching { api.thisWeek() }.getOrDefault(emptyList()).map { (t, day) ->
+            t.copy(episodeTitle = listOfNotNull(dayName(day), t.episodeTitle).joinToString(" · "))
+        }
+    }
     val list = items
     when {
         list == null -> Centered { Text("Loading…", color = Dim) }
-        list.isEmpty() -> Centered { Text("Nothing announced right now.", color = Dim) }
+        list.isEmpty() && week.isEmpty() -> Centered { Text("Nothing announced right now.", color = Dim) }
         else -> LazyColumn(
-            contentPadding = PaddingValues(start = Gutter, end = Gutter, top = 18.dp, bottom = 40.dp),
+            contentPadding = PaddingValues(top = 18.dp, bottom = 40.dp),
             verticalArrangement = Arrangement.spacedBy(26.dp),
         ) {
-            items(list, key = { it.key }) { c -> ComingSoonItem(api, c, onCard) }
+            if (week.isNotEmpty()) item(key = "week") { CardRow(Shelf("new-episodes", "New episodes coming", week), memory, onClick = onCard) }
+            items(list, key = { it.key }) { c -> Box(Modifier.padding(horizontal = Gutter)) { ComingSoonItem(api, c, onCard) } }
         }
     }
 }
