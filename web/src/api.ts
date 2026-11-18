@@ -152,6 +152,46 @@ export interface LiveGuide {
   guideReady: boolean
   guideLoading: boolean
 }
+// Sports (Live TV): a team, a game from ESPN, and what /live/sports answers.
+export interface SportsTeam {
+  id: string
+  name: string
+  short?: string
+  abbr?: string
+  logo?: string
+  color?: string
+  score?: string
+  record?: string
+  winner?: boolean
+}
+export interface FavoriteTeam {
+  league: string
+  id: string
+  name: string
+  logo?: string
+}
+export interface SportsGame {
+  id: string
+  league: string
+  leagueName: string
+  start: string
+  state: 'pre' | 'in' | 'post'
+  detail: string
+  home: SportsTeam
+  away: SportsTeam
+  networks?: string[]
+  note?: string
+  postseason?: boolean
+  title: string
+  channel?: LiveChannel
+  streaming?: string
+  favorite?: boolean
+  onNow: boolean
+}
+export type GuideGame = LiveHit & { league?: string }
+export type SportsAnswer =
+  | { source: 'espn'; now: SportsGame[]; soon: SportsGame[]; big?: SportsGame; teams?: FavoriteTeam[] }
+  | { source?: 'guide'; now: GuideGame[]; soon: GuideGame[]; big?: GuideGame }
 export interface LiveHit {
   channel: LiveChannel
   show?: LiveProgramme // empty for a channel found by its name
@@ -2556,8 +2596,15 @@ export const api = {
     get<LiveGuide>(`/live/guide?ids=${encodeURIComponent(ids.join(','))}&from=${Math.floor(from / 1000)}&hours=${hours}`),
   setLiveFavorite: (id: string, on: boolean) =>
     on ? put<{ favorite: boolean }>(`/live/favorites/${encodeURIComponent(id)}`) : del<{ favorite: boolean }>(`/live/favorites/${encodeURIComponent(id)}`),
-  // Sports on Live TV: games on now and in the next day, the next big game first.
-  liveSports: () => get<{ now: (LiveHit & { league?: string })[]; soon: (LiveHit & { league?: string })[]; big?: LiveHit & { league?: string } }>('/live/sports'),
+  // Sports on Live TV: games on now and in the next day, the next big game
+  // first. From ESPN (scores, teams, networks) or, failing that, the guide.
+  liveSports: () => get<SportsAnswer>('/live/sports'),
+  sportsTeams: (league?: string) =>
+    get<{ mine: FavoriteTeam[]; leagues: { key: string; name: string }[]; teams?: SportsTeam[] }>(`/live/sports/teams${league ? `?league=${league}` : ''}`),
+  followTeam: (league: string, t: SportsTeam, on: boolean) =>
+    on
+      ? put<{ mine: FavoriteTeam[] }>(`/live/sports/teams/${league}/${encodeURIComponent(t.id)}`, { name: t.name, logo: t.logo })
+      : del<{ mine: FavoriteTeam[] }>(`/live/sports/teams/${league}/${encodeURIComponent(t.id)}`),
   liveSearch: (q: string) => get<{ hits: LiveHit[]; guideReady?: boolean }>(`/live/search?q=${encodeURIComponent(q)}`),
   liveCatchup: (id: string, start: number, stop: number) =>
     get<LivePlay>(`/live/catchup/${encodeURIComponent(id)}?start=${Math.floor(start / 1000)}&stop=${Math.floor(stop / 1000)}`),

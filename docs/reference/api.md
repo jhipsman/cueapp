@@ -233,7 +233,10 @@ Every route the server exposes. Routes marked **public** need no sign-in; all ot
 | GET | `/api/live/reminders` | signed in | GET /api/live/reminders: this profile's reminders, soonest first, each with its channel. |
 | PUT | `/api/live/reminders` | signed in | PUT /api/live/reminders {channelId, start, stop, title}: remind this profile when a show starts. |
 | GET | `/api/live/search` | signed in | GET /api/live/search?q=: what's on now and coming up whose title (or description) has every word searched for, and channels named that way. |
-| GET | `/api/live/sports` | signed in | GET /api/live/sports: {now: [...], soon: [...], big: game} |
+| GET | `/api/live/sports` | signed in | GET /api/live/sports |
+| GET | `/api/live/sports/teams` | signed in | GET /api/live/sports/teams?league=nfl: the league's teams to follow, and the profile's. |
+| DELETE | `/api/live/sports/teams/{league}/{id}` | signed in | PUT\|DELETE /api/live/sports/teams/{league}/{id} {name, logo}: follow a team (or stop). |
+| PUT | `/api/live/sports/teams/{league}/{id}` | signed in | PUT\|DELETE /api/live/sports/teams/{league}/{id} {name, logo}: follow a team (or stop). |
 
 ## manual-import
 
@@ -763,4 +766,4 @@ Every route the server exposes. Routes marked **public** need no sign-in; all ot
 | PUT | `/api/watched/settings` | admin | PUT /api/watched/settings {"sync": true, "cleanup": {...}} |
 | POST | `/api/watched/sync` | admin | POST /api/watched/sync: read what's been watched now. |
 
-428 routes.
+431 routes.

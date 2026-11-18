@@ -223,22 +223,32 @@ class CueApi(ctx: Context, val server: String) {
     // ---- Live TV ----
 
     suspend fun channels(): LiveChannels = LiveChannels.from(obj("/api/live/channels"))
-    /** Sports: the channels with games on now or soon (the next big game first), and that game's title and time. */
+    /** Sports: the channels with games on now or soon (the next big game first), and a line about that game. */
     suspend fun sports(): Pair<List<String>, String?> {
         val o = obj("/api/live/sports")
         val ids = mutableListOf<String>()
-        o.optJSONObject("big")?.optJSONObject("channel")?.optString("id")?.let { ids.add(it) }
+        o.optJSONObject("big")?.optJSONObject("channel")?.optString("id")?.takeIf { it.isNotEmpty() }?.let { ids.add(it) }
         for (k in listOf("now", "soon")) {
             val a = o.optJSONArray(k) ?: continue
-            for (i in 0 until a.length()) a.getJSONObject(i).optJSONObject("channel")?.optString("id")?.let { if (it !in ids) ids.add(it) }
+            for (i in 0 until a.length()) a.getJSONObject(i).optJSONObject("channel")?.optString("id")?.takeIf { it.isNotEmpty() }?.let { if (it !in ids) ids.add(it) }
         }
-        val big = o.optJSONObject("big")?.let { b ->
-            val show = b.optJSONObject("show")
-            val title = show?.optString("title").orEmpty()
-            val live = b.optBoolean("onNow")
-            if (title.isEmpty()) null else (if (live) "Live now: " else "Next big game: ") + title + " · " + b.optJSONObject("channel")?.optString("name").orEmpty()
+        val b = o.optJSONObject("big") ?: return ids to null
+        val live = b.optBoolean("onNow")
+        val where = b.optJSONObject("channel")?.optString("name")?.takeIf { it.isNotEmpty() } ?: b.str("streaming")?.let { "on $it" } ?: ""
+        val line = if (o.optString("source") == "espn") {
+            // ESPN: the teams and score, or when it starts.
+            val away = b.optJSONObject("away")
+            val home = b.optJSONObject("home")
+            val a = away?.optString("short")?.ifEmpty { away.optString("name") }.orEmpty()
+            val h = home?.optString("short")?.ifEmpty { home.optString("name") }.orEmpty()
+            val game = if (live) "$a ${away?.optString("score").orEmpty()} – $h ${home?.optString("score").orEmpty()} · ${b.optString("detail")}"
+            else "$a at $h · ${shortTime(b.optString("start"))}"
+            (if (live) "● Live: " else if (b.optBoolean("favorite")) "★ Your team: " else "Next big game: ") + game + (if (where.isNotEmpty()) " · $where" else "")
+        } else {
+            val title = b.optJSONObject("show")?.optString("title").orEmpty()
+            if (title.isEmpty()) null else (if (live) "Live now: " else "Next big game: ") + title + (if (where.isNotEmpty()) " · $where" else "")
         }
-        return ids to big
+        return ids to line
     }
     suspend fun livePlay(id: String): JSONObject = obj("/api/live/play/${URLEncoder.encode(id, "UTF-8").replace("+", "%20")}")
     suspend fun setFavorite(id: String, on: Boolean) {
@@ -373,6 +383,15 @@ data class Title(
         }
     }
 }
+
+/** "Sun 1:00 PM" from an ISO time, in the TV's time zone. */
+fun shortTime(iso: String): String = runCatching {
+    // The server's times are UTC ("2026-11-22T18:00:00Z"); minSdk 23 has no
+    // pattern letter for an offset, so the Z is matched as text.
+    val f = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", java.util.Locale.US).apply { timeZone = java.util.TimeZone.getTimeZone("UTC") }
+    val d = f.parse(iso.take(19)) ?: return iso
+    java.text.SimpleDateFormat("EEE h:mm a", java.util.Locale.US).format(d)
+}.getOrDefault(iso)
 
 data class CastPerson(val id: Int, val name: String, val character: String?, val photo: String?)
 

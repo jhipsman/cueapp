@@ -7451,3 +7451,182 @@ button.wx-switch.on:hover {
 .wx-allmenu:not(.sheet) {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
+
+/* ---- Sports from ESPN: teams, scores, the team picker */
+.wx-sports-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.wx-sports-head h2 {
+  margin: 0;
+}
+.wx-sports-matchup {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex-wrap: wrap;
+  width: 100%;
+}
+.wx-sports-big .wx-sports-team img {
+  width: 56px;
+  height: 56px;
+}
+.wx-sports-big .wx-sports-tname b {
+  font-size: clamp(1.1rem, 2.4vw, 1.6rem);
+}
+.wx-sports-big .wx-sports-score {
+  font-size: 2rem;
+}
+.wx-sports-at {
+  font-weight: 800;
+  color: rgba(255, 255, 255, 0.6);
+}
+.wx-sports-big.live .wx-sports-at {
+  color: #ff5a6e;
+}
+.wx-sports-foot {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  color: rgba(255, 255, 255, 0.8);
+  margin-top: 4px;
+}
+.wx-sports-team {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.wx-sports-team img {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  flex: 0 0 auto;
+}
+.wx-sports-abbr {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.12);
+  display: grid;
+  place-items: center;
+  font-size: 0.6rem;
+  font-weight: 800;
+  flex: 0 0 auto;
+}
+.wx-sports-tname {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+.wx-sports-tname b {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.wx-sports-tname small {
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.5);
+}
+.wx-sports-score {
+  font-weight: 800;
+  font-size: 1.1rem;
+  font-variant-numeric: tabular-nums;
+}
+.wx-sports-team.won .wx-sports-score {
+  color: var(--wx-accent);
+}
+.wx-sports-game .wx-sports-team {
+  width: 100%;
+}
+.wx-sports-game:disabled {
+  cursor: default;
+  opacity: 0.85;
+}
+.wx-sports-game.fav {
+  border-color: rgba(255, 209, 102, 0.55);
+}
+.wx-sports-league {
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+.wx-sports-where {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.6);
+}
+.wx-sports-where img {
+  max-height: 16px;
+  max-width: 40px;
+}
+.wx-sports-credit {
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.35);
+  margin: 8px 0 0;
+}
+.wx-teampick {
+  width: min(760px, 100%);
+  max-height: 85vh;
+  overflow-y: auto;
+  border-radius: 22px;
+  padding: 20px;
+}
+.wx-teampick-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.wx-teampick-head h2 {
+  margin: 0;
+}
+.wx-teampick-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 8px;
+  margin-top: 14px;
+}
+.wx-teampick-team {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+  color: #fff;
+  border-radius: 12px;
+  padding: 8px 10px;
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  font-size: 0.88rem;
+}
+.wx-teampick-team img {
+  width: 30px;
+  height: 30px;
+  object-fit: contain;
+}
+.wx-teampick-team span {
+  flex: 1;
+}
+.wx-teampick-team.on {
+  border-color: var(--wx-accent);
+  background: rgba(var(--wx-accent-rgb), 0.15);
+}
+
+.wx-sports-where > :first-child {
+  flex: 0 0 auto;
+  width: 40px;
+  height: 18px;
+  font-size: 0.55rem;
+  overflow: hidden;
+}
+.wx-sports-where {
+  white-space: nowrap;
+  min-width: 0;
+}

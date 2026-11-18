@@ -81,13 +81,10 @@ func sportsScore(title, desc, channel, category string) (league string, score in
 	return "", 0
 }
 
-// GET /api/live/sports: {now: [...], soon: [...], big: game}
-func (s *Server) handleLiveSports(w http.ResponseWriter, r *http.Request) {
-	pid, ok := s.watchProfile(w, r)
-	if !ok {
-		return
-	}
-	empty := map[string]any{"now": []sportsGame{}, "soon": []sportsGame{}}
+// guideSports is the fallback when ESPN can't be read: games found in the
+// TV guide by their titles.
+func (s *Server) guideSports(w http.ResponseWriter, r *http.Request, pid int64) {
+	empty := map[string]any{"now": []sportsGame{}, "soon": []sportsGame{}, "source": "guide"}
 	_, chans, err := s.liveChannels(r.Context())
 	if errors.Is(err, errLiveNotSet) {
 		writeJSON(w, http.StatusOK, empty)
@@ -152,7 +149,7 @@ func (s *Server) handleLiveSports(w http.ResponseWriter, r *http.Request) {
 	if len(soon) > 40 {
 		soon = soon[:40]
 	}
-	out := map[string]any{"now": nowList, "soon": soon, "guideReady": guide != nil}
+	out := map[string]any{"now": nowList, "soon": soon, "guideReady": guide != nil, "source": "guide"}
 	if big != nil {
 		out["big"] = big
 	}
