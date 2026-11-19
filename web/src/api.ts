@@ -397,6 +397,14 @@ export interface WatchPersonPage extends WatchPerson {
   credits: WatchCard[] // what else they're in (role in episodeTitle), most popular first
 }
 // A streaming service's top 10 right now.
+// Browse's front page: the streaming services, the collections in season
+// and the film series.
+export interface BrowseHome {
+  services: { key: string; name: string; logo?: string }[]
+  collections: { key: string; title: string; blurb: string }[]
+  franchises: { id: number; name: string; poster?: string }[]
+}
+
 export interface TopList {
   key: string // netflix, prime, appletv, disney, hulu, max, peacock, paramount
   name: string
@@ -2555,6 +2563,11 @@ export const api = {
       open?: { kind: WatchKind; tmdbId: number }
     }>('/watch/ask', { messages }),
   // A Top 10 for any service, country, genre or decade.
+  // Browse: services, collections, film series (/watch/browse).
+  browse: () => get<BrowseHome>('/watch/browse'),
+  browseService: (key: string) => get<{ key: string; name: string; logo?: string; rows: { key: string; title: string; items: WatchCard[] }[] }>(`/watch/browse/service/${encodeURIComponent(key)}`),
+  browseCollection: (key: string) => get<{ key: string; title: string; blurb: string; items: WatchCard[] }>(`/watch/browse/collection/${encodeURIComponent(key)}`),
+  browseFranchise: (id: number) => get<{ id: number; name: string; overview: string; poster?: string; backdrop?: string; items: WatchCard[] }>(`/watch/browse/franchise/${id}`),
   watchTop: (q: { kind?: string; service?: string; country?: string; genre?: string; decade?: number }) =>
     get<{ title: string; items: WatchCard[]; services: { key: string; name: string; logo?: string }[]; genres: string[]; countries: Record<string, string> }>(
       `/watch/top?${new URLSearchParams(Object.entries(q).filter(([, v]) => v !== undefined && v !== '' && v !== 0).map(([k, v]) => [k, String(v)])).toString()}`,

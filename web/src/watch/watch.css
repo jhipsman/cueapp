@@ -7785,3 +7785,149 @@ button.wx-switch.on:hover {
   text-align: center;
   border-radius: 999px;
 }
+
+/* ---- Browse: quick tiles, services, collections, film series. */
+.wx-browse-quick {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 12px;
+  max-width: 760px;
+}
+.wx-browse-quick-tile {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-rows: auto auto;
+  column-gap: 12px;
+  align-items: center;
+  padding: 16px 18px;
+  border-radius: 14px;
+  color: #fff;
+  text-decoration: none;
+  transition: transform 0.15s;
+}
+.wx-browse-quick-tile:hover {
+  transform: translateY(-2px);
+}
+.wx-browse-quick-tile svg {
+  grid-row: span 2;
+}
+.wx-browse-quick-tile b {
+  font-size: 1.05rem;
+}
+.wx-browse-quick-tile span {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.8);
+}
+.wx-browse-quick-tile.soon {
+  background: linear-gradient(135deg, #3e63dd, #1b2a6b);
+}
+.wx-browse-quick-tile.top {
+  background: linear-gradient(135deg, #d6409f, #5e1a47);
+}
+.wx-browse-section {
+  margin-top: 28px;
+}
+.wx-browse-section h3 {
+  margin: 0 0 10px;
+  font-size: 1.15rem;
+}
+.wx-browse .wx-network {
+  text-decoration: none;
+}
+.wx-browse-cols {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 12px;
+}
+.wx-browse-col {
+  min-height: 108px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 4px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  color: #fff;
+  text-decoration: none;
+  background: linear-gradient(135deg, #4a4d55, #16171b);
+  transition: transform 0.15s;
+}
+.wx-browse-col:hover {
+  transform: translateY(-2px);
+}
+.wx-browse-col b {
+  font-size: 1.05rem;
+}
+.wx-browse-col span {
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.8);
+}
+.wx-browse-col.holiday { background: linear-gradient(135deg, #b3261e, #3b0d0a); }
+.wx-browse-col.halloween { background: linear-gradient(135deg, #e86a1a, #3a1606); }
+.wx-browse-col.acclaimed { background: linear-gradient(135deg, #c9a227, #3d2f06); }
+.wx-browse-col.family { background: linear-gradient(135deg, #30a46c, #0d3320); }
+.wx-browse-col.short { background: linear-gradient(135deg, #0091ff, #062a4d); }
+.wx-browse-col.gems { background: linear-gradient(135deg, #8e4ec6, #2a1240); }
+.wx-browse-series {
+  display: flex;
+  gap: 14px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding-bottom: 6px;
+}
+.wx-browse-fr {
+  flex: 0 0 auto;
+  width: 132px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: rgba(255, 255, 255, 0.8);
+  text-decoration: none;
+  font-size: 0.78rem;
+}
+.wx-browse-fr img {
+  width: 100%;
+  aspect-ratio: 2 / 3;
+  object-fit: cover;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.06);
+  transition: transform 0.15s;
+}
+.wx-browse-fr:hover img {
+  transform: translateY(-3px);
+}
+.wx-browse-fr span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.wx-browse-head h2 {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 6px 0 0;
+}
+.wx-browse-head h2 img {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+}
+.wx-back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: rgba(255, 255, 255, 0.65);
+  text-decoration: none;
+  font-size: 0.85rem;
+}
+.wx-back-link:hover {
+  color: #fff;
+}
+@media (max-width: 640px) {
+  .wx-browse-cols {
+    grid-template-columns: 1fr 1fr;
+  }
+  .wx-browse-col {
+    min-height: 92px;
+  }
+}
