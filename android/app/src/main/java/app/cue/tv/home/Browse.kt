@@ -76,7 +76,7 @@ suspend fun CueApi.browseCollection(key: String): List<Tile> =
 suspend fun CueApi.browseFranchise(id: Int): List<Tile> =
     (obj("/api/watch/browse/franchise/$id").optJSONArray("items") ?: JSONArray()).cards()
 
-private sealed interface BrowseAt {
+sealed interface BrowseAt {
     data object Soon : BrowseAt
     data object Top : BrowseAt
     data class Service(val s: BrowseService) : BrowseAt
@@ -84,33 +84,49 @@ private sealed interface BrowseAt {
     data class Franchise(val f: BrowseFranchise) : BrowseAt
 }
 
+// Where Browse has got to, kept by the main screen: opening a title covers
+// Browse (it leaves the screen), and Back from the title must land on the
+// same service or collection, the highlight on the title that was opened.
+class BrowseState {
+    var at by mutableStateOf<BrowseAt?>(null)
+    var cameBack by mutableStateOf(false)
+    // The open page's own memory (a new page starts on its first title).
+    var pageMemory = FocusMemory()
+        private set
+
+    fun open(to: BrowseAt) {
+        at = to
+        pageMemory = FocusMemory()
+    }
+
+    fun back() {
+        at = null
+        cameBack = true
+    }
+}
+
 private var browseCache: BrowseHome? = null
 
 @Composable
-fun BrowseScreen(api: CueApi, memory: FocusMemory, onCard: (Tile) -> Unit) {
-    var at by remember { mutableStateOf<BrowseAt?>(null) }
+fun BrowseScreen(api: CueApi, memory: FocusMemory, state: BrowseState, onCard: (Tile) -> Unit) {
     // Back from a service, collection or Coming soon: here again, the
     // highlight back on the menu. (Arriving from the side menu, the menu
     // doesn't take the highlight: moving down the side menu past Browse
     // mustn't pull the remote into it.)
-    var cameBack by remember { mutableStateOf(false) }
-    BackHandler(enabled = at != null) {
-        at = null
-        cameBack = true
-    }
-    when (val a = at) {
-        null -> BrowseMenu(api, takeFocus = cameBack) { at = it }
+    BackHandler(enabled = state.at != null) { state.back() }
+    val page = state.pageMemory
+    when (val a = state.at) {
+        null -> BrowseMenu(api, takeFocus = state.cameBack, tookFocus = { state.cameBack = false }) { state.open(it) }
         BrowseAt.Soon -> ComingSoonScreen(api, onCard)
         BrowseAt.Top -> TopScreen(api, memory, onCard)
-        // Each page its own memory, so it starts on its own first title.
-        is BrowseAt.Service -> ServicePage(api, a.s, remember(a) { FocusMemory() }, onCard)
-        is BrowseAt.Collection -> GridPage(a.c.title, a.c.blurb, "col-${a.c.key}", remember(a) { FocusMemory() }, onCard) { api.browseCollection(a.c.key) }
-        is BrowseAt.Franchise -> GridPage(a.f.name, "In the order they came out.", "fr-${a.f.id}", remember(a) { FocusMemory() }, onCard) { api.browseFranchise(a.f.id) }
+        is BrowseAt.Service -> ServicePage(api, a.s, page, onCard)
+        is BrowseAt.Collection -> GridPage(a.c.title, a.c.blurb, "col-${a.c.key}", page, onCard) { api.browseCollection(a.c.key) }
+        is BrowseAt.Franchise -> GridPage(a.f.name, "In the order they came out.", "fr-${a.f.id}", page, onCard) { api.browseFranchise(a.f.id) }
     }
 }
 
 @Composable
-private fun BrowseMenu(api: CueApi, takeFocus: Boolean, open: (BrowseAt) -> Unit) {
+private fun BrowseMenu(api: CueApi, takeFocus: Boolean, tookFocus: () -> Unit, open: (BrowseAt) -> Unit) {
     var home by remember { mutableStateOf(browseCache) }
     var problem by remember { mutableStateOf("") }
     LaunchedEffect(Unit) {
@@ -123,6 +139,7 @@ private fun BrowseMenu(api: CueApi, takeFocus: Boolean, open: (BrowseAt) -> Unit
         if (!takeFocus) return@LaunchedEffect
         delay(120)
         runCatching { first.requestFocus() }
+        tookFocus() // once: coming here from the side menu later mustn't take it
     }
     LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(top = 18.dp, bottom = 48.dp), verticalArrangement = Arrangement.spacedBy(22.dp)) {
         item(key = "head") {

@@ -548,6 +548,7 @@ fun MainScreen(api: CueApi, playback: Playback, openWeb: (String) -> Unit, chang
     val open = remember { mutableStateListOf<Tile>() } // titles opened, one over another
     val memories = remember { List(PageCount) { FocusMemory() } }
     val titleMemory = remember { FocusMemory() }
+    val browseState = remember { BrowseState() } // outlives a title opened over Browse
     val tabFocus = remember { List(navItems.size + 1) { FocusRequester() } }
     var tabsFocused by remember { mutableStateOf(false) }
     // Whether a page may take the highlight when it shows: on opening the
@@ -635,7 +636,7 @@ fun MainScreen(api: CueApi, playback: Playback, openWeb: (String) -> Unit, chang
                     6 -> ComingSoonScreen(api, onCard)
                     7 -> SportsScreen(api, playback)
                     8 -> TopScreen(api, memories[8], onCard)
-                    9 -> BrowseScreen(api, memories[9], onCard)
+                    9 -> BrowseScreen(api, memories[9], browseState, onCard)
                     else -> ProfileScreen(api, switchProfile, changeServer, openWeb)
                 }
             }
