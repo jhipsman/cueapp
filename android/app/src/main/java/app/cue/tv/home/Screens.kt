@@ -114,6 +114,13 @@ fun CueRoot(api: CueApi, playback: Playback, openWeb: (String) -> Unit, changeSe
     // first start, or a sign-in the server has dropped, waits on the logo.
     val signedInHere = remember { api.profileToken.isNotEmpty() && api.cookie.isNotEmpty() }
     var stage by remember { mutableStateOf(if (signedInHere) Stage.Ready else Stage.Checking) }
+    // The logo's moment when going straight in (otherwise Checking shows it).
+    var intro by remember { mutableStateOf(signedInHere) }
+    LaunchedEffect(Unit) {
+        if (!intro) return@LaunchedEffect
+        delay(1300)
+        intro = false
+    }
     // Switch profile asked for: "Who's watching?" stays up even with one profile.
     var switching by remember { mutableStateOf(false) }
     val rootScope = rememberCoroutineScope()
@@ -229,6 +236,13 @@ fun CueRoot(api: CueApi, playback: Playback, openWeb: (String) -> Unit, changeSe
                 }
             }
             }
+            // Opening the app signed in: the logo still has its moment, over
+            // Home as it loads underneath (so it costs no waiting), then fades.
+            androidx.compose.animation.AnimatedVisibility(
+                visible = intro,
+                enter = androidx.compose.animation.EnterTransition.None,
+                exit = androidx.compose.animation.fadeOut(tween(450, easing = Settle)),
+            ) { Box(Modifier.fillMaxSize().background(Background)) { LaunchLogo() } }
             playback.upNext?.let { u -> UpNextScreen(api, u, play = { playback.playUpNext() }, dismiss = { playback.dismissUpNext() }) }
             playback.starting?.let { st -> StartingScreen(api, st, playback.note) { playback.cancelStarting() } }
             AppUpdate.offer?.takeIf { AppUpdate.showing && playback.upNext == null && stage == Stage.Ready }?.let { o ->
