@@ -177,6 +177,9 @@ func (s *Server) guideSports(w http.ResponseWriter, r *http.Request, pid int64, 
 		soon = soon[:40]
 	}
 	out := map[string]any{"now": nowList, "soon": soon, "guideReady": guide != nil, "source": "guide"}
+	if n, ok := empty["note"]; ok {
+		out["note"] = n // why these come from the guide, not ESPN
+	}
 	if big != nil {
 		out["big"] = big
 	}
