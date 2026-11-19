@@ -29,6 +29,13 @@ func TestAskKeyAndPrompt(t *testing.T) {
 	if s.anthropicKey() != "saved" {
 		t.Fatal("the saved key should win")
 	}
+	if s.askModel() != askModelHaiku {
+		t.Fatal("Ask Cue should default to Haiku")
+	}
+	_ = s.Settings.Set(settings.KeyAnthropicModel, "opus", false)
+	if s.askModel() != askModelOpus {
+		t.Fatal("opus not used when chosen")
+	}
 	kid := askSystem(watch.Profile{Name: "Kid", MaxRating: "PG"})
 	if !strings.Contains(kid, "child's profile limited to PG") || !strings.Contains(kid, `"Kid"`) {
 		t.Fatal("kids' prompt missing its limit")

@@ -32,7 +32,21 @@ import (
 // It needs a Claude API key, added by the owner in Settings (or the
 // ANTHROPIC_API_KEY environment variable).
 
-const askModel = "claude-opus-5-5"
+// Ask Cue's models: Haiku by default (a fraction of a cent a question,
+// plenty for picking something to watch), Opus when the owner wants the
+// smartest answers (about 40 times the cost).
+const (
+	askModelHaiku = "claude-haiku-5-5"
+	askModelOpus  = "claude-opus-5-5"
+)
+
+// askModel is the model the owner chose in Settings (Haiku unless "opus").
+func (s *Server) askModel() string {
+	if v, _ := s.Settings.Get(settings.KeyAnthropicModel); v == "opus" {
+		return askModelOpus
+	}
+	return askModelHaiku
+}
 
 // anthropicKey is Ask Cue's key: the one saved in Settings, else the
 // environment's.
@@ -115,20 +129,22 @@ func (s *Server) handleAsk(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	client := anthropic.NewClient(option.WithAPIKey(key))
-	runner := client.Beta.Messages.NewToolRunner(tools, anthropic.BetaToolRunnerParams{
-		BetaMessageNewParams: anthropic.BetaMessageNewParams{
-			Model:     askModel,
-			MaxTokens: 4000,
-			System:    []anthropic.BetaTextBlockParam{{Text: askSystem(prof)}},
-			Messages:  msgs,
-			// A quick, chatty answer: no long reasoning needed.
-			OutputConfig: anthropic.BetaOutputConfigParam{Effort: anthropic.BetaOutputConfigEffortLow},
-			// A declined request is answered by another model instead.
-			Betas:     []anthropic.AnthropicBeta{"server-side-fallback-2026-07-01"},
-			Fallbacks: anthropic.BetaFallbacksParamOfDefault(),
-		},
-		MaxIterations: 6,
-	})
+	model := s.askModel()
+	params := anthropic.BetaMessageNewParams{
+		Model:     model,
+		MaxTokens: 4000,
+		System:    []anthropic.BetaTextBlockParam{{Text: askSystem(prof)}},
+		Messages:  msgs,
+		// A quick, chatty answer: no long reasoning needed.
+		OutputConfig: anthropic.BetaOutputConfigParam{Effort: anthropic.BetaOutputConfigEffortLow},
+	}
+	if model == askModelOpus {
+		// A declined request is answered by another model instead (Opus
+		// only: Haiku has no such fallback).
+		params.Betas = []anthropic.AnthropicBeta{"server-side-fallback-2026-07-01"}
+		params.Fallbacks = anthropic.BetaFallbacksParamOfDefault()
+	}
+	runner := client.Beta.Messages.NewToolRunner(tools, anthropic.BetaToolRunnerParams{BetaMessageNewParams: params, MaxIterations: 6})
 	msg, err := runner.RunToCompletion(ctx)
 	if err != nil {
 		slog.Warn("ask cue", "err", err)
@@ -428,7 +444,7 @@ func (a *asker) tools() ([]anthropic.BetaTool, error) {
 // tokens spent), for Settings' Test button.
 func testAnthropicKey(ctx context.Context, key string) connTestResult {
 	client := anthropic.NewClient(option.WithAPIKey(key), option.WithMaxRetries(0))
-	if _, err := client.Models.Get(ctx, askModel, anthropic.ModelGetParams{}); err != nil {
+	if _, err := client.Models.Get(ctx, askModelHaiku, anthropic.ModelGetParams{}); err != nil {
 		var apiErr *anthropic.Error
 		if errors.As(err, &apiErr) && (apiErr.StatusCode == http.StatusUnauthorized || apiErr.StatusCode == http.StatusForbidden) {
 			return connTestResult{Message: "Anthropic didn't accept that key."}

@@ -184,6 +184,27 @@ class CueApi(ctx: Context, val server: String) {
     /** What a phone has typed for this TV's search (code from the QR), and its count. */
     suspend fun remoteSearch(code: String): Pair<String, Int> = obj("/api/watch/remote/$code").let { it.optString("q") to it.optInt("seq") }
     suspend fun title(kind: String, id: Int): Title = Title.from(obj("/api/watch/$kind/$id"))
+    /** A Top 10 for a kind (all, movie, tv), service, genre, decade (0: right now) and country. */
+    suspend fun top(kind: String, service: String, genre: String, decade: Int, country: String): TopPage {
+        val query = listOfNotNull(
+            "kind=$kind",
+            service.takeIf { it.isNotEmpty() }?.let { "service=${q(it)}" },
+            genre.takeIf { it.isNotEmpty() }?.let { "genre=${q(it)}" },
+            decade.takeIf { it > 0 }?.let { "decade=$it" },
+            "country=${q(country)}",
+        ).joinToString("&")
+        val o = obj("/api/watch/top?$query")
+        val sv = o.optJSONArray("services") ?: JSONArray()
+        val gs = o.optJSONArray("genres") ?: JSONArray()
+        val cs = o.optJSONObject("countries")
+        return TopPage(
+            o.optString("title"),
+            (o.optJSONArray("items") ?: JSONArray()).cards(),
+            (0 until sv.length()).map { sv.getJSONObject(it) }.map { TopList(it.optString("key"), it.optString("name"), emptyList(), it.str("logo")) },
+            (0 until gs.length()).map { gs.getString(it) },
+            cs?.keys()?.asSequence()?.map { it to cs.optString(it) }?.sortedBy { it.second }?.toList() ?: emptyList(),
+        )
+    }
     /** What a person has been in (their name, and the titles, most popular first). */
     suspend fun personCredits(id: Int): List<Tile> = (obj("/api/watch/person/$id").optJSONArray("credits") ?: JSONArray()).cards()
     suspend fun season(id: Int, n: Int): List<Episode> {
@@ -223,6 +244,26 @@ class CueApi(ctx: Context, val server: String) {
     // ---- Live TV ----
 
     suspend fun channels(): LiveChannels = LiveChannels.from(obj("/api/live/channels"))
+    /** The Sports tab: ESPN's games (none when Cue reads them from the TV guide instead). */
+    suspend fun sportsBoard(): SportsBoard {
+        val o = obj("/api/live/sports")
+        if (o.optString("source") != "espn") return SportsBoard(null, emptyList(), emptyList())
+        fun side(t: JSONObject?) = GameSide(t?.optString("short")?.ifEmpty { t.optString("name") }.orEmpty(), t?.str("logo"), t?.optString("score").orEmpty(), t?.optString("record").orEmpty())
+        fun game(g: JSONObject): GameRow {
+            val live = g.optString("state") == "in"
+            val ch = g.optJSONObject("channel")
+            val where = ch?.optString("name")?.takeIf { it.isNotEmpty() } ?: g.str("streaming")?.let { "On $it" }
+                ?: g.optJSONArray("networks")?.optString(0)?.takeIf { it.isNotEmpty() }?.let { "On $it" } ?: ""
+            return GameRow(g.optString("league") + "-" + g.optString("id"), g.optString("leagueName") + (g.str("note")?.let { " · $it" } ?: ""),
+                side(g.optJSONObject("away")), side(g.optJSONObject("home")),
+                if (live) g.optString("detail") else shortTime(g.optString("start")), live, g.optBoolean("favorite"),
+                ch?.optString("id")?.takeIf { it.isNotEmpty() }, where)
+        }
+        fun list(k: String) = (o.optJSONArray(k) ?: JSONArray()).let { a -> (0 until a.length()).map { game(a.getJSONObject(it)) } }
+        val big = o.optJSONObject("big")?.let { game(it) }
+        return SportsBoard(big, list("now").filter { it.key != big?.key }, list("soon").filter { it.key != big?.key })
+    }
+
     /** Sports: the channels with games on now or soon (the next big game first), and that game. */
     suspend fun sports(): SportsInfo {
         val o = obj("/api/live/sports")
@@ -254,7 +295,7 @@ class CueApi(ctx: Context, val server: String) {
 
 fun JSONArray.cards(): List<Tile> = (0 until length()).map { Tile.from(getJSONObject(it)) }
 
-private fun JSONObject.str(k: String): String? = optString(k).takeIf { has(k) && !isNull(k) && it.isNotEmpty() }
+internal fun JSONObject.str(k: String): String? = optString(k).takeIf { has(k) && !isNull(k) && it.isNotEmpty() }
 private fun JSONObject.int(k: String): Int? = if (has(k) && !isNull(k)) optInt(k) else null
 private fun JSONObject.dbl(k: String): Double? = if (has(k) && !isNull(k)) optDouble(k) else null
 
@@ -383,6 +424,13 @@ data class Title(
 data class GameSide(val name: String, val logo: String?, val score: String, val record: String)
 data class BigGame(val tag: String, val away: GameSide?, val home: GameSide?, val title: String, val detail: String, val live: Boolean)
 data class SportsInfo(val channels: List<String>, val big: BigGame?)
+
+/** One game on the Sports tab: the sides, when or the clock, and where it's on (a channel id to play, or a service). */
+data class GameRow(
+    val key: String, val league: String, val away: GameSide, val home: GameSide, val detail: String,
+    val live: Boolean, val favorite: Boolean, val channelId: String?, val where: String,
+)
+data class SportsBoard(val big: GameRow?, val now: List<GameRow>, val soon: List<GameRow>)
 
 /** "Sun 1:00 PM" from an ISO time, in the TV's time zone. */
 fun shortTime(iso: String): String = runCatching {

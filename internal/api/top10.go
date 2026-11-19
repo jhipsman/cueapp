@@ -38,7 +38,14 @@ var topServices = []topService{
 type topList struct {
 	Key   string      `json:"key"`
 	Name  string      `json:"name"`
+	Logo  string      `json:"logo,omitempty"` // the service's logo (TMDB's)
 	Items []watchCard `json:"items"`
+}
+
+// serviceLogo is a service's logo (its first TMDB provider id's), or "".
+func serviceLogo(logos map[int]string, providers string) string {
+	id, _ := strconv.Atoi(strings.SplitN(providers, "|", 2)[0])
+	return logos[id]
 }
 
 type scored struct {
@@ -50,6 +57,7 @@ type scored struct {
 // nothing found are left out).
 func (s *Server) top10(ctx context.Context, tm *metadata.Client) []topList {
 	out := make([]topList, len(topServices))
+	logos, _ := tm.ProviderLogos(ctx, "US")
 	var wg sync.WaitGroup
 	for i, svc := range topServices {
 		wg.Add(1)
@@ -77,7 +85,7 @@ func (s *Server) top10(ctx context.Context, tm *metadata.Client) []topList {
 					break
 				}
 			}
-			out[i] = topList{Key: svc.Key, Name: svc.Name, Items: items}
+			out[i] = topList{Key: svc.Key, Name: svc.Name, Logo: serviceLogo(logos, svc.providers), Items: items}
 		}()
 	}
 	wg.Wait()
@@ -160,9 +168,15 @@ func (s *Server) handleWatchTop(w http.ResponseWriter, r *http.Request) {
 	if country != "US" {
 		title += " in " + topCountries[country]
 	}
+	var logos map[int]string
+	if tm := s.TMDB(); tm != nil && tm.HasAPIKey() {
+		lctx, lcancel := context.WithTimeout(r.Context(), 5*time.Second)
+		logos, _ = tm.ProviderLogos(lctx, "US")
+		lcancel()
+	}
 	page := topPage{Title: title, Items: []watchCard{}, Countries: topCountries}
 	for _, svc := range topServices {
-		page.Services = append(page.Services, topList{Key: svc.Key, Name: svc.Name})
+		page.Services = append(page.Services, topList{Key: svc.Key, Name: svc.Name, Logo: serviceLogo(logos, svc.providers)})
 	}
 	for g := range topGenres {
 		page.Genres = append(page.Genres, g)

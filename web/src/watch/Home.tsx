@@ -87,7 +87,7 @@ export default function Home({ only }: { only?: WatchKind }) {
         {!only && !tv && <Greeting home={home} />}
         {/* The Films and Series homes: their own Top 10 first, then the networks. */}
         {only && home.top10 && <TopTen lists={home.top10} only={only} />}
-        {only && !tv && home.top10 && <NetworkStrip kind={only} services={home.top10.map((l) => ({ key: l.key, name: l.name }))} />}
+        {only && !tv && home.top10 && <NetworkStrip kind={only} services={home.top10.map((l) => ({ key: l.key, name: l.name, logo: l.logo }))} />}
         {!only && <ReportNews />}
         {!only && <PartiesNow />}
         <SpotlightContext.Provider value={tv ? onSpot : null}>

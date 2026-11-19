@@ -287,6 +287,7 @@ class PlayerActivity : Activity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        CrashLog.install(this)
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         info = JSONObject(intent.getStringExtra(EXTRA_JSON) ?: "{}")
         server = intent.getStringExtra(EXTRA_SERVER) ?: ""
@@ -1811,7 +1812,8 @@ class PlayerActivity : Activity() {
                 // The new episode's skip times come once it's playing (fetchSkips).
                 .put("introStart", 0.0).put("introEnd", 0.0).put("recapStart", 0.0).put("recapEnd", 0.0)
                 .put("creditsStart", 0.0).put("creditsFromEnd", 0.0)
-            main.post { if (!finished) nextReady = j }
+            // Kept only while the episode it follows is still the one playing.
+            main.post { if (!finished && info.optInt("season") == s && info.optInt("episode") == e) nextReady = j }
         }.start()
     }
 
@@ -1855,7 +1857,10 @@ class PlayerActivity : Activity() {
         hideSkip()
         saveProgress()
         nextReady = null
-        nextAsked = false
+        // Nothing is prepared while the old episode is still loaded (during
+        // the fade it's near its end, which would prepare the episode about
+        // to play as "next" and play it twice); asked again once it's swapped.
+        nextAsked = true
         swapped = true
         // A short fade to black over the change.
         val veil = View(this).apply { setBackgroundColor(Color.BLACK); alpha = 0f }
@@ -1864,6 +1869,9 @@ class PlayerActivity : Activity() {
             leftEpisode = info.optInt("season") to info.optInt("episode")
             leftAt = SystemClock.elapsedRealtime()
             info = j
+            nextReady = null
+            nextAsked = false
+            hiccups = 0
             introStart = 0; introEnd = 0; recapStart = 0; recapEnd = 0; creditsStart = 0; creditsFromEnd = 0
             skipTo = 0
             skipsAsked = false

@@ -6,6 +6,8 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.launch
+import app.cue.tv.CrashLog
 import app.cue.tv.MainActivity
 import app.cue.tv.PlayerActivity
 import app.cue.tv.Server
@@ -36,6 +38,7 @@ class HomeActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        CrashLog.install(this)
         val server = Server.address(this)
         if (server == null) {
             startActivity(Intent(this, SetupActivity::class.java))
@@ -43,6 +46,7 @@ class HomeActivity : ComponentActivity() {
             return
         }
         api = CueApi(this, server)
+        lifecycleScope.launch { CrashLog.sendSaved(this@HomeActivity, api) }
         playback = Playback(api, lifecycleScope) { json ->
             player.launch(
                 Intent(this, PlayerActivity::class.java)

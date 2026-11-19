@@ -71,7 +71,7 @@ export const ANTHROPIC_COPY: ServiceCopy = {
   blurb: (
     <>
       Ask Cue is an assistant on every screen: say what you're in the mood for ("something funny for tonight, under two hours") or ask about a film, a show or an actor, and it answers with titles you can play.
-      It uses Claude, Anthropic's AI, with your own key. Normal family use costs a few dollars a month at most; you only pay for what's asked.
+      It uses Claude, Anthropic's AI, with your own key. With Claude Haiku (the default) family use costs well under a dollar a month; you only pay for what's asked.
     </>
   ),
   without: 'Ask Cue stays off.',

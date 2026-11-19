@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useDocumentTitle } from '../documentTitle'
 import { useNavigate } from 'react-router-dom'
 import { api, type FavoriteTeam, type GuideGame, type SportsAnswer, type SportsGame, type SportsTeam } from '../api'
 import Icon from '../components/Icon'
@@ -27,7 +28,18 @@ function countdown(s: string): string {
   return h < 24 ? `In ${h}h ${mins % 60}m` : dayTime(s)
 }
 
-export default function SportsHub() {
+// SportsPage: Sports as its own section (/watch/sports): it needs no TV
+// provider; with one, Watch goes to the channel.
+export function SportsPage() {
+  useDocumentTitle('Sports')
+  return (
+    <div className="wx-page wx-sports-page">
+      <SportsHub page />
+    </div>
+  )
+}
+
+export default function SportsHub({ page }: { page?: boolean } = {}) {
   const navigate = useNavigate()
   const [data, setData] = useState<SportsAnswer | null>(null)
   const [picking, setPicking] = useState(false)
@@ -41,7 +53,16 @@ export default function SportsHub() {
     const t = window.setInterval(load, 60_000)
     return () => window.clearInterval(t)
   }, [])
-  if (!data || (data.now.length === 0 && data.soon.length === 0)) return null
+  if (!data) return page ? <p className="wx-dim">Loading the games…</p> : null
+  if (data.now.length === 0 && data.soon.length === 0)
+    return page ? (
+      <section className="wx-sports">
+        <h2>
+          <Icon name="activity" size={20} /> Sports
+        </h2>
+        <p className="wx-dim">No games on now or in the next day.</p>
+      </section>
+    ) : null
   if (data.source !== 'espn') return <GuideSports data={data as { now: GuideGame[]; soon: GuideGame[]; big?: GuideGame }} />
   const open = (g: SportsGame) => g.channel && navigate(liveHref(g.channel.id, 'all'))
   const big = data.big

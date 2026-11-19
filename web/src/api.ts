@@ -400,6 +400,7 @@ export interface WatchPersonPage extends WatchPerson {
 export interface TopList {
   key: string // netflix, prime, appletv, disney, hulu, max, peacock, paramount
   name: string
+  logo?: string // the service's logo
   items: WatchCard[]
 }
 // An episode of a show you follow coming out soon (Coming soon, This week).
@@ -807,6 +808,7 @@ export interface Settings {
   traktClientId?: string
   anthropicApiKey?: string // Ask Cue's Claude key (write-only)
   hasAnthropicApiKey?: boolean
+  askModel?: 'haiku' | 'opus' // Ask Cue's model: Haiku (cheapest, the default) or Opus (smartest)
   hasTraktClientId: boolean
   onboardingDone: boolean
   torrentListenPort?: string
@@ -2552,7 +2554,7 @@ export const api = {
     }>('/watch/ask', { messages }),
   // A Top 10 for any service, country, genre or decade.
   watchTop: (q: { kind?: string; service?: string; country?: string; genre?: string; decade?: number }) =>
-    get<{ title: string; items: WatchCard[]; services: { key: string; name: string }[]; genres: string[]; countries: Record<string, string> }>(
+    get<{ title: string; items: WatchCard[]; services: { key: string; name: string; logo?: string }[]; genres: string[]; countries: Record<string, string> }>(
       `/watch/top?${new URLSearchParams(Object.entries(q).filter(([, v]) => v !== undefined && v !== '' && v !== 0).map(([k, v]) => [k, String(v)])).toString()}`,
     ),
   // A genre's most popular films or shows (Search's genre tiles).

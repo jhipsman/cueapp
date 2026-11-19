@@ -7630,3 +7630,34 @@ button.wx-switch.on:hover {
   white-space: nowrap;
   min-width: 0;
 }
+
+/* ---- Streaming service logos (TMDB's) on tabs and buttons */
+.wx-top-tab.has-logo {
+  padding: 3px;
+  border-radius: 10px;
+  background: transparent;
+  opacity: 0.55;
+  border-color: transparent;
+}
+.wx-top-tab.has-logo img {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  display: block;
+}
+.wx-top-tab.has-logo.on,
+.wx-top-tab.has-logo:hover {
+  opacity: 1;
+  background: transparent;
+  border-color: #fff;
+}
+.wx-network.has-logo {
+  padding: 6px;
+  background: rgba(255, 255, 255, 0.06);
+}
+.wx-network.has-logo img {
+  width: 64px;
+  height: 64px;
+  border-radius: 12px;
+  display: block;
+}
