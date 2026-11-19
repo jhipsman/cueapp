@@ -6,6 +6,10 @@
 
 package app.cue.tv.home
 
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.focusGroup
+import androidx.compose.animation.core.animateDpAsState
 import androidx.activity.compose.BackHandler
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
@@ -89,15 +93,13 @@ import androidx.tv.material3.Button
 import androidx.tv.material3.ButtonDefaults
 import androidx.tv.material3.Card
 import androidx.tv.material3.CardDefaults
-import androidx.tv.material3.Tab
-import androidx.tv.material3.TabRow
 import androidx.tv.material3.Text
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-// The app's own screens: signing in, the profile, then the tabs along the
+// The app's own screens: signing in, the profile, then the rail down the
 // top (Home, Shows, Movies, Live TV, Search, My List, the profile) and a
 // title's page over them.
 
@@ -498,32 +500,52 @@ fun avatarColor(avatar: String): Color = when (avatar.substringBefore('/')) {
     else -> Teal
 }
 
-// ---- The tabs ----
+// ---- The side rail ----
 
-private val tabs = listOf("Home", "Shows", "Movies", "Live TV", "Search", "My List", "Coming soon", "Sports", "Top 10")
+// Each place in the rail and the page it shows. Coming soon and the Top 10
+// live in Browse now (pages 6 and 8 stay for it); the profile sits at the
+// rail's foot.
+private class NavItem(val name: String, val icon: Int, val page: Int)
+
+private val navItems = listOf(
+    NavItem("Search", app.cue.tv.R.drawable.ic_nav_search, 4),
+    NavItem("Home", app.cue.tv.R.drawable.ic_nav_home, 0),
+    NavItem("Shows", app.cue.tv.R.drawable.ic_nav_shows, 1),
+    NavItem("Movies", app.cue.tv.R.drawable.ic_nav_movies, 2),
+    NavItem("Sports", app.cue.tv.R.drawable.ic_nav_sports, 7),
+    NavItem("Live TV", app.cue.tv.R.drawable.ic_nav_live, 3),
+    NavItem("My List", app.cue.tv.R.drawable.ic_nav_mylist, 5),
+    NavItem("Browse", app.cue.tv.R.drawable.ic_nav_browse, 9),
+)
+private const val ProfilePage = 10
+private const val PageCount = 11
+private val RailWidth = 72.dp
+
+// The rail's place for a page (the profile is the last).
+private fun railSlot(page: Int): Int = navItems.indexOfFirst { it.page == page }.let { if (it < 0) navItems.size else it }
 
 @Composable
 fun MainScreen(api: CueApi, playback: Playback, openWeb: (String) -> Unit, changeServer: () -> Unit, switchProfile: () -> Unit) {
     var tab by remember { mutableIntStateOf(0) }
     val open = remember { mutableStateListOf<Tile>() } // titles opened, one over another
-    val memories = remember { List(tabs.size + 1) { FocusMemory() } }
+    val memories = remember { List(PageCount) { FocusMemory() } }
     val titleMemory = remember { FocusMemory() }
-    val tabFocus = remember { List(tabs.size + 1) { FocusRequester() } }
+    val tabFocus = remember { List(navItems.size + 1) { FocusRequester() } }
     var tabsFocused by remember { mutableStateOf(false) }
     // Whether a page may take the highlight when it shows: on opening the
     // app and on coming back from a title, but not while the remote moves
-    // along the tabs (each tab's page shows as the highlight passes it).
+    // along the rail (each place's page shows as the highlight passes it).
     var pageTakesFocus by remember { mutableStateOf(true) }
     BackHandler(enabled = open.isNotEmpty()) {
         open.removeAt(open.lastIndex)
         pageTakesFocus = true
     }
-    // Back in a page goes up to the tabs; on the tabs, to Home; on Home's
+    // Back in a page goes over to the rail; on the rail, to Home; on Home's
     // tab it leaves the app.
-    BackHandler(enabled = open.isEmpty() && !tabsFocused) { runCatching { tabFocus[tab].requestFocus() } }
+    BackHandler(enabled = open.isEmpty() && !tabsFocused) { runCatching { tabFocus[railSlot(tab)].requestFocus() } }
     BackHandler(enabled = open.isEmpty() && tabsFocused && tab != 0) {
         tab = 0
-        runCatching { tabFocus[0].requestFocus() }
+        runCatching { tabFocus[railSlot(0)].requestFocus() }
     }
     // A card opens its page, Continue Watching and new episodes too: Resume
     // (or Play) is there, with the episodes, so nothing starts by surprise.
@@ -574,40 +596,8 @@ fun MainScreen(api: CueApi, playback: Playback, openWeb: (String) -> Unit, chang
         }
     }) {
         if (page <= 2) HomeBackdrop(api, hero) else AmbientBackground(null)
-        Column(Modifier.fillMaxSize()) {
-            Row(Modifier.fillMaxWidth().padding(start = Gutter, end = Gutter, top = 12.dp, bottom = 2.dp), verticalAlignment = Alignment.CenterVertically) {
-                androidx.compose.foundation.Image(
-                    androidx.compose.ui.res.painterResource(app.cue.tv.R.drawable.ic_cue_mark), contentDescription = null,
-                    modifier = Modifier.size(22.dp),
-                )
-                HGap(6.dp)
-                Text("cue", fontFamily = Type.display(), fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                HGap(22.dp)
-                // Coming up to the tabs lands on the tab showing, not whichever
-                // is nearest, so it doesn't change page by itself.
-                TabRow(
-                    selectedTabIndex = tab,
-                    modifier = Modifier
-                        .focusProperties { enter = { tabFocus[tab] } }
-                        .onFocusChanged {
-                            tabsFocused = it.hasFocus
-                            if (it.hasFocus) pageTakesFocus = false
-                        },
-                ) {
-                    tabs.forEachIndexed { i, name ->
-                        Tab(selected = i == tab, onFocus = { tab = i }, modifier = Modifier.focusRequester(tabFocus[i])) {
-                            Text(name, fontSize = 12.sp, fontWeight = FontWeight.Medium, modifier = Modifier.padding(horizontal = 13.dp, vertical = 5.dp))
-                        }
-                    }
-                    Tab(selected = tab == tabs.size, onFocus = { tab = tabs.size }, modifier = Modifier.focusRequester(tabFocus[tabs.size])) {
-                        Box(Modifier.padding(horizontal = 8.dp, vertical = 3.dp).size(22.dp).clip(CircleShape).background(LocalAccent.current),
-                            contentAlignment = Alignment.Center) {
-                            AvatarFace(api.profileAvatar, api.profileName, 11.sp,
-                                letterColor = if (LocalAccent.current.luminance() > 0.45f) Color.Black else Color.White)
-                        }
-                    }
-                }
-            }
+        // The pages sit right of the rail; the rail opens over them.
+        Box(Modifier.fillMaxSize().padding(start = RailWidth)) {
             // The page follows the highlight once it rests on a tab (passing
             // over one doesn't build its page), and the old page has faded
             // before the new one shows, so two pages never overlap.
@@ -627,11 +617,94 @@ fun MainScreen(api: CueApi, playback: Playback, openWeb: (String) -> Unit, chang
                     6 -> ComingSoonScreen(api, onCard)
                     7 -> SportsScreen(api, playback)
                     8 -> TopScreen(api, memories[8], onCard)
+                    9 -> BrowseScreen(api, memories[9], onCard)
                     else -> ProfileScreen(api, switchProfile, changeServer, openWeb)
                 }
             }
         }
+        SideRail(
+            api = api,
+            current = tab,
+            focusers = tabFocus,
+            expanded = tabsFocused,
+            modifier = Modifier
+                .align(Alignment.CenterStart)
+                .focusProperties { enter = { tabFocus[railSlot(tab)] } }
+                .focusGroup()
+                .onFocusChanged {
+                    tabsFocused = it.hasFocus
+                    if (it.hasFocus) pageTakesFocus = false
+                },
+            onFocusPage = { tab = it },
+        )
     }
+    }
+}
+
+// The rail: icons down the left, opening to show their names (and the
+// screen dimming behind) when the remote comes onto it. The page showing is
+// marked with a short bar in the profile's colour.
+@Composable
+private fun SideRail(api: CueApi, current: Int, focusers: List<FocusRequester>, expanded: Boolean, modifier: Modifier, onFocusPage: (Int) -> Unit) {
+    val width by animateDpAsState(if (expanded) 212.dp else RailWidth, tween(220, easing = Settle), label = "rail")
+    val shade by animateFloatAsState(if (expanded) 1f else 0f, tween(220), label = "rail-shade")
+    Box(modifier.fillMaxHeight().width(width)) {
+        // Behind it: dark at the rail, fading out to the right.
+        Box(Modifier.matchParentSize().background(Brush.horizontalGradient(listOf(Color(0xF20B0C0F), Color(0xF20B0C0F).copy(alpha = 0.55f + 0.4f * shade), Color(0x000B0C0F)))))
+        Column(Modifier.fillMaxHeight().padding(start = 10.dp, end = 10.dp, top = 20.dp, bottom = 18.dp)) {
+            androidx.compose.foundation.Image(
+                androidx.compose.ui.res.painterResource(app.cue.tv.R.drawable.ic_cue_mark), contentDescription = null,
+                modifier = Modifier.padding(start = 14.dp).size(24.dp),
+            )
+            Gap(28.dp)
+            navItems.forEachIndexed { i, n ->
+                RailItem(n.name, selected = n.page == current, expanded = expanded, modifier = Modifier.focusRequester(focusers[i]),
+                    onFocus = { onFocusPage(n.page) }) {
+                    androidx.tv.material3.Icon(androidx.compose.ui.res.painterResource(n.icon), contentDescription = null, modifier = Modifier.size(20.dp))
+                }
+                Gap(4.dp)
+            }
+            Spacer(Modifier.weight(1f))
+            RailItem(api.profileName.ifEmpty { "Profile" }, selected = current == ProfilePage, expanded = expanded,
+                modifier = Modifier.focusRequester(focusers[navItems.size]), onFocus = { onFocusPage(ProfilePage) }) {
+                Box(Modifier.size(22.dp).clip(CircleShape).background(LocalAccent.current), contentAlignment = Alignment.Center) {
+                    AvatarFace(api.profileAvatar, api.profileName, 11.sp,
+                        letterColor = if (LocalAccent.current.luminance() > 0.45f) Color.Black else Color.White)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun RailItem(label: String, selected: Boolean, expanded: Boolean, modifier: Modifier, onFocus: () -> Unit, icon: @Composable () -> Unit) {
+    val accent = LocalAccent.current
+    Box(contentAlignment = Alignment.CenterStart) {
+        Button(
+            onClick = onFocus,
+            modifier = modifier.fillMaxWidth().height(40.dp).onFocusChanged { if (it.isFocused) onFocus() },
+            shape = ButtonDefaults.shape(RoundedCornerShape(10.dp)),
+            scale = ButtonDefaults.scale(focusedScale = 1f, pressedScale = 0.98f),
+            colors = ButtonDefaults.colors(
+                containerColor = Color.Transparent,
+                contentColor = if (selected) Color.White else Color(0x99FFFFFF),
+                focusedContainerColor = Color.White,
+                focusedContentColor = Color(0xFF0B0C0F),
+                pressedContainerColor = Color(0xFFE6E7EA),
+                pressedContentColor = Color(0xFF0B0C0F),
+            ),
+            contentPadding = PaddingValues(start = 14.dp, end = 10.dp),
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                icon()
+                if (expanded) {
+                    HGap(16.dp)
+                    Text(label, fontSize = 14.sp, fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium, maxLines = 1)
+                }
+            }
+        }
+        // The page showing: a short bar at the rail's edge.
+        if (selected) Box(Modifier.offset(x = (-8).dp).width(3.dp).height(18.dp).clip(RoundedCornerShape(2.dp)).background(accent))
     }
 }
 
