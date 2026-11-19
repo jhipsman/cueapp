@@ -498,7 +498,7 @@ fun avatarColor(avatar: String): Color = when (avatar.substringBefore('/')) {
 
 // ---- The tabs ----
 
-private val tabs = listOf("Home", "Shows", "Movies", "Live TV", "Search", "My List", "Coming soon", "Sports")
+private val tabs = listOf("Home", "Shows", "Movies", "Live TV", "Search", "My List", "Coming soon", "Sports", "Top 10")
 
 @Composable
 fun MainScreen(api: CueApi, playback: Playback, openWeb: (String) -> Unit, changeServer: () -> Unit, switchProfile: () -> Unit) {
@@ -624,6 +624,7 @@ fun MainScreen(api: CueApi, playback: Playback, openWeb: (String) -> Unit, chang
                     5 -> MyListScreen(api, memories[5], pageTakesFocus, tookFocus, onCard)
                     6 -> ComingSoonScreen(api, onCard)
                     7 -> SportsScreen(api, playback)
+                    8 -> TopScreen(api, memories[8], onCard)
                     else -> ProfileScreen(api, switchProfile, changeServer, openWeb)
                 }
             }

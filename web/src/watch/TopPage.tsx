@@ -51,8 +51,8 @@ export default function TopPage() {
             Everywhere
           </button>
           {data?.services.map((s) => (
-            <button key={s.key} className={`wx-top-tab${service === s.key ? ' on' : ''}`} onClick={() => set('service', s.key)}>
-              {s.name}
+            <button key={s.key} className={`wx-top-tab${service === s.key ? ' on' : ''}${s.logo ? ' has-logo' : ''}`} onClick={() => set('service', s.key)} title={s.name}>
+              {s.logo ? <img src={s.logo} alt={s.name} /> : s.name}
             </button>
           ))}
         </div>

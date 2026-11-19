@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -15,6 +16,10 @@ import (
 func TestTop10(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		q := r.URL.Query()
+		if strings.HasPrefix(r.URL.Path, "/watch/providers/") {
+			fmt.Fprint(w, `{"results":[{"provider_id":8,"provider_name":"Netflix","logo_path":"/netflix.jpg"}]}`)
+			return
+		}
 		if q.Get("watch_region") != "US" || q.Get("with_watch_monetization_types") != "flatrate" {
 			t.Errorf("query %v", q)
 		}
@@ -31,7 +36,7 @@ func TestTop10(t *testing.T) {
 	defer srv.Close()
 	s := &Server{}
 	lists := s.top10(context.Background(), metadata.NewWithBaseURL("k", srv.URL))
-	if len(lists) != 1 || lists[0].Name != "Netflix" {
+	if len(lists) != 1 || lists[0].Name != "Netflix" || lists[0].Logo != "https://image.tmdb.org/t/p/w92/netflix.jpg" {
 		t.Fatalf("lists = %+v", lists)
 	}
 	var got []string

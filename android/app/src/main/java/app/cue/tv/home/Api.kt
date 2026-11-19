@@ -184,6 +184,27 @@ class CueApi(ctx: Context, val server: String) {
     /** What a phone has typed for this TV's search (code from the QR), and its count. */
     suspend fun remoteSearch(code: String): Pair<String, Int> = obj("/api/watch/remote/$code").let { it.optString("q") to it.optInt("seq") }
     suspend fun title(kind: String, id: Int): Title = Title.from(obj("/api/watch/$kind/$id"))
+    /** A Top 10 for a kind (all, movie, tv), service, genre, decade (0: right now) and country. */
+    suspend fun top(kind: String, service: String, genre: String, decade: Int, country: String): TopPage {
+        val query = listOfNotNull(
+            "kind=$kind",
+            service.takeIf { it.isNotEmpty() }?.let { "service=${q(it)}" },
+            genre.takeIf { it.isNotEmpty() }?.let { "genre=${q(it)}" },
+            decade.takeIf { it > 0 }?.let { "decade=$it" },
+            "country=${q(country)}",
+        ).joinToString("&")
+        val o = obj("/api/watch/top?$query")
+        val sv = o.optJSONArray("services") ?: JSONArray()
+        val gs = o.optJSONArray("genres") ?: JSONArray()
+        val cs = o.optJSONObject("countries")
+        return TopPage(
+            o.optString("title"),
+            (o.optJSONArray("items") ?: JSONArray()).cards(),
+            (0 until sv.length()).map { sv.getJSONObject(it) }.map { TopList(it.optString("key"), it.optString("name"), emptyList(), it.str("logo")) },
+            (0 until gs.length()).map { gs.getString(it) },
+            cs?.keys()?.asSequence()?.map { it to cs.optString(it) }?.sortedBy { it.second }?.toList() ?: emptyList(),
+        )
+    }
     /** What a person has been in (their name, and the titles, most popular first). */
     suspend fun personCredits(id: Int): List<Tile> = (obj("/api/watch/person/$id").optJSONArray("credits") ?: JSONArray()).cards()
     suspend fun season(id: Int, n: Int): List<Episode> {
@@ -274,7 +295,7 @@ class CueApi(ctx: Context, val server: String) {
 
 fun JSONArray.cards(): List<Tile> = (0 until length()).map { Tile.from(getJSONObject(it)) }
 
-private fun JSONObject.str(k: String): String? = optString(k).takeIf { has(k) && !isNull(k) && it.isNotEmpty() }
+internal fun JSONObject.str(k: String): String? = optString(k).takeIf { has(k) && !isNull(k) && it.isNotEmpty() }
 private fun JSONObject.int(k: String): Int? = if (has(k) && !isNull(k)) optInt(k) else null
 private fun JSONObject.dbl(k: String): Double? = if (has(k) && !isNull(k)) optDouble(k) else null
 

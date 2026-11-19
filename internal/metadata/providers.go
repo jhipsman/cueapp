@@ -3,6 +3,7 @@ package metadata
 import (
 	"context"
 	"fmt"
+	"net/url"
 )
 
 // Provider is a streaming service a title is on.
@@ -43,4 +44,29 @@ func LogoURL(logoPath string) string {
 		return ""
 	}
 	return "https://image.tmdb.org/t/p/w92" + logoPath
+}
+
+// ProviderLogos is every streaming service TMDB knows in a region, by its
+// id: the logo's address (for the services' tabs and buttons).
+func (c *Client) ProviderLogos(ctx context.Context, region string) (map[int]string, error) {
+	key := "provider-logos:" + region
+	if v, ok := c.pages.get(key); ok {
+		return v.(map[int]string), nil
+	}
+	out := map[int]string{}
+	for _, kind := range []string{"movie", "tv"} {
+		var res struct {
+			Results []Provider `json:"results"`
+		}
+		if err := c.get(ctx, "/watch/providers/"+kind, url.Values{"watch_region": {region}, "language": {"en-US"}}, &res); err != nil {
+			return nil, err
+		}
+		for _, p := range res.Results {
+			if p.LogoPath != "" && out[p.ID] == "" {
+				out[p.ID] = LogoURL(p.LogoPath)
+			}
+		}
+	}
+	c.pages.put(key, out)
+	return out, nil
 }
