@@ -129,8 +129,11 @@ class WalkThroughTest {
             // Into Browse: Coming soon is the first tile; then a service's page.
             press(KeyEvent.KEYCODE_DPAD_RIGHT)
             Thread.sleep(400)
+            // Wherever the highlight landed: up to the top tiles (Coming
+            // soon, Top 10), then down one to the services.
+            press(KeyEvent.KEYCODE_DPAD_UP, 4)
             shot("browse-in")
-            press(KeyEvent.KEYCODE_DPAD_DOWN) // to the services
+            press(KeyEvent.KEYCODE_DPAD_DOWN)
             press(KeyEvent.KEYCODE_DPAD_CENTER)
             see("Netflix originals")
             Thread.sleep(600)
