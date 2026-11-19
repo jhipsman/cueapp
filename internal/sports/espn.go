@@ -16,6 +16,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	_ "time/tzdata" // the Eastern day on a server without a zone database
 
 	"github.com/jhipsman/cueapp/internal/netguard"
 )
@@ -125,6 +126,15 @@ func (c *Client) Problems() string {
 	}
 	return strings.Join(out, "; ")
 }
+
+// eastern is US Eastern time, the day ESPN's scoreboards count by (a fixed
+// UTC-5 where the zone database is missing).
+var eastern = func() *time.Location {
+	if l, err := time.LoadLocation("America/New_York"); err == nil {
+		return l
+	}
+	return time.FixedZone("EST", -5*3600)
+}()
 
 // failMemory is how long AllGames remembers ESPN being unreachable.
 const failMemory = 2 * time.Minute
@@ -249,11 +259,39 @@ func (c *Client) Games(ctx context.Context, l League) ([]Game, error) {
 		return v.games, nil
 	}
 	c.mu.Unlock()
-	now := c.now()
-	dates := now.AddDate(0, 0, -1).Format("20060102") + "-" + now.AddDate(0, 0, 1).Format("20060102")
+	// One day at a time, as ESPN counts days (US Eastern): today and
+	// tomorrow, and yesterday too in the small hours, when last night's late
+	// games may still be on. ESPN refuses a range of days with a limit (400),
+	// so each day is asked for on its own; if even today is refused, the
+	// plain scoreboard (ESPN's own today).
+	et := c.now().In(eastern)
+	days := []time.Time{et, et.AddDate(0, 0, 1)}
+	if et.Hour() < 5 {
+		days = append([]time.Time{et.AddDate(0, 0, -1)}, days...)
+	}
 	var sb scoreboard
-	if err := c.get(ctx, "/"+l.Path+"/scoreboard?limit=200&dates="+dates, &sb); err != nil {
-		return nil, err
+	seen := map[string]bool{}
+	for i, d := range days {
+		var one scoreboard
+		err := c.get(ctx, "/"+l.Path+"/scoreboard?dates="+d.Format("20060102"), &one)
+		if err != nil {
+			if i > 0 && len(sb.Events) > 0 {
+				continue // another day refused: what was read stands
+			}
+			if err2 := c.get(ctx, "/"+l.Path+"/scoreboard", &one); err2 != nil {
+				return nil, err
+			}
+		}
+		for _, e := range one.Events {
+			if !seen[string(e.ID)] {
+				seen[string(e.ID)] = true
+				sb.Events = append(sb.Events, e)
+			}
+		}
+		sb.Skipped += one.Skipped
+		if sb.SkipErr == nil {
+			sb.SkipErr = one.SkipErr
+		}
 	}
 	games := parseScoreboard(sb, l)
 	if sb.Skipped > 0 {

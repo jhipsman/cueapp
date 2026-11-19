@@ -54,8 +54,10 @@ func TestScoreboard(t *testing.T) {
 	if err != nil || len(games) != 3 {
 		t.Fatalf("games: %v %d", err, len(games))
 	}
-	if !strings.Contains(asked[0], "dates=20261121-20261123") {
-		t.Fatalf("asked %s", asked[0])
+	// One day at a time (US Eastern: 3 PM on the 22nd), no range or limit:
+	// ESPN refuses those.
+	if len(asked) != 2 || !strings.HasSuffix(asked[0], "?dates=20261122") || !strings.HasSuffix(asked[1], "?dates=20261123") {
+		t.Fatalf("asked %v", asked)
 	}
 	live := games[0]
 	if live.Title() != "Bills at Chiefs" || live.State != "in" || live.Away.Score != "21" || live.Home.Record != "9-2" || live.Detail != "Q3 4:12" {
@@ -77,7 +79,7 @@ func TestScoreboard(t *testing.T) {
 	}
 	// Read once a minute.
 	_, _ = c.Games(context.Background(), nfl)
-	if len(asked) != 1 {
+	if len(asked) != 2 { // today and tomorrow, once
 		t.Fatalf("not cached: %d asks", len(asked))
 	}
 	// The playoff game later beats... the live regular game now? Live wins
@@ -91,5 +93,27 @@ func TestScoreboard(t *testing.T) {
 	}
 	if w := ChannelWords("FS1"); len(w) == 0 || w[0] != "fs1" {
 		t.Fatalf("fs1 words %v", w)
+	}
+}
+
+// ESPN refusing a dated ask (400): the plain scoreboard instead.
+func TestScoreboardFallsBackToToday(t *testing.T) {
+	var asked []string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		asked = append(asked, r.URL.String())
+		if r.URL.RawQuery != "" {
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		w.Write([]byte(nflBoard))
+	}))
+	defer srv.Close()
+	c := New(srv.URL)
+	c.http = srv.Client()
+	c.now = func() time.Time { return time.Date(2026, 11, 22, 20, 0, 0, 0, time.UTC) }
+	nfl, _ := LeagueByKey("nfl")
+	games, err := c.Games(context.Background(), nfl)
+	if err != nil || len(games) != 3 {
+		t.Fatalf("games: %v %d (asked %v)", err, len(games), asked)
 	}
 }
