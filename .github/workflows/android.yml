@@ -112,6 +112,7 @@ jobs:
             ./gradlew --no-daemon connectedDebugAndroidTest || touch ../walkthrough-failed
             mkdir -p ../walkthrough && adb pull /data/local/tmp/cue-shots ../walkthrough/ || true
             adb logcat -d > ../walkthrough/logcat.txt || true
+            grep -E "AndroidRuntime|FATAL|CueWalkThrough" ../walkthrough/logcat.txt | tail -60 || true
             test ! -f ../walkthrough-failed
 
       - uses: actions/upload-artifact@v4

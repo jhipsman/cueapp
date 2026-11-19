@@ -14,6 +14,7 @@ import java.time.temporal.ChronoUnit
 // screens' handling of a failed answer is tested too.
 class FakeCue : Dispatcher() {
     val unknown = mutableListOf<String>()
+    val asked: MutableList<String> = java.util.Collections.synchronizedList(mutableListOf())
 
     private val names = listOf("Night Harbor", "Paper Moons", "Signal Fire", "Glass Rivers", "Northbound", "Copper Sky",
         "Quiet Hours", "Last Light", "Marigold", "Orbit", "Dispatch", "The Valley")
@@ -86,6 +87,7 @@ class FakeCue : Dispatcher() {
 
     override fun dispatch(request: RecordedRequest): MockResponse {
         val path = request.requestUrl?.encodedPath ?: ""
+        asked.add(request.method + " " + path)
         return when {
             path == "/api/auth/me" -> ok(JSONObject().put("username", "sam").put("role", "admin"))
             path == "/api/profiles" -> ok(JSONObject().put("profiles", JSONArray().put(JSONObject().put("id", 1).put("name", "Sam").put("avatar", "teal").put("main", true))))

@@ -78,8 +78,16 @@ class WalkThroughTest {
     private fun see(text: String, timeout: Long = 15_000) {
         if (!device.wait(Until.hasObject(By.textContains(text)), timeout)) {
             shot("missing-" + text.replace(Regex("[^A-Za-z0-9]+"), "-"))
-            throw AssertionError("\"$text\" never showed")
+            throw AssertionError("\"$text\" never showed. On screen: ${onScreen()}. Asked of the server: ${fake.asked.takeLast(15)}")
         }
+    }
+
+    // The words on screen now (for a failure's message: the log shows what
+    // was there instead).
+    private fun onScreen(): List<String> {
+        val out = java.io.ByteArrayOutputStream()
+        runCatching { device.dumpWindowHierarchy(out) }
+        return Regex("text=\"([^\"]+)\"").findAll(out.toString()).map { it.groupValues[1] }.distinct().take(40).toList()
     }
 
     private fun press(key: Int, times: Int = 1) {
@@ -92,8 +100,8 @@ class WalkThroughTest {
     @Test
     fun walkThroughTheApp() {
         ActivityScenario.launch(HomeActivity::class.java).use {
-            // Home, straight in (signed in already): its rows.
-            see("Trending movies")
+            // Home, straight in (signed in already): its first row.
+            see("Continue watching")
             Thread.sleep(800)
             shot("home")
 
@@ -104,8 +112,8 @@ class WalkThroughTest {
 
             // Down the menu, each place showing its page as the highlight rests on it.
             val pages = listOf(
-                "Shows" to "Trending shows",
-                "Movies" to "Trending movies",
+                "Shows" to "Continue watching",
+                "Movies" to "Top 10 on Netflix",
                 "Sports" to "Chiefs",
                 "Live TV" to "News 24",
                 "My List" to "Nothing here yet",
@@ -147,7 +155,7 @@ class WalkThroughTest {
 
             // Back on the menu goes Home; Home's page again.
             press(KeyEvent.KEYCODE_BACK)
-            see("Trending movies")
+            see("Continue watching")
             shot("home-again")
         }
         // No crash saved along the way, and nothing asked of the server it didn't expect.
