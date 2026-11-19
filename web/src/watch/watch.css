@@ -7405,6 +7405,49 @@ button.wx-switch.on:hover {
 .wx-sports-game.live .wx-sports-when {
   color: #ff5a6e;
 }
+/* Guide games: league line, matchup (two lines), channel with its logo. */
+.wx-sports-game {
+  min-width: 0;
+  white-space: normal;
+  overflow: hidden;
+}
+.wx-sports-game b {
+  line-height: 1.25;
+  min-height: 2.5em;
+  margin-bottom: 4px;
+}
+.wx-sports-game small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.wx-sports-kicker {
+  font-size: 0.7rem !important;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.45) !important;
+}
+.wx-sports-big .wx-sports-kicker {
+  display: block;
+  margin-top: 4px;
+}
+.wx-sports-foot {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+.wx-sports-foot img {
+  height: 16px;
+  width: auto;
+  max-width: 40px;
+  flex: 0 0 auto;
+  object-fit: contain;
+}
+.wx-sports-note {
+  margin: 4px 0 10px;
+}
 .wx-sports-logo {
   height: 24px;
   display: flex;
@@ -7660,4 +7703,13 @@ button.wx-switch.on:hover {
   height: 64px;
   border-radius: 12px;
   display: block;
+}
+.wx-link {
+  background: none;
+  border: 0;
+  padding: 0;
+  color: #fff;
+  text-decoration: underline;
+  cursor: pointer;
+  font: inherit;
 }

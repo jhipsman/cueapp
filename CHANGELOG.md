@@ -12,6 +12,7 @@ under [Unreleased]. How releases are cut: [docs/RELEASING.md](docs/RELEASING.md)
 - Releases are signed with a new update key, held only by the project owner. **Update now** installs only releases signed with it.
 
 ### Fixed
+- **Sports**: when ESPN can't be reached, the page no longer sits on "Loading the games…": it shows games from your TV guide straight away and says why ESPN didn't answer. Guide games read better too: the league on its own line, then the matchup ("Milwaukee Bucks at Miami Heat"), and channel names without the provider's clutter ("ESPN", not "US ★ ESPN HD ◉"). A game shown on two channels, or in two languages, is listed once.
 - Fire TV / Google TV: moving through the menus no longer crashes the app when a list holds the same title, person, channel or game twice (a cast member in two roles, a channel listed twice). Signing out with no connection and a dropped connection while waiting for a sign-in code no longer close the app either.
 - Fire TV / Google TV: if the app does crash, it sends the error to your Cue server the next time it opens, so the cause can be found: `docker compose logs cue | grep "tv app crashed"`.
 - **Sports couldn't be found without Live TV**: it lived inside Live TV, which only shows with a TV provider set up. Sports is now its own section: **Sports** in the top bar (and More on a phone) on the web, a **Sports** tab on Fire TV / Google TV and on Apple TV. Without a TV provider it shows the games and scores; with one, picking a game plays the channel it's on.

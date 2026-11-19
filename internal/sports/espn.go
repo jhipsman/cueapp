@@ -7,6 +7,7 @@ package sports
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -100,7 +101,14 @@ type Client struct {
 
 	mu    sync.Mutex
 	cache map[string]cached
+	// When every league failed, and why: for a couple of minutes after,
+	// AllGames answers at once rather than waiting on ESPN again.
+	failedAt  time.Time
+	failedErr error
 }
+
+// failMemory is how long AllGames remembers ESPN being unreachable.
+const failMemory = 2 * time.Minute
 
 type cached struct {
 	at    time.Time
@@ -281,10 +289,18 @@ func parseScoreboard(sb scoreboard, l League) []Game {
 // AllGames is every league's games (leagues that fail are skipped; an
 // error only when all fail).
 func (c *Client) AllGames(ctx context.Context) ([]Game, error) {
+	c.mu.Lock()
+	if c.failedErr != nil && c.now().Sub(c.failedAt) < failMemory {
+		err := c.failedErr
+		c.mu.Unlock()
+		return nil, err
+	}
+	c.mu.Unlock()
 	var mu sync.Mutex
 	var all []Game
 	var wg sync.WaitGroup
 	fails := 0
+	var first error
 	for _, l := range Leagues {
 		wg.Add(1)
 		go func() {
@@ -294,6 +310,9 @@ func (c *Client) AllGames(ctx context.Context) ([]Game, error) {
 			defer mu.Unlock()
 			if err != nil {
 				fails++
+				if first == nil {
+					first = err
+				}
 				return
 			}
 			all = append(all, g...)
@@ -301,8 +320,18 @@ func (c *Client) AllGames(ctx context.Context) ([]Game, error) {
 	}
 	wg.Wait()
 	if fails == len(Leagues) {
-		return nil, fmt.Errorf("espn: no league could be read")
+		err := fmt.Errorf("espn: no league could be read: %w", first)
+		// A cancelled request (the person left the page) says nothing about ESPN.
+		if ctx.Err() == nil || errors.Is(ctx.Err(), context.DeadlineExceeded) {
+			c.mu.Lock()
+			c.failedAt, c.failedErr = c.now(), err
+			c.mu.Unlock()
+		}
+		return nil, err
 	}
+	c.mu.Lock()
+	c.failedErr = nil
+	c.mu.Unlock()
 	sort.SliceStable(all, func(i, j int) bool { return all[i].Start.Before(all[j].Start) })
 	return all, nil
 }
