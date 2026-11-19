@@ -9,6 +9,7 @@ under [Unreleased]. How releases are cut: [docs/RELEASING.md](docs/RELEASING.md)
 ## [Unreleased]
 
 ### Added
+- **Ask Cue on Fire TV / Google TV**, in the side menu under Search: ask for something to watch with one of the ideas (one press), by typing with the TV's keyboard, or out loud where the TV lets apps listen (Google TV). The answer and its picks show beside it; asking again carries on the conversation, and "Play X" opens X's page.
 - **Browse**, on the web, Fire TV / Google TV and Apple TV: a page for each streaming service (its Top 10 today, what's new, its originals, its best rated, and its genres), collections across every service (Critically acclaimed, Family movie night, Under 90 minutes, Hidden gems, plus Holiday movies from mid-November and Halloween horror in October), and twenty film series in the order they came out. Coming soon and the Top 10 live in Browse too. Everything shown keeps to a kid profile's age limit.
 
 ### Changed

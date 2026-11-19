@@ -150,9 +150,18 @@ class WalkThroughTest {
             see("Streaming services")
             shot("back-to-browse")
 
-            // Up the menu to Search.
+            // Up the menu to Ask Cue: ask with one of the ideas, and the answer
+            // and its picks show; then Search, at the top.
             press(KeyEvent.KEYCODE_BACK) // to the side menu
             press(KeyEvent.KEYCODE_DPAD_UP, 7)
+            see("Something funny for tonight")
+            shot("ask-cue")
+            device.findObject(By.text("Something funny for tonight"))?.click()
+            see("easy laughs")
+            Thread.sleep(600)
+            shot("ask-cue-answer")
+            press(KeyEvent.KEYCODE_BACK) // to the side menu
+            press(KeyEvent.KEYCODE_DPAD_UP)
             see("Search from your phone")
             shot("search")
 

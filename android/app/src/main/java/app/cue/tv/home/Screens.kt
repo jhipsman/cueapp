@@ -541,6 +541,7 @@ private class NavItem(val name: String, val icon: Int, val page: Int)
 
 private val navItems = listOf(
     NavItem("Search", app.cue.tv.R.drawable.ic_nav_search, 4),
+    NavItem("Ask Cue", app.cue.tv.R.drawable.ic_nav_ask, 11),
     NavItem("Home", app.cue.tv.R.drawable.ic_nav_home, 0),
     NavItem("Shows", app.cue.tv.R.drawable.ic_nav_shows, 1),
     NavItem("Movies", app.cue.tv.R.drawable.ic_nav_movies, 2),
@@ -550,7 +551,7 @@ private val navItems = listOf(
     NavItem("Browse", app.cue.tv.R.drawable.ic_nav_browse, 9),
 )
 private const val ProfilePage = 10
-private const val PageCount = 11
+private const val PageCount = 12
 private val RailWidth = 72.dp
 
 // The rail's place for a page (the profile is the last).
@@ -651,6 +652,7 @@ fun MainScreen(api: CueApi, playback: Playback, openWeb: (String) -> Unit, chang
                     7 -> SportsScreen(api, playback)
                     8 -> TopScreen(api, memories[8], onCard)
                     9 -> BrowseScreen(api, memories[9], browseState, onCard)
+                    11 -> AskScreen(api, memories[11], onCard)
                     else -> ProfileScreen(api, switchProfile, changeServer, openWeb)
                 }
             }
