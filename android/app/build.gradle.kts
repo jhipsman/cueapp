@@ -21,6 +21,8 @@ android {
         // The Cue server the app opens with, so there's no address to type:
         // -PcueServer=https://... builds it for another server. Profile >
         // Change server still points it elsewhere.
+        // The walk-through on an Android TV emulator (app/src/androidTest).
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         buildConfigField("String", "DEFAULT_SERVER", "\"" + (project.findProperty("cueServer") ?: "https://cuetv.me") + "\"")
     }
 
@@ -95,4 +97,12 @@ dependencies {
     implementation("androidx.profileinstaller:profileinstaller:1.4.1")
     implementation("io.coil-kt:coil-compose:2.7.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
+
+    // The walk-through test: the app on an Android TV emulator, driven with
+    // the remote's keys against a stand-in Cue server.
+    androidTestImplementation("androidx.test:runner:1.6.2")
+    androidTestImplementation("androidx.test:core-ktx:1.6.1")
+    androidTestImplementation("androidx.test.ext:junit:1.2.1")
+    androidTestImplementation("androidx.test.uiautomator:uiautomator:2.3.0")
+    androidTestImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
 }

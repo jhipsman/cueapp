@@ -96,8 +96,10 @@ import androidx.tv.material3.CardDefaults
 import androidx.tv.material3.Text
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 // The app's own screens: signing in, the profile, then the rail down the
 // top (Home, Shows, Movies, Live TV, Search, My List, the profile) and a
@@ -107,7 +109,11 @@ enum class Stage { Checking, SignIn, Profiles, Ready }
 
 @Composable
 fun CueRoot(api: CueApi, playback: Playback, openWeb: (String) -> Unit, changeServer: () -> Unit) {
-    var stage by remember { mutableStateOf(Stage.Checking) }
+    // Signed in on this TV with a profile chosen: straight in (Home opens on
+    // what it showed last time), checking with the server meanwhile. Only a
+    // first start, or a sign-in the server has dropped, waits on the logo.
+    val signedInHere = remember { api.profileToken.isNotEmpty() && api.cookie.isNotEmpty() }
+    var stage by remember { mutableStateOf(if (signedInHere) Stage.Ready else Stage.Checking) }
     // Switch profile asked for: "Who's watching?" stays up even with one profile.
     var switching by remember { mutableStateOf(false) }
     val rootScope = rememberCoroutineScope()
@@ -152,6 +158,17 @@ fun CueRoot(api: CueApi, playback: Playback, openWeb: (String) -> Unit, changeSe
         if (stage == Stage.Ready && inFront) AppUpdate.check(ctx, api.server)
     }
     LaunchedEffect(stage) { if (stage == Stage.Ready) Tour.maybeShow(ctx) }
+    LaunchedEffect(Unit) {
+        if (!signedInHere) return@LaunchedEffect
+        if (homeCache == null) homeCache = withContext(Dispatchers.IO) { api.savedHome() }
+        // The server no longer knows this sign-in: back to signing in. (Not
+        // reaching it isn't that: Home says so, over what it last showed.)
+        val known = runCatching { api.signedIn() }.getOrDefault(true)
+        if (!known) {
+            api.forgetProfile()
+            stage = Stage.SignIn
+        }
+    }
     LaunchedEffect(stage) {
         if (stage != Stage.Checking) return@LaunchedEffect
         problem = ""
@@ -206,6 +223,7 @@ fun CueRoot(api: CueApi, playback: Playback, openWeb: (String) -> Unit, changeSe
                     TourScreen { Tour.done(ctx) }
                 } else MainScreen(api, playback, openWeb, changeServer) {
                     api.forgetProfile()
+                    homeCache = null // the next profile's own Home, not this one's
                     switching = true
                     stage = Stage.Profiles
                 }
@@ -722,6 +740,8 @@ fun HomeScreen(api: CueApi, only: String?, memory: FocusMemory, takeFocus: Boole
     var spot by remember { mutableStateOf<Tile?>(null) }
     val listState = rememberLazyListState()
     LaunchedEffect(Unit) {
+        // What this profile saw last time, at once; then the server's.
+        if (home == null) withContext(Dispatchers.IO) { api.savedHome() }?.let { home = it; homeCache = it }
         try {
             val h = api.home()
             homeCache = h

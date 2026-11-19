@@ -89,20 +89,28 @@ private var browseCache: BrowseHome? = null
 @Composable
 fun BrowseScreen(api: CueApi, memory: FocusMemory, onCard: (Tile) -> Unit) {
     var at by remember { mutableStateOf<BrowseAt?>(null) }
-    // Back from a service, collection or Coming soon: here again.
-    BackHandler(enabled = at != null) { at = null }
+    // Back from a service, collection or Coming soon: here again, the
+    // highlight back on the menu. (Arriving from the side menu, the menu
+    // doesn't take the highlight: moving down the side menu past Browse
+    // mustn't pull the remote into it.)
+    var cameBack by remember { mutableStateOf(false) }
+    BackHandler(enabled = at != null) {
+        at = null
+        cameBack = true
+    }
     when (val a = at) {
-        null -> BrowseMenu(api) { at = it }
+        null -> BrowseMenu(api, takeFocus = cameBack) { at = it }
         BrowseAt.Soon -> ComingSoonScreen(api, onCard)
         BrowseAt.Top -> TopScreen(api, memory, onCard)
-        is BrowseAt.Service -> ServicePage(api, a.s, memory, onCard)
-        is BrowseAt.Collection -> GridPage(a.c.title, a.c.blurb, "col-${a.c.key}", memory, onCard) { api.browseCollection(a.c.key) }
-        is BrowseAt.Franchise -> GridPage(a.f.name, "In the order they came out.", "fr-${a.f.id}", memory, onCard) { api.browseFranchise(a.f.id) }
+        // Each page its own memory, so it starts on its own first title.
+        is BrowseAt.Service -> ServicePage(api, a.s, remember(a) { FocusMemory() }, onCard)
+        is BrowseAt.Collection -> GridPage(a.c.title, a.c.blurb, "col-${a.c.key}", remember(a) { FocusMemory() }, onCard) { api.browseCollection(a.c.key) }
+        is BrowseAt.Franchise -> GridPage(a.f.name, "In the order they came out.", "fr-${a.f.id}", remember(a) { FocusMemory() }, onCard) { api.browseFranchise(a.f.id) }
     }
 }
 
 @Composable
-private fun BrowseMenu(api: CueApi, open: (BrowseAt) -> Unit) {
+private fun BrowseMenu(api: CueApi, takeFocus: Boolean, open: (BrowseAt) -> Unit) {
     var home by remember { mutableStateOf(browseCache) }
     var problem by remember { mutableStateOf("") }
     LaunchedEffect(Unit) {
@@ -112,6 +120,7 @@ private fun BrowseMenu(api: CueApi, open: (BrowseAt) -> Unit) {
     }
     val first = remember { FocusRequester() }
     LaunchedEffect(Unit) {
+        if (!takeFocus) return@LaunchedEffect
         delay(120)
         runCatching { first.requestFocus() }
     }
@@ -238,6 +247,13 @@ private fun ServicePage(api: CueApi, s: BrowseService, memory: FocusMemory, onCa
         runCatching { api.browseService(s.key) }
             .onSuccess { rows = it }
             .onFailure { problem = it.message ?: "Couldn't load ${s.name}." }
+        // The highlight onto the first title (the tile that opened this is gone).
+        rows?.firstOrNull()?.let { r ->
+            r.items.firstOrNull()?.let { c ->
+                delay(150)
+                memory.restore("${r.key}/${c.key}")
+            }
+        }
     }
     val r = rows
     LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(top = 18.dp, bottom = 48.dp), verticalArrangement = Arrangement.spacedBy(18.dp)) {
@@ -268,6 +284,10 @@ private fun GridPage(title: String, blurb: String, key: String, memory: FocusMem
         runCatching { load() }
             .onSuccess { items = it }
             .onFailure { problem = it.message ?: "Couldn't load $title." }
+        items?.firstOrNull()?.let { c ->
+            delay(150)
+            memory.restore("$key/${c.key}")
+        }
     }
     Column(Modifier.fillMaxSize().padding(top = 18.dp)) {
         Column(Modifier.padding(horizontal = Gutter)) {

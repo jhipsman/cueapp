@@ -75,3 +75,50 @@ jobs:
           name: lint-report
           path: android/app/build/reports/lint-results-release.html
           if-no-files-found: ignore
+
+  # The app on an Android TV emulator, walked through with the remote's keys
+  # (android/app/src/androidTest): every place in the side menu, Browse, a
+  # service's page, a title and back. A screen that never shows or a crash
+  # fails it; the screenshots of each step are kept with the run.
+  walkthrough:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Let the emulator use hardware acceleration
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Walk through the app on an Android TV emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 30
+          target: android-tv
+          arch: x86
+          profile: tv_1080p
+          disable-animations: false
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          working-directory: android
+          script: |
+            chmod +x gradlew
+            ./gradlew --no-daemon connectedDebugAndroidTest || touch ../walkthrough-failed
+            mkdir -p ../walkthrough && adb pull /data/local/tmp/cue-shots ../walkthrough/ || true
+            adb logcat -d > ../walkthrough/logcat.txt || true
+            test ! -f ../walkthrough-failed
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: walkthrough
+          path: |
+            walkthrough
+            android/app/build/reports/androidTests
+          if-no-files-found: ignore
