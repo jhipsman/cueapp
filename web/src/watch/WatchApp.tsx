@@ -30,6 +30,7 @@ import { RemindersProvider } from './reminders'
 import { useModules } from '../ModulesContext'
 import { useAuth } from '../AuthContext'
 import AllMenu from './AllMenu'
+import BrowsePage, { BrowseListPage, BrowseServicePage } from './BrowsePage'
 import { SportsPage } from './SportsHub'
 import AskPage from './AskPage'
 import TopPage from './TopPage'
@@ -98,6 +99,10 @@ export default function WatchApp() {
                 <Route path="top" element={<TopPage />} />
                 <Route path="ask" element={<AskPage />} />
                 <Route path="sports" element={<SportsPage />} />
+                <Route path="browse" element={<BrowsePage />} />
+                <Route path="browse/service/:key" element={<BrowseServicePage />} />
+                <Route path="browse/collection/:key" element={<BrowseListPage kind="collection" />} />
+                <Route path="browse/franchise/:id" element={<BrowseListPage kind="franchise" />} />
                 <Route path="movie/:tmdbId" element={<TitlePage kind="movie" />} />
                 <Route path="tv/:tmdbId" element={<TitlePage kind="tv" />} />
                 <Route path="*" element={<Home />} />
@@ -309,8 +314,8 @@ function TopBar() {
         <NavLink to="/watch/shows">Shows</NavLink>
         <NavLink to="/watch/movies">Movies</NavLink>
         <NavLink to="/watch/list">My List</NavLink>
-        <NavLink to="/watch/coming-soon">Coming soon</NavLink>
         <NavLink to="/watch/sports">Sports</NavLink>
+        <NavLink to="/watch/browse">Browse</NavLink>
         {liveTV && <NavLink to="/watch/live">Live TV</NavLink>}
         <span className="wx-more-wrap">
           <button className="wx-more" onClick={() => setMore((m) => !m)} aria-expanded={more}>

@@ -8,6 +8,12 @@ under [Unreleased]. How releases are cut: [docs/RELEASING.md](docs/RELEASING.md)
 
 ## [Unreleased]
 
+### Added
+- **Browse**, on the web, Fire TV / Google TV and Apple TV: a page for each streaming service (its Top 10 today, what's new, its originals, its best rated, and its genres), collections across every service (Critically acclaimed, Family movie night, Under 90 minutes, Hidden gems, plus Holiday movies from mid-November and Halloween horror in October), and twenty film series in the order they came out. Coming soon and the Top 10 live in Browse too. Everything shown keeps to a kid profile's age limit.
+
+### Changed
+- **Fire TV / Google TV: a side menu instead of the tabs along the top.** Search, Home, Shows, Movies, Sports, Live TV, My List and Browse are icons down the left, with your profile at the bottom; moving onto it opens it with the names. On the web, Browse takes Coming soon's place in the top bar (Coming soon is in Browse and in More).
+
 ### Security
 - Releases are signed with a new update key, held only by the project owner. **Update now** installs only releases signed with it.
 

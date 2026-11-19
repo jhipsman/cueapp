@@ -289,6 +289,29 @@ type TopQuery struct {
 	MaxRuntime int
 	// MinRating keeps titles TMDB's users rate at least this (out of 10).
 	MinRating float64
+	// Sort: "" (most popular), "rating" (best rated, with enough votes)
+	// or "votes" (most voted for: the well known).
+	Sort string
+	// Networks keeps shows first shown on these TMDB networks ("213" for
+	// Netflix; "|" for several): a service's originals. Films ignore it.
+	Networks string
+	// Keywords keeps titles tagged with these TMDB keywords ("|" for any).
+	Keywords string
+	// Genres keeps titles of any of these TMDB genres ("16|10751"); with
+	// Genre, both apply.
+	Genres string
+	// MaxCertification keeps films rated at most this in the US ("PG").
+	// Shows ignore it.
+	MaxCertification string
+	// MinVotes / MaxVotes bound how many people have rated a title (0: the
+	// usual floor / no ceiling). A ceiling finds the lesser known.
+	MinVotes, MaxVotes int
+	// Since keeps titles first out on or after this day ("2026-08-01").
+	Since string
+	// Without leaves out titles of these TMDB genres ("16|99").
+	Without string
+	// Until keeps titles first out on or before this day.
+	Until string
 }
 
 func (q TopQuery) params(dateField string) url.Values {
@@ -320,6 +343,47 @@ func (q TopQuery) params(dateField string) url.Values {
 		v.Set(dateField+".gte", fmt.Sprintf("%d-01-01", q.Decade))
 		v.Set(dateField+".lte", fmt.Sprintf("%d-12-31", q.Decade+9))
 		v.Set("sort_by", "vote_count.desc")
+	}
+	switch q.Sort {
+	case "rating":
+		v.Set("sort_by", "vote_average.desc")
+		if v.Get("vote_count.gte") == "40" {
+			v.Set("vote_count.gte", "300")
+		}
+	case "votes":
+		v.Set("sort_by", "vote_count.desc")
+	}
+	if q.Networks != "" && dateField == "first_air_date" {
+		v.Set("with_networks", q.Networks)
+	}
+	if q.Keywords != "" {
+		v.Set("with_keywords", q.Keywords)
+	}
+	if q.Genres != "" {
+		if g := v.Get("with_genres"); g != "" {
+			v.Set("with_genres", g+","+q.Genres)
+		} else {
+			v.Set("with_genres", q.Genres)
+		}
+	}
+	if q.MaxCertification != "" && dateField == "primary_release_date" {
+		v.Set("certification_country", "US")
+		v.Set("certification.lte", q.MaxCertification)
+	}
+	if q.MinVotes > 0 {
+		v.Set("vote_count.gte", fmt.Sprint(q.MinVotes))
+	}
+	if q.MaxVotes > 0 {
+		v.Set("vote_count.lte", fmt.Sprint(q.MaxVotes))
+	}
+	if q.Since != "" {
+		v.Set(dateField+".gte", q.Since)
+	}
+	if q.Until != "" {
+		v.Set(dateField+".lte", q.Until)
+	}
+	if q.Without != "" {
+		v.Set("without_genres", q.Without)
 	}
 	return v
 }

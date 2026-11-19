@@ -723,6 +723,10 @@ Every route the server exposes. Routes marked **public** need no sign-in; all ot
 |---|---|---|---|
 | GET | `/api/watch/ask` | signed in | GET /api/watch/ask: whether Ask Cue is set up. |
 | POST | `/api/watch/ask` | signed in | POST /api/watch/ask {messages: [{role, text}]}: the conversation so far, the last turn the person's; the answer and the titles to show. |
+| GET | `/api/watch/browse` | signed in | GET /api/watch/browse: the services, the collections in season, and the film series. |
+| GET | `/api/watch/browse/collection/{key}` | signed in | GET /api/watch/browse/collection/{key}: one collection across services. |
+| GET | `/api/watch/browse/franchise/{id}` | signed in | GET /api/watch/browse/franchise/{id}: a film series, its films in the order they came out. |
+| GET | `/api/watch/browse/service/{key}` | signed in | GET /api/watch/browse/service/{key}: a service's page, as rows. |
 | GET | `/api/watch/coming-soon` | signed in | GET /api/watch/coming-soon: the Coming soon page. |
 | DELETE | `/api/watch/continue/{kind}/{tmdbId}` | signed in | DELETE /api/watch/continue/{kind}/{tmdbId}: takes a title off Continue Watching. |
 | GET | `/api/watch/extras/{kind}/{tmdbId}` | signed in | GET /api/watch/extras/{kind}/{tmdbId}: a title's logo, the main colour of its picture (for the glow and highlights) and its trailer (for the living banner), ... |
@@ -767,4 +771,4 @@ Every route the server exposes. Routes marked **public** need no sign-in; all ot
 | PUT | `/api/watched/settings` | admin | PUT /api/watched/settings {"sync": true, "cleanup": {...}} |
 | POST | `/api/watched/sync` | admin | POST /api/watched/sync: read what's been watched now. |
 
-432 routes.
+436 routes.

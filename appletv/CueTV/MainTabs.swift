@@ -22,6 +22,8 @@ struct MainTabs: View {
                 .tabItem { Label("Search", systemImage: "magnifyingglass") }
             BrowseStack { MyListView() }
                 .tabItem { Label("My List", systemImage: "plus.square.on.square") }
+            BrowseStack { CollectionsView() }
+                .tabItem { Label("Browse", systemImage: "square.grid.2x2") }
             ProfileTab()
                 .tabItem { Label(cue.profileName.isEmpty ? "Profile" : cue.profileName, systemImage: "person.crop.circle") }
         }

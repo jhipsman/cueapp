@@ -21,6 +21,7 @@ export function useAllItems(): { group: string; items: Item[] }[] {
         { label: 'Shows', to: '/watch/shows', icon: 'tv' },
         { label: 'Movies', to: '/watch/movies', icon: 'film' },
         { label: 'My List', to: '/watch/list', icon: 'bookmark' },
+        { label: 'Browse', to: '/watch/browse', icon: 'compass', hint: 'Each streaming service, collections, film series' },
         { label: 'Coming soon', to: '/watch/coming-soon', icon: 'calendar', hint: 'New episodes and films on their way' },
         { label: 'Top 10', to: '/watch/top', icon: 'star', hint: 'By service, country, genre or decade' },
         { label: 'Sports', to: '/watch/sports', icon: 'activity', hint: 'Live scores, the next big game, your teams' },
