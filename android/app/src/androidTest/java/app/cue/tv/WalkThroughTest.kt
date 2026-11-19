@@ -171,7 +171,8 @@ class WalkThroughTest {
             // Into the page, down to the idea, and press it (a TV's buttons
             // take the remote's select, not a touch).
             press(KeyEvent.KEYCODE_DPAD_RIGHT)
-            reach("Something funny for tonight", KeyEvent.KEYCODE_DPAD_DOWN)
+            press(KeyEvent.KEYCODE_DPAD_UP, 2) // the first row of ideas
+            reach("Something funny for tonight", KeyEvent.KEYCODE_DPAD_LEFT, tries = 4)
             press(KeyEvent.KEYCODE_DPAD_CENTER)
             see("easy laughs")
             Thread.sleep(600)

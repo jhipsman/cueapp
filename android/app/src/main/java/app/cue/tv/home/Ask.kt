@@ -133,6 +133,17 @@ fun AskScreen(api: CueApi, memory: FocusMemory, onCard: (Tile) -> Unit) {
                     fontSize = 14.sp, color = Dim)
                 return@Column
             }
+            // The ideas first: coming over from the side menu, the highlight
+            // lands on one (one press asks), not on the typing box (which
+            // would bring up the keyboard straight away).
+            Text("TRY", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Dim, letterSpacing = 1.5.sp)
+            Spacer(Modifier.height(8.dp))
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.rise(140)) {
+                ideas.forEach { idea -> Pill(idea) { question = idea; send(idea) } }
+            }
+            Spacer(Modifier.height(22.dp))
+            Text("OR ASK YOUR OWN", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Dim, letterSpacing = 1.5.sp)
+            Spacer(Modifier.height(8.dp))
             OutlinedTextField(
                 question, { question = it }, singleLine = true, colors = fieldColors(),
                 placeholder = { androidx.compose.material3.Text(if (turns.isEmpty()) "Something cosy for a rainy night" else "Ask a follow-up") },
@@ -151,12 +162,6 @@ fun AskScreen(api: CueApi, memory: FocusMemory, onCard: (Tile) -> Unit) {
                     answer = null
                     question = ""
                 }
-            }
-            Spacer(Modifier.height(22.dp))
-            Text("TRY", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Dim, letterSpacing = 1.5.sp)
-            Spacer(Modifier.height(8.dp))
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.rise(140)) {
-                ideas.forEach { idea -> Pill(idea) { question = idea; send(idea) } }
             }
         }
         // ---- the answer ----
