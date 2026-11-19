@@ -60,10 +60,7 @@ export async function POST(req: Request) {
           max_tokens: 16000,
           system: [{ type: "text", text: SYSTEM_PROMPT, cache_control: { type: "ephemeral" } }],
           output_config: { effort: "medium" },
-          // If a safety check declines a request, the API retries it on a fallback model.
-          betas: ["server-side-fallback-2026-07-01"],
-          fallbacks: "default",
-          tools: [...makeTools(supabase), { type: "web_search_20260209", name: "web_search", max_uses: 3 }],
+          tools: [...makeTools(supabase), { type: "web_search_20250305", name: "web_search", max_uses: 3 }],
           messages: history,
           max_iterations: 8,
           stream: true,

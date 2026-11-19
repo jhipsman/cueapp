@@ -3,7 +3,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import { findItems, insertItem, openTodos, titleForUrl, updateItem, type Item } from "./items";
 
-export const MODEL = "claude-opus-5-5";
+// Haiku: fast and cheap, and plenty for searching and saving memory.
+export const MODEL = "claude-haiku-5-5";
 
 // Kept byte-for-byte stable so it caches. Anything that changes per request
 // (the time, the user's time zone) goes in a system message at the end.

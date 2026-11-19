@@ -7,7 +7,7 @@ This is **step 1**: the shell, the assistant and memory.
 ## What's here
 
 - **Home**: a greeting, the assistant chat, open to-dos, quick capture, and what you saved recently.
-- **Assistant**: Claude (`claude-opus-5-5`) with tools over your memory. It can search, read, save notes, links and to-dos, and mark them done or reschedule them. It can also search the web. It knows the current time in your time zone, so "remind me Friday at 10" gets a real due date. The conversation stays on your device until you press Clear. If a safety check declines a request, the API retries it on a fallback model (`fallbacks: "default"`).
+- **Assistant**: Claude Haiku 5.5 (`claude-haiku-5-5`, fast and inexpensive) with tools over your memory. It can search, read, save notes, links and to-dos, and mark them done or reschedule them. It can also search the web. It knows the current time in your time zone, so "remind me Friday at 10" gets a real due date. The conversation stays on your device until you press Clear.
 - **Memory**: notes, links (the title is filled in for you), files and to-dos, each in **Personal** or **Work**. It has full-text search and filters. Text files (`.txt`, `.md`, `.csv`, `.json`, …) are searchable once uploaded. Other files keep their name for now.
 - **Privacy**: any item can be marked **Keep out of AI**, so the assistant never sees it. Work has a **Delete all work data** button. Sign-in is by emailed link, and only to addresses listed in `BASE_ALLOWED_EMAILS`. Row-level security keeps each account's data to itself.
 
