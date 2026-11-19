@@ -125,53 +125,73 @@ func New(base string) *Client {
 }
 
 // raw shapes of ESPN's scoreboard.
+// scoreboard is a league's scoreboard. Each game is read on its own, so a
+// game ESPN shapes differently from the rest is skipped, not the league.
 type scoreboard struct {
-	Events []struct {
-		ID     string `json:"id"`
-		Date   string `json:"date"`
-		Season struct {
-			Type int `json:"type"` // 3: postseason
-		} `json:"season"`
-		Status struct {
-			Type struct {
-				State       string `json:"state"`
-				ShortDetail string `json:"shortDetail"`
-			} `json:"type"`
-		} `json:"status"`
-		Competitions []struct {
-			Competitors []struct {
-				HomeAway string `json:"homeAway"`
-				Score    string `json:"score"`
-				Winner   bool   `json:"winner"`
-				Team     struct {
-					ID               string `json:"id"`
-					DisplayName      string `json:"displayName"`
-					ShortDisplayName string `json:"shortDisplayName"`
-					Abbreviation     string `json:"abbreviation"`
-					Logo             string `json:"logo"`
-					Color            string `json:"color"`
-				} `json:"team"`
-				Records []struct {
-					Summary string `json:"summary"`
-				} `json:"records"`
-			} `json:"competitors"`
-			Broadcasts []struct {
-				Market string   `json:"market"`
-				Names  []string `json:"names"`
-			} `json:"broadcasts"`
-			GeoBroadcasts []struct {
-				Market struct {
-					Type string `json:"type"` // National, Home, Away
-				} `json:"market"`
-				Media struct {
-					ShortName string `json:"shortName"`
-				} `json:"media"`
-			} `json:"geoBroadcasts"`
-			Notes []struct {
-				Headline string `json:"headline"`
-			} `json:"notes"`
-		} `json:"competitions"`
-	} `json:"events"`
+	Events []sbEvent
+}
+
+func (sb *scoreboard) UnmarshalJSON(b []byte) error {
+	var raw struct {
+		Events []json.RawMessage `json:"events"`
+	}
+	if err := json.Unmarshal(b, &raw); err != nil {
+		return err
+	}
+	for _, r := range raw.Events {
+		var e sbEvent
+		if json.Unmarshal(r, &e) == nil {
+			sb.Events = append(sb.Events, e)
+		}
+	}
+	return nil
+}
+
+type sbEvent struct {
+	ID     string `json:"id"`
+	Date   string `json:"date"`
+	Season struct {
+		Type int `json:"type"` // 3: postseason
+	} `json:"season"`
+	Status struct {
+		Type struct {
+			State       string `json:"state"`
+			ShortDetail string `json:"shortDetail"`
+		} `json:"type"`
+	} `json:"status"`
+	Competitions []struct {
+		Competitors []struct {
+			HomeAway string   `json:"homeAway"`
+			Score    flexText `json:"score"`
+			Winner   bool     `json:"winner"`
+			Team     struct {
+				ID               string `json:"id"`
+				DisplayName      string `json:"displayName"`
+				ShortDisplayName string `json:"shortDisplayName"`
+				Abbreviation     string `json:"abbreviation"`
+				Logo             string `json:"logo"`
+				Color            string `json:"color"`
+			} `json:"team"`
+			Records []struct {
+				Summary string `json:"summary"`
+			} `json:"records"`
+		} `json:"competitors"`
+		Broadcasts []struct {
+			Market string   `json:"market"`
+			Names  []string `json:"names"`
+		} `json:"broadcasts"`
+		GeoBroadcasts []struct {
+			Market struct {
+				Type string `json:"type"` // National, Home, Away
+			} `json:"market"`
+			Media struct {
+				ShortName string `json:"shortName"`
+			} `json:"media"`
+		} `json:"geoBroadcasts"`
+		Notes []struct {
+			Headline string `json:"headline"`
+		} `json:"notes"`
+	} `json:"competitions"`
 }
 
 func (c *Client) get(ctx context.Context, path string, out any) error {
@@ -180,6 +200,7 @@ func (c *Client) get(ctx context.Context, path string, out any) error {
 		return err
 	}
 	req.Header.Set("Accept", "application/json")
+	req.Header.Set("User-Agent", "Cue/1 (self-hosted media server)")
 	resp, err := c.http.Do(req)
 	if err != nil {
 		return fmt.Errorf("espn %s: %w", path, netguard.CleanError(err))
@@ -231,7 +252,7 @@ func parseScoreboard(sb scoreboard, l League) []Game {
 			Postseason: e.Season.Type == 3, Size: l.Score}
 		for _, t := range comp.Competitors {
 			team := Team{ID: t.Team.ID, Name: t.Team.DisplayName, Short: t.Team.ShortDisplayName, Abbr: t.Team.Abbreviation,
-				Logo: t.Team.Logo, Color: t.Team.Color, Score: t.Score, Winner: t.Winner}
+				Logo: t.Team.Logo, Color: t.Team.Color, Score: string(t.Score), Winner: t.Winner}
 			if len(t.Records) > 0 {
 				team.Record = t.Records[0].Summary
 			}
@@ -489,4 +510,31 @@ func LogoURL(l League, t Team) string {
 		}
 		return "https://a.espncdn.com/i/teamlogos/soccer/500/" + t.ID + ".png"
 	}
+}
+
+// flexText is a value ESPN sends as text in one league and as a number, or
+// an object with a displayValue, in another (a score: "102", 102 or
+// {"value": 102, "displayValue": "102"}).
+type flexText string
+
+func (t *flexText) UnmarshalJSON(b []byte) error {
+	var s string
+	if json.Unmarshal(b, &s) == nil {
+		*t = flexText(s)
+		return nil
+	}
+	var n json.Number
+	if json.Unmarshal(b, &n) == nil {
+		*t = flexText(n.String())
+		return nil
+	}
+	var o struct {
+		DisplayValue string `json:"displayValue"`
+	}
+	if json.Unmarshal(b, &o) == nil {
+		*t = flexText(o.DisplayValue)
+		return nil
+	}
+	*t = ""
+	return nil
 }
