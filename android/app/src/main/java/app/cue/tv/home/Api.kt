@@ -16,6 +16,18 @@ import java.net.URLEncoder
 // every request (X-Cue-Profile), as in Watch.
 class CueApi(ctx: Context, val server: String) {
     private val prefs = ctx.getSharedPreferences("cue", Context.MODE_PRIVATE)
+    private val files: java.io.File = ctx.applicationContext.filesDir
+
+    // The last Home this profile saw, kept on the TV so the app opens on it
+    // at once (then refreshes) instead of waiting on the server.
+    private fun homeFile() = java.io.File(files, "home-$profileId.json")
+
+    /** The Home saved last time for this profile, if it's under a week old. */
+    fun savedHome(): Home? = runCatching {
+        val f = homeFile()
+        if (!f.exists() || System.currentTimeMillis() - f.lastModified() > 7L * 24 * 3600 * 1000) null
+        else Home.from(JSONObject(f.readText()))
+    }.getOrNull()
 
     var profileToken: String
         get() = prefs.getString("profileToken", "") ?: ""
@@ -177,7 +189,12 @@ class CueApi(ctx: Context, val server: String) {
 
     // ---- Movies and shows ----
 
-    suspend fun home(): Home = Home.from(obj("/api/watch/home"))
+    suspend fun home(): Home {
+        val text = request("GET", "/api/watch/home").ifEmpty { "{}" }
+        val h = Home.from(JSONObject(text))
+        withContext(Dispatchers.IO) { runCatching { homeFile().writeText(text) } }
+        return h
+    }
     suspend fun search(q: String): List<Tile> = arr("/api/watch/search?q=${q(q)}").cards()
     /** A genre's most popular films or shows (Search's genre tabs). */
     suspend fun genre(kind: String, id: Int): List<Tile> = arr("/api/watch/genre?kind=$kind&genre=$id").cards()
