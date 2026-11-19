@@ -1,6 +1,7 @@
 package api
 
 import (
+	"cmp"
 	"context"
 	"fmt"
 	"log/slog"
@@ -47,6 +48,8 @@ func (s *Server) handleLiveSports(w http.ResponseWriter, r *http.Request) {
 	if err != nil || len(games) == 0 {
 		if err != nil {
 			slog.Info("sports: espn", "err", err)
+		} else {
+			err = fmt.Errorf("ESPN listed no games: %s", cmp.Or(espn.Problems(), "every league was empty"))
 		}
 		s.guideSports(w, r, pid, err)
 		return
@@ -67,9 +70,15 @@ func (s *Server) handleLiveSports(w http.ResponseWriter, r *http.Request) {
 	nowList, soon := []espnGame{}, []espnGame{}
 	var big *espnGame
 	var bigScore float64
+	finished, later := 0, 0
 	for _, g := range games {
 		// Over (a final from yesterday) or more than a day away: not here.
-		if g.State == "post" || g.Start.After(now.Add(30*time.Hour)) {
+		if g.State == "post" {
+			finished++
+			continue
+		}
+		if g.Start.After(now.Add(30 * time.Hour)) {
+			later++
 			continue
 		}
 		eg := espnGame{Game: g, Title: g.Title(), OnNow: g.State == "in", Favorite: fav[g.League+":"+g.Home.ID] || fav[g.League+":"+g.Away.ID]}
@@ -110,6 +119,15 @@ func (s *Server) handleLiveSports(w http.ResponseWriter, r *http.Request) {
 		soon = soon[:60]
 	}
 	out := map[string]any{"now": nowList, "soon": soon, "source": "espn", "teams": favTeams}
+	if len(nowList) == 0 && len(soon) == 0 {
+		// Nothing to show: say what ESPN did list, so it can be told apart
+		// from a quiet day.
+		note := fmt.Sprintf("ESPN listed %d games: %d finished, %d more than a day away.", len(games), finished, later)
+		if p := espn.Problems(); p != "" {
+			note += " " + p
+		}
+		out["note"] = note
+	}
 	if big != nil {
 		out["big"] = big
 	}

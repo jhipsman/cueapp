@@ -141,7 +141,20 @@ func (s *Server) guideSports(w http.ResponseWriter, r *http.Request, pid int64, 
 			games = append(games, sportsGame{liveHit: liveHit{Channel: lc, Show: &pp, OnNow: !p.Start.After(now)}, League: league, Kicker: kicker, Matchup: matchup, Big: score})
 		}
 	}
-	slices.SortStableFunc(games, func(a, b sportsGame) int { return a.Show.Start.Compare(b.Show.Start) })
+	// By time; at the same time, real matchups ("Bulls at Nets") before
+	// shows about sport ("Good Morning Football").
+	slices.SortStableFunc(games, func(a, b sportsGame) int {
+		if c := a.Show.Start.Compare(b.Show.Start); c != 0 && !(a.OnNow && b.OnNow) {
+			return c
+		}
+		if ma, mb := isMatchup(a.Matchup), isMatchup(b.Matchup); ma != mb {
+			if ma {
+				return -1
+			}
+			return 1
+		}
+		return a.Show.Start.Compare(b.Show.Start)
+	})
 	nowList, soon := []sportsGame{}, []sportsGame{}
 	var big *sportsGame
 	for i := range games {
@@ -195,6 +208,13 @@ func espnReason(err error) string {
 // Milwaukee Bucks at Miami Heat" is ("NBA Basketball", "Milwaukee Bucks at
 // Miami Heat"). A title without one is all matchup.
 func splitGameTitle(title string) (kicker, matchup string) {
+	// Providers' small-caps tags ("ᴸᶦᵛᵉ", "ᴺᵉʷ") go.
+	title = strings.Map(func(r rune) rune {
+		if (r >= 0x1D2C && r <= 0x1DBF) || r == 0x2071 || r == 0x207F {
+			return -1
+		}
+		return r
+	}, title)
 	title = strings.Join(strings.Fields(title), " ")
 	if i := strings.Index(title, ":"); i > 0 && i < len(title)-1 {
 		k, m := strings.TrimSpace(title[:i]), strings.TrimSpace(title[i+1:])
@@ -246,4 +266,16 @@ func tidyChannelName(name string) string {
 		return strings.TrimSpace(name)
 	}
 	return strings.Join(f, " ")
+}
+
+// isMatchup is whether a title names two sides: "Bulls at Nets", "France
+// U17 vs. Haiti U17", "New Zealand v England".
+func isMatchup(t string) bool {
+	l := " " + strings.ToLower(t) + " "
+	for _, sep := range []string{" vs ", " vs. ", " v ", " v. ", " at ", " @ "} {
+		if strings.Contains(l, sep) {
+			return true
+		}
+	}
+	return false
 }

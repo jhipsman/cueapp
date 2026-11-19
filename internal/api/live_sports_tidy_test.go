@@ -33,3 +33,12 @@ func TestSplitGameTitle(t *testing.T) {
 		t.Errorf("languages should share a matchup, got %q", a)
 	}
 }
+
+func TestGuideTitleCleanup(t *testing.T) {
+	if _, m := splitGameTitle("France U17 vs. Haiti U17 ᴸᶦᵛᵉ"); m != "France U17 vs. Haiti U17" {
+		t.Errorf("got %q", m)
+	}
+	if !isMatchup("Chicago Bulls at Brooklyn Nets") || isMatchup("Good Morning Football") || isMatchup("Boomer and Gio") {
+		t.Error("isMatchup")
+	}
+}

@@ -10,6 +10,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"sort"
 	"strings"
@@ -105,6 +106,24 @@ type Client struct {
 	// AllGames answers at once rather than waiting on ESPN again.
 	failedAt  time.Time
 	failedErr error
+	// Per league, the last read's unreadable games (for Problems()).
+	skipped map[string]string
+}
+
+// Problems says what the last reads couldn't make sense of ("3 of 12 NBA
+// games unreadable: …"), "" when nothing.
+func (c *Client) Problems() string {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	var out []string
+	for _, p := range c.skipped {
+		out = append(out, p)
+	}
+	sort.Strings(out)
+	if len(out) > 2 {
+		out = append(out[:2], fmt.Sprintf("and %d more leagues", len(out)-2))
+	}
+	return strings.Join(out, "; ")
 }
 
 // failMemory is how long AllGames remembers ESPN being unreachable.
@@ -121,7 +140,7 @@ func New(base string) *Client {
 	if base == "" {
 		base = "https://site.api.espn.com/apis/site/v2/sports"
 	}
-	return &Client{base: strings.TrimRight(base, "/"), http: netguard.Client(10 * time.Second), now: time.Now, cache: map[string]cached{}}
+	return &Client{base: strings.TrimRight(base, "/"), http: netguard.Client(10 * time.Second), now: time.Now, cache: map[string]cached{}, skipped: map[string]string{}}
 }
 
 // raw shapes of ESPN's scoreboard.
@@ -129,6 +148,9 @@ func New(base string) *Client {
 // game ESPN shapes differently from the rest is skipped, not the league.
 type scoreboard struct {
 	Events []sbEvent
+	// Games that couldn't be read, and why the first couldn't.
+	Skipped int
+	SkipErr error
 }
 
 func (sb *scoreboard) UnmarshalJSON(b []byte) error {
@@ -140,56 +162,61 @@ func (sb *scoreboard) UnmarshalJSON(b []byte) error {
 	}
 	for _, r := range raw.Events {
 		var e sbEvent
-		if json.Unmarshal(r, &e) == nil {
-			sb.Events = append(sb.Events, e)
+		if err := json.Unmarshal(r, &e); err != nil {
+			sb.Skipped++
+			if sb.SkipErr == nil {
+				sb.SkipErr = err
+			}
+			continue
 		}
+		sb.Events = append(sb.Events, e)
 	}
 	return nil
 }
 
 type sbEvent struct {
-	ID     string `json:"id"`
-	Date   string `json:"date"`
+	ID     flexText `json:"id"`
+	Date   flexText `json:"date"`
 	Season struct {
-		Type int `json:"type"` // 3: postseason
+		Type flexText `json:"type"` // 3: postseason
 	} `json:"season"`
 	Status struct {
 		Type struct {
-			State       string `json:"state"`
-			ShortDetail string `json:"shortDetail"`
+			State       flexText `json:"state"`
+			ShortDetail flexText `json:"shortDetail"`
 		} `json:"type"`
 	} `json:"status"`
 	Competitions []struct {
 		Competitors []struct {
-			HomeAway string   `json:"homeAway"`
+			HomeAway flexText `json:"homeAway"`
 			Score    flexText `json:"score"`
 			Winner   bool     `json:"winner"`
 			Team     struct {
-				ID               string `json:"id"`
-				DisplayName      string `json:"displayName"`
-				ShortDisplayName string `json:"shortDisplayName"`
-				Abbreviation     string `json:"abbreviation"`
-				Logo             string `json:"logo"`
-				Color            string `json:"color"`
+				ID               flexText `json:"id"`
+				DisplayName      flexText `json:"displayName"`
+				ShortDisplayName flexText `json:"shortDisplayName"`
+				Abbreviation     flexText `json:"abbreviation"`
+				Logo             flexText `json:"logo"`
+				Color            flexText `json:"color"`
 			} `json:"team"`
 			Records []struct {
-				Summary string `json:"summary"`
+				Summary flexText `json:"summary"`
 			} `json:"records"`
 		} `json:"competitors"`
 		Broadcasts []struct {
-			Market string   `json:"market"`
+			Market flexText `json:"market"`
 			Names  []string `json:"names"`
 		} `json:"broadcasts"`
 		GeoBroadcasts []struct {
 			Market struct {
-				Type string `json:"type"` // National, Home, Away
+				Type flexText `json:"type"` // National, Home, Away
 			} `json:"market"`
 			Media struct {
-				ShortName string `json:"shortName"`
+				ShortName flexText `json:"shortName"`
 			} `json:"media"`
 		} `json:"geoBroadcasts"`
 		Notes []struct {
-			Headline string `json:"headline"`
+			Headline flexText `json:"headline"`
 		} `json:"notes"`
 	} `json:"competitions"`
 }
@@ -229,6 +256,16 @@ func (c *Client) Games(ctx context.Context, l League) ([]Game, error) {
 		return nil, err
 	}
 	games := parseScoreboard(sb, l)
+	if sb.Skipped > 0 {
+		slog.Warn("sports: espn games unreadable", "league", l.Key, "skipped", sb.Skipped, "read", len(sb.Events), "err", sb.SkipErr)
+		c.mu.Lock()
+		c.skipped[l.Key] = fmt.Sprintf("%d of %d %s games unreadable: %v", sb.Skipped, sb.Skipped+len(sb.Events), l.Name, sb.SkipErr)
+		c.mu.Unlock()
+	} else {
+		c.mu.Lock()
+		delete(c.skipped, l.Key)
+		c.mu.Unlock()
+	}
 	c.mu.Lock()
 	c.cache[key] = cached{at: c.now(), games: games}
 	c.mu.Unlock()
@@ -242,19 +279,19 @@ func parseScoreboard(sb scoreboard, l League) []Game {
 			continue
 		}
 		comp := e.Competitions[0]
-		start, err := time.Parse("2006-01-02T15:04Z", e.Date)
+		start, err := time.Parse("2006-01-02T15:04Z", string(e.Date))
 		if err != nil {
-			if start, err = time.Parse(time.RFC3339, e.Date); err != nil {
+			if start, err = time.Parse(time.RFC3339, string(e.Date)); err != nil {
 				continue
 			}
 		}
-		g := Game{ID: e.ID, League: l.Key, LeagueName: l.Name, Start: start, State: e.Status.Type.State, Detail: e.Status.Type.ShortDetail,
-			Postseason: e.Season.Type == 3, Size: l.Score}
+		g := Game{ID: string(e.ID), League: l.Key, LeagueName: l.Name, Start: start, State: string(e.Status.Type.State), Detail: string(e.Status.Type.ShortDetail),
+			Postseason: e.Season.Type == "3", Size: l.Score}
 		for _, t := range comp.Competitors {
-			team := Team{ID: t.Team.ID, Name: t.Team.DisplayName, Short: t.Team.ShortDisplayName, Abbr: t.Team.Abbreviation,
-				Logo: t.Team.Logo, Color: t.Team.Color, Score: string(t.Score), Winner: t.Winner}
+			team := Team{ID: string(t.Team.ID), Name: string(t.Team.DisplayName), Short: string(t.Team.ShortDisplayName), Abbr: string(t.Team.Abbreviation),
+				Logo: string(t.Team.Logo), Color: string(t.Team.Color), Score: string(t.Score), Winner: t.Winner}
 			if len(t.Records) > 0 {
-				team.Record = t.Records[0].Summary
+				team.Record = string(t.Records[0].Summary)
 			}
 			if g.State == "pre" {
 				team.Score = ""
@@ -262,7 +299,7 @@ func parseScoreboard(sb scoreboard, l League) []Game {
 			if team.Logo == "" {
 				team.Logo = LogoURL(l, team)
 			}
-			if t.HomeAway == "home" {
+			if string(t.HomeAway) == "home" {
 				g.Home = team
 			} else {
 				g.Away = team
@@ -280,12 +317,12 @@ func parseScoreboard(sb scoreboard, l League) []Game {
 			}
 		}
 		for _, b := range comp.GeoBroadcasts {
-			if strings.EqualFold(b.Market.Type, "National") {
-				add(b.Media.ShortName)
+			if strings.EqualFold(string(b.Market.Type), "National") {
+				add(string(b.Media.ShortName))
 			}
 		}
 		for _, b := range comp.Broadcasts {
-			if b.Market == "" || strings.EqualFold(b.Market, "national") {
+			if string(b.Market) == "" || strings.EqualFold(string(b.Market), "national") {
 				for _, n := range b.Names {
 					add(n)
 				}
@@ -295,11 +332,11 @@ func parseScoreboard(sb scoreboard, l League) []Game {
 		// viewer far away may still have.
 		if len(g.Networks) == 0 {
 			for _, b := range comp.GeoBroadcasts {
-				add(b.Media.ShortName)
+				add(string(b.Media.ShortName))
 			}
 		}
 		if len(comp.Notes) > 0 {
-			g.Note = comp.Notes[0].Headline
+			g.Note = string(comp.Notes[0].Headline)
 		}
 		out = append(out, g)
 	}
