@@ -64,7 +64,7 @@ fun TopTenRow(lists: List<TopList>, only: String?, memory: FocusMemory, onFocus:
         Text("Top 10 on ${list.name} today", fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = Color(0xF2FFFFFF),
             modifier = Modifier.padding(start = Gutter + 2.dp, bottom = 6.dp))
         LazyRow(Modifier.focusRestorer(), contentPadding = PaddingValues(horizontal = Gutter), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            items(shown, key = { it.key }) { l -> ServiceTab(l.name, l.logo, selected = l.key == list.key) { key = l.key } }
+            items(shown.distinctBy { it.key }, key = { it.key }) { l -> ServiceTab(l.name, l.logo, selected = l.key == list.key) { key = l.key } }
         }
         CompositionLocalProvider(LocalBringIntoViewSpec provides PivotSpec) {
             LazyRow(
@@ -72,7 +72,7 @@ fun TopTenRow(lists: List<TopList>, only: String?, memory: FocusMemory, onFocus:
                 contentPadding = PaddingValues(horizontal = Gutter, vertical = 16.dp),
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
             ) {
-                items(list.items.take(10).withIndex().toList(), key = { "${list.key}/${it.value.key}" }) { (i, c) ->
+                items(list.items.distinctBy { it.key }.take(10).withIndex().toList(), key = { "${list.key}/${it.value.key}" }) { (i, c) ->
                     Row(verticalAlignment = Alignment.Bottom) {
                         Box(Modifier.offset(x = 10.dp, y = (-18).dp)) {
                             // The number: the page's dark inside a light outline.
@@ -145,7 +145,7 @@ fun TopScreen(api: CueApi, memory: FocusMemory, onCard: (Tile) -> Unit) {
             LazyRow(Modifier.focusRestorer(), contentPadding = PaddingValues(horizontal = Gutter, vertical = 6.dp), horizontalArrangement = Arrangement.spacedBy(10.dp),
                 verticalAlignment = Alignment.CenterVertically) {
                 item { ChoiceTab("Everywhere", selected = service == "") { service = "" } }
-                items(p?.services ?: emptyList(), key = { it.key }) { s -> ServiceTab(s.name, s.logo, selected = s.key == service) { service = s.key } }
+                items((p?.services ?: emptyList()).distinctBy { it.key }, key = { it.key }) { s -> ServiceTab(s.name, s.logo, selected = s.key == service) { service = s.key } }
             }
         }
         item(key = "genres") {
@@ -155,7 +155,7 @@ fun TopScreen(api: CueApi, memory: FocusMemory, onCard: (Tile) -> Unit) {
             FilterRow(decades.map { (if (it == 0) "" else "$it") to (if (it == 0) "Right now" else "The ${it}s") }, if (decade == 0) "" else "$decade") { decade = it.toIntOrNull() ?: 0 }
         }
         if ((p?.countries?.size ?: 0) > 1) item(key = "countries") {
-            FilterRow(p!!.countries, country) { country = it }
+            FilterRow(p?.countries ?: emptyList(), country) { country = it }
         }
         item(key = "grid") {
             val items = p?.items ?: emptyList()
@@ -164,7 +164,7 @@ fun TopScreen(api: CueApi, memory: FocusMemory, onCard: (Tile) -> Unit) {
                 items.isEmpty() -> Text("Nothing found for that. Try another service or genre.", color = Dim, modifier = Modifier.padding(start = Gutter, top = 20.dp))
                 else -> CompositionLocalProvider(LocalBringIntoViewSpec provides PivotSpec) {
                     LazyRow(Modifier.focusRestorer(), contentPadding = PaddingValues(horizontal = Gutter, vertical = 16.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        items(items.take(10).withIndex().toList(), key = { "top-page/${it.value.key}" }) { (i, c) ->
+                        items(items.distinctBy { it.key }.take(10).withIndex().toList(), key = { "top-page/${it.value.key}" }) { (i, c) ->
                             Row(verticalAlignment = Alignment.Bottom) {
                                 Box(Modifier.offset(x = 10.dp, y = (-18).dp)) {
                                     Text("${i + 1}", style = TextStyle(fontSize = 104.sp, fontWeight = FontWeight.Black, color = Color(0xFF101114), letterSpacing = (-6).sp))
@@ -185,6 +185,6 @@ fun TopScreen(api: CueApi, memory: FocusMemory, onCard: (Tile) -> Unit) {
 @Composable
 private fun FilterRow(choices: List<Pair<String, String>>, chosen: String, onChoose: (String) -> Unit) {
     LazyRow(Modifier.focusRestorer(), contentPadding = PaddingValues(horizontal = Gutter, vertical = 4.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        items(choices, key = { it.first }) { (value, label) -> ChoiceTab(label, selected = value == chosen) { onChoose(value) } }
+        items(choices.distinctBy { it.first }, key = { it.first }) { (value, label) -> ChoiceTab(label, selected = value == chosen) { onChoose(value) } }
     }
 }

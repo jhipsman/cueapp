@@ -287,6 +287,7 @@ class PlayerActivity : Activity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        CrashLog.install(this)
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         info = JSONObject(intent.getStringExtra(EXTRA_JSON) ?: "{}")
         server = intent.getStringExtra(EXTRA_SERVER) ?: ""

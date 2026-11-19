@@ -189,7 +189,7 @@ fun CueRoot(api: CueApi, playback: Playback, openWeb: (String) -> Unit, changeSe
                 Stage.SignIn -> SignInScreen(api, problem, changeServer) { stage = Stage.Profiles }
                 Stage.Profiles -> ProfilesScreen(api, pickAlone = !switching, signOut = {
                     rootScope.launch {
-                        api.signOut()
+                        runCatching { api.signOut() }
                         switching = false
                         stage = Stage.SignIn
                     }
@@ -307,8 +307,10 @@ fun SignInScreen(api: CueApi, startProblem: String, changeServer: () -> Unit, do
                     done()
                     return@LaunchedEffect
                 }
-            } catch (e: CueApi.Problem) {
-                if (e.code == 410) link = null // ran out: a new code
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                if (e is CueApi.Problem && e.code == 410) link = null // ran out: a new code
                 else delay(5000)
             } catch (e: Exception) {
                 delay(5000)
@@ -660,7 +662,7 @@ fun HomeScreen(api: CueApi, only: String?, memory: FocusMemory, takeFocus: Boole
         Centered { Text(problem.ifEmpty { "Loading…" }, color = Dim) }
         return
     }
-    val rows = h.rows.mapNotNull { r ->
+    val rows = h.rows.distinctBy { it.key }.mapNotNull { r ->
         val items = if (only == null) r.items else r.items.filter { it.kind == only }
         if (items.isEmpty()) null else Shelf(r.key, r.title, items)
     }
@@ -898,14 +900,14 @@ fun TitleScreen(api: CueApi, playback: Playback, card: Tile, memory: FocusMemory
             if (c.kind == "tv" && t.seasons.isNotEmpty()) {
                 item {
                     LazyRow(Modifier.focusRestorer(), contentPadding = PaddingValues(horizontal = Gutter, vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        items(t.seasons, key = { it.number }) { s ->
+                        items(t.seasons.distinctBy { it.number }, key = { it.number }) { s ->
                             ChoiceTab(s.name, selected = s.number == season) { season = s.number }
                         }
                     }
                 }
                 item {
                     LazyRow(Modifier.focusRestorer(), contentPadding = PaddingValues(horizontal = Gutter, vertical = 16.dp), horizontalArrangement = Arrangement.spacedBy(18.dp)) {
-                        items(episodes, key = { "${it.season}-${it.episode}" }) { e ->
+                        items(episodes.distinctBy { "${it.season}-${it.episode}" }, key = { "${it.season}-${it.episode}" }) { e ->
                             EpisodeCard(e) { playback.playTitle("tv", c.tmdbId, e.season, e.episode) }
                         }
                     }
@@ -924,7 +926,7 @@ fun TitleScreen(api: CueApi, playback: Playback, card: Tile, memory: FocusMemory
                     Column {
                         Text("Cast", fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = Color(0xF2FFFFFF), modifier = Modifier.padding(start = Gutter + 2.dp, top = 6.dp))
                         LazyRow(Modifier.focusRestorer(), contentPadding = PaddingValues(horizontal = Gutter, vertical = 14.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                            items(t.people, key = { it.id }) { p -> PersonCard(p, selected = picked?.id == p.id) { picked = p } }
+                            items(t.people.distinctBy { it.id }, key = { it.id }) { p -> PersonCard(p, selected = picked?.id == p.id) { picked = p } }
                         }
                         val p = picked
                         if (p != null && withThem.isNotEmpty()) {
@@ -1008,7 +1010,7 @@ fun PosterGrid(items: List<Tile>, memory: FocusMemory, prefix: String, onCard: (
         horizontalArrangement = Arrangement.spacedBy(18.dp),
         verticalArrangement = Arrangement.spacedBy(22.dp),
     ) {
-        items(items, key = { it.key }) { c -> PosterCard(c, memory, "$prefix/${c.key}", onClick = onCard) }
+        items(items.distinctBy { it.key }, key = { it.key }) { c -> PosterCard(c, memory, "$prefix/${c.key}", onClick = onCard) }
     }
 }
 
@@ -1074,7 +1076,7 @@ fun LiveScreen(api: CueApi, playback: Playback, openWeb: (String) -> Unit) {
                 Pill("Full guide") { openWeb("/watch/live") }
                 Gap(8.dp)
             }
-            items(groups, key = { it.first }) { (id, name) ->
+            items(groups.distinctBy { it.first }, key = { it.first }) { (id, name) ->
                 ChoiceTab(name, selected = id == group, modifier = Modifier.fillMaxWidth()) { group = id }
             }
         }
@@ -1083,7 +1085,7 @@ fun LiveScreen(api: CueApi, playback: Playback, openWeb: (String) -> Unit) {
                 verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 val big = sports.big
                 if (group == "sports" && big != null) item(key = "big") { BigGameCard(big) }
-                items(shown.take(400), key = { it.id }) { ch ->
+                items(shown.distinctBy { it.id }.take(400), key = { it.id }) { ch ->
                     ChannelCard(api, ch, onFocus = { spot = ch }) { playback.playLive(ch, shown) }
                 }
             }
@@ -1340,7 +1342,7 @@ fun ComingSoonScreen(api: CueApi, onCard: (Tile) -> Unit) {
             verticalArrangement = Arrangement.spacedBy(26.dp),
         ) {
             if (week.isNotEmpty()) item(key = "week") { CardRow(Shelf("new-episodes", "New episodes coming", week), memory, onClick = onCard) }
-            items(list, key = { it.key }) { c -> Box(Modifier.padding(horizontal = Gutter)) { ComingSoonItem(api, c, onCard) } }
+            items(list.distinctBy { it.key }, key = { it.key }) { c -> Box(Modifier.padding(horizontal = Gutter)) { ComingSoonItem(api, c, onCard) } }
         }
     }
 }
@@ -1508,7 +1510,7 @@ fun SportsScreen(api: CueApi, playback: Playback) {
                 Column {
                     Text(label.uppercase(), fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.5.sp, color = Dim, modifier = Modifier.padding(start = Gutter + 2.dp))
                     LazyRow(Modifier.focusRestorer(), contentPadding = PaddingValues(horizontal = Gutter, vertical = 12.dp), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-                        items(list, key = { it.key }) { g -> GameCard(g) { watch(g) } }
+                        items(list.distinctBy { it.key }, key = { it.key }) { g -> GameCard(g) { watch(g) } }
                     }
                 }
             }

@@ -404,6 +404,7 @@ Every route the server exposes. Routes marked **public** need no sign-in; all ot
 | GET | `/api/play/convert/hls/{id}/{file}` | **public** | GET /api/play/convert/hls/{id}/{file}: a session's playlist or a piece. |
 | GET | `/api/play/convert/start` | signed in | GET /api/play/convert/start?u=&t=[&keep=1][&apple=1][&hls=1]: where a conversion asked to start at t begins (in seconds), so the player's timeline matches wh... |
 | GET | `/api/play/convert/stream` | signed in | GET /api/play/convert/stream?u=<token>[&t=<seconds>]: the file as an MP4 a browser plays, made as it's sent. |
+| POST | `/api/play/crash` | signed in | POST /api/play/crash {app, version, device, trace}: the TV app crashed the last time it ran. |
 | GET | `/api/play/movies/{id}` | signed in | GET /api/play/movies/{id}[?option=N][&fresh=1] |
 | GET | `/api/play/series/{id}/{season}/{episode}` | signed in | GET /api/play/series/{id}/{season}/{episode}[?option=N][&fresh=1] |
 | GET | `/api/play/tmdb/movie/{tmdbId}` | signed in | GET /api/play/tmdb/movie/{tmdbId}: any movie, in the library or not. |
@@ -766,4 +767,4 @@ Every route the server exposes. Routes marked **public** need no sign-in; all ot
 | PUT | `/api/watched/settings` | admin | PUT /api/watched/settings {"sync": true, "cleanup": {...}} |
 | POST | `/api/watched/sync` | admin | POST /api/watched/sync: read what's been watched now. |
 
-431 routes.
+432 routes.

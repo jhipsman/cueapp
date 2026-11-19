@@ -234,7 +234,7 @@ fun CardRow(row: Shelf, memory: FocusMemory, onFocus: (Tile) -> Unit = {}, onCli
             contentPadding = PaddingValues(horizontal = Gutter, vertical = 16.dp),
             horizontalArrangement = Arrangement.spacedBy(18.dp),
         ) {
-            items(row.items, key = { it.key }) { c ->
+            items(row.items.distinctBy { it.key }, key = { it.key }) { c ->
                 PosterCard(c, memory, "${row.key}/${c.key}", wide, onFocus, onClick)
             }
         }
