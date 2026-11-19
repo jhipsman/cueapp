@@ -34,7 +34,10 @@ export function Pills({ value, onChange, counts }: { value: KindFilter; onChange
 // big numbers beside them.
 
 export function TopTen({ lists, only }: { lists: TopList[]; only?: WatchKind }) {
-  const shown = lists.map((l) => ({ ...l, items: only ? l.items.filter((c) => c.kind === only) : l.items })).filter((l) => l.items.length > 0)
+  // On the Films or Series home: that kind's own ten (filtering the mixed
+  // ten would leave two or three).
+  const ofKind = (l: TopList) => (only === 'movie' ? (l.movies ?? l.items.filter((c) => c.kind === 'movie')) : only === 'tv' ? (l.shows ?? l.items.filter((c) => c.kind === 'tv')) : l.items)
+  const shown = lists.map((l) => ({ ...l, items: ofKind(l) })).filter((l) => l.items.length >= (only ? 5 : 1))
   const [key, setKey] = useState(shown[0]?.key ?? '')
   const strip = useRef<HTMLDivElement>(null)
   const navigate = useNavigate()
@@ -269,13 +272,16 @@ export function NetworkStrip({ kind, services }: { kind: WatchKind; services: { 
   const what = kind === 'movie' ? 'films' : 'shows'
   return (
     <section className="wx-networks" aria-label={`Browse ${what}`}>
+      <h2>Browse {what} by service</h2>
       <div className="wx-network-row">
         {services.map((s) => (
           <button key={s.key} className={`wx-network ${s.key}${s.logo ? ' has-logo' : ''}`} onClick={() => navigate(`/watch/top?service=${s.key}&kind=${kind}`)} title={s.name}>
-            {s.logo ? <img src={s.logo} alt={s.name} /> : s.name}
+            {s.logo ? <img src={s.logo} alt="" /> : null}
+            <span>{s.name}</span>
           </button>
         ))}
       </div>
+      <h2>By decade</h2>
       <div className="wx-network-row decades">
         {[2020, 2010, 2000, 1990, 1980, 1970].map((d) => (
           <button key={d} className="wx-decade" onClick={() => navigate(`/watch/top?decade=${d}&kind=${kind}`)}>

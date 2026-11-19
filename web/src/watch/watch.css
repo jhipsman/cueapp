@@ -7713,3 +7713,75 @@ button.wx-switch.on:hover {
   cursor: pointer;
   font: inherit;
 }
+
+/* ---- Films / Series homes: Top 10 tabs and the browse strips, tidied.
+   Service tabs sit on their own line under the title, all the same size;
+   the chosen one is lit with a ring, the rest dimmed. */
+.wx-top-head .wx-top-tabs {
+  order: 3;
+  flex-basis: 100%;
+  gap: 8px;
+  padding: 4px 2px;
+}
+.wx-top-tab.has-logo,
+.wx-top-tab.has-logo.on {
+  padding: 0;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  opacity: 0.45;
+  box-shadow: none;
+  transition: opacity 0.15s, box-shadow 0.15s;
+}
+.wx-top-tab.has-logo img {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+}
+.wx-top-tab.has-logo:hover {
+  opacity: 0.8;
+}
+.wx-top-tab.has-logo.on {
+  opacity: 1;
+  box-shadow: 0 0 0 2px #fff;
+}
+.wx-networks > h2 {
+  margin: 8px 0 2px;
+  font-size: 1.15rem;
+}
+.wx-network {
+  width: 128px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 10px 10px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.05);
+}
+.wx-network.has-logo {
+  padding: 14px 10px 10px;
+  background: rgba(255, 255, 255, 0.05);
+}
+.wx-network.has-logo img {
+  width: 52px;
+  height: 52px;
+  border-radius: 12px;
+  object-fit: cover;
+}
+.wx-network span {
+  color: rgba(255, 255, 255, 0.75);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+.wx-network:hover span {
+  color: #fff;
+}
+.wx-decade {
+  min-width: 84px;
+  text-align: center;
+  border-radius: 999px;
+}

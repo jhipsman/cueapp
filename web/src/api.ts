@@ -402,6 +402,8 @@ export interface TopList {
   name: string
   logo?: string // the service's logo
   items: WatchCard[]
+  movies?: WatchCard[]
+  shows?: WatchCard[]
 }
 // An episode of a show you follow coming out soon (Coming soon, This week).
 export interface WeekEpisode extends WatchCard {
