@@ -48,7 +48,7 @@ func (s *Server) handleLiveSports(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			slog.Info("sports: espn", "err", err)
 		}
-		s.guideSports(w, r, pid)
+		s.guideSports(w, r, pid, err)
 		return
 	}
 	favTeams, _ := s.WatchRepo.FavoriteTeams(pid)

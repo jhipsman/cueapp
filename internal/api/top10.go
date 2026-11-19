@@ -40,6 +40,9 @@ type topList struct {
 	Name  string      `json:"name"`
 	Logo  string      `json:"logo,omitempty"` // the service's logo (TMDB's)
 	Items []watchCard `json:"items"`
+	// The ten films and the ten shows on their own (Home's top10 only).
+	Movies []watchCard `json:"movies,omitempty"`
+	Shows  []watchCard `json:"shows,omitempty"`
 }
 
 // serviceLogo is a service's logo (its first TMDB provider id's), or "".
@@ -75,17 +78,24 @@ func (s *Server) top10(ctx context.Context, tm *metadata.Client) []topList {
 				}
 			}
 			sort.SliceStable(all, func(a, b int) bool { return all[a].pop > all[b].pop })
-			var items []watchCard
+			// The ten across films and shows, and the ten of each (for the
+			// Films and Series homes, so filtering doesn't leave two).
+			var items, movies, shows []watchCard
 			for _, x := range all {
 				if x.card.PosterURL == "" {
 					continue
 				}
-				items = append(items, x.card)
-				if len(items) == 10 {
-					break
+				if len(items) < 10 {
+					items = append(items, x.card)
+				}
+				if x.card.Kind == "movie" && len(movies) < 10 {
+					movies = append(movies, x.card)
+				}
+				if x.card.Kind == "tv" && len(shows) < 10 {
+					shows = append(shows, x.card)
 				}
 			}
-			out[i] = topList{Key: svc.Key, Name: svc.Name, Logo: serviceLogo(logos, svc.providers), Items: items}
+			out[i] = topList{Key: svc.Key, Name: svc.Name, Logo: serviceLogo(logos, svc.providers), Items: items, Movies: movies, Shows: shows}
 		}()
 	}
 	wg.Wait()

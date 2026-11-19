@@ -188,10 +188,10 @@ export interface SportsGame {
   favorite?: boolean
   onNow: boolean
 }
-export type GuideGame = LiveHit & { league?: string }
+export type GuideGame = LiveHit & { league?: string; kicker?: string; matchup?: string }
 export type SportsAnswer =
   | { source: 'espn'; now: SportsGame[]; soon: SportsGame[]; big?: SportsGame; teams?: FavoriteTeam[] }
-  | { source?: 'guide'; now: GuideGame[]; soon: GuideGame[]; big?: GuideGame }
+  | { source?: 'guide'; now: GuideGame[]; soon: GuideGame[]; big?: GuideGame; note?: string }
 export interface LiveHit {
   channel: LiveChannel
   show?: LiveProgramme // empty for a channel found by its name
@@ -402,6 +402,8 @@ export interface TopList {
   name: string
   logo?: string // the service's logo
   items: WatchCard[]
+  movies?: WatchCard[]
+  shows?: WatchCard[]
 }
 // An episode of a show you follow coming out soon (Coming soon, This week).
 export interface WeekEpisode extends WatchCard {

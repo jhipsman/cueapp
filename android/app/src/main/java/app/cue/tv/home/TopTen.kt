@@ -44,19 +44,29 @@ import org.json.JSONObject
 // Video and the rest, with the service picked by a tab and big outlined
 // numbers beside the posters. Everything in it plays on Cue.
 
-data class TopList(val key: String, val name: String, val items: List<Tile>, val logo: String? = null)
+// items: films and shows together; movies / shows: each on its own (for
+// the Films and Shows tabs, so filtering doesn't leave two).
+data class TopList(val key: String, val name: String, val items: List<Tile>, val logo: String? = null,
+    val movies: List<Tile>? = null, val shows: List<Tile>? = null)
 
 fun topLists(o: JSONObject): List<TopList> {
     val a = o.optJSONArray("top10") ?: return emptyList()
     return (0 until a.length()).map {
         val l = a.getJSONObject(it)
-        TopList(l.optString("key"), l.optString("name"), (l.optJSONArray("items") ?: JSONArray()).cards(), l.str("logo"))
+        TopList(l.optString("key"), l.optString("name"), (l.optJSONArray("items") ?: JSONArray()).cards(), l.str("logo"),
+            l.optJSONArray("movies")?.cards(), l.optJSONArray("shows")?.cards())
     }
 }
 
 @Composable
 fun TopTenRow(lists: List<TopList>, only: String?, memory: FocusMemory, onFocus: (Tile) -> Unit, onClick: (Tile) -> Unit) {
-    val shown = lists.map { l -> if (only == null) l else l.copy(items = l.items.filter { it.kind == only }) }.filter { it.items.isNotEmpty() }
+    val shown = lists.map { l ->
+        when (only) {
+            null -> l
+            "movie" -> l.copy(items = l.movies ?: l.items.filter { it.kind == "movie" })
+            else -> l.copy(items = l.shows ?: l.items.filter { it.kind == only })
+        }
+    }.filter { it.items.size >= (if (only == null) 1 else 5) }
     if (shown.isEmpty()) return
     var key by rememberSaveable { mutableStateOf(shown.first().key) }
     val list = shown.firstOrNull { it.key == key } ?: shown.first()

@@ -46,6 +46,10 @@ func TestTop10(t *testing.T) {
 	if fmt.Sprint(got) != "[Film A Show C Film B]" {
 		t.Fatalf("order = %v", got)
 	}
+	// Films and shows on their own too, for the Films and Series homes.
+	if len(lists[0].Movies) != 2 || lists[0].Movies[0].Title != "Film A" || len(lists[0].Shows) != 1 || lists[0].Shows[0].Title != "Show C" {
+		t.Fatalf("movies %+v shows %+v", lists[0].Movies, lists[0].Shows)
+	}
 }
 
 func TestWeekAheadOnlyOnFriday(t *testing.T) {

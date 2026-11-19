@@ -53,7 +53,11 @@ var sportsChannelRe = regexp.MustCompile(`(?i)(espn|fox sports|fs1|fs2|nfl|nba|m
 type sportsGame struct {
 	liveHit
 	League string `json:"league,omitempty"`
-	Big    int    `json:"-"`
+	// The guide's title split for showing: "NBA Basketball : Bucks v Heat"
+	// is kicker "NBA Basketball", matchup "Bucks v Heat".
+	Kicker  string `json:"kicker,omitempty"`
+	Matchup string `json:"matchup,omitempty"`
+	Big     int    `json:"-"`
 }
 
 // sportsScore says how big a game a programme on a channel is (0: not a game).
@@ -82,16 +86,23 @@ func sportsScore(title, desc, channel, category string) (league string, score in
 }
 
 // guideSports is the fallback when ESPN can't be read: games found in the
-// TV guide by their titles.
-func (s *Server) guideSports(w http.ResponseWriter, r *http.Request, pid int64) {
+// TV guide by their titles. It always answers (with a note saying what went
+// wrong), so the Sports page never waits on an error.
+func (s *Server) guideSports(w http.ResponseWriter, r *http.Request, pid int64, espnErr error) {
 	empty := map[string]any{"now": []sportsGame{}, "soon": []sportsGame{}, "source": "guide"}
+	if espnErr != nil {
+		empty["note"] = "Couldn't get the games from ESPN just now (" + espnReason(espnErr) + "). Trying again in a minute."
+	}
 	_, chans, err := s.liveChannels(r.Context())
 	if errors.Is(err, errLiveNotSet) {
 		writeJSON(w, http.StatusOK, empty)
 		return
 	}
 	if err != nil {
-		writeError(w, http.StatusBadGateway, liveProviderMessage(err))
+		if _, ok := empty["note"]; !ok {
+			empty["note"] = liveProviderMessage(err)
+		}
+		writeJSON(w, http.StatusOK, empty)
 		return
 	}
 	favs, _ := s.WatchRepo.LiveFavorites(pid)
@@ -114,17 +125,20 @@ func (s *Server) guideSports(w http.ResponseWriter, r *http.Request, pid int64) 
 			if score == 0 {
 				continue
 			}
-			key := strings.ToLower(strings.TrimSpace(p.Title)) + p.Start.Format(time.RFC3339)
+			kicker, matchup := splitGameTitle(p.Title)
+			// The same game on several channels (or in another language,
+			// "Baloncesto NBA : Bucks v Heat"): listed once.
+			key := strings.ToLower(matchup) + p.Start.Format(time.RFC3339)
 			if seen[key] {
 				continue
 			}
 			seen[key] = true
-			lc := liveChannel{ID: ch.ID, Num: ch.Num, Name: ch.Name, Category: ch.Category, Favorite: favs[ch.ID], Catchup: ch.CatchupDays}
+			lc := liveChannel{ID: ch.ID, Num: ch.Num, Name: tidyChannelName(ch.Name), Category: ch.Category, Favorite: favs[ch.ID], Catchup: ch.CatchupDays}
 			if ch.Logo != "" {
 				lc.Logo = "/api/live/logo/" + url.PathEscape(ch.ID)
 			}
 			pp := p
-			games = append(games, sportsGame{liveHit: liveHit{Channel: lc, Show: &pp, OnNow: !p.Start.After(now)}, League: league, Big: score})
+			games = append(games, sportsGame{liveHit: liveHit{Channel: lc, Show: &pp, OnNow: !p.Start.After(now)}, League: league, Kicker: kicker, Matchup: matchup, Big: score})
 		}
 	}
 	slices.SortStableFunc(games, func(a, b sportsGame) int { return a.Show.Start.Compare(b.Show.Start) })
@@ -162,4 +176,74 @@ func bigness(g sportsGame, now time.Time) float64 {
 		wait = 0
 	}
 	return float64(g.Big) - wait*4
+}
+
+// espnReason is the short reason ESPN couldn't be read, for the page: the
+// last part of the error ("status 403", "timeout"), not the whole chain.
+func espnReason(err error) string {
+	msg := err.Error()
+	if i := strings.LastIndex(msg, ": "); i >= 0 {
+		msg = msg[i+2:]
+	}
+	if len(msg) > 80 {
+		msg = msg[:80]
+	}
+	return msg
+}
+
+// splitGameTitle splits a guide title at its colon: "NBA Basketball :
+// Milwaukee Bucks at Miami Heat" is ("NBA Basketball", "Milwaukee Bucks at
+// Miami Heat"). A title without one is all matchup.
+func splitGameTitle(title string) (kicker, matchup string) {
+	title = strings.Join(strings.Fields(title), " ")
+	if i := strings.Index(title, ":"); i > 0 && i < len(title)-1 {
+		k, m := strings.TrimSpace(title[:i]), strings.TrimSpace(title[i+1:])
+		if k != "" && m != "" && len(k) <= 40 {
+			return k, m
+		}
+	}
+	return "", title
+}
+
+// tidyChannelName drops a provider's decoration from a channel's name:
+// "US ★ ESPN HD ◉" is "ESPN", "|UK| Sky Sports Main Event FHD" is "Sky
+// Sports Main Event".
+func tidyChannelName(name string) string {
+	n := strings.TrimSpace(name)
+	// A country prefix: "US ★ ", "US: ", "US | ", "|US| ", "[US] ".
+	for _, sep := range []string{"★", "|", ":", "-"} {
+		if i := strings.Index(n, sep); i >= 0 && i <= 6 {
+			head := strings.Trim(n[:i], " |[]")
+			if head == "" && sep == "|" {
+				// "|US| ESPN": the prefix sits between two bars.
+				if j := strings.Index(n[i+1:], "|"); j >= 0 && j <= 5 {
+					n = strings.TrimSpace(n[i+1+j+1:])
+				}
+				continue
+			}
+			if len(head) >= 2 && len(head) <= 4 && strings.ToUpper(head) == head {
+				n = strings.TrimSpace(n[i+len(sep):])
+			}
+		}
+	}
+	// Symbols and a quality suffix.
+	n = strings.Map(func(r rune) rune {
+		if r == '◉' || r == '●' || r == '★' || r == 'ᴴ' || r == 'ᴰ' || (r >= 0x1D2C && r <= 0x1DBF) {
+			return -1
+		}
+		return r
+	}, n)
+	f := strings.Fields(n)
+	for len(f) > 1 {
+		switch strings.ToUpper(f[len(f)-1]) {
+		case "HD", "FHD", "UHD", "SD", "4K", "HEVC", "H265", "RAW", "50FPS", "60FPS":
+			f = f[:len(f)-1]
+			continue
+		}
+		break
+	}
+	if len(f) == 0 {
+		return strings.TrimSpace(name)
+	}
+	return strings.Join(f, " ")
 }

@@ -43,27 +43,43 @@ export default function SportsHub({ page }: { page?: boolean } = {}) {
   const navigate = useNavigate()
   const [data, setData] = useState<SportsAnswer | null>(null)
   const [picking, setPicking] = useState(false)
+  const [failed, setFailed] = useState('')
   const load = () =>
     api
       .liveSports()
-      .then(setData)
-      .catch(() => undefined)
+      .then((d) => {
+        setData(d)
+        setFailed('')
+      })
+      .catch((e) => setFailed(e instanceof Error ? e.message : String(e)))
   useEffect(() => {
     void load()
     const t = window.setInterval(load, 60_000)
     return () => window.clearInterval(t)
   }, [])
-  if (!data) return page ? <p className="wx-dim">Loading the games…</p> : null
+  if (!data)
+    return page ? (
+      failed ? (
+        <p className="wx-dim">
+          Couldn't load the games ({failed}).{' '}
+          <button className="wx-link" onClick={() => void load()}>
+            Try again
+          </button>
+        </p>
+      ) : (
+        <p className="wx-dim">Loading the games…</p>
+      )
+    ) : null
   if (data.now.length === 0 && data.soon.length === 0)
     return page ? (
       <section className="wx-sports">
         <h2>
           <Icon name="activity" size={20} /> Sports
         </h2>
-        <p className="wx-dim">No games on now or in the next day.</p>
+        <p className="wx-dim">{('note' in data && data.note) || 'No games on now or in the next day.'}</p>
       </section>
     ) : null
-  if (data.source !== 'espn') return <GuideSports data={data as { now: GuideGame[]; soon: GuideGame[]; big?: GuideGame }} />
+  if (data.source !== 'espn') return <GuideSports data={data as { now: GuideGame[]; soon: GuideGame[]; big?: GuideGame; note?: string }} />
   const open = (g: SportsGame) => g.channel && navigate(liveHref(g.channel.id, 'all'))
   const big = data.big
   const same = (a: SportsGame, b?: SportsGame) => !!b && a.id === b.id && a.league === b.league
@@ -248,7 +264,7 @@ function TeamPicker({ onClose }: { onClose: () => void }) {
 }
 
 // GuideSports: when ESPN can't be read, the games found in the TV guide.
-function GuideSports({ data }: { data: { now: GuideGame[]; soon: GuideGame[]; big?: GuideGame } }) {
+function GuideSports({ data }: { data: { now: GuideGame[]; soon: GuideGame[]; big?: GuideGame; note?: string } }) {
   const navigate = useNavigate()
   const open = (g: GuideGame) => navigate(liveHref(g.channel.id, 'all'))
   const when = (g: GuideGame) => (!g.show ? '' : g.onNow ? `Live · ends ${hhmm(g.show.stop)}` : dayTime(g.show.start))
@@ -261,13 +277,15 @@ function GuideSports({ data }: { data: { now: GuideGame[]; soon: GuideGame[]; bi
       {big && big.show && (
         <button className={`wx-sports-big glass${big.onNow ? ' live' : ''}`} onClick={() => open(big)}>
           <span className="wx-sports-tag">{big.onNow ? '● LIVE NOW' : 'NEXT BIG GAME'}</span>
-          <b>{big.show.title}</b>
+          {big.kicker && <span className="wx-sports-kicker">{big.kicker}</span>}
+          <b>{big.matchup || big.show.title}</b>
           <span className="wx-sports-meta">
             <ChannelLogo name={big.channel.name} src={big.channel.logo} />
-            {[big.league, big.channel.name, when(big)].filter(Boolean).join(' · ')}
+            {[big.channel.name, when(big)].filter(Boolean).join(' · ')}
           </span>
         </button>
       )}
+      {data.note && <p className="wx-dim wx-sports-note">{data.note}</p>}
       {[
         ['On now', data.now] as const,
         ['Coming up', data.soon] as const,
@@ -278,8 +296,12 @@ function GuideSports({ data }: { data: { now: GuideGame[]; soon: GuideGame[]; bi
             <div className="wx-sports-row">
               {list.slice(0, 20).map((g) => (
                 <button key={`${g.channel.id}-${g.show?.start}`} className={`wx-sports-game${g.onNow ? ' live' : ''}`} onClick={() => open(g)}>
-                  <b>{g.show?.title}</b>
-                  <small>{[g.league, g.channel.name].filter(Boolean).join(' · ')}</small>
+                  <small className="wx-sports-kicker">{g.kicker || g.league || 'Sports'}</small>
+                  <b title={g.show?.title}>{g.matchup || g.show?.title}</b>
+                  <span className="wx-sports-foot">
+                    {g.channel.logo && <img src={g.channel.logo} alt="" loading="lazy" />}
+                    <small>{g.channel.name}</small>
+                  </span>
                   <small className="wx-sports-when">{when(g)}</small>
                 </button>
               ))}
