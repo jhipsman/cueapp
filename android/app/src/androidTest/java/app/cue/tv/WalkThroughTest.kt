@@ -141,7 +141,7 @@ class WalkThroughTest {
 
             // A title from the service's page, then Back to it, then Back to Browse.
             press(KeyEvent.KEYCODE_DPAD_CENTER)
-            see("Some tides bring things back")
+            see("More Like This")
             Thread.sleep(800)
             shot("title")
             press(KeyEvent.KEYCODE_BACK)
