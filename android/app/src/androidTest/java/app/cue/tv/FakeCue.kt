@@ -120,6 +120,10 @@ class FakeCue : Dispatcher() {
             path == "/api/parties" -> ok(JSONArray())
             path.startsWith("/api/live/") -> ok(JSONArray())
             path == "/api/play/crash" -> MockResponse().setResponseCode(204)
+            path == "/api/version" -> ok(JSONObject().put("version", "2.1.9"))
+            path == "/api/system/crashes" -> ok(JSONObject().put("open", 1).put("items", JSONArray().put(JSONObject()
+                .put("id", 7).put("app", "tv").put("count", 3).put("device", "Amazon AFTMM (Android 7)").put("version", "0.1.250")
+                .put("headline", "java.lang.IllegalStateException: Release should only be called once").put("fixedAt", ""))))
             else -> {
                 synchronized(unknown) { unknown.add(request.method + " " + path) }
                 MockResponse().setResponseCode(404).setBody("{\"error\":\"Not in the stand-in server.\"}")

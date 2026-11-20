@@ -54,6 +54,7 @@ class WalkThroughTest {
             .putBoolean("tour.v1", true)
             .commit()
         File(ctx.filesDir, "last-crash.txt").delete()
+        File(ctx.filesDir, "crash-history.json").delete()
         File(ctx.filesDir, "home-1.json").delete()
         shell("rm -rf $SHOTS")
         shell("mkdir -p $SHOTS")
@@ -190,6 +191,27 @@ class WalkThroughTest {
             press(KeyEvent.KEYCODE_BACK)
             see("Continue watching")
             shot("home-again")
+
+            // Settings, near the bottom of the menu: each section shows as
+            // the highlight rests on it, like the menu's own places.
+            press(KeyEvent.KEYCODE_DPAD_LEFT, 3)
+            reach("Settings", KeyEvent.KEYCODE_DPAD_DOWN, tries = 12)
+            see("Account and server")
+            shot("settings")
+            press(KeyEvent.KEYCODE_DPAD_RIGHT) // onto the sections
+            press(KeyEvent.KEYCODE_DPAD_DOWN)
+            see("Surround sound")
+            shot("settings-playback")
+            press(KeyEvent.KEYCODE_DPAD_DOWN)
+            see("No crashes on this TV")
+            see("Release should only be called once") // every TV's, as an administrator
+            shot("settings-problems")
+            press(KeyEvent.KEYCODE_DPAD_DOWN)
+            see("Version 2.1.9")
+            shot("settings-about")
+            press(KeyEvent.KEYCODE_BACK) // to the side menu
+            press(KeyEvent.KEYCODE_BACK)
+            see("Continue watching")
         }
         // No crash saved along the way, and nothing asked of the server it didn't expect.
         assertFalse("the app crashed: " + File(ctx.filesDir, "last-crash.txt").takeIf { it.exists() }?.readText().orEmpty(),

@@ -550,11 +550,19 @@ private val navItems = listOf(
     NavItem("Browse", app.cue.tv.R.drawable.ic_nav_browse, 9),
 )
 private const val ProfilePage = 10
-private const val PageCount = 12
+private const val SettingsPage = 12
+private const val PageCount = 13
 private val RailWidth = 72.dp
 
-// The rail's place for a page (the profile is the last).
-private fun railSlot(page: Int): Int = navItems.indexOfFirst { it.page == page }.let { if (it < 0) navItems.size else it }
+// The rail's place for a page: the places in navItems, then Settings, then
+// the profile last.
+private fun railSlot(page: Int): Int = navItems.indexOfFirst { it.page == page }.let {
+    when {
+        it >= 0 -> it
+        page == SettingsPage -> navItems.size
+        else -> navItems.size + 1
+    }
+}
 
 @Composable
 fun MainScreen(api: CueApi, playback: Playback, openWeb: (String) -> Unit, changeServer: () -> Unit, switchProfile: () -> Unit) {
@@ -563,7 +571,7 @@ fun MainScreen(api: CueApi, playback: Playback, openWeb: (String) -> Unit, chang
     val memories = remember { List(PageCount) { FocusMemory() } }
     val titleMemory = remember { FocusMemory() }
     val browseState = remember { BrowseState() } // outlives a title opened over Browse
-    val tabFocus = remember { List(navItems.size + 1) { FocusRequester() } }
+    val tabFocus = remember { List(navItems.size + 2) { FocusRequester() } }
     var tabsFocused by remember { mutableStateOf(false) }
     // Whether a page may take the highlight when it shows: on opening the
     // app and on coming back from a title, but not while the remote moves
@@ -652,7 +660,11 @@ fun MainScreen(api: CueApi, playback: Playback, openWeb: (String) -> Unit, chang
                     8 -> TopScreen(api, memories[8], onCard)
                     9 -> BrowseScreen(api, memories[9], browseState, onCard)
                     11 -> AskScreen(api, memories[11], onCard)
-                    else -> ProfileScreen(api, switchProfile, changeServer, openWeb)
+                    SettingsPage -> SettingsScreen(api, switchProfile, changeServer, openWeb)
+                    else -> ProfileScreen(api, switchProfile, changeServer, openWeb) {
+                        tab = SettingsPage
+                        runCatching { tabFocus[railSlot(SettingsPage)].requestFocus() }
+                    }
                 }
             }
         }
@@ -699,8 +711,13 @@ private fun SideRail(api: CueApi, current: Int, focusers: List<FocusRequester>, 
                 Gap(4.dp)
             }
             Spacer(Modifier.weight(1f))
+            RailItem("Settings", selected = current == SettingsPage, expanded = expanded,
+                modifier = Modifier.focusRequester(focusers[navItems.size]), onFocus = { onFocusPage(SettingsPage) }) {
+                androidx.tv.material3.Icon(androidx.compose.ui.res.painterResource(app.cue.tv.R.drawable.ic_nav_settings), contentDescription = null, modifier = Modifier.size(20.dp))
+            }
+            Gap(4.dp)
             RailItem(api.profileName.ifEmpty { "Profile" }, selected = current == ProfilePage, expanded = expanded,
-                modifier = Modifier.focusRequester(focusers[navItems.size]), onFocus = { onFocusPage(ProfilePage) }) {
+                modifier = Modifier.focusRequester(focusers[navItems.size + 1]), onFocus = { onFocusPage(ProfilePage) }) {
                 Box(Modifier.size(22.dp).clip(CircleShape).background(LocalAccent.current), contentAlignment = Alignment.Center) {
                     AvatarFace(api.profileAvatar, api.profileName, 11.sp,
                         letterColor = if (LocalAccent.current.luminance() > 0.45f) Color.Black else Color.White)
@@ -1336,7 +1353,7 @@ fun ChannelCard(api: CueApi, ch: Channel, onFocus: () -> Unit = {}, onClick: () 
 // ---- The profile ----
 
 @Composable
-fun ProfileScreen(api: CueApi, switchProfile: () -> Unit, changeServer: () -> Unit, openWeb: (String) -> Unit) {
+fun ProfileScreen(api: CueApi, switchProfile: () -> Unit, changeServer: () -> Unit, openWeb: (String) -> Unit, openSettings: () -> Unit = {}) {
     var managing by remember { mutableStateOf(false) }
     if (managing) {
         ManageProfilesScreen(api) { managing = false }
@@ -1364,6 +1381,7 @@ fun ProfileScreen(api: CueApi, switchProfile: () -> Unit, changeServer: () -> Un
             Gap(12.dp)
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Pill("Manage profiles") { managing = true }
+                Pill("Settings", onClick = openSettings)
                 Pill(if (light) "Light mode: on" else "Light mode: off") { LightMode.set(ctx, !light) }
             }
             Gap(10.dp)
