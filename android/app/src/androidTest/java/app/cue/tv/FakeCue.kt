@@ -107,6 +107,9 @@ class FakeCue : Dispatcher() {
                 .put("services", JSONArray().apply { services.forEach { (k, n) -> put(JSONObject().put("key", k).put("name", n)) } })
                 .put("genres", JSONArray().put("Comedy").put("Drama")).put("countries", JSONObject().put("US", "United States")))
             path == "/api/watch/browse" -> ok(browse())
+            path == "/api/watch/ask" && request.method == "GET" -> ok(JSONObject().put("ready", true))
+            path == "/api/watch/ask" -> ok(JSONObject().put("reply", "Here are a few easy laughs for tonight, all under two hours.")
+                .put("heading", "Funny, under two hours").put("cards", cards(8, 1)))
             path.startsWith("/api/watch/browse/service/") -> ok(JSONObject().put("name", "Netflix").put("rows", JSONArray()
                 .put(row("top", "Top 10 on Netflix today", cards(10, 1))).put(row("originals", "Netflix originals", cards(10, 3, "tv")))))
             path.startsWith("/api/watch/browse/collection/") || path.startsWith("/api/watch/browse/franchise/") ->

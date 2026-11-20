@@ -114,6 +114,13 @@ fun CueRoot(api: CueApi, playback: Playback, openWeb: (String) -> Unit, changeSe
     // first start, or a sign-in the server has dropped, waits on the logo.
     val signedInHere = remember { api.profileToken.isNotEmpty() && api.cookie.isNotEmpty() }
     var stage by remember { mutableStateOf(if (signedInHere) Stage.Ready else Stage.Checking) }
+    // The logo's moment when going straight in (otherwise Checking shows it).
+    var intro by remember { mutableStateOf(signedInHere) }
+    LaunchedEffect(Unit) {
+        if (!intro) return@LaunchedEffect
+        delay(1300)
+        intro = false
+    }
     // Switch profile asked for: "Who's watching?" stays up even with one profile.
     var switching by remember { mutableStateOf(false) }
     val rootScope = rememberCoroutineScope()
@@ -229,6 +236,13 @@ fun CueRoot(api: CueApi, playback: Playback, openWeb: (String) -> Unit, changeSe
                 }
             }
             }
+            // Opening the app signed in: the logo still has its moment, over
+            // Home as it loads underneath (so it costs no waiting), then fades.
+            androidx.compose.animation.AnimatedVisibility(
+                visible = intro,
+                enter = androidx.compose.animation.EnterTransition.None,
+                exit = androidx.compose.animation.fadeOut(tween(450, easing = Settle)),
+            ) { Box(Modifier.fillMaxSize().background(Background)) { LaunchLogo() } }
             playback.upNext?.let { u -> UpNextScreen(api, u, play = { playback.playUpNext() }, dismiss = { playback.dismissUpNext() }) }
             playback.starting?.let { st -> StartingScreen(api, st, playback.note) { playback.cancelStarting() } }
             AppUpdate.offer?.takeIf { AppUpdate.showing && playback.upNext == null && stage == Stage.Ready }?.let { o ->
@@ -527,6 +541,7 @@ private class NavItem(val name: String, val icon: Int, val page: Int)
 
 private val navItems = listOf(
     NavItem("Search", app.cue.tv.R.drawable.ic_nav_search, 4),
+    NavItem("Ask Cue", app.cue.tv.R.drawable.ic_nav_ask, 11),
     NavItem("Home", app.cue.tv.R.drawable.ic_nav_home, 0),
     NavItem("Shows", app.cue.tv.R.drawable.ic_nav_shows, 1),
     NavItem("Movies", app.cue.tv.R.drawable.ic_nav_movies, 2),
@@ -536,7 +551,7 @@ private val navItems = listOf(
     NavItem("Browse", app.cue.tv.R.drawable.ic_nav_browse, 9),
 )
 private const val ProfilePage = 10
-private const val PageCount = 11
+private const val PageCount = 12
 private val RailWidth = 72.dp
 
 // The rail's place for a page (the profile is the last).
@@ -637,6 +652,7 @@ fun MainScreen(api: CueApi, playback: Playback, openWeb: (String) -> Unit, chang
                     7 -> SportsScreen(api, playback)
                     8 -> TopScreen(api, memories[8], onCard)
                     9 -> BrowseScreen(api, memories[9], browseState, onCard)
+                    11 -> AskScreen(api, memories[11], onCard)
                     else -> ProfileScreen(api, switchProfile, changeServer, openWeb)
                 }
             }

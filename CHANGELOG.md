@@ -9,10 +9,11 @@ under [Unreleased]. How releases are cut: [docs/RELEASING.md](docs/RELEASING.md)
 ## [Unreleased]
 
 ### Added
+- **Ask Cue on Fire TV / Google TV**, in the side menu under Search: ask for something to watch with one of the ideas (one press), by typing with the TV's keyboard, or out loud where the TV lets apps listen (Google TV). The answer and its picks show beside it; asking again carries on the conversation, and "Play X" opens X's page.
 - **Browse**, on the web, Fire TV / Google TV and Apple TV: a page for each streaming service (its Top 10 today, what's new, its originals, its best rated, and its genres), collections across every service (Critically acclaimed, Family movie night, Under 90 minutes, Hidden gems, plus Holiday movies from mid-November and Halloween horror in October), and twenty film series in the order they came out. Coming soon and the Top 10 live in Browse too. Everything shown keeps to a kid profile's age limit.
 
 ### Changed
-- **Fire TV / Google TV opens straight to Home.** Signed in already, the app no longer holds on the logo while it checks with the server: it opens on the Home you saw last (kept on the TV), then refreshes it. Only a first start, or a sign-in the server has dropped, waits.
+- **Fire TV / Google TV opens straight to Home.** Signed in already, the app no longer holds on the logo while it checks with the server: it opens on the Home you saw last (kept on the TV), then refreshes it; the Cue logo still plays as it opens, over Home loading underneath. Only a first start, or a sign-in the server has dropped, waits.
 - Fire TV / Google TV: Back from a title opened in Browse returns to the service, collection or film series it came from, on the same title (it went back to Browse's front page).
 - Fire TV / Google TV: moving down the side menu past Browse no longer pulls the highlight into Browse; a service's page, a collection or a film series opens with the highlight on its first title.
 - **Fire TV / Google TV: a side menu instead of the tabs along the top.** Search, Home, Shows, Movies, Sports, Live TV, My List and Browse are icons down the left, with your profile at the bottom; moving onto it opens it with the names. On the web, Browse takes Coming soon's place in the top bar (Coming soon is in Browse and in More).

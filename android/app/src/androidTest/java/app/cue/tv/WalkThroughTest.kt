@@ -90,6 +90,18 @@ class WalkThroughTest {
         return Regex("text=\"([^\"]+)\"").findAll(out.toString()).map { it.groupValues[1] }.distinct().take(40).toList()
     }
 
+    // Moves the highlight with a key until it rests on the thing showing
+    // this text, failing if it never does.
+    private fun reach(text: String, key: Int, tries: Int = 8) {
+        repeat(tries) {
+            val on = device.findObject(By.focused(true))
+            if (on != null && (on.text == text || on.findObject(By.text(text)) != null)) return
+            press(key)
+        }
+        shot("unreached-" + text.replace(Regex("[^A-Za-z0-9]+"), "-"))
+        throw AssertionError("never reached \"$text\". Focused: ${device.findObject(By.focused(true))?.let { o -> o.text ?: o.className }}. On screen: ${onScreen()}")
+    }
+
     private fun press(key: Int, times: Int = 1) {
         repeat(times) {
             device.pressKeyCode(key)
@@ -150,9 +162,23 @@ class WalkThroughTest {
             see("Streaming services")
             shot("back-to-browse")
 
-            // Up the menu to Search.
+            // Up the menu to Ask Cue: ask with one of the ideas, and the answer
+            // and its picks show; then Search, at the top.
             press(KeyEvent.KEYCODE_BACK) // to the side menu
             press(KeyEvent.KEYCODE_DPAD_UP, 7)
+            see("Something funny for tonight")
+            shot("ask-cue")
+            // Into the page, down to the idea, and press it (a TV's buttons
+            // take the remote's select, not a touch).
+            press(KeyEvent.KEYCODE_DPAD_RIGHT)
+            press(KeyEvent.KEYCODE_DPAD_UP, 2) // the first row of ideas
+            reach("Something funny for tonight", KeyEvent.KEYCODE_DPAD_LEFT, tries = 4)
+            press(KeyEvent.KEYCODE_DPAD_CENTER)
+            see("easy laughs")
+            Thread.sleep(600)
+            shot("ask-cue-answer")
+            press(KeyEvent.KEYCODE_BACK) // to the side menu
+            press(KeyEvent.KEYCODE_DPAD_UP)
             see("Search from your phone")
             shot("search")
 
