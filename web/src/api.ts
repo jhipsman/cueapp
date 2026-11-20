@@ -7,6 +7,7 @@ import { outsideService, slowServiceMessage } from './outsideService'
 import { signalFor } from './requestSignal'
 import type { Diagnostics } from './supportReport'
 import type { ProblemCounts, ProblemList } from './problemsView'
+import type { Crash, CrashList } from './crashReport'
 
 const BASE = '/api'
 
@@ -2752,6 +2753,10 @@ export const api = {
   problemCounts: () => get<{ counts: ProblemCounts }>('/system/problems?summary=1').then((r) => r.counts),
   markProblemsRead: (req: { ids?: number[]; all?: boolean }) => post<{ marked: number; counts: ProblemCounts }>('/system/problems/read', req),
   setNotifyOnProblems: (enabled: boolean) => put<{ notifyOnProblems: boolean }>('/system/problems/notify', { enabled }),
+  crashes: () => get<CrashList>('/system/crashes'),
+  setCrashFixed: (id: number, fixed: boolean) => post<Crash>(`/system/crashes/${id}/fixed`, { fixed }),
+  deleteCrash: (id: number) => del<void>(`/system/crashes/${id}`),
+  setCrashAlerts: (enabled: boolean) => put<{ alerts: boolean }>('/system/crashes/alerts', { enabled }),
   flareSolverrStatus: () => get<FlareSolverrStatus>('/flaresolverr/status'),
   cleanupReport: () => get<CleanupReport>('/system/cleanup'),
   runCleanup: () => post<{ removedBytes: number; removed?: unknown[]; prunedQueueItems?: number; prunedActivity?: number; errors?: unknown }>('/system/cleanup'),

@@ -404,7 +404,7 @@ Every route the server exposes. Routes marked **public** need no sign-in; all ot
 | GET | `/api/play/convert/hls/{id}/{file}` | **public** | GET /api/play/convert/hls/{id}/{file}: a session's playlist or a piece. |
 | GET | `/api/play/convert/start` | signed in | GET /api/play/convert/start?u=&t=[&keep=1][&apple=1][&hls=1]: where a conversion asked to start at t begins (in seconds), so the player's timeline matches wh... |
 | GET | `/api/play/convert/stream` | signed in | GET /api/play/convert/stream?u=<token>[&t=<seconds>]: the file as an MP4 a browser plays, made as it's sent. |
-| POST | `/api/play/crash` | signed in | POST /api/play/crash {app, version, device, trace}: the TV app crashed the last time it ran. |
+| POST | `/api/play/crash` | signed in | POST /api/play/crash {app, version, device, trace}: the TV app crashed the last time it ran, or a page of the web app failed to draw. |
 | GET | `/api/play/movies/{id}` | signed in | GET /api/play/movies/{id}[?option=N][&fresh=1] |
 | GET | `/api/play/series/{id}/{season}/{episode}` | signed in | GET /api/play/series/{id}/{season}/{episode}[?option=N][&fresh=1] |
 | GET | `/api/play/tmdb/movie/{tmdbId}` | signed in | GET /api/play/tmdb/movie/{tmdbId}: any movie, in the library or not. |
@@ -604,6 +604,10 @@ Every route the server exposes. Routes marked **public** need no sign-in; all ot
 | GET | `/api/system/backups/{name}` | admin | sends one saved backup. |
 | GET | `/api/system/cleanup` | admin | lists what clean-up would remove from the downloads working folder right now (never the library), with the space it frees, when it last ran and whether it ru... |
 | POST | `/api/system/cleanup` | admin | runs the clean-up now and reports what it removed and how much history it pruned. |
+| GET | `/api/system/crashes` | admin | GET /api/system/crashes: the kept crashes, open ones first. |
+| PUT | `/api/system/crashes/alerts` | admin | PUT /api/system/crashes/alerts {"enabled"}: phone alerts about new crashes on or off. |
+| DELETE | `/api/system/crashes/{id}` | admin | DELETE /api/system/crashes/{id}: forget a crash. |
+| POST | `/api/system/crashes/{id}/fixed` | admin | POST /api/system/crashes/{id}/fixed {"fixed": true\|false}: mark a crash fixed (it alerts again if it comes back), or open again. |
 | GET | `/api/system/diagnostics` | admin | returns what a person needs to send with a support request: version and platform, how the database is doing, the setup warnings and the recent log. |
 | GET | `/api/system/info` | admin | returns facts the backup page shows. |
 | GET | `/api/system/options` | admin | reports the switches for checking for updates, installing them, pushed updates and restarting when stuck. |
@@ -771,4 +775,4 @@ Every route the server exposes. Routes marked **public** need no sign-in; all ot
 | PUT | `/api/watched/settings` | admin | PUT /api/watched/settings {"sync": true, "cleanup": {...}} |
 | POST | `/api/watched/sync` | admin | POST /api/watched/sync: read what's been watched now. |
 
-436 routes.
+440 routes.
