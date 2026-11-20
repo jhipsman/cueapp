@@ -44,7 +44,10 @@ mv "$out"/cue-rec/*.mp4 "$out/rec/" 2>/dev/null || true
 adb pull /data/local/tmp/cue-shots "$out/" >/dev/null 2>&1 || true
 adb logcat -d -v epoch > "$out/logcat.txt" || true
 grep -E "CueWalkThrough" "$out/logcat.txt" > "$out/steps.txt" || true
-grep -E "FATAL EXCEPTION|AndroidRuntime" -A40 "$out/logcat.txt" > "$out/crashes.txt" || true
+# Only real crashes: each "FATAL EXCEPTION" and the error lines of its
+# stack trace. (Every "am" command also logs harmless AndroidRuntime lines.)
+awk '/ E AndroidRuntime: FATAL EXCEPTION/ { on = 1 } on && / E AndroidRuntime:/ { print; next } on { on = 0; print "" }' \
+  "$out/logcat.txt" > "$out/crashes.txt" || true
 [ -s "$out/crashes.txt" ] || rm -f "$out/crashes.txt"
 echo "$status" > "$out/walkthrough-status.txt"
 exit 0
