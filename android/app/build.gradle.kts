@@ -80,7 +80,11 @@ dependencies {
 
     // The app's own screens (Home, titles, search, Live TV): Jetpack Compose
     // with Compose for TV, the toolkit Google TV's own apps use.
-    implementation(platform("androidx.compose:compose-bom:2024.10.01"))
+    // 2025.05.00 is Compose UI 1.8.1. Compose 1.7 crashed the app ("Dispatching
+    // intercepted soft keyboard event while focus system is invalidated", Google
+    // bug 346370327) when a remote key arrived while a row was settling its
+    // focus; from 1.8 such a key is skipped instead.
+    implementation(platform("androidx.compose:compose-bom:2025.05.00"))
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.foundation:foundation")
     implementation("androidx.compose.material3:material3")
