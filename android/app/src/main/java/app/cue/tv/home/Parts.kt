@@ -45,7 +45,8 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.foundation.gestures.BringIntoViewSpec
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.focus.focusRestorer
+import androidx.compose.foundation.focusGroup
+import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
@@ -229,7 +230,7 @@ fun CardRow(row: Shelf, memory: FocusMemory, onFocus: (Tile) -> Unit = {}, onCli
         // Left and right, the highlight settles near the start of the row.
         androidx.compose.runtime.CompositionLocalProvider(androidx.compose.foundation.gestures.LocalBringIntoViewSpec provides PivotSpec) {
         LazyRow(
-            modifier = Modifier.focusRestorer(),
+            modifier = Modifier.keepRowFocus(),
             // Room above and below for a card's lift and shadow.
             contentPadding = PaddingValues(horizontal = Gutter, vertical = 16.dp),
             horizontalArrangement = Arrangement.spacedBy(18.dp),
@@ -298,6 +299,31 @@ val GentleSpec = object : BringIntoViewSpec {
             else -> offset + size - bottom
         }
     }
+}
+
+// A row that remembers which of its cards had the highlight, so coming
+// back into it (up or down from another row, or from the side menu) lands
+// there again. In place of Compose's focusRestorer(), which pins the card
+// in a lazy row and on some TVs releases that pin twice ("Release should
+// only be called once"), crashing the app as the remote moves between
+// rows. This keeps no pin: if the remembered card has scrolled away, the
+// highlight goes to the nearest one instead.
+@OptIn(androidx.compose.ui.ExperimentalComposeUiApi::class)
+@Composable
+fun Modifier.keepRowFocus(): Modifier {
+    val group = remember { FocusRequester() }
+    return this
+        .focusRequester(group)
+        .focusProperties {
+            exit = {
+                runCatching { group.saveFocusedChild() }
+                FocusRequester.Default
+            }
+            enter = {
+                if (runCatching { group.restoreFocusedChild() }.getOrDefault(false)) FocusRequester.Cancel else FocusRequester.Default
+            }
+        }
+        .focusGroup()
 }
 
 // On a TV a text box would keep the highlight (up and down move its

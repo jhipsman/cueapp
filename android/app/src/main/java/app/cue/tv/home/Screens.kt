@@ -76,7 +76,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.foundation.gestures.LocalBringIntoViewSpec
 import androidx.compose.ui.graphics.Color
@@ -1009,14 +1008,14 @@ fun TitleScreen(api: CueApi, playback: Playback, card: Tile, memory: FocusMemory
             }
             if (c.kind == "tv" && t.seasons.isNotEmpty()) {
                 item {
-                    LazyRow(Modifier.focusRestorer(), contentPadding = PaddingValues(horizontal = Gutter, vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    LazyRow(Modifier.keepRowFocus(), contentPadding = PaddingValues(horizontal = Gutter, vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         items(t.seasons.distinctBy { it.number }, key = { it.number }) { s ->
                             ChoiceTab(s.name, selected = s.number == season) { season = s.number }
                         }
                     }
                 }
                 item {
-                    LazyRow(Modifier.focusRestorer(), contentPadding = PaddingValues(horizontal = Gutter, vertical = 16.dp), horizontalArrangement = Arrangement.spacedBy(18.dp)) {
+                    LazyRow(Modifier.keepRowFocus(), contentPadding = PaddingValues(horizontal = Gutter, vertical = 16.dp), horizontalArrangement = Arrangement.spacedBy(18.dp)) {
                         items(episodes.distinctBy { "${it.season}-${it.episode}" }, key = { "${it.season}-${it.episode}" }) { e ->
                             EpisodeCard(e) { playback.playTitle("tv", c.tmdbId, e.season, e.episode) }
                         }
@@ -1035,7 +1034,7 @@ fun TitleScreen(api: CueApi, playback: Playback, card: Tile, memory: FocusMemory
                     }
                     Column {
                         Text("Cast", fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = Color(0xF2FFFFFF), modifier = Modifier.padding(start = Gutter + 2.dp, top = 6.dp))
-                        LazyRow(Modifier.focusRestorer(), contentPadding = PaddingValues(horizontal = Gutter, vertical = 14.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                        LazyRow(Modifier.keepRowFocus(), contentPadding = PaddingValues(horizontal = Gutter, vertical = 14.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                             items(t.people.distinctBy { it.id }, key = { it.id }) { p -> PersonCard(p, selected = picked?.id == p.id) { picked = p } }
                         }
                         val p = picked
@@ -1619,7 +1618,7 @@ fun SportsScreen(api: CueApi, playback: Playback) {
             item(key = label) {
                 Column {
                     Text(label.uppercase(), fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.5.sp, color = Dim, modifier = Modifier.padding(start = Gutter + 2.dp))
-                    LazyRow(Modifier.focusRestorer(), contentPadding = PaddingValues(horizontal = Gutter, vertical = 12.dp), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                    LazyRow(Modifier.keepRowFocus(), contentPadding = PaddingValues(horizontal = Gutter, vertical = 12.dp), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
                         items(list.distinctBy { it.key }, key = { it.key }) { g -> GameCard(g) { watch(g) } }
                     }
                 }
