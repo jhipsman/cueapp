@@ -70,6 +70,9 @@ class WalkThroughTest {
 
     private fun shot(name: String) {
         step++
+        // In the log with its time, so the nightly polish run can find each
+        // step in its screen recording.
+        android.util.Log.i("CueWalkThrough", "step %02d %s".format(step, name))
         shell("screencap -p $SHOTS/%02d-%s.png".format(step, name))
     }
 
@@ -104,6 +107,7 @@ class WalkThroughTest {
 
     private fun press(key: Int, times: Int = 1) {
         repeat(times) {
+            android.util.Log.i("CueWalkThrough", "press " + KeyEvent.keyCodeToString(key))
             device.pressKeyCode(key)
             Thread.sleep(350)
         }

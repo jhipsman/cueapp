@@ -1,0 +1,148 @@
+# The nightly polish run's recordings: the TV app walked through on an
+# Android TV emulator and the web app walked through in a browser (desktop and
+# phone), with the screen recorded and every transition cut into a contact
+# sheet (tools/polish). A morning review compares them with
+# docs/motion-rulebook.md. It records only; it never fails on how things look,
+# only when a walk can't run.
+name: Polish recordings
+
+on:
+  schedule:
+    - cron: "17 7 * * *" # every night
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: polish
+  cancel-in-progress: true
+
+jobs:
+  tv:
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Let the emulator use hardware acceleration
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Walk through the TV app, recording the screen
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 30
+          target: android-tv
+          arch: x86
+          profile: tv_1080p
+          disable-animations: false
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          working-directory: android
+          script: bash ../tools/polish/tv-walk.sh ../polish-out/tv
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: polish-tv
+          path: polish-out
+          retention-days: 14
+          if-no-files-found: ignore
+
+  web:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Build the web app and the server
+        run: |
+          cd web && npm ci --no-audit --no-fund && npm run build && cd ..
+          go build -o cue ./cmd/app
+
+      - name: Start a throwaway Cue with an administrator
+        run: |
+          mkdir -p /tmp/cue/data /tmp/cue/movies /tmp/cue/tv /tmp/cue/dl
+          CONFIG_DIR=/tmp/cue/data MOVIES_DIR=/tmp/cue/movies TV_DIR=/tmp/cue/tv DOWNLOADS_DIR=/tmp/cue/dl \
+            APP_PORT=8264 CUE_PAUSE_AUTOMATION=1 ./cue > /tmp/cue/server.log 2>&1 &
+          for i in $(seq 1 30); do curl -sf localhost:8264/api/onboarding/status && break; sleep 1; done
+          curl -sf -H 'Content-Type: application/json' \
+            -d '{"username":"polish","password":"polish-walk-2026"}' localhost:8264/api/onboarding/admin
+
+      - name: Walk through the web app, recording the screen
+        run: |
+          npm install --no-save --no-audit --no-fund --prefix tools/polish playwright@1.56.1
+          npx --prefix tools/polish playwright install --with-deps chromium
+          node tools/polish/web-walk.mjs http://localhost:8264 polish-out/web
+          cp /tmp/cue/server.log polish-out/web/server.log
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: polish-web
+          path: polish-out
+          retention-days: 14
+          if-no-files-found: ignore
+
+  # One artifact with both walks and the contact sheets, for the review.
+  sheets:
+    needs: [tv, web]
+    if: always()
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # to publish the sheets on the polish-latest branch
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: polish-*
+          merge-multiple: true
+          path: polish-out
+
+      - name: Cut each transition into a contact sheet
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg > /dev/null
+          node tools/polish/sheets.mjs polish-out
+          {
+            echo "commit ${GITHUB_SHA}"
+            echo "tv walkthrough: $(cat polish-out/tv/walkthrough-status.txt 2>/dev/null || echo 'did not run')  (0 = passed)"
+            echo "tv crashes: $( [ -f polish-out/tv/crashes.txt ] && echo yes || echo none )"
+            echo "web errors: $(node -e "try{console.log(require('./polish-out/web/errors.json').length)}catch{console.log('did not run')}")"
+          } > polish-out/summary.txt
+          cat polish-out/summary.txt
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: polish
+          path: polish-out
+          retention-days: 14
+
+      # The sheets, screenshots and logs (not the videos) as the one commit of
+      # the polish-latest branch, replaced each night: a cloud review session
+      # can fetch a branch where it can't download an artifact.
+      - name: Publish on the polish-latest branch
+        run: |
+          rm -rf /tmp/publish && mkdir -p /tmp/publish && cp -r polish-out/. /tmp/publish/
+          cd /tmp/publish
+          find . \( -name '*.mp4' -o -name '*.webm' -o -name 'logcat.txt' \) -delete
+          cp "$GITHUB_WORKSPACE/tools/polish/README.md" README.md
+          git init -q -b polish-latest
+          git -c user.name="Cue polish run" -c user.email="actions@users.noreply.github.com" add -A
+          git -c user.name="Cue polish run" -c user.email="actions@users.noreply.github.com" commit -q -m "Polish run $(date -u +%F) for ${GITHUB_SHA::7}"
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" polish-latest

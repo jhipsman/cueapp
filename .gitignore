@@ -35,3 +35,7 @@ Thumbs.db
 
 # Agent and editor tooling stays out of the repo
 /music/
+
+# The nightly polish run (tools/polish)
+/tools/polish/node_modules/
+/polish-out/
