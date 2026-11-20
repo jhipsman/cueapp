@@ -91,7 +91,7 @@ jobs:
 
       - name: Walk through the web app, recording the screen
         run: |
-          npm install --no-save --no-audit --no-fund --prefix tools/polish playwright@1.56.1
+          npm install --no-save --no-audit --no-fund --prefix tools/polish playwright@1.63.0
           npx --prefix tools/polish playwright install --with-deps chromium
           node tools/polish/web-walk.mjs http://localhost:8264 polish-out/web
           cp /tmp/cue/server.log polish-out/web/server.log
