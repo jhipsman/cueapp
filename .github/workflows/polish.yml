@@ -10,12 +10,17 @@ on:
   schedule:
     - cron: "17 7 * * *" # every night
   workflow_dispatch:
+  # A change to the polish run itself is tried out on its pull request.
+  pull_request:
+    paths:
+      - "tools/polish/**"
+      - ".github/workflows/polish.yml"
 
 permissions:
   contents: read
 
 concurrency:
-  group: polish
+  group: polish-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -137,6 +142,7 @@ jobs:
       # the polish-latest branch, replaced each night: a cloud review session
       # can fetch a branch where it can't download an artifact.
       - name: Publish on the polish-latest branch
+        if: github.event_name != 'pull_request'
         run: |
           rm -rf /tmp/publish && mkdir -p /tmp/publish && cp -r polish-out/. /tmp/publish/
           cd /tmp/publish
