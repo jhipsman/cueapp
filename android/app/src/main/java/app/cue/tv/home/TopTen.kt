@@ -23,7 +23,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.TextStyle
@@ -73,12 +72,12 @@ fun TopTenRow(lists: List<TopList>, only: String?, memory: FocusMemory, onFocus:
     Column(Modifier.padding(bottom = 14.dp)) {
         Text("Top 10 on ${list.name} today", fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = Color(0xF2FFFFFF),
             modifier = Modifier.padding(start = Gutter + 2.dp, bottom = 6.dp))
-        LazyRow(Modifier.focusRestorer(), contentPadding = PaddingValues(horizontal = Gutter), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        LazyRow(Modifier.keepRowFocus(), contentPadding = PaddingValues(horizontal = Gutter), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             items(shown.distinctBy { it.key }, key = { it.key }) { l -> ServiceTab(l.name, l.logo, selected = l.key == list.key) { key = l.key } }
         }
         CompositionLocalProvider(LocalBringIntoViewSpec provides PivotSpec) {
             LazyRow(
-                modifier = Modifier.focusRestorer(),
+                modifier = Modifier.keepRowFocus(),
                 contentPadding = PaddingValues(horizontal = Gutter, vertical = 16.dp),
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
             ) {
@@ -152,7 +151,7 @@ fun TopScreen(api: CueApi, memory: FocusMemory, onCard: (Tile) -> Unit) {
             FilterRow(listOf("all" to "All", "movie" to "Movies", "tv" to "Shows"), kind) { kind = it }
         }
         item(key = "services") {
-            LazyRow(Modifier.focusRestorer(), contentPadding = PaddingValues(horizontal = Gutter, vertical = 6.dp), horizontalArrangement = Arrangement.spacedBy(10.dp),
+            LazyRow(Modifier.keepRowFocus(), contentPadding = PaddingValues(horizontal = Gutter, vertical = 6.dp), horizontalArrangement = Arrangement.spacedBy(10.dp),
                 verticalAlignment = Alignment.CenterVertically) {
                 item { ChoiceTab("Everywhere", selected = service == "") { service = "" } }
                 items((p?.services ?: emptyList()).distinctBy { it.key }, key = { it.key }) { s -> ServiceTab(s.name, s.logo, selected = s.key == service) { service = s.key } }
@@ -173,7 +172,7 @@ fun TopScreen(api: CueApi, memory: FocusMemory, onCard: (Tile) -> Unit) {
                 items.isEmpty() && loading -> Text("Loading…", color = Dim, modifier = Modifier.padding(start = Gutter, top = 20.dp))
                 items.isEmpty() -> Text("Nothing found for that. Try another service or genre.", color = Dim, modifier = Modifier.padding(start = Gutter, top = 20.dp))
                 else -> CompositionLocalProvider(LocalBringIntoViewSpec provides PivotSpec) {
-                    LazyRow(Modifier.focusRestorer(), contentPadding = PaddingValues(horizontal = Gutter, vertical = 16.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    LazyRow(Modifier.keepRowFocus(), contentPadding = PaddingValues(horizontal = Gutter, vertical = 16.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                         items(items.distinctBy { it.key }.take(10).withIndex().toList(), key = { "top-page/${it.value.key}" }) { (i, c) ->
                             Row(verticalAlignment = Alignment.Bottom) {
                                 Box(Modifier.offset(x = 10.dp, y = (-18).dp)) {
@@ -194,7 +193,7 @@ fun TopScreen(api: CueApi, memory: FocusMemory, onCard: (Tile) -> Unit) {
 // A row of choices (the one chosen lit).
 @Composable
 private fun FilterRow(choices: List<Pair<String, String>>, chosen: String, onChoose: (String) -> Unit) {
-    LazyRow(Modifier.focusRestorer(), contentPadding = PaddingValues(horizontal = Gutter, vertical = 4.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+    LazyRow(Modifier.keepRowFocus(), contentPadding = PaddingValues(horizontal = Gutter, vertical = 4.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         items(choices.distinctBy { it.first }, key = { it.first }) { (value, label) -> ChoiceTab(label, selected = value == chosen) { onChoose(value) } }
     }
 }
