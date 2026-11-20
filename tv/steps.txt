@@ -1,0 +1,51 @@
+         1795205545.192  4575  4595 I CueWalkThrough: step 01 home
+         1795205545.452  4575  4595 I CueWalkThrough: press KEYCODE_DPAD_LEFT
+         1795205545.864  4575  4595 I CueWalkThrough: press KEYCODE_DPAD_LEFT
+         1795205546.244  4575  4595 I CueWalkThrough: press KEYCODE_DPAD_LEFT
+         1795205546.637  4575  4595 I CueWalkThrough: step 02 side-menu
+         1795205546.821  4575  4595 I CueWalkThrough: press KEYCODE_DPAD_DOWN
+         1795205547.914  4575  4595 I CueWalkThrough: step 03 shows
+         1795205548.415  4575  4595 I CueWalkThrough: press KEYCODE_DPAD_DOWN
+         1795205549.517  4575  4595 I CueWalkThrough: step 04 movies
+         1795205549.784  4575  4595 I CueWalkThrough: press KEYCODE_DPAD_DOWN
+         1795205550.681  4575  4595 I CueWalkThrough: step 05 sports
+         1795205550.868  4575  4595 I CueWalkThrough: press KEYCODE_DPAD_DOWN
+         1795205551.807  4575  4595 I CueWalkThrough: step 06 live-tv
+         1795205552.009  4575  4595 I CueWalkThrough: press KEYCODE_DPAD_DOWN
+         1795205552.927  4575  4595 I CueWalkThrough: step 07 my-list
+         1795205553.147  4575  4595 I CueWalkThrough: press KEYCODE_DPAD_DOWN
+         1795205554.088  4575  4595 I CueWalkThrough: step 08 browse
+         1795205554.343  4575  4595 I CueWalkThrough: press KEYCODE_DPAD_RIGHT
+         1795205555.203  4575  4595 I CueWalkThrough: press KEYCODE_DPAD_UP
+         1795205555.571  4575  4595 I CueWalkThrough: press KEYCODE_DPAD_UP
+         1795205556.107  4575  4595 I CueWalkThrough: press KEYCODE_DPAD_UP
+         1795205556.726  4575  4595 I CueWalkThrough: press KEYCODE_DPAD_UP
+         1795205557.113  4575  4595 I CueWalkThrough: step 09 browse-in
+         1795205557.313  4575  4595 I CueWalkThrough: press KEYCODE_DPAD_DOWN
+         1795205557.750  4575  4595 I CueWalkThrough: press KEYCODE_DPAD_CENTER
+         1795205559.341  4575  4595 I CueWalkThrough: step 10 service-page
+         1795205559.516  4575  4595 I CueWalkThrough: press KEYCODE_DPAD_CENTER
+         1795205561.152  4575  4595 I CueWalkThrough: step 11 title
+         1795205561.441  4575  4595 I CueWalkThrough: press KEYCODE_BACK
+         1795205562.128  4575  4595 I CueWalkThrough: press KEYCODE_BACK
+         1795205563.017  4575  4595 I CueWalkThrough: step 12 back-to-browse
+         1795205563.331  4575  4595 I CueWalkThrough: press KEYCODE_BACK
+         1795205563.724  4575  4595 I CueWalkThrough: press KEYCODE_DPAD_UP
+         1795205564.376  4575  4595 I CueWalkThrough: press KEYCODE_DPAD_UP
+         1795205564.934  4575  4595 I CueWalkThrough: press KEYCODE_DPAD_UP
+         1795205565.565  4575  4595 I CueWalkThrough: press KEYCODE_DPAD_UP
+         1795205566.253  4575  4595 I CueWalkThrough: press KEYCODE_DPAD_UP
+         1795205566.945  4575  4595 I CueWalkThrough: press KEYCODE_DPAD_UP
+         1795205567.588  4575  4595 I CueWalkThrough: press KEYCODE_DPAD_UP
+         1795205569.090  4575  4595 I CueWalkThrough: step 13 ask-cue
+         1795205569.340  4575  4595 I CueWalkThrough: press KEYCODE_DPAD_RIGHT
+         1795205569.746  4575  4595 I CueWalkThrough: press KEYCODE_DPAD_UP
+         1795205570.207  4575  4595 I CueWalkThrough: press KEYCODE_DPAD_UP
+         1795205570.602  4575  4595 I CueWalkThrough: press KEYCODE_DPAD_CENTER
+         1795205571.587  4575  4595 I CueWalkThrough: step 14 ask-cue-answer
+         1795205571.770  4575  4595 I CueWalkThrough: press KEYCODE_BACK
+         1795205572.217  4575  4595 I CueWalkThrough: press KEYCODE_DPAD_UP
+         1795205574.056  4575  4595 I CueWalkThrough: step 15 search
+         1795205574.250  4575  4595 I CueWalkThrough: press KEYCODE_BACK
+         1795205575.013  4575  4595 I CueWalkThrough: step 16 home-again
+         1795205575.929  4575  4595 I CueWalkThrough: unknown requests: [GET /api/screens/listen, GET /tv.version, GET /api/screens/listen, GET /api/screens/listen, GET /api/screens/listen, GET /api/screens/listen, GET /api/screens/listen, GET /api/screens/listen, GET /api/screens/listen, GET /api/screens/listen]

@@ -1,0 +1,97 @@
+         1795205539.703  4563  4563 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+         1795205539.704  4563  4563 E libc    : Access denied finding property "persist.device_config.runtime_native_boot.profilebootclasspath"
+         1795205539.704  4563  4563 E libc    : Access denied finding property "persist.device_config.runtime_native_boot.enable_apex_image"
+         1795205539.704  4563  4563 I AndroidRuntime: Using default boot image
+         1795205539.704  4563  4563 E libc    : Access denied finding property "persist.device_config.runtime_native_boot.disable_lock_profiling"
+         1795205539.704  4563  4563 I AndroidRuntime: Leaving lock profiling enabled
+         1795205539.704  4563  4563 E libc    : Access denied finding property "persist.device_config.runtime_native_boot.enable_generational_cc"
+         1795205539.700  4563  4563 W app_process: type=1400 audit(0.0:72): avc: denied { read } for name="u:object_r:device_config_runtime_native_boot_prop:s0" dev="tmpfs" ino=8374 scontext=u:r:shell:s0 tcontext=u:object_r:device_config_runtime_native_boot_prop:s0 tclass=file permissive=0
+         1795205539.700  4563  4563 W app_process: type=1400 audit(0.0:73): avc: denied { read } for name="u:object_r:device_config_runtime_native_boot_prop:s0" dev="tmpfs" ino=8374 scontext=u:r:shell:s0 tcontext=u:object_r:device_config_runtime_native_boot_prop:s0 tclass=file permissive=0
+         1795205539.755  4563  4563 D app_process: Time zone APEX ICU file found: /apex/com.android.tzdata/etc/icu/icu_tzdata.dat
+         1795205539.755  4563  4563 D app_process: I18n APEX ICU file found: /apex/com.android.i18n/etc/icu/icudt66l.dat
+         1795205539.758  4563  4563 W app_process: Unexpected CPU variant for X86 using defaults: x86
+         1795205539.759  4563  4563 I app_process: The ClassLoaderContext is a special shared library.
+         1795205539.767  4563  4563 W app_process: JNI RegisterNativeMethods: attempt to register 0 native methods for android.media.AudioAttributes
+         1795205539.769  4563  4563 D AndroidRuntime: Calling main entry com.android.commands.am.Am
+         1795205539.772   469   495 I ActivityManager: Force stopping app.cue.tv appid=10076 user=0: start instr
+         1795205539.773   469   495 D CompatibilityChangeReporter: Compat change id reported: 135634846; UID 10076; state: DISABLED
+         1795205539.773   469   507 D CompatibilityChangeReporter: Compat change id reported: 143937733; UID 10076; state: ENABLED
+         1795205539.777   264   264 D Zygote  : Forked child process 4575
+         1795205539.778   469   507 I ActivityManager: Start proc 4575:app.cue.tv/u0a76 for added application app.cue.tv
+         1795205539.780  4575  4575 I app.cue.tv: Late-enabling -Xcheck:jni
+         1795205539.787  4575  4575 I app.cue.tv: Unquickening 12 vdex files!
+         1795205539.787  4575  4575 W app.cue.tv: Unexpected CPU variant for X86 using defaults: x86
+         1795205539.793  1525  1534 I adbd    : jdwp connection from 4575
+         1795205539.800  4575  4575 W ActivityThread: Package uses different ABI(s) than its instrumentation: package[app.cue.tv]: x86, null instrumentation[app.cue.tv.test]: null, null
+         1795205539.802  4575  4575 I app.cue.tv: The ClassLoaderContext is a special shared library.
+         1795205539.886   469   497 I RoleManagerService: Granting default roles...
+         1795205539.804  4575  4575 I chatty  : uid=10076(u0_a76) identical 1 line
+         1795205539.804  4575  4575 I app.cue.tv: The ClassLoaderContext is a special shared library.
+         1795205539.886   695  4458 W Role    : Cannot get ApplicationInfo for default holder: com.android.messaging
+         1795205539.887   695  4458 W Role    : Cannot get ApplicationInfo for default holder: com.android.gallery3d
+         1795205540.043  4575  4575 D ApplicationLoaders: Returning zygote-cached class loader: /system/framework/android.test.base.jar
+         1795205540.043  4575  4575 D ApplicationLoaders: Returning zygote-cached class loader: /system/framework/android.test.base.jar
+         1795205540.044  4575  4575 I app.cue.tv: The ClassLoaderContext is a special shared library.
+         1795205540.045  4575  4575 D ApplicationLoaders: Returning zygote-cached class loader: /system/framework/android.test.base.jar
+         1795205540.045  4575  4575 D ApplicationLoaders: Returning zygote-cached class loader: /system/framework/android.test.base.jar
+         1795205540.046  4575  4575 I app.cue.tv: The ClassLoaderContext is a special shared library.
+         1795205540.047  4575  4575 I chatty  : uid=10076(u0_a76) identical 2 lines
+         1795205540.047  4575  4575 I app.cue.tv: The ClassLoaderContext is a special shared library.
+         1795205540.287  4575  4575 W app.cue.tv: Accessing hidden method Landroid/app/Instrumentation;->execStartActivity(Landroid/content/Context;Landroid/os/IBinder;Landroid/os/IBinder;Landroid/app/Activity;Landroid/content/Intent;ILandroid/os/Bundle;)Landroid/app/Instrumentation$ActivityResult; (greylist, linking, allowed)
+         1795205540.287  4575  4575 W app.cue.tv: Accessing hidden method Landroid/app/Instrumentation;->execStartActivity(Landroid/content/Context;Landroid/os/IBinder;Landroid/os/IBinder;Ljava/lang/String;Landroid/content/Intent;ILandroid/os/Bundle;)Landroid/app/Instrumentation$ActivityResult; (greylist, linking, allowed)
+         1795205540.290  4575  4575 D NetworkSecurityConfig: No Network Security Config specified, using platform default
+         1795205540.291  4575  4575 D NetworkSecurityConfig: No Network Security Config specified, using platform default
+         1795205540.291  4575  4575 I AndroidJUnitRunner: newApplication android.app.Application
+         1795205540.301  4575  4575 I AndroidJUnitRunner: onCreate Bundle[mParcelledData.dataSize=248]
+         1795205540.302  4575  4575 D AndroidJUnitRunner: Use the raw file system for managing file I/O.
+         1795205540.306  4575  4575 V TestEventClient: No service name argument was given (testDiscoveryService, testRunEventService or orchestratorService)
+         1795205540.306  4575  4595 D AndroidJUnitRunner: onStart is called.
+         1795205540.310  4575  4595 D TestRequestBuilder: Using class path scanning to discover tests
+         1795205540.310  4575  4595 I TestRequestBuilder: Scanning classpath to find tests in paths [/data/app/~~Uru9xGk5o7DL3AfnL7ijog==/app.cue.tv.test-mokBqIanE81Ab6TWFCD2SQ==/base.apk]
+         1795205540.310  4575  4595 W app.cue.tv: Opening an oat file without a class loader. Are you using the deprecated DexFile APIs?
+         1795205540.360  4575  4595 I TestRunner: run started: 1 tests
+         1795205540.360  4575  4595 I TestRunner: started: walkThroughTheApp(app.cue.tv.WalkThroughTest)
+         1795205540.438  1305  1305 E Clearcut-EventLogger: Unexpected log parameter tray_notification_count
+         1795205540.459  4575  4575 I WebViewFactory: Loading com.google.android.webview version 90.0.4430.91 (code 443009131)
+--
+         1795205575.945  4563  4563 D AndroidRuntime: Shutting down VM
+         1795205575.946   283   311 D goldfish-address-space: claimShared: Ask to claim region [0x3fa78d000 0x3faf76000]
+         1795205575.955   284  3307 W EmuHWC2 : No layers, exit, buffer 0x0
+         1795205576.142   469   500 W ActivityManager: setHasOverlayUi called on unknown pid: 4575
+         1795205576.055   284  3307 I chatty  : uid=1000(system) HwBinder:284_3 identical 1 line
+         1795205576.071   284  3307 W EmuHWC2 : No layers, exit, buffer 0x0
+         1795205576.151   264   264 I Zygote  : Process 4575 exited due to signal 9 (Killed)
+         1795205576.157   469  3471 W InputReader: Device virtio_input_multi_touch_8 is associated with display ADISPLAY_ID_NONE.
+         1795205576.157   469  3471 W InputReader: Device virtio_input_multi_touch_9 is associated with display ADISPLAY_ID_NONE.
+         1795205576.157   469  3471 W InputReader: Device virtio_input_multi_touch_10 is associated with display ADISPLAY_ID_NONE.
+         1795205576.157   469  3471 W InputReader: Device virtio_input_multi_touch_7 is associated with display ADISPLAY_ID_NONE.
+         1795205576.157   469  3471 W InputReader: Device virtio_input_multi_touch_4 is associated with display ADISPLAY_ID_NONE.
+         1795205576.157   469  3471 W InputReader: Device virtio_input_multi_touch_11 is associated with display ADISPLAY_ID_NONE.
+         1795205576.157   469  3471 W InputReader: Device virtio_input_multi_touch_5 is associated with display ADISPLAY_ID_NONE.
+         1795205576.157   469  3471 W InputReader: Device virtio_input_multi_touch_6 is associated with display ADISPLAY_ID_NONE.
+         1795205576.157   469  3471 W InputReader: Device virtio_input_multi_touch_3 is associated with display ADISPLAY_ID_NONE.
+         1795205576.157   469  3471 W InputReader: Device virtio_input_multi_touch_2 is associated with display ADISPLAY_ID_NONE.
+         1795205576.157   469  3471 W InputReader: Device virtio_input_multi_touch_8 is associated with display ADISPLAY_ID_NONE.
+         1795205576.157   469  3471 W InputReader: Device virtio_input_multi_touch_9 is associated with display ADISPLAY_ID_NONE.
+         1795205576.157   469  3471 W InputReader: Device virtio_input_multi_touch_10 is associated with display ADISPLAY_ID_NONE.
+         1795205576.157   469  3471 W InputReader: Device virtio_input_multi_touch_7 is associated with display ADISPLAY_ID_NONE.
+         1795205576.157   469  3471 W InputReader: Device virtio_input_multi_touch_4 is associated with display ADISPLAY_ID_NONE.
+         1795205576.157   469  3471 W InputReader: Device virtio_input_multi_touch_11 is associated with display ADISPLAY_ID_NONE.
+         1795205576.157   469  3471 W InputReader: Device virtio_input_multi_touch_5 is associated with display ADISPLAY_ID_NONE.
+         1795205576.157   469  3471 W InputReader: Device virtio_input_multi_touch_6 is associated with display ADISPLAY_ID_NONE.
+         1795205576.157   469  3471 W InputReader: Device virtio_input_multi_touch_3 is associated with display ADISPLAY_ID_NONE.
+         1795205576.157   469  3471 W InputReader: Device virtio_input_multi_touch_2 is associated with display ADISPLAY_ID_NONE.
+         1795205576.167   469   508 I libprocessgroup: Successfully killed process cgroup uid 10076 pid 4575 in 226ms
+         1795205576.183  1305  3177 E ActivityThread: Failed to find provider info for tvlauncher.mic
+         1795205576.200   283   311 D goldfish-address-space: claimShared: Ask to claim region [0x3faf76000 0x3fb75f000]
+         1795205576.201  1305  1305 W HomeController: onResume: List view global layout completed.
+         1795205576.218   283   311 D goldfish-address-space: claimShared: Ask to claim region [0x3fb75f000 0x3fbf48000]
+         1795205576.243   283   283 D goldfish-address-space: claimShared: Ask to claim region [0x3f87e9000 0x3f8fd2000]
+         1795205576.291  1017  1017 I GoogleInputMethodService: GoogleInputMethodService.onFinishInput():3466 
+         1795205576.291  1017  1017 I GoogleInputMethodService: GoogleInputMethodService.onStartInput():2045 
+         1795205576.291  1017  1017 I DeviceUnlockedTag: DeviceUnlockedTag.notifyDeviceLockStatusChanged():38 Notify device unlocked.
+         1795205576.775  5140  5143 I cmd     : oneway function results will be dropped but finished with status OK and parcel size 4
+         1795205577.583   469   506 I ActivityManager: Force stopping app.cue.tv appid=10076 user=-1: deletePackageX
+         1795205577.620   469   522 I PackageManager: Removing permission app.cue.tv.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION that used to be declared by app.cue.tv
+         1795205577.635   469   522 W PackageManager: Removing dangling permission: app.cue.tv.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION from package app.cue.tv
+         1795205577.635   469   522 I PackageManager: Permission ownership changed. Updating all permissions.

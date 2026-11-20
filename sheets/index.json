@@ -1,0 +1,426 @@
+[
+  {
+    "sheet": "web-desktop-01-dashboard.jpg",
+    "app": "web",
+    "viewport": "desktop",
+    "step": "dashboard",
+    "url": "/watch",
+    "startSec": 0,
+    "frameMs": 83,
+    "frames": 29
+  },
+  {
+    "sheet": "web-desktop-02-discover.jpg",
+    "app": "web",
+    "viewport": "desktop",
+    "step": "discover",
+    "url": "/discover",
+    "startSec": 2.945,
+    "frameMs": 83,
+    "frames": 29
+  },
+  {
+    "sheet": "web-desktop-03-open-a-title.jpg",
+    "app": "web",
+    "viewport": "desktop",
+    "step": "open-a-title",
+    "url": "/title/9002",
+    "startSec": 5.356,
+    "frameMs": 83,
+    "frames": 22
+  },
+  {
+    "sheet": "web-desktop-04-back.jpg",
+    "app": "web",
+    "viewport": "desktop",
+    "step": "back",
+    "url": "/discover",
+    "startSec": 7.16,
+    "frameMs": 83,
+    "frames": 21
+  },
+  {
+    "sheet": "web-desktop-05-library.jpg",
+    "app": "web",
+    "viewport": "desktop",
+    "step": "library",
+    "url": "/library",
+    "startSec": 8.919,
+    "frameMs": 83,
+    "frames": 28
+  },
+  {
+    "sheet": "web-desktop-06-calendar.jpg",
+    "app": "web",
+    "viewport": "desktop",
+    "step": "calendar",
+    "url": "/calendar",
+    "startSec": 11.285,
+    "frameMs": 83,
+    "frames": 29
+  },
+  {
+    "sheet": "web-desktop-07-queue.jpg",
+    "app": "web",
+    "viewport": "desktop",
+    "step": "queue",
+    "url": "/queue",
+    "startSec": 13.693,
+    "frameMs": 83,
+    "frames": 28
+  },
+  {
+    "sheet": "web-desktop-08-search.jpg",
+    "app": "web",
+    "viewport": "desktop",
+    "step": "search",
+    "url": "/search",
+    "startSec": 16.031,
+    "frameMs": 83,
+    "frames": 28
+  },
+  {
+    "sheet": "web-desktop-09-watch-home.jpg",
+    "app": "web",
+    "viewport": "desktop",
+    "step": "watch-home",
+    "url": "/watch",
+    "startSec": 18.365,
+    "frameMs": 83,
+    "frames": 29
+  },
+  {
+    "sheet": "web-desktop-10-settings.jpg",
+    "app": "web",
+    "viewport": "desktop",
+    "step": "settings",
+    "url": "/settings/streaming",
+    "startSec": 20.775,
+    "frameMs": 83,
+    "frames": 28
+  },
+  {
+    "sheet": "web-desktop-11-settings-notifications.jpg",
+    "app": "web",
+    "viewport": "desktop",
+    "step": "settings-notifications",
+    "url": "/settings/notifications",
+    "startSec": 23.069,
+    "frameMs": 83,
+    "frames": 28
+  },
+  {
+    "sheet": "web-desktop-12-settings-problems.jpg",
+    "app": "web",
+    "viewport": "desktop",
+    "step": "settings-problems",
+    "url": "/settings/problems",
+    "startSec": 25.371,
+    "frameMs": 83,
+    "frames": 27
+  },
+  {
+    "sheet": "web-desktop-13-settings-logs.jpg",
+    "app": "web",
+    "viewport": "desktop",
+    "step": "settings-logs",
+    "url": "/settings/logs",
+    "startSec": 27.627,
+    "frameMs": 83,
+    "frames": 29
+  },
+  {
+    "sheet": "web-desktop-14-open-a-menu.jpg",
+    "app": "web",
+    "viewport": "desktop",
+    "step": "open-a-menu",
+    "url": "/settings/logs",
+    "startSec": 30.157,
+    "frameMs": 83,
+    "frames": 22
+  },
+  {
+    "sheet": "web-phone-01-dashboard.jpg",
+    "app": "web",
+    "viewport": "phone",
+    "step": "dashboard",
+    "url": "/watch",
+    "startSec": 0,
+    "frameMs": 83,
+    "frames": 29
+  },
+  {
+    "sheet": "web-phone-02-discover.jpg",
+    "app": "web",
+    "viewport": "phone",
+    "step": "discover",
+    "url": "/discover",
+    "startSec": 2.728,
+    "frameMs": 83,
+    "frames": 27
+  },
+  {
+    "sheet": "web-phone-03-open-a-title.jpg",
+    "app": "web",
+    "viewport": "phone",
+    "step": "open-a-title",
+    "url": "/title/9002",
+    "startSec": 5,
+    "frameMs": 83,
+    "frames": 21
+  },
+  {
+    "sheet": "web-phone-04-back.jpg",
+    "app": "web",
+    "viewport": "phone",
+    "step": "back",
+    "url": "/discover",
+    "startSec": 6.714,
+    "frameMs": 83,
+    "frames": 20
+  },
+  {
+    "sheet": "web-phone-05-library.jpg",
+    "app": "web",
+    "viewport": "phone",
+    "step": "library",
+    "url": "/library",
+    "startSec": 8.368,
+    "frameMs": 83,
+    "frames": 27
+  },
+  {
+    "sheet": "web-phone-06-calendar.jpg",
+    "app": "web",
+    "viewport": "phone",
+    "step": "calendar",
+    "url": "/calendar",
+    "startSec": 10.6,
+    "frameMs": 83,
+    "frames": 27
+  },
+  {
+    "sheet": "web-phone-07-queue.jpg",
+    "app": "web",
+    "viewport": "phone",
+    "step": "queue",
+    "url": "/queue",
+    "startSec": 12.835,
+    "frameMs": 83,
+    "frames": 27
+  },
+  {
+    "sheet": "web-phone-08-search.jpg",
+    "app": "web",
+    "viewport": "phone",
+    "step": "search",
+    "url": "/search",
+    "startSec": 15.065,
+    "frameMs": 83,
+    "frames": 27
+  },
+  {
+    "sheet": "web-phone-09-watch-home.jpg",
+    "app": "web",
+    "viewport": "phone",
+    "step": "watch-home",
+    "url": "/watch",
+    "startSec": 17.291,
+    "frameMs": 83,
+    "frames": 27
+  },
+  {
+    "sheet": "web-phone-10-settings.jpg",
+    "app": "web",
+    "viewport": "phone",
+    "step": "settings",
+    "url": "/settings/streaming",
+    "startSec": 19.537,
+    "frameMs": 83,
+    "frames": 27
+  },
+  {
+    "sheet": "web-phone-11-settings-notifications.jpg",
+    "app": "web",
+    "viewport": "phone",
+    "step": "settings-notifications",
+    "url": "/settings/notifications",
+    "startSec": 21.756,
+    "frameMs": 83,
+    "frames": 27
+  },
+  {
+    "sheet": "web-phone-12-settings-problems.jpg",
+    "app": "web",
+    "viewport": "phone",
+    "step": "settings-problems",
+    "url": "/settings/problems",
+    "startSec": 23.988,
+    "frameMs": 83,
+    "frames": 27
+  },
+  {
+    "sheet": "web-phone-13-settings-logs.jpg",
+    "app": "web",
+    "viewport": "phone",
+    "step": "settings-logs",
+    "url": "/settings/logs",
+    "startSec": 26.216,
+    "frameMs": 83,
+    "frames": 27
+  },
+  {
+    "sheet": "web-phone-14-open-a-menu.jpg",
+    "app": "web",
+    "viewport": "phone",
+    "step": "open-a-menu",
+    "url": "/settings/logs",
+    "startSec": 28.441,
+    "frameMs": 83,
+    "frames": 21
+  },
+  {
+    "sheet": "tv-01-home.jpg",
+    "app": "tv",
+    "step": "home",
+    "startSec": 29.26,
+    "part": "part-01",
+    "frameMs": 100,
+    "frames": 24
+  },
+  {
+    "sheet": "tv-02-side-menu.jpg",
+    "app": "tv",
+    "step": "side-menu",
+    "startSec": 31.52,
+    "part": "part-01",
+    "frameMs": 100,
+    "frames": 16
+  },
+  {
+    "sheet": "tv-03-shows.jpg",
+    "app": "tv",
+    "step": "shows",
+    "startSec": 32.89,
+    "part": "part-01",
+    "frameMs": 100,
+    "frames": 15
+  },
+  {
+    "sheet": "tv-04-movies.jpg",
+    "app": "tv",
+    "step": "movies",
+    "startSec": 34.48,
+    "part": "part-01",
+    "frameMs": 100,
+    "frames": 15
+  },
+  {
+    "sheet": "tv-05-sports.jpg",
+    "app": "tv",
+    "step": "sports",
+    "startSec": 35.85,
+    "part": "part-01",
+    "frameMs": 100,
+    "frames": 13
+  },
+  {
+    "sheet": "tv-06-live-tv.jpg",
+    "app": "tv",
+    "step": "live-tv",
+    "startSec": 36.94,
+    "part": "part-01",
+    "frameMs": 100,
+    "frames": 13
+  },
+  {
+    "sheet": "tv-07-my-list.jpg",
+    "app": "tv",
+    "step": "my-list",
+    "startSec": 38.08,
+    "part": "part-01",
+    "frameMs": 100,
+    "frames": 13
+  },
+  {
+    "sheet": "tv-08-browse.jpg",
+    "app": "tv",
+    "step": "browse",
+    "startSec": 39.21,
+    "part": "part-01",
+    "frameMs": 100,
+    "frames": 13
+  },
+  {
+    "sheet": "tv-09-browse-in.jpg",
+    "app": "tv",
+    "step": "browse-in",
+    "startSec": 40.41,
+    "part": "part-01",
+    "frameMs": 100,
+    "frames": 32
+  },
+  {
+    "sheet": "tv-10-service-page.jpg",
+    "app": "tv",
+    "step": "service-page",
+    "startSec": 43.38,
+    "part": "part-01",
+    "frameMs": 100,
+    "frames": 24
+  },
+  {
+    "sheet": "tv-11-title.jpg",
+    "app": "tv",
+    "step": "title",
+    "startSec": 45.58,
+    "part": "part-01",
+    "frameMs": 100,
+    "frames": 20
+  },
+  {
+    "sheet": "tv-12-back-to-browse.jpg",
+    "app": "tv",
+    "step": "back-to-browse",
+    "startSec": 47.51,
+    "part": "part-01",
+    "frameMs": 100,
+    "frames": 20
+  },
+  {
+    "sheet": "tv-13-ask-cue.jpg",
+    "app": "tv",
+    "step": "ask-cue",
+    "startSec": 51.56,
+    "part": "part-01",
+    "frameMs": 100,
+    "frames": 40
+  },
+  {
+    "sheet": "tv-14-ask-cue-answer.jpg",
+    "app": "tv",
+    "step": "ask-cue-answer",
+    "startSec": 55.41,
+    "part": "part-01",
+    "frameMs": 100,
+    "frames": 26
+  },
+  {
+    "sheet": "tv-15-search.jpg",
+    "app": "tv",
+    "step": "search",
+    "startSec": 57.84,
+    "part": "part-01",
+    "frameMs": 100,
+    "frames": 27
+  },
+  {
+    "sheet": "tv-16-home-again.jpg",
+    "app": "tv",
+    "step": "home-again",
+    "startSec": 60.32,
+    "part": "part-01",
+    "frameMs": 100,
+    "frames": 12
+  }
+]

@@ -1,0 +1,174 @@
+{
+  "desktop": [
+    {
+      "step": "dashboard",
+      "start": 0,
+      "end": 2.945,
+      "url": "/watch"
+    },
+    {
+      "step": "discover",
+      "start": 2.945,
+      "end": 5.356,
+      "url": "/discover"
+    },
+    {
+      "step": "open-a-title",
+      "start": 5.356,
+      "end": 7.16,
+      "url": "/title/9002"
+    },
+    {
+      "step": "back",
+      "start": 7.16,
+      "end": 8.919,
+      "url": "/discover"
+    },
+    {
+      "step": "library",
+      "start": 8.919,
+      "end": 11.285,
+      "url": "/library"
+    },
+    {
+      "step": "calendar",
+      "start": 11.285,
+      "end": 13.693,
+      "url": "/calendar"
+    },
+    {
+      "step": "queue",
+      "start": 13.693,
+      "end": 16.031,
+      "url": "/queue"
+    },
+    {
+      "step": "search",
+      "start": 16.031,
+      "end": 18.365,
+      "url": "/search"
+    },
+    {
+      "step": "watch-home",
+      "start": 18.365,
+      "end": 20.775,
+      "url": "/watch"
+    },
+    {
+      "step": "settings",
+      "start": 20.775,
+      "end": 23.069,
+      "url": "/settings/streaming"
+    },
+    {
+      "step": "settings-notifications",
+      "start": 23.069,
+      "end": 25.371,
+      "url": "/settings/notifications"
+    },
+    {
+      "step": "settings-problems",
+      "start": 25.371,
+      "end": 27.627,
+      "url": "/settings/problems"
+    },
+    {
+      "step": "settings-logs",
+      "start": 27.627,
+      "end": 30.157,
+      "url": "/settings/logs"
+    },
+    {
+      "step": "open-a-menu",
+      "start": 30.157,
+      "end": 31.964,
+      "url": "/settings/logs"
+    }
+  ],
+  "phone": [
+    {
+      "step": "dashboard",
+      "start": 0,
+      "end": 2.728,
+      "url": "/watch"
+    },
+    {
+      "step": "discover",
+      "start": 2.728,
+      "end": 5,
+      "url": "/discover"
+    },
+    {
+      "step": "open-a-title",
+      "start": 5,
+      "end": 6.714,
+      "url": "/title/9002"
+    },
+    {
+      "step": "back",
+      "start": 6.714,
+      "end": 8.368,
+      "url": "/discover"
+    },
+    {
+      "step": "library",
+      "start": 8.368,
+      "end": 10.6,
+      "url": "/library"
+    },
+    {
+      "step": "calendar",
+      "start": 10.6,
+      "end": 12.835,
+      "url": "/calendar"
+    },
+    {
+      "step": "queue",
+      "start": 12.835,
+      "end": 15.065,
+      "url": "/queue"
+    },
+    {
+      "step": "search",
+      "start": 15.065,
+      "end": 17.291,
+      "url": "/search"
+    },
+    {
+      "step": "watch-home",
+      "start": 17.291,
+      "end": 19.537,
+      "url": "/watch"
+    },
+    {
+      "step": "settings",
+      "start": 19.537,
+      "end": 21.756,
+      "url": "/settings/streaming"
+    },
+    {
+      "step": "settings-notifications",
+      "start": 21.756,
+      "end": 23.988,
+      "url": "/settings/notifications"
+    },
+    {
+      "step": "settings-problems",
+      "start": 23.988,
+      "end": 26.216,
+      "url": "/settings/problems"
+    },
+    {
+      "step": "settings-logs",
+      "start": 26.216,
+      "end": 28.441,
+      "url": "/settings/logs"
+    },
+    {
+      "step": "open-a-menu",
+      "start": 28.441,
+      "end": 30.153,
+      "url": "/settings/logs"
+    }
+  ]
+}
