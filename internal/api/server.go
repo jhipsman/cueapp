@@ -15,6 +15,7 @@ import (
 	"github.com/jhipsman/cueapp/internal/blocklist"
 	"github.com/jhipsman/cueapp/internal/books"
 	"github.com/jhipsman/cueapp/internal/config"
+	"github.com/jhipsman/cueapp/internal/crashes"
 	"github.com/jhipsman/cueapp/internal/crypto"
 	"github.com/jhipsman/cueapp/internal/download"
 	"github.com/jhipsman/cueapp/internal/indexers"
@@ -62,6 +63,7 @@ type Server struct {
 	SubtitleQuota     *subtitles.QuotaRepo
 	Usage             *usage.Tracker // requests and limit hits per third-party service
 	Problems          *problems.Log  // the log of real problems shown under Settings > System > Logs and errors (handlers_problems.go)
+	Crashes           *crashes.Store // crashes of the TV and web apps, under Settings > System > Problems (tv_crash.go)
 	MediaServers      *mediaservers.Repo
 	MusicRepo         *music.Repo // artists, albums, tracks (the music module, music*.go)
 	BookRepo          *books.Repo // ebooks and audiobooks (books_api.go)
@@ -196,6 +198,7 @@ func New(db *sql.DB, cfg config.Config, box *crypto.Box, defaultTMDBAPIKey, vers
 	}
 	s.QueueRepo.SetBox(box) // download addresses carry indexer keys: kept encrypted
 	s.startProblems()
+	s.Crashes = crashes.Open(db)
 	s.Definitions = indexers.NewDefinitionStore(filepath.Join(cfg.ConfigDir, "indexer-definitions"))
 	s.Cardigann = indexers.NewCardigannManager(s.Definitions, s.flareSolverrURL)
 	s.IndexerRepo.SetCardigann(s.Cardigann)
@@ -786,6 +789,10 @@ func (s *Server) protectedRoutes() *routeTable {
 	admin.HandleFunc("POST /api/system/problems/read", s.handleProblemsRead)
 	admin.HandleFunc("GET /api/system/problems/export", s.handleProblemsExport)
 	admin.HandleFunc("PUT /api/system/problems/notify", s.handleProblemsNotify)
+	admin.HandleFunc("GET /api/system/crashes", s.handleCrashes)
+	admin.HandleFunc("POST /api/system/crashes/{id}/fixed", s.handleCrashFixed)
+	admin.HandleFunc("DELETE /api/system/crashes/{id}", s.handleCrashDelete)
+	admin.HandleFunc("PUT /api/system/crashes/alerts", s.handleCrashAlerts)
 	admin.HandleFunc("GET /api/system/update", s.handleUpdateState)
 	admin.HandleFunc("POST /api/system/update", s.handlePushUpdate)
 	admin.HandleFunc("DELETE /api/system/update", s.handleRemoveUpdate)

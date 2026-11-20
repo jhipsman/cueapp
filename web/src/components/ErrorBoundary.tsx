@@ -14,6 +14,7 @@ export default class ErrorBoundary extends Component<{ children: ReactNode; rese
   componentDidCatch(error: Error, info: ErrorInfo) {
     // The browser console is where a bug report can pick it up.
     console.error('Cue: a page failed to draw.', error, info.componentStack)
+    reportCrash(error, info.componentStack ?? '')
   }
 
   componentDidUpdate(prev: { resetKey?: string }) {
@@ -40,4 +41,22 @@ export default class ErrorBoundary extends Component<{ children: ReactNode; rese
       </div>
     )
   }
+}
+
+// Sends the crash to Cue (Settings > System > Problems), at most once per
+// page load and kind, so a page failing in a loop sends one report. It never
+// gets in the way: if it can't be sent, it's left at the console.
+const reported = new Set<string>()
+function reportCrash(error: Error, componentStack: string) {
+  const head = `${error.name}: ${error.message}`
+  if (reported.has(head) || reported.size >= 5) return
+  reported.add(head)
+  const stack = error.stack?.includes(error.message) ? error.stack : `${head}\n${error.stack ?? ''}`
+  const trace = `${stack}\n\nPage: ${window.location.pathname}\nComponents:${componentStack}`.slice(0, 16_000)
+  void fetch('/api/play/crash', {
+    method: 'POST',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ app: 'web', device: navigator.userAgent.slice(0, 120), trace }),
+  }).catch(() => {})
 }

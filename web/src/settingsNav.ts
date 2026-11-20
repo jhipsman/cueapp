@@ -18,6 +18,7 @@ export const SETTINGS_NAV: { to: string; label: string; icon: IconName; color: s
   { to: '/settings/profile', label: 'Accounts', icon: 'user', color: '#8fb8f5', member: true },
   { to: '/settings/system', label: 'Server and backup', icon: 'hard', color: '#b4bfcc' },
   { to: '/settings/logs', label: 'Logs and errors', icon: 'warning', color: '#f0a3a3' },
+  { to: '/settings/problems', label: 'Problems', icon: 'activity', color: '#f0a3a3' },
   { to: '/settings/migrate', label: 'Move from other apps', icon: 'refresh', color: '#b4bfcc' },
   { to: '/settings/about', label: 'About and credits', icon: 'info', color: '#e7a6f2', member: true },
 ]
@@ -52,7 +53,7 @@ const GROUPS: { key: string; label: string; icon: IconName; color: string; pages
   { key: 'metadata', label: 'Info, lists and subtitles', icon: 'globe', color: '#c1acf7', pages: ['/settings/metadata', '/settings/subtitles'] },
   { key: 'connections', label: 'Connections', icon: 'monitor', color: '#f2c14e', pages: ['/settings/media-servers', '/settings/notifications'] },
   { key: 'profile', label: 'Accounts', icon: 'user', color: '#8fb8f5', pages: ['/settings/profile'] },
-  { key: 'system', label: 'System', icon: 'hard', color: '#b4bfcc', pages: ['/settings/system', '/settings/logs', '/settings/migrate', '/settings/about'] },
+  { key: 'system', label: 'System', icon: 'hard', color: '#b4bfcc', pages: ['/settings/system', '/settings/logs', '/settings/problems', '/settings/migrate', '/settings/about'] },
 ]
 
 // In streaming-only mode, the few settings a streaming app needs.
@@ -61,7 +62,7 @@ const STREAMING_GROUPS: typeof GROUPS = [
   { key: 'indexers', label: 'Torrent sites', icon: 'search', color: '#a5b4fc', pages: ['/settings/indexers'] },
   { key: 'metadata', label: 'Movie info and subtitles', icon: 'globe', color: '#c1acf7', pages: ['/settings/metadata', '/settings/subtitles'] },
   { key: 'profile', label: 'Accounts', icon: 'user', color: '#8fb8f5', pages: ['/settings/profile'] },
-  { key: 'system', label: 'System', icon: 'hard', color: '#b4bfcc', pages: ['/settings/system', '/settings/logs', '/settings/about'] },
+  { key: 'system', label: 'System', icon: 'hard', color: '#b4bfcc', pages: ['/settings/system', '/settings/logs', '/settings/problems', '/settings/about'] },
 ]
 
 export const inPage = (pathname: string, to: string) => pathname === to || pathname.startsWith(to + '/')

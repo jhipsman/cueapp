@@ -261,6 +261,7 @@ var mustBeAdmin = []string{
 	"GET /api/indexers", "GET /api/usenet-servers", "GET /api/vpn/configs", "GET /api/notifications", "GET /api/media-servers",
 	"GET /api/system/backup", "POST /api/system/restore",
 	"GET /api/system/problems", "POST /api/system/problems/read", "GET /api/system/problems/export", "PUT /api/system/problems/notify",
+	"GET /api/system/crashes", "POST /api/system/crashes/{id}/fixed", "DELETE /api/system/crashes/{id}", "PUT /api/system/crashes/alerts",
 	"DELETE /api/movies/{id}", "DELETE /api/books/{id}", "GET /api/books/import", "POST /api/books/import", "DELETE /api/series/{id}", "DELETE /api/music/artists/{id}", "PUT /api/music/artists/{id}",
 	"POST /api/music/profiles", "PUT /api/music/profiles/{id}", "DELETE /api/music/profiles/{id}",
 	"POST /api/quality-profiles", "PUT /api/quality-profiles/{id}", "DELETE /api/quality-profiles/{id}",

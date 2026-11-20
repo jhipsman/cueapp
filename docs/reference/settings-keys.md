@@ -63,6 +63,7 @@ The keys the app stores in its settings table. You normally change these from th
 | `music.default_profile_id` | id of the music profile artists without one of their own use; unset = the first |
 | `music.enabled` | older name of modules.music; still honoured while modules.music is unset, and kept in step with it |
 | `music.path` | music library folder; falls back to the MUSIC_DIR env default (/music) when unset |
+| `notify.crash_alerts` | "0" stops phone alerts when the TV or web app crashes in a way not seen before; unset or "1" sends them to administrators' phones that have alerts on |
 | `notify.on_problems` | "1" sends a notification (to the targets that listen for Health) when a new error is added to the problem log; unset or "0" sends none |
 | `notify.quiet_hours` | hours when everyday messages wait, "23-7" (server time); unset = none. Problems are always sent at once |
 | `onboarding.done` | "1" once the first-run wizard completes |

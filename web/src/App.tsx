@@ -37,6 +37,7 @@ import ShowDetail from './pages/ShowDetail'
 import DownloadSettings from './pages/settings/DownloadSettings'
 import SystemSettings from './pages/settings/SystemSettings'
 import LogsSettings from './pages/settings/LogsSettings'
+import ProblemsSettings from './pages/settings/ProblemsSettings'
 import IndexerSettings from './pages/settings/IndexerSettings'
 import MediaSettings from './pages/settings/MediaSettings'
 import ModulesSettings from './pages/settings/ModulesSettings'
@@ -174,6 +175,7 @@ function Gate() {
           <Route path="profile" element={<Profile />} />
           <Route path="system" element={<AdminOnly><SystemSettings /></AdminOnly>} />
           <Route path="logs" element={<AdminOnly><LogsSettings /></AdminOnly>} />
+          <Route path="problems" element={<AdminOnly><ProblemsSettings /></AdminOnly>} />
           <Route path="about" element={<About />} />
           <Route path="general" element={<Navigate to="/settings/system" replace />} />
         </Route>

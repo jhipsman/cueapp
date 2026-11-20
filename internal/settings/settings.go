@@ -103,7 +103,8 @@ const (
 
 	KeyPublicURL = "server.public_url" // the address you open Cue at from your own devices (like https://cue.example.com); links in notification messages use it; unset = no links
 
-	KeyNotifyOnProblems = "notify.on_problems" // "1" sends a notification (to the targets that listen for Health) when a new error is added to the problem log; unset or "0" sends none
+	KeyCrashAlerts      = "notify.crash_alerts" // "0" stops phone alerts when the TV or web app crashes in a way not seen before; unset or "1" sends them to administrators' phones that have alerts on
+	KeyNotifyOnProblems = "notify.on_problems"  // "1" sends a notification (to the targets that listen for Health) when a new error is added to the problem log; unset or "0" sends none
 
 	// A download keeps its place until it has been repaired, unpacked and
 	// imported; the others wait in line.
