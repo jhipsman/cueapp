@@ -204,6 +204,7 @@ The TVs are the household's: anyone signed in to this Cue sees them, as with wat
 ## The apps
 
 - **Fire TV, Google TV, Android TV**: a native app with its own player (every format the TV can decode, 4K HDR and Dolby Vision, Dolby and DTS to your speakers, the TV's refresh rate matched to the film). Install it with Downloader from your server's `/tv.apk`. See [the TV app](../android/README.md). Its Search shows a QR code: scan it with a phone to type or say a search for the TV (a Fire TV's remote microphone belongs to Alexa).
+  Its **Settings** (at the bottom of the side menu, above the profile) has four sections, like Settings on the web: **Account and server** (switch or manage profiles, change server, the web version); **Playback** (the subtitles a film starts with, surround sound, Light mode), kept on that TV; **Problems**, the last crashes on that TV and whether Cue has them, with every TV's open crashes for an administrator and a QR code that opens [Problems](logs-and-errors.md#crashes-of-the-tv-app-and-the-website-problems) on a phone; and **About and updates**, the app's and the server's versions and **Check for an update**.
 - **Apple TV**: a native app that plays in Apple's own player; files it can't open are converted as they play, keeping 4K, HDR and surround. It's installed from Xcode on a Mac. See [the Apple TV app](../appletv/README.md).
 - **Phones and computers**: Watch in the browser. On an iPhone, Safari's **Share > Add to Home Screen** opens it full screen like an app; on Android, Chrome's **Install app**.
 
