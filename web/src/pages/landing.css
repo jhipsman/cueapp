@@ -1,16 +1,14 @@
-/* The front page for someone not signed in (Landing.tsx). A dark screening
-   room: the app plays in a tilted screen and a phone up top and in the
-   grid, so the page itself stays quiet: black, one teal light, big type.
-   Everything is scoped under .lp. */
+/* The front page for someone not signed in (Landing.tsx): a headline, the
+   app playing, and how to get it. Quiet on purpose: near-black, one teal
+   light, plenty of room. Everything is scoped under .lp. */
 .lp {
-  --ink: #06070a;
-  --ink-2: #0c0f15;
-  --glass: rgba(255, 255, 255, 0.045);
-  --line: rgba(255, 255, 255, 0.09);
+  --ink: #07080b;
+  --ink-2: #0e1117;
+  --line: rgba(255, 255, 255, 0.08);
   --fg: #f2f4f7;
   --dim: #98a1b0;
   --teal: #34d1bf;
-  --teal-hi: #9af5ea;
+  --settle: cubic-bezier(0.2, 0.8, 0.2, 1);
   --display: 'Sora', system-ui, sans-serif;
   --body: 'IBM Plex Sans', system-ui, -apple-system, sans-serif;
   --mono: 'IBM Plex Mono', ui-monospace, Menlo, monospace;
@@ -24,232 +22,90 @@
   scroll-behavior: smooth;
 }
 .lp * { box-sizing: border-box }
-.lp h1, .lp h2, .lp h3 { font-family: var(--display); margin: 0; text-wrap: balance; letter-spacing: -0.035em; color: var(--fg) }
+.lp h1, .lp h2, .lp h3 { font-family: var(--display); margin: 0; text-wrap: balance; color: var(--fg) }
 .lp a { color: inherit }
-.lp-wrap { max-width: 1200px; margin: 0 auto; padding-left: max(20px, env(safe-area-inset-left, 0px)); padding-right: max(20px, env(safe-area-inset-right, 0px)) }
+.lp p { margin: 0 }
 .lp :focus-visible { outline: 2px solid var(--teal); outline-offset: 3px; border-radius: 8px }
 .lp video, .lp img { display: block; max-width: 100% }
-.lp-dim { margin: 0; color: var(--dim); font-size: 14px }
-.lp-num span { font: inherit }
-.lp-signin .lp-btn { margin-top: 20px }
-.lp-hero .lp-ctas button { font-family: var(--display) }
+.lp-wrap { width: 100%; max-width: 1040px; margin: 0 auto; padding-left: max(20px, env(safe-area-inset-left, 0px)); padding-right: max(20px, env(safe-area-inset-right, 0px)) }
 
-/* Layout: a dark screening room. The app plays everywhere on the page (a
-   tilted screen and a phone up top, live clips in the grid), so the page
-   itself stays quiet: black, one teal light, big tight type. */
-/* ---- Nav: a floating glass pill ---- */
-.lp-nav { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 14px); z-index: 20; display: flex; justify-content: center; padding-left: max(14px, env(safe-area-inset-left, 0px)); padding-right: max(14px, env(safe-area-inset-right, 0px)); pointer-events: none }
-.lp-nav-in { pointer-events: auto; display: flex; align-items: center; gap: 6px; padding: 7px 7px 7px 16px; border-radius: 999px;
-  background: rgba(14, 17, 23, 0.62); border: 1px solid var(--line); backdrop-filter: blur(18px) saturate(1.4); -webkit-backdrop-filter: blur(18px) saturate(1.4); box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4) }
-.lp-brand { display: flex; align-items: center; gap: 8px; font: 700 18px var(--display); text-decoration: none; margin-right: 10px }
-.lp-brand svg { width: 24px; height: 24px }
-.lp-link { text-decoration: none; color: var(--dim); font: 500 14px var(--body); padding: 8px 12px; border-radius: 999px }
-.lp-link:hover { color: var(--fg); background: var(--glass) }
-.lp-btn { display: inline-flex; align-items: center; gap: 9px; border: 0; border-radius: 999px; padding: 12px 20px; font: 600 15px var(--display); letter-spacing: -0.01em; cursor: pointer; text-decoration: none; white-space: nowrap; transition: transform 0.2s, box-shadow 0.2s, background 0.2s }
-.lp-btn svg { width: 16px; height: 16px; fill: currentColor; flex: none }
-.lp-btn.primary { background: var(--teal); color: #03211d; box-shadow: 0 8px 30px rgba(52, 209, 191, 0.35) }
-.lp-btn.primary:hover { transform: translateY(-1px); box-shadow: 0 12px 40px rgba(52, 209, 191, 0.5) }
-.lp-btn.ghost { background: var(--glass); color: var(--fg); box-shadow: inset 0 0 0 1px var(--line) }
-.lp-btn.ghost:hover { background: rgba(255, 255, 255, 0.08) }
-.lp-nav .lp-btn { padding: 9px 15px; font-size: 14px }
+/* ---- Nav ---- */
+.lp-nav { display: flex; align-items: center; gap: 8px; padding-top: calc(env(safe-area-inset-top, 0px) + 22px); padding-bottom: 22px }
+.lp-brand { display: inline-flex; align-items: center; gap: 9px; margin-right: auto; font: 700 19px var(--display); letter-spacing: -0.02em; text-decoration: none }
+.lp-brand svg { width: 26px; height: 26px }
+.lp-brand.small { font-size: 15px; gap: 7px }
+.lp-brand.small svg { width: 18px; height: 18px }
+.lp-link { padding: 8px 12px; border-radius: 999px; color: var(--dim); font: 500 14px var(--body); text-decoration: none; transition: color 0.15s var(--settle) }
+.lp-link:hover { color: var(--fg) }
+
+/* ---- Buttons ---- */
+.lp-btn { display: inline-flex; align-items: center; gap: 8px; border: 0; border-radius: 999px; padding: 13px 24px; font: 600 15px var(--display); letter-spacing: -0.01em;
+  cursor: pointer; text-decoration: none; white-space: nowrap; transition: transform 0.16s var(--settle), background 0.16s var(--settle) }
+.lp-btn.small { padding: 9px 16px; font-size: 14px }
+.lp-btn.primary { background: var(--teal); color: #03211d }
+.lp-btn.primary:hover { transform: translateY(-1px) }
+.lp-btn.ghost { background: transparent; color: var(--fg); box-shadow: inset 0 0 0 1px var(--line) }
+.lp-btn.ghost:hover { background: rgba(255, 255, 255, 0.05) }
 
 /* ---- Hero ---- */
-.lp-hero { position: relative; padding-block: 70px 40px; isolation: isolate }
-.lp-hero::before { content: ""; position: absolute; inset: -140px 0 auto; height: 900px; z-index: -1;
-  background: radial-gradient(700px 480px at 72% 38%, rgba(52, 209, 191, 0.22), transparent 70%), radial-gradient(600px 400px at 10% 10%, rgba(80, 110, 255, 0.08), transparent 70%) }
-.lp-hero-grid { display: grid; grid-template-columns: 1.05fr 1.2fr; gap: 40px; align-items: center }
-.lp-hero-grid > * { min-width: 0 }
-.lp-eyebrow { display: inline-flex; align-items: center; gap: 8px; font: 500 12px var(--mono); letter-spacing: 0.14em; text-transform: uppercase; color: var(--teal); margin: 0 0 18px }
-.lp-eyebrow i { width: 7px; height: 7px; border-radius: 50%; background: var(--teal); box-shadow: 0 0 12px var(--teal); animation: lp-pulse 2s infinite }
-@keyframes lp-pulse { 50% { opacity: 0.35 } }
-.lp-hero h1 { font-size: clamp(44px, 5.2vw, 74px); line-height: 0.95; font-weight: 800; letter-spacing: -0.05em }
-.lp-hero h1 .lp-sheen { background: linear-gradient(100deg, var(--teal) 20%, var(--teal-hi) 45%, var(--teal) 70%); background-size: 220% 100%; -webkit-background-clip: text; background-clip: text; color: transparent; animation: lp-sheen 5s ease-in-out infinite }
-@keyframes lp-sheen { 0%, 100% { background-position: 100% 0 } 50% { background-position: 0 0 } }
-.lp-lead { color: var(--dim); font-size: clamp(17px, 1.6vw, 20px); max-width: 34ch; margin: 22px 0 30px }
-.lp-ctas { display: flex; flex-wrap: wrap; gap: 12px }
-.lp-stage3d { position: relative; perspective: 1800px; padding-bottom: 40px }
-.lp-screen { position: relative; border-radius: 18px; overflow: hidden; aspect-ratio: 16 / 9; background: #000; transform: rotateY(-16deg) rotateX(7deg) rotateZ(0.5deg); transform-origin: 30% 50%;
-  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.12), 0 60px 120px -20px rgba(0, 0, 0, 0.9), 0 0 140px -10px rgba(52, 209, 191, 0.35); transition: transform 0.8s cubic-bezier(.2, .8, .2, 1) }
-.lp-stage3d:hover .lp-screen { transform: rotateY(-8deg) rotateX(3deg) }
-.lp-screen video, .lp-screen img { width: 100%; height: 100%; object-fit: cover }
-.lp-screen::after { content: ""; position: absolute; inset: 0; background: linear-gradient(115deg, rgba(255, 255, 255, 0.14), transparent 35%); pointer-events: none }
-.lp-phone { position: absolute; right: -2%; bottom: -24px; width: 24%; transform: rotate(4deg); filter: drop-shadow(0 40px 50px rgba(0, 0, 0, 0.75)) }
+.lp-hero { position: relative; display: grid; justify-items: center; text-align: center; padding-top: clamp(48px, 9vw, 110px); isolation: isolate }
+.lp-hero::before { content: ""; position: absolute; left: 50%; top: 42%; width: min(900px, 120vw); height: 520px; transform: translateX(-50%); z-index: -1;
+  background: radial-gradient(closest-side, rgba(52, 209, 191, 0.16), transparent); pointer-events: none }
+.lp-hero h1 { font-size: clamp(40px, 6.4vw, 80px); line-height: 1.02; font-weight: 800; letter-spacing: -0.045em }
+.lp-hero h1 span { color: var(--teal) }
+.lp-ctas { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin-top: 34px }
 
-/* A modern phone, drawn: titanium edge and buttons, a thin black border,
-   the camera's pill and a status bar. Sizes follow the phone's width. */
-.lp-phone, .t-phone .lp-mini { container-type: inline-size }
-/* The 3D phone, over the drawn one, which steps aside once it's loaded. */
-.lp-phone3d { position: absolute; inset: -10% -18%; opacity: 0; transition: opacity 0.9s ease; pointer-events: none }
-.lp-phone3d.on { opacity: 1 }
-.lp-phone3d canvas { width: 100%; height: 100%; display: block }
-.lp-phone .lp-device, .lp-mini .lp-device { transition: opacity 0.6s ease }
-.lp-phone:has(.lp-phone3d.on) .lp-device, .lp-mini:has(.lp-phone3d.on) .lp-device { opacity: 0 }
-.lp-phone:has(.lp-phone3d.on) { transform: none }
-.t-phone .lp-mini:has(.lp-phone3d.on) { transform: translateX(-50%) }
-.lp-device { position: relative; aspect-ratio: 0.5; padding: 1.4cqw; border-radius: 16cqw;
-  background: linear-gradient(120deg, #f1f2f4 0%, #a3a7ad 14%, #e3e5e8 32%, #8c9097 52%, #d3d5d9 74%, #9a9ea5 90%, #e8e9ec 100%);
-  box-shadow: inset 0 0 0 0.35cqw rgba(255, 255, 255, 0.55), inset 0 0 0 0.7cqw rgba(0, 0, 0, 0.18) }
-.lp-device-bezel { height: 100%; padding: 3cqw; border-radius: 14.6cqw; background: #050506; box-shadow: inset 0 0 0 0.5cqw #1c1d21 }
-.lp-device-screen { position: relative; display: flex; flex-direction: column; height: 100%; overflow: hidden; border-radius: 11.6cqw; background: #000 }
-.lp-device-screen video, .lp-device-screen img { flex: 1; min-height: 0; width: 100%; object-fit: cover; object-position: 12% top; display: block }
-.lp-status { position: relative; flex: none; height: 13cqw; display: flex; align-items: center; justify-content: space-between; padding: 0 9cqw 0 11cqw;
-  color: #fff; font: 600 4.6cqw/1 -apple-system, 'SF Pro Text', 'Inter', system-ui, sans-serif; letter-spacing: -0.01em }
-.lp-island { position: absolute; left: 50%; top: 3cqw; width: 30cqw; height: 8.6cqw; transform: translateX(-50%); border-radius: 999px; background: #000;
-  box-shadow: inset -2.4cqw 0 0 -1.6cqw #000 }
-.lp-island::after { content: ''; position: absolute; right: 3cqw; top: 50%; width: 2.6cqw; height: 2.6cqw; transform: translateY(-50%); border-radius: 50%;
-  background: radial-gradient(circle at 40% 35%, #2c3a5a, #0a0d16 60%) }
-.lp-status-r { display: flex; align-items: center; gap: 1.6cqw }
-.lp-bars { width: 5.4cqw; height: 3.4cqw; background:
-  linear-gradient(#fff, #fff) 0 100% / 20% 40% no-repeat, linear-gradient(#fff, #fff) 33.3% 100% / 20% 60% no-repeat,
-  linear-gradient(#fff, #fff) 66.6% 100% / 20% 80% no-repeat, linear-gradient(#fff, #fff) 100% 100% / 20% 100% no-repeat }
-.lp-batt { position: relative; width: 7cqw; height: 3.4cqw; border-radius: 1cqw; border: 0.45cqw solid rgba(255, 255, 255, 0.45);
-  background: linear-gradient(90deg, #fff 0 80%, transparent 80%) content-box; padding: 0.4cqw }
-.lp-batt::after { content: ''; position: absolute; right: -1.3cqw; top: 50%; width: 0.7cqw; height: 1.4cqw; transform: translateY(-50%); border-radius: 0 0.5cqw 0.5cqw 0; background: rgba(255, 255, 255, 0.45) }
-.lp-key { position: absolute; width: 1.2cqw; border-radius: 0.6cqw; background: linear-gradient(90deg, #8d9198, #e4e6e9 55%, #a2a6ac) }
-.lp-key.action { left: -0.9cqw; top: 17%; height: 5%; }
-.lp-key.up { left: -0.9cqw; top: 25%; height: 9% }
-.lp-key.down { left: -0.9cqw; top: 36%; height: 9% }
-.lp-key.side { right: -0.9cqw; top: 28%; height: 14% }
+/* The app, on a plain screen */
+.lp-screen { position: relative; width: 100%; margin: clamp(48px, 7vw, 80px) 0 0; border-radius: 18px; overflow: hidden; aspect-ratio: 16 / 9; background: #000;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.1), 0 40px 120px -30px rgba(0, 0, 0, 0.9) }
+.lp-screen video { width: 100%; height: 100%; object-fit: cover }
+.lp-ad { position: absolute; right: 16px; bottom: 16px; display: inline-flex; align-items: center; gap: 8px; padding: 9px 15px 9px 12px; border: 0; border-radius: 999px;
+  background: rgba(7, 8, 11, 0.72); color: var(--fg); font: 600 13px var(--display); cursor: pointer; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  box-shadow: inset 0 0 0 1px var(--line); transition: background 0.16s var(--settle) }
+.lp-ad:hover { background: rgba(7, 8, 11, 0.9) }
+.lp-ad svg { width: 14px; height: 14px; fill: currentColor }
 
-/* ---- Poster marquee ---- */
-.lp-marquee { position: relative; padding-block: 40px 20px; overflow: hidden; -webkit-mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent); mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent) }
-/* Each row moves as one layer: the posters are painted once and slid, not redrawn every frame. */
-.lp-mrow { display: flex; gap: 14px; width: max-content; animation: lp-slide 70s linear infinite; will-change: transform; transform: translateZ(0) }
-.lp-mrow + .lp-mrow { margin-top: 14px; animation-direction: reverse; animation-duration: 80s }
-.lp-mrow img { width: 132px; height: 198px; object-fit: cover; border-radius: 12px; flex: none; opacity: 0.92 }
-@keyframes lp-slide { to { transform: translateX(-50%) } }
-.lp-marquee:hover .lp-mrow,
-.lp-marquee.still .lp-mrow { animation-play-state: paused } /* still: scrolled out of sight */
-
-/* ---- Sections ---- */
-.lp-part { padding-block: 90px 10px }
-.lp-head { display: grid; gap: 14px; margin-bottom: 36px; max-width: 760px }
-.lp-head h2 { font-size: clamp(34px, 5vw, 58px); line-height: 1; font-weight: 800 }
-.lp-head h2 em { font-style: normal; color: var(--teal) }
-.lp-head p { margin: 0; color: var(--dim); font-size: 18px; max-width: 56ch }
-
-/* Bento of live clips */
-.lp-bento { display: grid; grid-template-columns: repeat(6, 1fr); grid-auto-rows: 210px; gap: 14px }
-.lp-tile { position: relative; overflow: hidden; border-radius: 22px; background: var(--ink-2); border: 1px solid var(--line); min-width: 0; isolation: isolate }
-.lp-tile > .bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: -1; transition: transform 1.2s cubic-bezier(.2, .8, .2, 1) }
-.lp-tile:hover > .bg { transform: scale(1.04) }
-.lp-tile .lp-cap { position: absolute; inset: auto 0 0 0; padding: 60px 22px 20px; background: linear-gradient(to top, rgba(4, 5, 8, 0.92), rgba(4, 5, 8, 0.55) 55%, transparent) }
-.lp-tile h3 { font-size: 22px; line-height: 1.15; font-weight: 700 }
-.lp-tile p { margin: 6px 0 0; color: #b9c0cc; font-size: 14px; max-width: 40ch }
-.lp-tag { position: absolute; left: 16px; top: 16px; font: 500 11px var(--mono); letter-spacing: 0.12em; text-transform: uppercase; padding: 6px 10px; border-radius: 999px; background: rgba(6, 7, 10, 0.6); border: 1px solid var(--line); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px) }
-.lp-tag b { color: var(--teal); font-weight: 500 }
-.t-title { grid-column: span 4; grid-row: span 2 }
-.t-phone { grid-column: span 2; grid-row: span 2; background: radial-gradient(400px 300px at 50% 30%, rgba(52, 209, 191, 0.16), var(--ink-2)) }
-.t-phone .lp-mini { position: absolute; left: 50%; top: 64px; width: 40%; transform: translateX(-50%) rotate(-3deg); filter: drop-shadow(0 30px 40px rgba(0, 0, 0, 0.7)) }
-.t-hover, .t-play { grid-column: span 3 }
-.t-live, .t-year, .t-people { grid-column: span 2 }
-.t-year { display: grid; align-content: center; justify-items: start; padding: 22px; background: radial-gradient(360px 220px at 80% 0%, rgba(52, 209, 191, 0.2), var(--ink-2)) }
-.t-year .lp-num { font: 800 64px/1 var(--display); letter-spacing: -0.05em; font-variant-numeric: tabular-nums }
-.t-year .lp-num small { font-size: 22px; color: var(--teal); letter-spacing: 0; margin-left: 6px }
-.t-year p { color: var(--dim) }
-.t-people { display: grid; align-content: center; padding: 22px; gap: 16px }
-.lp-devices { display: flex; flex-wrap: wrap; gap: 8px }
-.lp-devices span { padding: 7px 12px; border-radius: 999px; font-size: 13px; font-weight: 600; background: rgba(255, 255, 255, 0.06); border: 1px solid var(--line); background-clip: padding-box }
-.lp-devices span:first-child { background: var(--teal); color: #06201d; border-color: transparent }
-
-/* Search the TV from your phone: the phone's search page, typing. */
-.lp-remote { flex: 1; display: grid; align-content: start; justify-items: center; gap: 6cqw; padding: 8cqw 7cqw 0; background: #0d0f13; color: #fff }
-.lp-remote p { margin: 0; justify-self: start; font-size: 5.5cqw; color: var(--teal); font-weight: 600 }
-.lp-remote-field { justify-self: stretch; height: 14cqw; display: flex; align-items: center; padding: 0 5cqw; border-radius: 4cqw; background: rgba(255, 255, 255, 0.08); font-size: 7cqw; font-weight: 600 }
-.lp-typed { display: inline-block; overflow: hidden; white-space: nowrap; width: 0; border-right: 0.6cqw solid var(--teal); animation: lp-type 6s steps(8) infinite, lp-caret 0.8s step-end infinite }
-@keyframes lp-type { 0%, 10% { width: 0 } 35%, 92% { width: 8.6ch } 100% { width: 0 } }
-@keyframes lp-caret { 50% { border-color: transparent } }
-.lp-remote-mic { width: 18cqw; height: 18cqw; border-radius: 50%; background: var(--teal); box-shadow: 0 0 0 4cqw rgba(52, 209, 191, 0.18) }
-.lp-remote-hits { justify-self: stretch; display: grid; animation: lp-hits 6s infinite }
-.lp-remote-hits img { width: 100%; aspect-ratio: 2 / 3; object-fit: cover; border-radius: 4cqw }
-@keyframes lp-hits { 0%, 30% { opacity: 0; transform: translateY(6%) } 40%, 92% { opacity: 1; transform: none } 100% { opacity: 0 } }
-
-/* Bad copy? The Versions menu over a soft, blocky picture. */
-.t-versions .bg { filter: blur(3px) saturate(0.8) brightness(0.75); transform: scale(1.06) }
-.t-versions:hover .bg { transform: scale(1.1) }
-.lp-pop { position: absolute; right: 22px; top: 22px; width: min(260px, 52%); display: grid; gap: 4px; padding: 8px; border-radius: 14px; background: rgba(20, 21, 26, 0.92);
-  border: 1px solid var(--line); background-clip: padding-box; box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5); font-size: 13px }
-.lp-pop small { padding: 6px 10px 2px; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--dim) }
-.lp-pop span { padding: 8px 10px; border-radius: 9px }
-.lp-pop .dim { color: rgba(255, 255, 255, 0.45) }
-.lp-pop .lit { font-weight: 700; background: rgba(52, 209, 191, 0.16); box-shadow: inset 0 0 0 1px rgba(52, 209, 191, 0.6); animation: lp-pulse 2.4s ease-in-out infinite }
-.lp-pop em { display: block; font-style: normal; font-weight: 400; font-size: 11px; color: var(--dim); margin-top: 2px }
-@keyframes lp-pulse { 50% { box-shadow: inset 0 0 0 1px rgba(52, 209, 191, 0.6), 0 0 0 5px rgba(52, 209, 191, 0.12) } }
-
-/* Skip intro, as it shows in the player. */
-.lp-skip { position: absolute; right: 22px; top: 40%; padding: 9px 16px; border-radius: 999px; background: rgba(255, 255, 255, 0.95); color: #0b0d12; font-size: 14px; font-weight: 700;
-  box-shadow: 0 0 0 0 rgba(52, 209, 191, 0.6); animation: lp-ring 2.2s ease-out infinite }
-.lp-skip b { font-weight: 800; margin-left: 4px }
-@keyframes lp-ring { 0% { box-shadow: 0 0 0 0 rgba(52, 209, 191, 0.65) } 80%, 100% { box-shadow: 0 0 0 12px rgba(52, 209, 191, 0) } }
-.lp-faces { display: flex; gap: 10px }
-.lp-faces span { width: 54px; height: 54px; border-radius: 16px; display: grid; place-items: center; font: 800 24px var(--display); color: #0b0d12; transition: transform 0.3s cubic-bezier(.2, 1.6, .4, 1) }
-.t-people:hover .lp-faces span { transform: translateY(-4px) rotate(-4deg) }
-.t-people:hover .lp-faces span:nth-child(2) { transition-delay: 0.04s } .t-people:hover .lp-faces span:nth-child(3) { transition-delay: 0.08s } .t-people:hover .lp-faces span:nth-child(4) { transition-delay: 0.12s }
-.t-people h3, .t-year h3 { font-size: 20px }
-
-/* The commercial, in its own cinema frame */
-.lp-cinema { position: relative; border-radius: 26px; overflow: hidden; aspect-ratio: 16 / 9; background: #000; max-width: 100%;
-  box-shadow: 0 0 0 1px var(--line), 0 50px 140px -30px rgba(52, 209, 191, 0.35), 0 40px 100px -20px rgba(0, 0, 0, 0.9) }
-.lp-cinema video, .lp-cinema img { width: 100%; height: 100%; object-fit: cover }
-.lp-cinema .lp-play { position: absolute; inset: 0; display: grid; place-items: center; background: radial-gradient(circle at 50% 50%, rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0.55)); border: 0; cursor: pointer; color: #fff }
-.lp-cinema .lp-play span { display: flex; align-items: center; gap: 14px; padding: 18px 28px 18px 20px; border-radius: 999px; background: var(--teal); color: #03211d; font: 700 18px var(--display); box-shadow: 0 0 0 10px rgba(52, 209, 191, 0.18), 0 20px 50px rgba(0, 0, 0, 0.5); transition: transform 0.25s, box-shadow 0.25s }
-.lp-cinema .lp-play:hover span { transform: scale(1.05); box-shadow: 0 0 0 16px rgba(52, 209, 191, 0.14), 0 20px 50px rgba(0, 0, 0, 0.5) }
-.lp-cinema .lp-play svg { width: 22px; height: 22px; fill: currentColor }
-.lp-meta { display: flex; flex-wrap: wrap; gap: 8px 18px; margin-top: 16px; color: var(--dim); font: 500 13px var(--mono) }
-
-/* Setup tabs */
-.lp-tabs { display: inline-flex; gap: 4px; padding: 5px; border-radius: 999px; background: var(--glass); border: 1px solid var(--line); margin-bottom: 22px; max-width: 100%; overflow-x: auto }
-.lp-tabs button { border: 0; background: none; color: var(--dim); font: 600 14px var(--display); padding: 10px 18px; border-radius: 999px; cursor: pointer; white-space: nowrap }
+/* ---- Get Cue ---- */
+.lp-get { display: grid; justify-items: center; padding-top: clamp(80px, 12vw, 140px) }
+.lp-get h2 { font-size: clamp(32px, 4.4vw, 48px); line-height: 1; font-weight: 800; letter-spacing: -0.04em; margin-bottom: 28px }
+.lp-tabs { display: inline-flex; gap: 4px; padding: 5px; margin-bottom: 28px; border-radius: 999px; border: 1px solid var(--line); max-width: 100%; overflow-x: auto }
+.lp-tabs button { border: 0; background: none; color: var(--dim); font: 600 14px var(--display); padding: 10px 18px; border-radius: 999px; cursor: pointer; white-space: nowrap;
+  transition: background 0.16s var(--settle), color 0.16s var(--settle) }
+.lp-tabs button:hover { color: var(--fg) }
 .lp-tabs button[aria-selected="true"] { background: var(--fg); color: #0b0d12 }
-.lp-panel { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px }
-.lp-step { background: var(--ink-2); border: 1px solid var(--line); border-radius: 20px; padding: 24px; display: grid; gap: 10px; align-content: start; min-width: 0 }
-.lp-step .n { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; font: 700 15px var(--display); color: #03211d; background: var(--teal) }
-.lp-step h3 { font-size: 19px; letter-spacing: -0.02em }
-.lp-step p { margin: 0; color: var(--dim); font-size: 15px }
-.lp-step .lp-code { margin: 4px 0 8px; font: 800 44px/1 var(--display); letter-spacing: 0.06em; color: var(--teal); font-variant-numeric: tabular-nums }
-.lp-copy { display: flex; align-items: center; gap: 8px; background: #000; border: 1px solid var(--line); border-radius: 12px; padding: 8px 8px 8px 14px; min-width: 0 }
-.lp-copy code { font: 500 16px var(--mono); color: var(--teal); flex: 1; min-width: 0; overflow-wrap: anywhere }
-.lp-copy button { flex: none; border: 1px solid var(--line); background: var(--glass); color: var(--fg); border-radius: 9px; padding: 7px 11px; font: 600 12px var(--body); cursor: pointer }
+.lp-panel { list-style: none; margin: 0; padding: 0; width: 100%; display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; animation: lp-in 0.32s var(--settle) both }
+@keyframes lp-in { from { opacity: 0; transform: translateY(10px) } }
+.lp-step { display: grid; gap: 14px; align-content: start; padding: 24px; border-radius: 18px; background: var(--ink-2); border: 1px solid var(--line); background-clip: padding-box; min-width: 0 }
+.lp-step > div { display: grid; gap: 8px; min-width: 0 }
+.lp-step .n { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; font: 700 14px var(--display); color: #03211d; background: var(--teal) }
+.lp-step h3 { font-size: 18px; letter-spacing: -0.02em }
+.lp-step p { color: var(--dim); font-size: 15px }
+.lp-step p b { color: var(--fg) }
+.lp-step .lp-code { margin: 2px 0 4px; font: 800 42px/1 var(--display); letter-spacing: 0.06em; color: var(--teal); font-variant-numeric: tabular-nums }
+.lp-copy { display: flex; align-items: center; gap: 8px; padding: 8px 8px 8px 14px; border-radius: 12px; background: #000; border: 1px solid var(--line); min-width: 0 }
+.lp-copy code { flex: 1; min-width: 0; font: 500 15px var(--mono); color: var(--teal); overflow-wrap: anywhere }
+.lp-copy button { flex: none; padding: 7px 11px; border-radius: 9px; border: 1px solid var(--line); background: rgba(255, 255, 255, 0.04); color: var(--fg); font: 600 12px var(--body); cursor: pointer }
 
-/* Sign in */
-.lp-signin { margin-top: 90px; position: relative; overflow: hidden; border-radius: 28px; border: 1px solid var(--line); padding: clamp(28px, 5vw, 56px);
-  background: radial-gradient(600px 300px at 90% 10%, rgba(52, 209, 191, 0.25), transparent 70%), var(--ink-2); display: grid; grid-template-columns: 1.2fr 1fr; gap: 30px; align-items: center }
-.lp-signin > * { min-width: 0 }
-.lp-signin h2 { font-size: clamp(30px, 4vw, 46px); line-height: 1.02; font-weight: 800 }
-.lp-signin p { color: var(--dim); margin: 14px 0 0; max-width: 46ch }
-.lp-who { display: flex; flex-wrap: wrap; gap: 14px; justify-content: flex-end }
-.lp-who div { display: grid; gap: 8px; justify-items: center; color: var(--dim); font-size: 13px }
-.lp-who span { width: 76px; height: 76px; border-radius: 22px; display: grid; place-items: center; font: 800 32px var(--display); color: #0b0d12; box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4) }
-.lp-foot { padding-block: 60px 50px; color: #69717f; font-size: 13px; display: flex; flex-wrap: wrap; gap: 10px 24px; justify-content: space-between }
+/* ---- Footer ---- */
+.lp-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 24px; padding-top: clamp(80px, 12vw, 140px); padding-bottom: 40px; color: #69717f; font-size: 13px }
+.lp-foot .lp-brand { margin-right: 0; color: var(--dim) }
 
-@media (max-width: 960px) {
-  .lp-hero-grid { grid-template-columns: 1fr }
-  .lp-screen { transform: rotateY(-8deg) rotateX(4deg) }
-  .lp-bento { grid-template-columns: repeat(2, 1fr); grid-auto-rows: 200px }
-  .t-title { grid-column: span 2; grid-row: span 2 }
-  .t-phone { grid-column: span 1; grid-row: span 2 }
-  .t-hover, .t-play { grid-column: span 2 }
-  .t-live, .t-year, .t-people { grid-column: span 1 }
+@media (max-width: 820px) {
   .lp-panel { grid-template-columns: 1fr }
-  .lp-signin { grid-template-columns: 1fr }
-  .lp-who { justify-content: flex-start }
-  .lp-link { display: none }
+  .lp-step { grid-template-columns: auto 1fr; align-items: start; padding: 20px }
 }
-@media (max-width: 560px) {
-  .lp-pop { left: 16px; right: 16px; top: 56px; width: auto; padding: 6px }
-  .lp-pop small, .lp-pop .dim { display: none }
-  .lp-bento { grid-template-columns: 1fr; grid-auto-rows: 210px }
-  .t-title, .t-phone, .t-hover, .t-play, .t-live, .t-year, .t-people { grid-column: span 1 }
-  .t-title { grid-row: span 1 }
-  .t-phone { grid-row: span 2 }
-  .t-phone .lp-mini { width: 44% }
-  .t-title p { display: none }
-  .lp-phone { width: 30%; right: 0 }
+@media (max-width: 480px) {
+  .lp-link { display: none }
+  .lp-ctas .lp-btn { flex: 1; justify-content: center }
+  .lp-screen { border-radius: 14px }
+  .lp-ad { right: 8px; bottom: 8px; padding: 6px 11px 6px 9px; font-size: 12px }
+  .lp-ad svg { width: 12px; height: 12px }
+  /* Three equal tabs that fit the width, wrapping their names if they must. */
+  .lp-tabs { display: grid; grid-template-columns: repeat(3, 1fr); width: 100%; border-radius: 16px }
+  .lp-tabs button { padding: 9px 6px; border-radius: 12px; font-size: 13px; line-height: 1.25; white-space: normal }
 }
 @media (prefers-reduced-motion: reduce) {
-  .lp-mrow, .lp-hero h1 .lp-sheen, .lp-eyebrow i, .lp-typed, .lp-remote-hits, .lp-pop .lit, .lp-skip { animation: none }
-  .lp-typed { width: 8.6ch }
-  .lp-screen, .lp-tile > .bg, .lp-faces span { transition: none }
+  .lp { scroll-behavior: auto }
+  .lp-panel { animation: none }
+  .lp-btn, .lp-ad, .lp-tabs button, .lp-link { transition: none }
 }
-/* Backgrounds stay inside the thin borders, so rounded corners stay soft. */
-.lp-tile, .lp-step, .lp-signin, .lp-tabs, .lp-copy, .lp-nav-in, .lp-tag { background-clip: padding-box }
