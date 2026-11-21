@@ -65,7 +65,7 @@ const (
 	KeySubtitleUpgrade       = "subtitles.upgrade"                // "0" stops swapping a subtitle for one made for the exact video file later; on by default, and only while subtitles download automatically
 	KeyOpenSubtitlesAPIKey   = "subtitles.opensubtitles_api_key"  // encrypted
 	KeyAnthropicAPIKey       = "ai.anthropic_api_key"             // encrypted: Ask Cue's key (Claude API)
-	KeyAnthropicModel        = "ai.model"                         // Ask Cue's model: "" or "haiku" (the default, cheapest), "opus" (the smartest)
+	KeyAnthropicModel        = "ai.model"                         // Ask Cue's model: "" or "sonnet" (the default), "haiku" (the cheapest), "opus" (the smartest)
 
 	// Phase 3 — curated/public list import (Discover). Trakt's
 	// public list-items endpoint only needs a client ID (an app

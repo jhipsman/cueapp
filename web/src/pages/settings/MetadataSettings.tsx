@@ -38,15 +38,16 @@ export default function MetadataSettings() {
           <legend>Which Claude answers</legend>
           {(
             [
-              ['haiku', 'Haiku (recommended)', 'Quick and plenty smart for picking something to watch. About a fifth of a cent a question.'],
-              ['opus', 'Opus', 'The smartest answers, about 40 times the cost (around 7¢ a question).'],
+              ['sonnet', 'Sonnet (recommended)', 'Knows films and shows well and keeps to everything you ask for. About 2¢ a question.'],
+              ['haiku', 'Haiku', 'The cheapest, about a fifth of a cent a question, but its picks are plainer.'],
+              ['opus', 'Opus', 'The smartest answers, about twice the cost of Sonnet.'],
             ] as const
           ).map(([value, label, hint]) => (
             <label key={value} className="ask-model-choice">
               <input
                 type="radio"
                 name="askModel"
-                checked={(s.askModel ?? 'haiku') === value}
+                checked={(s.askModel ?? 'sonnet') === value}
                 onChange={() => void api.putSettings({ askModel: value }).then(load)}
               />
               <span>
