@@ -5,7 +5,7 @@ import { titleFor } from '../documentTitle'
 import './landing.css'
 
 // The front page for someone not signed in: a short headline, the app
-// playing, and how to get Cue on each screen. Signing in is one button
+// playing scene by scene, and how to get Cue on each screen. Signing in is one button
 // away; once signed in, Cue opens straight to Watch and this page isn't
 // seen again.
 
@@ -25,49 +25,147 @@ function Mark() {
   )
 }
 
-const PlayIcon = () => (
-  <svg viewBox="0 0 24 24" aria-hidden="true">
-    <path d="M8 5v14l11-7z" />
-  </svg>
-)
+// The demo: the app itself, scene after scene (Home with its trailer, a
+// poster previewing as it's hovered, a title's page, the player, Live TV),
+// cross-fading from one to the next with the chapters underneath. The
+// screen's colours glow softly behind it, and it settles flat as it scrolls
+// into view. It plays only while it's on screen; with reduced motion it
+// shows each scene's still and moves only when a chapter is picked.
+type Scene = { label: string; name: string; ms: number; still?: boolean }
+const SCENES: Scene[] = [
+  { label: 'Home', name: 'hero', ms: 11500 },
+  { label: 'Previews', name: 'hover', ms: 6200 },
+  { label: 'Titles', name: 'title', ms: 5800 },
+  { label: 'Watching', name: 'play', ms: 5400 },
+  { label: 'Live TV', name: 'live', ms: 5000, still: true },
+]
 
-// The app's Home screen, playing (muted, looping) while it's on screen.
-// "Watch the ad" swaps it for the commercial, with sound and controls.
-function Screen() {
-  const [ad, setAd] = useState(false)
-  const v = useRef<HTMLVideoElement>(null)
+function Reel() {
+  const [at, setAt] = useState(0)
+  const [shown, setShown] = useState(false)
+  const [still] = useState(() => typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches)
+  const box = useRef<HTMLDivElement>(null)
+  const glow = useRef<HTMLCanvasElement>(null)
+  const bar = useRef<HTMLSpanElement[]>([])
+  const media = useRef<(HTMLVideoElement | HTMLImageElement | null)[]>([])
+
+  // Play only while it's on screen (and the tab is showing).
   useEffect(() => {
-    const el = v.current
-    if (!el) return
-    if (ad) {
-      el.play().catch(() => undefined)
+    const el = box.current
+    if (!el || !('IntersectionObserver' in window)) {
+      setShown(true)
       return
     }
-    if (matchMedia('(prefers-reduced-motion: reduce)').matches || !('IntersectionObserver' in window)) return
-    const io = new IntersectionObserver(
-      ([e]) => {
-        if (e.isIntersecting) el.play().catch(() => undefined)
-        else el.pause()
-      },
-      { threshold: 0.25 },
-    )
+    const io = new IntersectionObserver(([e]) => setShown(e.isIntersecting), { threshold: 0.2 })
     io.observe(el)
     return () => io.disconnect()
-  }, [ad])
+  }, [])
+
+  // The scene showing plays from its start; the others wait, paused.
+  useEffect(() => {
+    media.current.forEach((m, i) => {
+      if (!(m instanceof HTMLVideoElement)) return
+      if (i !== at) {
+        m.pause()
+        return
+      }
+      if (still) return
+      if (shown) m.play().catch(() => undefined)
+      else m.pause()
+    })
+  }, [at, shown, still])
+  useEffect(() => {
+    const m = media.current[at]
+    if (m instanceof HTMLVideoElement) m.currentTime = 0
+  }, [at])
+
+  // The clock: each scene's progress bar fills, then the next scene comes.
+  useEffect(() => {
+    bar.current.forEach((b, i) => b && b.style.setProperty('--p', i < at ? '1' : '0'))
+    if (still || !shown) return
+    let spent = 0
+    let last = performance.now()
+    let raf = 0
+    const tick = (now: number) => {
+      if (!document.hidden) spent += now - last
+      last = now
+      const k = Math.min(1, spent / SCENES[at].ms)
+      bar.current[at]?.style.setProperty('--p', String(k))
+      if (k >= 1) setAt((a) => (a + 1) % SCENES.length)
+      else raf = requestAnimationFrame(tick)
+    }
+    raf = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(raf)
+  }, [at, shown, still])
+
+  // The glow: the picture, tiny and blurred, behind the screen.
+  useEffect(() => {
+    const c = glow.current?.getContext('2d')
+    if (!c) return
+    const draw = () => {
+      const m = media.current[at]
+      if (!m) return
+      try {
+        c.drawImage(m, 0, 0, 32, 18)
+      } catch {
+        // not ready yet
+      }
+    }
+    draw()
+    if (still || !shown) return
+    const id = setInterval(draw, 150)
+    return () => clearInterval(id)
+  }, [at, shown, still])
+
   return (
-    <figure className="lp-screen">
-      {ad ? (
-        <video key="ad" ref={v} src={`${M}commercial.mp4`} poster={`${M}commercial.jpg`} controls playsInline preload="auto" aria-label="The Cue commercial" />
-      ) : (
-        <>
-          <video key="app" ref={v} src={`${M}hero.mp4`} poster={`${M}hero.jpg`} muted loop playsInline preload="metadata" aria-label="Cue's Home screen" />
-          <button type="button" className="lp-ad" onClick={() => setAd(true)}>
-            <PlayIcon />
-            Watch the ad
+    <div className="lp-reel" ref={box}>
+      <canvas className="lp-glow" ref={glow} width={32} height={18} aria-hidden="true" />
+      <figure className="lp-screen" aria-label={`Cue: ${SCENES[at].label}`}>
+        {SCENES.map((sc, i) =>
+          sc.still ? (
+            <img
+              key={sc.name}
+              ref={(el) => {
+                media.current[i] = el
+              }}
+              className={i === at ? 'on drift' : ''}
+              src={`${M}${sc.name}.jpg`}
+              alt=""
+              loading="lazy"
+              decoding="async"
+            />
+          ) : (
+            <video
+              key={sc.name}
+              ref={(el) => {
+                media.current[i] = el
+              }}
+              className={i === at ? 'on' : ''}
+              src={`${M}${sc.name}.mp4`}
+              poster={`${M}${sc.name}.jpg`}
+              muted
+              loop
+              playsInline
+              preload={i === at || i === (at + 1) % SCENES.length ? 'auto' : 'metadata'}
+              aria-hidden="true"
+            />
+          ),
+        )}
+      </figure>
+      <div className="lp-chapters" role="group" aria-label="Scenes">
+        {SCENES.map((sc, i) => (
+          <button key={sc.name} type="button" aria-pressed={i === at} onClick={() => setAt(i)}>
+            {sc.label}
+            <span
+              className="lp-bar"
+              ref={(el) => {
+                if (el) bar.current[i] = el
+              }}
+            />
           </button>
-        </>
-      )}
-    </figure>
+        ))}
+      </div>
+    </div>
   )
 }
 
@@ -159,7 +257,7 @@ export default function Landing() {
             Sign in
           </Link>
         </div>
-        <Screen />
+        <Reel />
       </header>
 
       <section className="lp-get lp-wrap" id="get" aria-labelledby="lp-get-h">

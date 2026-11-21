@@ -55,15 +55,33 @@
 .lp-hero h1 span { color: var(--teal) }
 .lp-ctas { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin-top: 34px }
 
-/* The app, on a plain screen */
-.lp-screen { position: relative; width: 100%; margin: clamp(48px, 7vw, 80px) 0 0; border-radius: 18px; overflow: hidden; aspect-ratio: 16 / 9; background: #000;
+/* The demo reel: the app, scene by scene, on a screen that glows with
+   what's playing and settles flat as it scrolls into view. */
+.lp-reel { position: relative; width: 100%; margin-top: clamp(48px, 7vw, 80px); isolation: isolate }
+.lp-glow { position: absolute; left: -5%; top: -6%; width: 110%; aspect-ratio: 16 / 9; z-index: -1; filter: blur(70px) saturate(1.5); opacity: 0.5; pointer-events: none }
+.lp-screen { position: relative; margin: 0; border-radius: 18px; overflow: hidden; aspect-ratio: 16 / 9; background: #000;
   box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.1), 0 40px 120px -30px rgba(0, 0, 0, 0.9) }
-.lp-screen video { width: 100%; height: 100%; object-fit: cover }
-.lp-ad { position: absolute; right: 16px; bottom: 16px; display: inline-flex; align-items: center; gap: 8px; padding: 9px 15px 9px 12px; border: 0; border-radius: 999px;
-  background: rgba(7, 8, 11, 0.72); color: var(--fg); font: 600 13px var(--display); cursor: pointer; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
-  box-shadow: inset 0 0 0 1px var(--line); transition: background 0.16s var(--settle) }
-.lp-ad:hover { background: rgba(7, 8, 11, 0.9) }
-.lp-ad svg { width: 14px; height: 14px; fill: currentColor }
+.lp-screen video, .lp-screen img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transform: scale(1.015);
+  transition: opacity 0.42s var(--settle), transform 0.6s var(--settle) }
+.lp-screen .on { opacity: 1; transform: none }
+/* Live TV is a still: a slow, straight drift keeps it alive. */
+.lp-screen img.drift { animation: lp-drift 5s linear both }
+@keyframes lp-drift { from { transform: scale(1) } to { transform: scale(1.05) translateX(-1%) } }
+@supports (animation-timeline: view()) {
+  .lp-screen { animation: lp-settle linear both; animation-timeline: view(); animation-range: entry 10% cover 45% }
+  @keyframes lp-settle { from { transform: perspective(1800px) rotateX(18deg) scale(0.92); opacity: 0.55 } to { transform: none; opacity: 1 } }
+}
+
+/* The chapters: the scene playing, and how far through it is. */
+.lp-chapters { display: flex; justify-content: center; gap: 6px; margin-top: 18px; overflow-x: auto; scrollbar-width: none }
+.lp-chapters::-webkit-scrollbar { display: none }
+.lp-chapters button { position: relative; flex: none; padding: 9px 14px 13px; border: 0; border-radius: 10px; background: none; color: var(--dim); font: 600 13px var(--display);
+  cursor: pointer; transition: color 0.16s var(--settle), background 0.16s var(--settle) }
+.lp-chapters button:hover { color: var(--fg); background: rgba(255, 255, 255, 0.04) }
+.lp-chapters button[aria-pressed="true"] { color: var(--fg) }
+.lp-bar { position: absolute; left: 14px; right: 14px; bottom: 5px; height: 2px; border-radius: 1px; background: rgba(255, 255, 255, 0.12); overflow: hidden }
+.lp-bar::after { content: ""; position: absolute; inset: 0; background: var(--teal); transform-origin: left; transform: scaleX(var(--p, 0)) }
+.lp-chapters button[aria-pressed="false"] .lp-bar::after { opacity: 0.35 }
 
 /* ---- Get Cue ---- */
 .lp-get { display: grid; justify-items: center; padding-top: clamp(80px, 12vw, 140px) }
@@ -98,8 +116,9 @@
   .lp-link { display: none }
   .lp-ctas .lp-btn { flex: 1; justify-content: center }
   .lp-screen { border-radius: 14px }
-  .lp-ad { right: 8px; bottom: 8px; padding: 6px 11px 6px 9px; font-size: 12px }
-  .lp-ad svg { width: 12px; height: 12px }
+  .lp-chapters { justify-content: flex-start; gap: 2px; margin-inline: -20px; padding-inline: 14px }
+  .lp-chapters button { padding: 8px 10px 12px; font-size: 12px }
+  .lp-bar { left: 10px; right: 10px }
   /* Three equal tabs that fit the width, wrapping their names if they must. */
   .lp-tabs { display: grid; grid-template-columns: repeat(3, 1fr); width: 100%; border-radius: 16px }
   .lp-tabs button { padding: 9px 6px; border-radius: 12px; font-size: 13px; line-height: 1.25; white-space: normal }
@@ -107,5 +126,6 @@
 @media (prefers-reduced-motion: reduce) {
   .lp { scroll-behavior: auto }
   .lp-panel { animation: none }
-  .lp-btn, .lp-ad, .lp-tabs button, .lp-link { transition: none }
+  .lp-btn, .lp-tabs button, .lp-link, .lp-chapters button, .lp-screen video, .lp-screen img { transition: none }
+  .lp-screen, .lp-screen img.drift { animation: none }
 }
