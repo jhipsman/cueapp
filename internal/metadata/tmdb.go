@@ -148,7 +148,7 @@ type pagedMovies struct {
 
 // SearchMovies queries TMDB's movie search endpoint.
 func (c *Client) SearchMovies(ctx context.Context, query string) ([]Movie, error) {
-	return c.getMovieList(ctx, "/search/movie", url.Values{"query": {query}})
+	return c.getMovieList(ctx, "/search/movie", url.Values{"query": {query}, "include_adult": {"false"}})
 }
 
 // MultiResult is one hit from TMDB's combined movie + TV search.

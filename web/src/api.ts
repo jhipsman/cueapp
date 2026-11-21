@@ -820,6 +820,7 @@ export interface Settings {
   anthropicApiKey?: string // Ask Cue's Claude key (write-only)
   hasAnthropicApiKey?: boolean
   askModel?: 'haiku' | 'sonnet' | 'opus' // Ask Cue's model: Sonnet (the default), Haiku (cheapest) or Opus (smartest)
+  hideAdult?: boolean // adult Live TV channels and adult releases left out (on unless switched off)
   hasTraktClientId: boolean
   onboardingDone: boolean
   torrentListenPort?: string

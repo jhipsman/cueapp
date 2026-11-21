@@ -67,7 +67,7 @@ type pagedShows struct {
 
 // SearchTV queries TMDB's TV search endpoint.
 func (c *Client) SearchTV(ctx context.Context, query string) ([]Show, error) {
-	return c.getShowList(ctx, "/search/tv", url.Values{"query": {query}})
+	return c.getShowList(ctx, "/search/tv", url.Values{"query": {query}, "include_adult": {"false"}})
 }
 
 // TrendingTV / PopularTV mirror the movie equivalents for Discover.
