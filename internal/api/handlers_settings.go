@@ -77,7 +77,7 @@ type settingsPayload struct {
 	// Ask Cue's Claude API key (write-only; HasAnthropicAPIKey says whether one is saved).
 	AnthropicAPIKey        *string `json:"anthropicApiKey,omitempty"`
 	HasAnthropicAPIKey     bool    `json:"hasAnthropicApiKey"`
-	AskModel               *string `json:"askModel,omitempty"` // Ask Cue's model: haiku or opus
+	AskModel               *string `json:"askModel,omitempty"` // Ask Cue's model: haiku, sonnet or opus
 	HasOpenSubtitlesAPIKey bool    `json:"hasOpenSubtitlesApiKey"`
 
 	// Optional OpenSubtitles.com account (raises the daily download limit).
@@ -205,10 +205,7 @@ func (s *Server) containerFolders() *containerFolders {
 // never logged/exposed in plaintext beyond what's needed); HasTMDBAPIKey
 // tells the UI whether one is already configured.
 func (s *Server) handleGetSettings(w http.ResponseWriter, r *http.Request) {
-	askModelName := "haiku"
-	if s.askModel() == askModelOpus {
-		askModelName = "opus"
-	}
+	askModelName := s.askModelName()
 	moviesPath := s.moviesRoot()
 	downloadsPath := s.downloadsRoot()
 	namingPreset, _ := s.Settings.Get(settings.KeyNamingPreset)
@@ -515,8 +512,8 @@ func (s *Server) handlePutSettings(w http.ResponseWriter, r *http.Request) {
 	}
 	if req.AskModel != nil {
 		m := strings.TrimSpace(*req.AskModel)
-		if m != "haiku" && m != "opus" {
-			writeError(w, http.StatusBadRequest, `Ask Cue's model is "haiku" or "opus".`)
+		if m != "haiku" && m != "sonnet" && m != "opus" {
+			writeError(w, http.StatusBadRequest, `Ask Cue's model is "haiku", "sonnet" or "opus".`)
 			return
 		}
 		if err := s.Settings.Set(settings.KeyAnthropicModel, m, false); err != nil {

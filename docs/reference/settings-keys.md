@@ -10,7 +10,7 @@ The keys the app stores in its settings table. You normally change these from th
 | `accounts.invite_expires` |  |
 | `accounts.invite_token` |  |
 | `ai.anthropic_api_key` | encrypted: Ask Cue's key (Claude API) |
-| `ai.model` | Ask Cue's model: "" or "haiku" (the default, cheapest), "opus" (the smartest) |
+| `ai.model` | Ask Cue's model: "" or "sonnet" (the default), "haiku" (the cheapest), "opus" (the smartest) |
 | `app.streaming_only` | "1" streaming only (Watch is the app, the download jobs rest), "0" the full library manager; unset = CUE_STREAMING_ONLY (on unless "0") |
 | `audiobooks.path` | audiobooks library folder; falls back to the AUDIOBOOKS_DIR env default (/audiobooks) when unset |
 | `auth.proxy_addresses` | where that proxy connects from: IP addresses or CIDR ranges, comma-separated ("private" is refused). The header is only believed from these |

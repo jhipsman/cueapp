@@ -819,7 +819,7 @@ export interface Settings {
   traktClientId?: string
   anthropicApiKey?: string // Ask Cue's Claude key (write-only)
   hasAnthropicApiKey?: boolean
-  askModel?: 'haiku' | 'opus' // Ask Cue's model: Haiku (cheapest, the default) or Opus (smartest)
+  askModel?: 'haiku' | 'sonnet' | 'opus' // Ask Cue's model: Sonnet (the default), Haiku (cheapest) or Opus (smartest)
   hasTraktClientId: boolean
   onboardingDone: boolean
   torrentListenPort?: string
