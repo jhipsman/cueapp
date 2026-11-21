@@ -607,7 +607,8 @@ fun MainScreen(api: CueApi, playback: Playback, openWeb: (String) -> Unit, chang
     }
 
     // Opening a title zooms it in over Home; Back zooms it away again, Home
-    // settling back into place. (Short, so a slow TV keeps up.)
+    // settling back into place. The fade is 320 ms, the short end of T6,
+    // so a slow TV keeps up.
     AnimatedContent(
         targetState = open.lastOrNull(),
         contentKey = { it?.key ?: "home" },
@@ -615,9 +616,9 @@ fun MainScreen(api: CueApi, playback: Playback, openWeb: (String) -> Unit, chang
             val opening = targetState != null && initialState == null
             val closing = targetState == null
             when {
-                opening -> (fadeIn(tween(240, easing = Settle)) + scaleIn(tween(320, easing = Settle), initialScale = 1.05f)) togetherWith
+                opening -> (fadeIn(tween(320, easing = Settle)) + scaleIn(tween(320, easing = Settle), initialScale = 1.05f)) togetherWith
                     (fadeOut(tween(160)) + scaleOut(tween(320, easing = Settle), targetScale = 0.96f))
-                closing -> (fadeIn(tween(240, easing = Settle)) + scaleIn(tween(320, easing = Settle), initialScale = 0.96f)) togetherWith
+                closing -> (fadeIn(tween(320, easing = Settle)) + scaleIn(tween(320, easing = Settle), initialScale = 0.96f)) togetherWith
                     (fadeOut(tween(160)) + scaleOut(tween(320, easing = Settle), targetScale = 1.05f))
                 else -> fadeIn(tween(260, delayMillis = 60)) togetherWith fadeOut(tween(140))
             }
