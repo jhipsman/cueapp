@@ -1382,11 +1382,13 @@ fieldset.group .card, fieldset.group table { max-width: 100%; }
 .sidebar a.parent-open { background: transparent; }
 .subnav { gap: 4px; }
 
-/* Loading screen (base styles live in index.html so they work before this file loads). */
 :root[data-theme="light"] .splash { background: #f6f7f9; color: #1b2330; }
-:root[data-theme="dark"] .splash { background: #0f1216; color: #e8ecf1; }
-.splash { background: var(--bg); color: var(--text); }
-.splash-logo { color: var(--accent); }
+:root[data-theme="light"] .splash-label { color: #444b58; }
+:root[data-theme="dark"] .splash { background: #101114; color: #f4f4f5; }
+/* The loading screen's look is in index.html (it shows before this file
+   arrives). Here it takes the profile's colour, as on the TV, and the light
+   theme when that's chosen. */
+.splash { --splash-accent: var(--accent); }
 .splash-hint { max-width: 34ch; margin: 0; text-align: center; color: var(--text-dim); font-size: 0.9rem; }
 .slow-note { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; padding: 16px 18px; border-radius: 14px; border: 1px solid var(--border); border-left: 5px solid var(--warning); background: var(--surface); color: var(--text-dim); }
 .slow-note strong { color: var(--text); }
