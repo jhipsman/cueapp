@@ -607,7 +607,8 @@ fun MainScreen(api: CueApi, playback: Playback, openWeb: (String) -> Unit, chang
     }
 
     // Opening a title zooms it in over Home; Back zooms it away again, Home
-    // settling back into place. (Short, so a slow TV keeps up.)
+    // settling back into place. The fade is 320 ms, the short end of T6,
+    // so a slow TV keeps up.
     AnimatedContent(
         targetState = open.lastOrNull(),
         contentKey = { it?.key ?: "home" },
@@ -615,9 +616,9 @@ fun MainScreen(api: CueApi, playback: Playback, openWeb: (String) -> Unit, chang
             val opening = targetState != null && initialState == null
             val closing = targetState == null
             when {
-                opening -> (fadeIn(tween(240, easing = Settle)) + scaleIn(tween(320, easing = Settle), initialScale = 1.05f)) togetherWith
+                opening -> (fadeIn(tween(320, easing = Settle)) + scaleIn(tween(320, easing = Settle), initialScale = 1.05f)) togetherWith
                     (fadeOut(tween(160)) + scaleOut(tween(320, easing = Settle), targetScale = 0.96f))
-                closing -> (fadeIn(tween(240, easing = Settle)) + scaleIn(tween(320, easing = Settle), initialScale = 0.96f)) togetherWith
+                closing -> (fadeIn(tween(320, easing = Settle)) + scaleIn(tween(320, easing = Settle), initialScale = 0.96f)) togetherWith
                     (fadeOut(tween(160)) + scaleOut(tween(320, easing = Settle), targetScale = 1.05f))
                 else -> fadeIn(tween(260, delayMillis = 60)) togetherWith fadeOut(tween(140))
             }
@@ -692,8 +693,10 @@ fun MainScreen(api: CueApi, playback: Playback, openWeb: (String) -> Unit, chang
 // marked with a short bar in the profile's colour.
 @Composable
 private fun SideRail(api: CueApi, current: Int, focusers: List<FocusRequester>, expanded: Boolean, modifier: Modifier, onFocusPage: (Int) -> Unit) {
-    val width by animateDpAsState(if (expanded) 212.dp else RailWidth, tween(220, easing = Settle), label = "rail")
-    val shade by animateFloatAsState(if (expanded) 1f else 0f, tween(220), label = "rail-shade")
+    // Opens over 260 ms; closes in about two-thirds of that (T7, S5).
+    val railMs = if (expanded) 260 else 180
+    val width by animateDpAsState(if (expanded) 212.dp else RailWidth, tween(railMs, easing = Settle), label = "rail")
+    val shade by animateFloatAsState(if (expanded) 1f else 0f, tween(railMs, easing = Settle), label = "rail-shade")
     Box(modifier.fillMaxHeight().width(width)) {
         // Behind it: dark at the rail, fading out to the right.
         Box(Modifier.matchParentSize().background(Brush.horizontalGradient(listOf(Color(0xF20B0C0F), Color(0xF20B0C0F).copy(alpha = 0.55f + 0.4f * shade), Color(0x000B0C0F)))))
