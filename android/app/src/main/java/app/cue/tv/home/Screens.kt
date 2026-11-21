@@ -692,8 +692,10 @@ fun MainScreen(api: CueApi, playback: Playback, openWeb: (String) -> Unit, chang
 // marked with a short bar in the profile's colour.
 @Composable
 private fun SideRail(api: CueApi, current: Int, focusers: List<FocusRequester>, expanded: Boolean, modifier: Modifier, onFocusPage: (Int) -> Unit) {
-    val width by animateDpAsState(if (expanded) 212.dp else RailWidth, tween(220, easing = Settle), label = "rail")
-    val shade by animateFloatAsState(if (expanded) 1f else 0f, tween(220), label = "rail-shade")
+    // Opens over 260 ms; closes in about two-thirds of that (T7, S5).
+    val railMs = if (expanded) 260 else 180
+    val width by animateDpAsState(if (expanded) 212.dp else RailWidth, tween(railMs, easing = Settle), label = "rail")
+    val shade by animateFloatAsState(if (expanded) 1f else 0f, tween(railMs, easing = Settle), label = "rail-shade")
     Box(modifier.fillMaxHeight().width(width)) {
         // Behind it: dark at the rail, fading out to the right.
         Box(Modifier.matchParentSize().background(Brush.horizontalGradient(listOf(Color(0xF20B0C0F), Color(0xF20B0C0F).copy(alpha = 0.55f + 0.4f * shade), Color(0x000B0C0F)))))
