@@ -164,6 +164,9 @@ func (s *Server) liveChannels(ctx context.Context) ([]iptv.Category, []iptv.Chan
 		}
 		return nil, nil, err
 	}
+	if s.hideAdult() {
+		cats, chans = withoutAdultChannels(cats, chans)
+	}
 	s.live.cats, s.live.chans = cats, chans
 	if stErr == nil {
 		s.live.status = st

@@ -164,6 +164,8 @@ Each person plays from their own stream; only the position is shared. Parties li
 
 Add your IPTV provider and Watch gets a **Live TV** tab: every channel with its logo, a TV guide of what's on now and for the next hours, and Favourites per profile.
 
+Adult channels are hidden: a group or channel named like one (XXX, For Adults, Adults Only, 18+, porn or erotic channels, Playboy, Hustler, Brazzers, Penthouse, Dorcel, Redlight, Babestation) is left out of the channel list, the guide, Sports, Live TV search, recordings and playing, for every profile. Adult Swim stays. **Settings › Streaming › Family › Hide adult content** turns this off for the whole household; it also keeps adult releases out of release search.
+
 ![The Live TV guide](images/watch/watch-live-guide.png)
 
 1. Find your provider's **Xtream Codes** login: a server address (usually with a port, like `http://line.example.com:8080`), a username and a password. Providers send it with the M3U link; if you only have an M3U link, the three are in it: `http://SERVER/get.php?username=USERNAME&password=PASSWORD&...`.

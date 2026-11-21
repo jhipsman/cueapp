@@ -123,10 +123,15 @@ func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
 	merged := indexers.MergeResults(outcomes)
 
 	blocked := s.blockedKeys()
-	out := make([]searchResultPayload, len(merged))
-	for i, res := range merged {
-		out[i] = s.toSearchResultPayload(res)
-		out[i].Blocklisted = blocked[blocklist.Key(res.Title)]
+	hide := s.hideAdult()
+	out := make([]searchResultPayload, 0, len(merged))
+	for _, res := range merged {
+		if hide && adultResult(res) {
+			continue
+		}
+		p := s.toSearchResultPayload(res)
+		p.Blocklisted = blocked[blocklist.Key(res.Title)]
+		out = append(out, p)
 	}
 	writeJSON(w, http.StatusOK, out)
 }

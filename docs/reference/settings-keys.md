@@ -73,6 +73,7 @@ The keys the app stores in its settings table. You normally change these from th
 | `premiumize.use_for` | "torrents" (the default when unset) \| "usenet" \| "both" |
 | `push.vapid` | the key phone alerts are signed with (made by the app, encrypted; not user-editable) |
 | `quality.language` | the audio language wanted, as a name like "English" (the default when unset); a release clearly in another language only is not picked automatically |
+| `safety.hide_adult` | "0" shows adult Live TV channels and adult releases in release search; unset or "1" hides them |
 | `scripts.after_import` | JSON: script (a file name in /config/scripts; empty = off) and timeoutSec (default 300). Only a signed-in browser session can set it, not an API key |
 | `scripts.last_run` | what the last run did (JSON; set by the app, not user-editable) |
 | `server.public_url` | the address you open Cue at from your own devices (like https://cue.example.com); links in notification messages use it; unset = no links |

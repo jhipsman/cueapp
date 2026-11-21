@@ -18,6 +18,27 @@ export default function StreamingSettings() {
   const { refresh: refreshModules } = useModules()
   const [st, setSt] = useState<Streaming | null>(null)
   const [busy, setBusy] = useState(false)
+  const [hideAdult, setHideAdult] = useState<boolean | null>(null)
+
+  useEffect(() => {
+    api
+      .getSettings()
+      .then((s) => setHideAdult(s.hideAdult ?? true))
+      .catch(() => setHideAdult(true))
+  }, [])
+
+  async function saveHideAdult(v: boolean) {
+    setBusy(true)
+    try {
+      const s = await api.putSettings({ hideAdult: v })
+      setHideAdult(s.hideAdult ?? v)
+      toast.success(v ? 'Adult channels and releases are hidden.' : 'Adult channels and releases show again.')
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : String(e))
+    } finally {
+      setBusy(false)
+    }
+  }
 
   useEffect(() => {
     api
@@ -106,6 +127,16 @@ export default function StreamingSettings() {
           <Link className="btn-with-icon" to="/watch/profiles" style={{ display: 'inline-flex' }}>
             <Icon name="user" size={16} /> Manage profiles
           </Link>
+          <div style={{ marginTop: 14 }}>
+            <Switch
+              checked={hideAdult ?? true}
+              disabled={hideAdult === null || busy}
+              onChange={(v) => void saveHideAdult(v)}
+              label="Hide adult content"
+              description="Adult Live TV channels and groups (XXX, For Adults, 18+, the adult networks) are left out of every channel list, the guide, search and recordings, for every profile. Adult releases never show in release search. Search, Ask Cue and Play never offer adult titles either way."
+              showState
+            />
+          </div>
         </fieldset>
       </div>
 

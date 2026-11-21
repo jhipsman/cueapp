@@ -89,7 +89,7 @@ func (c *Client) Search(ctx context.Context, q string, max int) ([]Video, error)
 			} `json:"snippet"`
 		} `json:"items"`
 	}
-	if err := c.get(ctx, "search", url.Values{"part": {"snippet"}, "type": {"video"}, "q": {q}, "maxResults": {strconv.Itoa(max)}, "safeSearch": {"none"}}, &found); err != nil {
+	if err := c.get(ctx, "search", url.Values{"part": {"snippet"}, "type": {"video"}, "q": {q}, "maxResults": {strconv.Itoa(max)}, "safeSearch": {"moderate"}}, &found); err != nil {
 		return nil, err
 	}
 	if len(found.Items) == 0 {
