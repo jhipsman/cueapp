@@ -5,7 +5,8 @@
 #
 # It installs Docker if it's missing, sets Cue up in /opt/cue, gets an HTTPS
 # address (your own domain, or a free one made from the server's IP), starts
-# it, and updates it every night. Run it again any time: it keeps your
+# it, and keeps it up to date (it checks for a new version every 5 minutes).
+# Run it again any time: it keeps your
 # settings and only updates what it set up.
 #
 # Choices, all optional, as environment variables before `bash`:
@@ -55,10 +56,13 @@ tz="${TZ:-}"
 if [ -z "$tz" ] && [ -f .env ]; then tz="$(sed -n 's/^TZ=//p' .env | head -n1)"; fi
 if [ -z "$tz" ]; then tz="$(timedatectl show -p Timezone --value 2>/dev/null || true)"; fi
 [ -n "$tz" ] || tz=Etc/UTC
-cat > .env <<EOT
-CUE_HOST=$host
-TZ=$tz
-EOT
+# Any other settings in .env (CUE_IMAGE, say) stay as they were.
+others=""
+if [ -f .env ]; then others="$(grep -v -e '^CUE_HOST=' -e '^TZ=' .env || true)"; fi
+{
+  printf 'CUE_HOST=%s\nTZ=%s\n' "$host" "$tz"
+  if [ -n "$others" ]; then printf '%s\n' "$others"; fi
+} > .env
 
 # www.<your domain> forwards to <your domain>, when its DNS points here too
 # (checked now: a www name that doesn't point here would only make Caddy
@@ -93,10 +97,13 @@ say "Downloading and starting Cue"
 docker compose pull -q || die "Couldn't download Cue's image. If it says 'unauthorized' or 'denied', make the cue package public on GitHub (see docs/cloud.md)."
 docker compose up -d --remove-orphans
 
-# ---- Nightly update ----
+# ---- Updates ----
+# Every 5 minutes: ask the registry for a newer image and restart Cue only if
+# there is one (an unchanged image costs a manifest check and nothing else).
+# flock keeps a slow download from overlapping the next check.
 cat > /etc/cron.d/cue-update <<'EOT'
-# Cue: fetch the latest version every night and restart only if it changed.
-17 4 * * * root cd /opt/cue && docker compose pull -q && docker compose up -d --remove-orphans && docker image prune -f >/dev/null
+# Cue: check for a new version every 5 minutes and restart only if it changed.
+*/5 * * * * root flock -n /run/cue-update.lock sh -c 'cd /opt/cue && docker compose pull -q && docker compose up -d --remove-orphans && docker image prune -f >/dev/null'
 EOT
 chmod 644 /etc/cron.d/cue-update
 
@@ -127,5 +134,5 @@ cat <<EOT
   Fire TV app: enter https://$host as the server address.
   Phone: open https://$host in Safari or Chrome and add it to the home screen.
 
-  Cue updates itself every night. Its settings are in $DIR/config.
+  Cue updates itself within a few minutes of each new version. Its settings are in $DIR/config.
 EOT

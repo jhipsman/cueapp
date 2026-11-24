@@ -32,7 +32,7 @@ On a rented server (DigitalOcean, Hetzner, a VPS), the whole machine is on the i
    ```sh
    apt-get install -y unattended-upgrades && dpkg-reconfigure -plow unattended-upgrades
    ```
-4. **Keep Cue updated.** The cloud setup checks for a new version every night; run `cd /opt/cue && docker compose pull && docker compose up -d` to update at once.
+4. **Keep Cue updated.** The cloud setup checks for a new version every 5 minutes and installs it by itself; to update at once, run `docker compose pull` and then `docker compose up -d` in `/opt/cue`.
 5. **Turn on your provider's backups or snapshots,** or download Cue's own backup now and then (Settings > System > Server and backup), and keep it private (item 9 above).
 
 ## Example proxy setups
