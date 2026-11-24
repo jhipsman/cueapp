@@ -78,6 +78,7 @@ type Game struct {
 	Away       Team      `json:"away"`
 	Networks   []string  `json:"networks,omitempty"` // national TV and streaming: CBS, ESPN, Prime Video
 	Note       string    `json:"note,omitempty"`     // "AFC Wild Card"
+	Venue      string    `json:"venue,omitempty"`    // "TD Garden"
 	Postseason bool      `json:"postseason,omitempty"`
 	Size       int       `json:"-"` // the league's score
 }
@@ -197,6 +198,9 @@ type sbEvent struct {
 		} `json:"type"`
 	} `json:"status"`
 	Competitions []struct {
+		Venue struct {
+			FullName flexText `json:"fullName"`
+		} `json:"venue"`
 		Competitors []struct {
 			HomeAway flexText `json:"homeAway"`
 			Score    flexText `json:"score"`
@@ -376,6 +380,7 @@ func parseScoreboard(sb scoreboard, l League) []Game {
 		if len(comp.Notes) > 0 {
 			g.Note = string(comp.Notes[0].Headline)
 		}
+		g.Venue = string(comp.Venue.FullName)
 		out = append(out, g)
 	}
 	sort.SliceStable(out, func(i, j int) bool { return out[i].Start.Before(out[j].Start) })

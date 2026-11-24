@@ -2,16 +2,16 @@
    from a couch as much as from a desk (big targets, visible focus). */
 
 .wx {
-  --wx-bg: #101114;
-  --wx-panel: #1b1d22;
+  --wx-bg: #0b0b0c;
+  --wx-panel: #171719;
   --wx-text: #f4f4f5;
   --wx-dim: #a6a8ae;
   /* The color theme (theme.ts sets these per profile); Cue's own here. */
-  --wx-accent: #34d1bf; /* Cue cyan, from the logo */
-  --wx-accent-rgb: 52, 209, 191;
-  --wx-accent-text: #06201d;
-  --wx-bg-rgb: 16, 17, 20;
-  --wx-glow: 0 0 24px rgba(52, 209, 191, 0.45);
+  --wx-accent: #e4e4e7; /* Cue white on graphite */
+  --wx-accent-rgb: 228, 228, 231;
+  --wx-accent-text: #0b0b0c;
+  --wx-bg-rgb: 11, 11, 12;
+  --wx-glow: 0 0 0 transparent;
   --wx-gutter: clamp(16px, 4vw, 56px);
   min-height: 100vh;
   background: var(--wx-bg);
@@ -21,7 +21,7 @@
 }
 html.watch-mode,
 html.watch-mode body {
-  background: var(--wx-bg, #101114);
+  background: var(--wx-bg, #0b0b0c);
 }
 .wx a {
   color: inherit;

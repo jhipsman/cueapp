@@ -4,7 +4,7 @@ import "testing"
 
 func TestThemeClean(t *testing.T) {
 	got := Theme{Accent: "#FF0088", Glow: "loud", Background: "tinted"}.Clean()
-	want := Theme{Accent: "#ff0088", Glow: "soft", Background: "tinted"}
+	want := Theme{Accent: "#ff0088", Glow: DefaultTheme.Glow, Background: "tinted"}
 	if got != want {
 		t.Errorf("got %+v, want %+v", got, want)
 	}

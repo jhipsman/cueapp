@@ -71,33 +71,37 @@ import coil.compose.AsyncImage
 // Pieces the app's screens share: colours, artwork, posters, rows.
 
 // The profile's theme, as chosen in Watch (Colors): its colour, how much
-// it glows, and the background (Midnight, Black, Slate or Tinted). The
+// it glows, and the background (Graphite, Midnight, Black, Slate or Tinted). The
 // colours below follow it, so the whole app changes with it.
 object CueTheme {
-    var accent by androidx.compose.runtime.mutableStateOf(CueTeal)
-    var background by androidx.compose.runtime.mutableStateOf("midnight")
-    var glow by androidx.compose.runtime.mutableStateOf("soft")
+    var accent by androidx.compose.runtime.mutableStateOf(CueWhite)
+    var background by androidx.compose.runtime.mutableStateOf("graphite")
+    var glow by androidx.compose.runtime.mutableStateOf("off")
 
     fun from(api: CueApi) {
         accent = accentOf(api.accent)
-        background = api.themeBackground.ifEmpty { "midnight" }
-        glow = api.themeGlow.ifEmpty { "soft" }
+        background = api.themeBackground.ifEmpty { "graphite" }
+        glow = api.themeGlow.ifEmpty { "off" }
     }
 }
 
 val CueTeal = Color(0xFF34D1BF)
+// Cue's own colour now: a soft white on graphite greys.
+val CueWhite = Color(0xFFE4E4E7)
 
 val Background: Color get() = when (CueTheme.background) {
     "black" -> Color(0xFF000000)
+    "midnight" -> Color(0xFF101114)
     "slate" -> Color(0xFF0E1522)
     "tinted" -> androidx.compose.ui.graphics.lerp(Color(0xFF0D0E11), CueTheme.accent, 0.07f)
-    else -> Color(0xFF101114)
+    else -> Color(0xFF0B0B0C) // graphite
 }
 val Panel: Color get() = when (CueTheme.background) {
     "black" -> Color(0xFF141416)
+    "midnight" -> Color(0xFF1B1D22)
     "slate" -> Color(0xFF1A2333)
     "tinted" -> androidx.compose.ui.graphics.lerp(Color(0xFF191B20), CueTheme.accent, 0.1f)
-    else -> Color(0xFF1B1D22)
+    else -> Color(0xFF171719) // graphite
 }
 val Dim = Color(0xFFA6A8AE)
 val Teal: Color get() = CueTheme.accent
@@ -111,13 +115,13 @@ val GlowAmount: Float get() = when (CueTheme.glow) {
 // The background at an opacity: for the fades over pictures.
 fun shade(alpha: Float): Color = Background.copy(alpha = alpha)
 
-// The profile's colour (or Cue's teal), for focus rings and progress.
-val LocalAccent = compositionLocalOf { CueTeal }
+// The profile's colour (or Cue's white), for focus rings and progress.
+val LocalAccent = compositionLocalOf { CueWhite }
 
 fun accentOf(hex: String): Color = try {
-    if (hex.length == 7 && hex.startsWith("#")) Color(android.graphics.Color.parseColor(hex)) else CueTeal
+    if (hex.length == 7 && hex.startsWith("#")) Color(android.graphics.Color.parseColor(hex)) else CueWhite
 } catch (e: Exception) {
-    CueTeal
+    CueWhite
 }
 
 // TMDB pictures a TV needs are smaller than the web's: they load faster.

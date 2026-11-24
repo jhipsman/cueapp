@@ -252,7 +252,7 @@ export interface StreamPrefs {
 export interface WatchTheme {
   accent: string // "#rrggbb"
   glow: 'off' | 'soft' | 'strong'
-  background: 'midnight' | 'black' | 'slate' | 'tinted'
+  background: 'graphite' | 'midnight' | 'black' | 'slate' | 'tinted'
 }
 export interface WatchProfiles {
   profiles: WatchProfile[]
