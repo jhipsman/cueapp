@@ -47,6 +47,13 @@ func (s *Server) filmOutNow(ctx context.Context, tmdbID int) filmOut {
 		return filmOut{out: true}
 	}
 	f := filmOutOf(d, time.Now())
+	// On a streaming service already (a service's own film often lists only
+	// its premiere): out, whatever the dates say.
+	if !f.out {
+		if wp, err := tm.GetWatchProviders(ctx, "movie", tmdbID, "US"); err == nil && len(wp.Subscription)+len(wp.Free)+len(wp.Ads) > 0 {
+			f.out = true
+		}
+	}
 	filmOutKnown.Store(tmdbID, f)
 	return f
 }

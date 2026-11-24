@@ -1,7 +1,7 @@
 import { usePrefs } from './prefs'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
-import { api, browserCantOpen, profileToken, type PlayAnswer, type WatchCard, type WatchEpisode, type WatchSkips } from '../api'
+import { api, browserCantOpen, profileToken, type PlayAnswer, type PrepareStatus, type WatchKind, type WatchCard, type WatchEpisode, type WatchSkips } from '../api'
 import Icon from '../components/Icon'
 import { useDocumentTitle } from '../documentTitle'
 import { epCode, playHref, Spinner } from './parts'
@@ -904,6 +904,9 @@ export default function PlayerPage() {
       {error && (
         <div className="wx-player-center">
           <p className="wx-error">{error}</p>
+          {/Get it ready/.test(error) && (
+            <GetItReady kind={kind} tmdbId={tmdbId} season={season} episode={episode} onReady={() => void load(1, true)} />
+          )}
           <FreeElsewhere kind={kind} tmdbId={tmdbId} />
           {answer && <OpenIn url={answer.url} onOpen={() => undefined} />}
           {answer && !answer.youtube && playerApps(answer.url).length === 0 && !onTV() && <CopyLink url={answer.url} />}
@@ -1243,6 +1246,73 @@ export default function PlayerPage() {
           </div>
         </div>
       )}
+    </div>
+  )
+}
+
+// Get it ready: on a release's first day the versions found often aren't in
+// Premiumize's cloud yet. This sends the best one there, shows how far it's
+// got, and plays it the moment it's ready (the phone is told too).
+function GetItReady({ kind, tmdbId, season, episode, onReady }: { kind: WatchKind; tmdbId: number; season: number; episode: number; onReady: () => void }) {
+  const [st, setSt] = useState<PrepareStatus | null>(null)
+  const [busy, setBusy] = useState(false)
+  const ready = useRef(onReady)
+  useEffect(() => {
+    ready.current = onReady
+  }, [onReady])
+  // One already on its way (asked before, or by the server on release day).
+  useEffect(() => {
+    let live = true
+    api
+      .prepareStatus(kind, tmdbId, season, episode)
+      .then((s) => live && s.state !== 'none' && setSt(s))
+      .catch(() => undefined)
+    return () => {
+      live = false
+    }
+  }, [kind, tmdbId, season, episode])
+  useEffect(() => {
+    if (st?.state === 'ready') {
+      ready.current()
+      return
+    }
+    if (st?.state !== 'preparing') return
+    const t = window.setTimeout(() => {
+      api
+        .prepareStatus(kind, tmdbId, season, episode)
+        .then(setSt)
+        .catch(() => undefined)
+    }, 4000)
+    return () => window.clearTimeout(t)
+  }, [st, kind, tmdbId, season, episode])
+  const start = () => {
+    setBusy(true)
+    api
+      .prepareTitle(kind, tmdbId, season, episode)
+      .then(setSt)
+      .catch((e) => setSt({ state: 'failed', message: e instanceof Error ? e.message : String(e) }))
+      .finally(() => setBusy(false))
+  }
+  if (st?.state === 'preparing') {
+    const pct = Math.round((st.progress ?? 0) * 100)
+    return (
+      <div className="wx-ready-box" role="status">
+        <b>Getting it ready… {pct > 0 ? `${pct}%` : ''}</b>
+        <span className="wx-ready-bar">
+          <i style={{ width: `${Math.max(4, pct)}%` }} />
+        </span>
+        <small>Premiumize is fetching it. It plays here as soon as it's ready, and your phone hears too, so you can leave this page.</small>
+      </div>
+    )
+  }
+  return (
+    <div className="wx-ready-box">
+      {st?.message && st.state !== 'none' && <small className="wx-error">{st.message}</small>}
+      {st?.state === 'none' && st.message && <small>{st.message}</small>}
+      <button className="wx-btn play" onClick={start} disabled={busy} autoFocus={onTV()}>
+        <Icon name="download" size={16} /> {busy ? 'Sending it…' : 'Get it ready'}
+      </button>
+      <small>For new releases: Premiumize fetches it, usually in a few minutes.</small>
     </div>
   )
 }

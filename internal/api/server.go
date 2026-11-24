@@ -511,6 +511,11 @@ func (s *Server) protectedRoutes() *routeTable {
 	play.HandleFunc("GET /api/watch/browse/collection/{key}", s.handleBrowseCollection)
 	play.HandleFunc("GET /api/watch/browse/franchise/{id}", s.handleBrowseFranchise)
 	play.HandleFunc("GET /api/play/tmdb/tv/{tmdbId}/{season}/{episode}", s.handlePlayTMDBEpisode)
+	// Get it ready: a release not yet in Premiumize's cloud, fetched there (play_prepare.go).
+	play.HandleFunc("POST /api/play/prepare/movie/{tmdbId}", s.handlePrepare)
+	play.HandleFunc("GET /api/play/prepare/movie/{tmdbId}", s.handlePrepare)
+	play.HandleFunc("POST /api/play/prepare/tv/{tmdbId}/{season}/{episode}", s.handlePrepare)
+	play.HandleFunc("GET /api/play/prepare/tv/{tmdbId}/{season}/{episode}", s.handlePrepare)
 	play.HandleFunc("GET /api/profiles", s.handleListWatchProfiles)
 	play.HandleFunc("POST /api/profiles/{id}/select", s.handleSelectWatchProfile)
 	play.HandleFunc("PUT /api/profile/theme", s.handlePutProfileTheme)

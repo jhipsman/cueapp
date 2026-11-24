@@ -131,8 +131,50 @@ class Playback(
         } catch (e: kotlinx.coroutines.CancellationException) {
             throw e
         } catch (e: Exception) {
-            note = e.message ?: "That didn't play."
+            val why = e.message ?: "That didn't play."
+            // A new release, found but not in Premiumize's cloud yet: get it
+            // ready there and play it when it is (no button to press: Play
+            // was pressed already).
+            if (why.contains("Get it ready") && v.option == 1) {
+                getItReady(v, startSec)
+                return
+            }
+            note = why
             starting = starting?.copy(failed = true)
+        }
+    }
+
+    // Day one: sends the best version to Premiumize, shows how far it's got,
+    // and plays it once it's there, unless something else was picked
+    // meanwhile. (The phone is told it's ready, too.)
+    private suspend fun getItReady(v: Vod, startSec: Double?) {
+        val path = if (v.kind == "tv") "/api/play/prepare/tv/${v.id}/${v.season}/${v.episode}" else "/api/play/prepare/movie/${v.id}"
+        note = "It's out, but not ready to stream yet. Getting it ready…"
+        var st = try {
+            JSONObject(api.request("POST", path, JSONObject()).ifEmpty { "{}" })
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            note = e.message ?: "Couldn't get it ready."
+            starting = starting?.copy(failed = true)
+            return
+        }
+        val started = System.currentTimeMillis()
+        while (vod === v && st.optString("state") == "preparing" && System.currentTimeMillis() - started < 30 * 60_000L) {
+            val pct = (st.optDouble("progress", 0.0) * 100).toInt()
+            note = "Getting it ready on Premiumize" + (if (pct > 0) " · $pct%" else "…") +
+                "  It plays as soon as it's ready (your phone hears too)."
+            kotlinx.coroutines.delay(5000)
+            st = runCatching { api.obj(path) }.getOrDefault(st)
+        }
+        if (vod !== v) return // something else was picked
+        when (st.optString("state")) {
+            "ready" -> openVod(v, startSec)
+            "preparing" -> note = "Still getting it ready. Your phone will hear when it's ready to watch."
+            else -> {
+                note = st.optString("message").ifEmpty { "Couldn't get it ready. Try again later." }
+                starting = starting?.copy(failed = true)
+            }
         }
     }
 

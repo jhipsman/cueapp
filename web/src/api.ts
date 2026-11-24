@@ -150,6 +150,12 @@ export interface LiveChannel {
   raw?: string // the provider's own name
   rank?: number // 0 the big networks, 1 the rest, then events, 24/7 loops, adult: the default order
 }
+export interface PrepareStatus {
+  state: 'none' | 'preparing' | 'ready' | 'failed'
+  progress?: number // 0 to 1
+  message?: string
+  release?: string
+}
 export interface WatchSearchAnswer {
   query: string
   understood?: string // how it was read: "Comedy movies from the 1990s"
@@ -2535,6 +2541,12 @@ export const api = {
     get<PlayAnswer>(
       `/play/tmdb/${kind}/${tmdbId}${kind === 'tv' ? `/${season}/${episode}` : ''}?option=${option}${fresh ? '&fresh=1' : ''}${web ? `&client=web${safari() ? '&safari=1' : ''}` : ''}${party ? `&party=${encodeURIComponent(party)}` : ''}`,
     ),
+  // Get it ready: a new release not in Premiumize's cloud yet, fetched there
+  // (POST starts it; GET says how it's going).
+  prepareTitle: (kind: WatchKind, tmdbId: number, season = 0, episode = 0) =>
+    post<PrepareStatus>(`/play/prepare/${kind}/${tmdbId}${kind === 'tv' ? `/${season}/${episode}` : ''}`),
+  prepareStatus: (kind: WatchKind, tmdbId: number, season = 0, episode = 0) =>
+    get<PrepareStatus>(`/play/prepare/${kind}/${tmdbId}${kind === 'tv' ? `/${season}/${episode}` : ''}`),
   // prefetchPlay looks a stream up ahead of time, so Play starts at once.
   prefetchPlay: (kind: WatchKind, tmdbId: number, season = 0, episode = 0) =>
     get<null>(`/play/tmdb/${kind}/${tmdbId}${kind === 'tv' ? `/${season}/${episode}` : ''}?prefetch=1`).catch(() => null),
