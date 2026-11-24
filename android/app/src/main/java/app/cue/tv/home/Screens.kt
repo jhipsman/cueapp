@@ -661,6 +661,11 @@ fun MainScreen(api: CueApi, playback: Playback, openWeb: (String) -> Unit, chang
                 }
             }
         }
+        // The menu open: the page dims behind it, darkest at the menu, so
+        // nothing on the page shows through or beside the names.
+        val dim by animateFloatAsState(if (tabsFocused) 1f else 0f, tween(220), label = "rail-dim")
+        if (dim > 0f) Box(Modifier.fillMaxSize().graphicsLayer { alpha = dim }
+            .background(Brush.horizontalGradient(0f to Background, 0.2f to Background.copy(alpha = 0.94f), 0.32f to Background.copy(alpha = 0.78f), 0.6f to Background.copy(alpha = 0.35f), 0.9f to Color.Transparent)))
         SideRail(
             api = api,
             current = tab,
@@ -672,7 +677,10 @@ fun MainScreen(api: CueApi, playback: Playback, openWeb: (String) -> Unit, chang
                 .focusGroup()
                 .onFocusChanged {
                     tabsFocused = it.hasFocus
-                    if (it.hasFocus) pageTakesFocus = false
+                    if (it.hasFocus) {
+                        pageTakesFocus = false
+                        askedBack = false // gone to the menu: Search mustn't pull the highlight back to Ask Cue
+                    }
                 },
             onFocusPage = { tab = it },
         )
@@ -689,7 +697,9 @@ private fun SideRail(api: CueApi, current: Int, focusers: List<FocusRequester>, 
     val shade by animateFloatAsState(if (expanded) 1f else 0f, tween(220), label = "rail-shade")
     Box(modifier.fillMaxHeight().width(width)) {
         // Behind it: dark at the rail, fading out to the right.
-        Box(Modifier.matchParentSize().background(Brush.horizontalGradient(listOf(Color(0xF20B0C0F), Color(0xF20B0C0F).copy(alpha = 0.55f + 0.4f * shade), Color(0x000B0C0F)))))
+        // (Open, the dimmed page behind takes over: no edge where the rail ends.)
+        Box(Modifier.matchParentSize().graphicsLayer { alpha = 1f - shade }
+            .background(Brush.horizontalGradient(listOf(Background.copy(alpha = 0.95f), Background.copy(alpha = 0.55f), Color.Transparent))))
         Column(Modifier.fillMaxHeight().padding(start = 10.dp, end = 10.dp, top = 20.dp, bottom = 18.dp)) {
             androidx.compose.foundation.Image(
                 androidx.compose.ui.res.painterResource(app.cue.tv.R.drawable.ic_cue_mark), contentDescription = null,

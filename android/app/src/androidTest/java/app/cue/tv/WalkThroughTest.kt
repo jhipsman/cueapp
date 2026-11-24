@@ -46,6 +46,7 @@ class WalkThroughTest {
         server.dispatcher = fake
         server.start()
         val base = server.url("/").toString().trimEnd('/')
+        fake.base = base
         // Signed in on this TV already, with a profile chosen and the tour seen.
         ctx.getSharedPreferences("cue", Context.MODE_PRIVATE).edit().clear()
             .putString("server", base)
@@ -125,7 +126,7 @@ class WalkThroughTest {
             // Down the menu, each place showing its page as the highlight rests on it.
             val pages = listOf(
                 "Movies" to "Top 10 on Netflix",
-                "Shows" to "Continue watching",
+                "Shows" to "Series", // the show up top
                 "Live TV" to "BILLS", // the game up top
                 "Browse" to "Streaming services",
             )
@@ -168,8 +169,8 @@ class WalkThroughTest {
             shot("search")
             // Into the page and up to the button (a TV's buttons take the
             // remote's select, not a touch).
-            press(KeyEvent.KEYCODE_DPAD_RIGHT)
-            reach("✨  Ask Cue", KeyEvent.KEYCODE_DPAD_UP, tries = 5)
+            press(KeyEvent.KEYCODE_DPAD_RIGHT) // lands on Ask Cue
+            reach("✨  Ask Cue", KeyEvent.KEYCODE_DPAD_UP, tries = 2)
             press(KeyEvent.KEYCODE_DPAD_CENTER)
             see("Something funny for tonight")
             shot("ask-cue")

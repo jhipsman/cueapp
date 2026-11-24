@@ -8,6 +8,14 @@ plugins {
 // over the old one.
 val build = System.getenv("GITHUB_RUN_NUMBER")?.toIntOrNull() ?: 1
 
+// The Android that Robolectric runs the screenshots on (Android 15).
+val robolectricJars: Configuration by configurations.creating
+val robolectricAndroidDir = layout.buildDirectory.dir("robolectric-android")
+val robolectricAndroid = tasks.register<Copy>("robolectricAndroid") {
+    from(robolectricJars)
+    into(robolectricAndroidDir)
+}
+
 android {
     namespace = "app.cue.tv"
     compileSdk = 35
@@ -60,6 +68,31 @@ android {
         compose = true
         buildConfig = true
     }
+    // The stand-in server is shared by the emulator walk-through and the
+    // screenshots taken on the build machine (app/src/test).
+    sourceSets {
+        getByName("test").java.srcDir("src/sharedTest/java")
+        getByName("androidTest").java.srcDir("src/sharedTest/java")
+    }
+    // Screenshots of the real screens on the build machine (no emulator):
+    // Robolectric runs the app, drawing with Android's own graphics, and
+    // Roborazzi saves each screen as a picture (app/build/screens).
+    testOptions {
+        unitTests {
+            isIncludeAndroidResources = true
+            all {
+                // Robolectric's Android, fetched by Gradle (its own downloader
+                // gives up when Maven Central asks it to slow down).
+                it.dependsOn(robolectricAndroid)
+                it.systemProperty("robolectric.offline", "true")
+                it.systemProperty("robolectric.dependency.dir", robolectricAndroidDir.get().asFile.absolutePath)
+                it.systemProperty("robolectric.graphicsMode", "NATIVE")
+                it.systemProperty("robolectric.pixelCopyRenderMode", "hardware")
+                it.systemProperty("roborazzi.test.record", "true")
+                it.maxHeapSize = "3g"
+            }
+        }
+    }
     lint {
         // assembleRelease doesn't run lint; the TV app workflow runs lintRelease
         // as its own step, which fails on lint errors (warnings only report).
@@ -105,4 +138,15 @@ dependencies {
     androidTestImplementation("androidx.test.ext:junit:1.2.1")
     androidTestImplementation("androidx.test.uiautomator:uiautomator:2.3.0")
     androidTestImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
+    // The screenshots (app/src/test).
+    testImplementation("junit:junit:4.13.2")
+    testImplementation("org.robolectric:robolectric:4.14.1")
+    testImplementation("io.github.takahirom.roborazzi:roborazzi:1.36.0")
+    testImplementation("io.github.takahirom.roborazzi:roborazzi-compose:1.36.0")
+    testImplementation("androidx.compose.ui:ui-test-junit4")
+    testImplementation("androidx.test:core-ktx:1.6.1")
+    testImplementation("androidx.test.ext:junit:1.2.1")
+    testImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
+    debugImplementation("androidx.compose.ui:ui-test-manifest")
+    robolectricJars("org.robolectric:android-all-instrumented:15-robolectric-12650502-i7") { isTransitive = false }
 }

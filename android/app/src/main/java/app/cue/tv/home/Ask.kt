@@ -177,7 +177,8 @@ fun AskScreen(api: CueApi, memory: FocusMemory, onCard: (Tile) -> Unit, takeFocu
             }
         }
         // ---- the answer ----
-        Column(Modifier.weight(1f).fillMaxHeight().padding(top = 30.dp, end = Gutter)) {
+        // (No padding on the right: the picks run off the edge, as every row does.)
+        Column(Modifier.weight(1f).fillMaxHeight().padding(top = 30.dp)) {
             val a = answer
             when {
                 busy -> Text("Thinking…", fontSize = 16.sp, color = Dim, modifier = Modifier.padding(start = 24.dp))
@@ -187,7 +188,7 @@ fun AskScreen(api: CueApi, memory: FocusMemory, onCard: (Tile) -> Unit, takeFocu
                 }
                 else -> {
                     Text(a.reply, fontSize = 17.sp, color = Color(0xF2FFFFFF), lineHeight = 25.sp, maxLines = 8, overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.padding(start = 24.dp))
+                        modifier = Modifier.padding(start = 24.dp, end = Gutter))
                     if (a.cards.isNotEmpty()) {
                         Spacer(Modifier.height(18.dp))
                         CardRow(Shelf("ask-${turns.size}", a.heading ?: "Picks", a.cards), memory, onClick = onCard)

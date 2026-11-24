@@ -76,6 +76,21 @@ jobs:
           path: android/app/build/reports/lint-results-release.html
           if-no-files-found: ignore
 
+      # Every main screen as a picture, drawn on the build machine
+      # (android/app/src/test): Robolectric runs the real app against the
+      # stand-in server. A screen that never shows fails it; the pictures are
+      # kept with the run, to look at without a TV.
+      - name: Screens
+        working-directory: android
+        run: ./gradlew --no-daemon testDebugUnitTest
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: screens
+          path: android/app/build/screens
+          if-no-files-found: ignore
+
   # The app on an Android TV emulator, walked through with the remote's keys
   # (android/app/src/androidTest): every place in the side menu, Browse, a
   # service's page, a title and back. A screen that never shows or a crash

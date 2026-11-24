@@ -30,6 +30,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.focusGroup
+import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
@@ -65,7 +67,7 @@ private val GENRES = listOf(
 
 private const val ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789" // no 0/O, 1/I/L
 
-@OptIn(ExperimentalLayoutApi::class)
+@OptIn(ExperimentalLayoutApi::class, androidx.compose.ui.ExperimentalComposeUiApi::class)
 @Composable
 fun SearchScreen(api: CueApi, memory: FocusMemory, listen: Boolean = false, listened: () -> Unit = {}, onAsk: (() -> Unit)? = null, askFocus: Boolean = false, askFocused: () -> Unit = {}, onCard: (Tile) -> Unit) {
     val askButton = remember { androidx.compose.ui.focus.FocusRequester() }
@@ -143,7 +145,11 @@ fun SearchScreen(api: CueApi, memory: FocusMemory, listen: Boolean = false, list
         onCard(c)
     }
 
-    Row(Modifier.fillMaxSize()) {
+    // Coming over from the side menu, the highlight lands on Ask Cue (top
+    // left), not on whatever on the right happens to be level with Search.
+    Row(Modifier.fillMaxSize().focusProperties {
+        if (onAsk != null) enter = { askButton }
+    }.focusGroup()) {
         // ---- the ways in ----
         Column(
             Modifier.width(400.dp).fillMaxHeight()
