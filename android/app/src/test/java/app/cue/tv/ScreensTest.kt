@@ -5,6 +5,8 @@ import android.view.KeyEvent
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.test.performTextClearance
+import androidx.compose.ui.test.performTextInput
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -113,6 +115,13 @@ class ScreensTest {
         press(KeyEvent.KEYCODE_DPAD_UP, 4)
         see("Search from your phone")
         shot("search")
+        // A search that describes something: its answers as rows.
+        compose.onNode(androidx.compose.ui.test.hasSetTextAction()).performTextInput("comedy")
+        see("With Ana Reyes")
+        shot("search-results")
+        compose.onNode(androidx.compose.ui.test.hasSetTextAction()).performTextClearance()
+        see("Search from your phone")
+        press(KeyEvent.KEYCODE_BACK) // the keyboard
         // Ask Cue, from its button on Search.
         press(KeyEvent.KEYCODE_DPAD_RIGHT) // onto Ask Cue
         press(KeyEvent.KEYCODE_DPAD_CENTER)

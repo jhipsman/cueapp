@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.ui.layout.layout
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -131,13 +132,16 @@ fun SearchScreen(api: CueApi, memory: FocusMemory, listen: Boolean = false, list
         val shows = g.tv?.let { runCatching { api.genre("tv", it) }.getOrDefault(emptyList()) } ?: emptyList()
         genreItems = (0 until maxOf(films.size, shows.size)).flatMap { i -> listOfNotNull(films.getOrNull(i), shows.getOrNull(i)) }
     }
-    var results by remember { mutableStateOf<List<Tile>?>(null) }
+    // What a search finds, as rows: a person's films, what it describes
+    // ("funny 90s movies"), a topic ("zombies"), titles named like it.
+    var answer by remember { mutableStateOf<SearchAnswer?>(null) }
     LaunchedEffect(query) {
         val q = query.trim()
-        if (q.length < 2) { results = null; return@LaunchedEffect }
+        if (q.length < 2) { answer = null; return@LaunchedEffect }
         delay(350)
-        results = runCatching { api.search(q) }.getOrDefault(results ?: emptyList())
+        answer = runCatching { api.searchRows(q) }.getOrDefault(answer ?: SearchAnswer(null, null, emptyList()))
     }
+    val results = answer?.rows?.flatMap { it.items }
     var recent by remember { mutableStateOf(recentSearches(ctx)) }
     val open: (Tile) -> Unit = { c ->
         val q = query.trim()
@@ -195,6 +199,7 @@ fun SearchScreen(api: CueApi, memory: FocusMemory, listen: Boolean = false, list
                 shown == null && g != null -> g.name
                 shown == null -> "Popular right now"
                 shown.isEmpty() -> "Nothing matches “$q”"
+                answer?.didYouMean != null -> "Showing results for “${answer?.didYouMean}”"
                 else -> "Results for “$q”"
             }
             Text(heading, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = Color.White, modifier = Modifier.padding(start = 4.dp))
@@ -210,8 +215,26 @@ fun SearchScreen(api: CueApi, memory: FocusMemory, listen: Boolean = false, list
                     items(GENRES.size) { i -> ChoiceTab(GENRES[i].name, selected = g == GENRES[i]) { genre = GENRES[i] } }
                 }
             }
-            PosterGrid(shown ?: if (g != null) genreItems else popular, memory,
-                if (shown != null) "search" else g?.let { "genre-${it.name}" } ?: "popular", open, sidePadding = 4.dp)
+            val rows = answer?.rows.orEmpty()
+            if (rows.size > 1) {
+                // More than one kind of answer: a row each, under its heading.
+                androidx.compose.foundation.lazy.LazyColumn(contentPadding = PaddingValues(top = 6.dp, bottom = 48.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    // (Rows keep the screen's margin; here that's the column's edge.)
+                    items(rows.size, key = { rows[it].key }) { i ->
+                        Box(Modifier.layout { m, c ->
+                            // Wider by the margin, and moved left by it: lined up with the
+                            // heading, and still running off the screen's right edge.
+                            val extra = (Gutter - 4.dp).roundToPx()
+                            val p = m.measure(c.copy(minWidth = c.maxWidth + extra, maxWidth = c.maxWidth + extra))
+                            layout(c.maxWidth, p.height) { p.place(-extra, 0) }
+                        }) { CardRow(rows[i], memory, onClick = open) }
+                    }
+                }
+            } else {
+                PosterGrid(shown ?: if (g != null) genreItems else popular, memory,
+                    if (shown != null) "search" else g?.let { "genre-${it.name}" } ?: "popular", open, sidePadding = 4.dp)
+            }
         }
     }
 }

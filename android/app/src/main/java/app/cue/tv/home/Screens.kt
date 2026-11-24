@@ -9,7 +9,6 @@ package app.cue.tv.home
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.focusGroup
-import androidx.compose.animation.core.animateDpAsState
 import androidx.activity.compose.BackHandler
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
@@ -552,6 +551,7 @@ private val navItems = listOf(
 private const val ProfilePage = 10
 private const val PageCount = 12
 private val RailWidth = 72.dp
+private val RailOpenWidth = 212.dp // the rail's box, closed too (only its names fade in)
 
 // The rail's place for a page (the profile is the last).
 private fun railSlot(page: Int): Int = navItems.indexOfFirst { it.page == page }.let { if (it < 0) navItems.size else it }
@@ -644,6 +644,8 @@ fun MainScreen(api: CueApi, playback: Playback, openWeb: (String) -> Unit, chang
                 label = "tab",
                 modifier = Modifier.fillMaxSize(),
             ) { showing ->
+                // Shown from the side menu: no rising into place (see rise).
+                CompositionLocalProvider(LocalCalm provides tabsFocused) {
                 when (showing) {
                     0 -> HomeScreen(api, null, memories[0], pageTakesFocus, tookFocus, setAmbient, onCard, playback)
                     1 -> HomeScreen(api, "tv", memories[1], pageTakesFocus, tookFocus, setAmbient, onCard)
@@ -659,12 +661,14 @@ fun MainScreen(api: CueApi, playback: Playback, openWeb: (String) -> Unit, chang
                     11 -> AskScreen(api, memories[11], onCard)
                     else -> ProfileScreen(api, switchProfile, changeServer, openWeb)
                 }
+                }
             }
         }
         // The menu open: the page dims behind it, darkest at the menu, so
         // nothing on the page shows through or beside the names.
         val dim by animateFloatAsState(if (tabsFocused) 1f else 0f, tween(220), label = "rail-dim")
-        if (dim > 0f) Box(Modifier.fillMaxSize().graphicsLayer { alpha = dim }
+        // (Always there, read only when drawn: opening it recomposes nothing.)
+        Box(Modifier.fillMaxSize().graphicsLayer { alpha = dim }
             .background(Brush.horizontalGradient(0f to Background, 0.2f to Background.copy(alpha = 0.94f), 0.32f to Background.copy(alpha = 0.78f), 0.6f to Background.copy(alpha = 0.35f), 0.9f to Color.Transparent)))
         SideRail(
             api = api,
@@ -693,9 +697,11 @@ fun MainScreen(api: CueApi, playback: Playback, openWeb: (String) -> Unit, chang
 // marked with a short bar in the profile's colour.
 @Composable
 private fun SideRail(api: CueApi, current: Int, focusers: List<FocusRequester>, expanded: Boolean, modifier: Modifier, onFocusPage: (Int) -> Unit) {
-    val width by animateDpAsState(if (expanded) 212.dp else RailWidth, tween(220, easing = Settle), label = "rail")
-    val shade by animateFloatAsState(if (expanded) 1f else 0f, tween(220), label = "rail-shade")
-    Box(modifier.fillMaxHeight().width(width)) {
+    // One width throughout: opening only fades the names in (changing the
+    // width laid every item out again on every frame, which a slow TV
+    // can't keep up with).
+    val shade by animateFloatAsState(if (expanded) 1f else 0f, tween(200, easing = Settle), label = "rail-shade")
+    Box(modifier.fillMaxHeight().width(RailOpenWidth)) {
         // Behind it: dark at the rail, fading out to the right.
         // (Open, the dimmed page behind takes over: no edge where the rail ends.)
         Box(Modifier.matchParentSize().graphicsLayer { alpha = 1f - shade }
@@ -707,14 +713,14 @@ private fun SideRail(api: CueApi, current: Int, focusers: List<FocusRequester>, 
             )
             Gap(28.dp)
             navItems.forEachIndexed { i, n ->
-                RailItem(n.name, selected = n.page == current, expanded = expanded, modifier = Modifier.focusRequester(focusers[i]),
+                RailItem(n.name, selected = n.page == current, expanded = expanded, reveal = { shade }, modifier = Modifier.focusRequester(focusers[i]),
                     onFocus = { onFocusPage(n.page) }) {
                     androidx.tv.material3.Icon(androidx.compose.ui.res.painterResource(n.icon), contentDescription = null, modifier = Modifier.size(20.dp))
                 }
                 Gap(4.dp)
             }
             Spacer(Modifier.weight(1f))
-            RailItem(api.profileName.ifEmpty { "Profile" }, selected = current == ProfilePage, expanded = expanded,
+            RailItem(api.profileName.ifEmpty { "Profile" }, selected = current == ProfilePage, expanded = expanded, reveal = { shade },
                 modifier = Modifier.focusRequester(focusers[navItems.size]), onFocus = { onFocusPage(ProfilePage) }) {
                 Box(Modifier.size(22.dp).clip(CircleShape).background(LocalAccent.current), contentAlignment = Alignment.Center) {
                     AvatarFace(api.profileAvatar, api.profileName, 11.sp,
@@ -726,12 +732,15 @@ private fun SideRail(api: CueApi, current: Int, focusers: List<FocusRequester>, 
 }
 
 @Composable
-private fun RailItem(label: String, selected: Boolean, expanded: Boolean, modifier: Modifier, onFocus: () -> Unit, icon: @Composable () -> Unit) {
+private fun RailItem(label: String, selected: Boolean, expanded: Boolean, reveal: () -> Float, modifier: Modifier, onFocus: () -> Unit, icon: @Composable () -> Unit) {
     val accent = LocalAccent.current
     Box(contentAlignment = Alignment.CenterStart) {
         Button(
             onClick = onFocus,
-            modifier = modifier.fillMaxWidth().height(40.dp).onFocusChanged { if (it.isFocused) onFocus() },
+            // Closed, just the icon's width (moving left from a page finds
+            // it); open, the full width, once, while the names fade in.
+            modifier = modifier.then(if (expanded) Modifier.fillMaxWidth() else Modifier.width(RailWidth - 20.dp))
+                .height(40.dp).onFocusChanged { if (it.isFocused) onFocus() },
             shape = ButtonDefaults.shape(RoundedCornerShape(10.dp)),
             scale = ButtonDefaults.scale(focusedScale = 1f, pressedScale = 0.98f),
             colors = ButtonDefaults.colors(
@@ -746,10 +755,10 @@ private fun RailItem(label: String, selected: Boolean, expanded: Boolean, modifi
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 icon()
-                if (expanded) {
-                    HGap(16.dp)
-                    Text(label, fontSize = 14.sp, fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium, maxLines = 1)
-                }
+                HGap(16.dp)
+                // Read in the drawing step only: the fade redraws, nothing recomposes.
+                Text(label, fontSize = 14.sp, fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium, maxLines = 1,
+                    modifier = Modifier.graphicsLayer { alpha = reveal() })
             }
         }
         // The page showing: a short bar at the rail's edge.

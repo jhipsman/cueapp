@@ -958,32 +958,53 @@ func castNames(cs []metadata.CastMember) []string {
 
 // ---- Search
 
-// GET /api/watch/search?q=...: movies and shows, best match first.
+// GET /api/watch/search?q=...: movies and shows, best match first: titles
+// named like it, and what it means (a person, a genre or decade or service,
+// a topic; search_smart.go). With v=2, those as rows with headings
+// ({query, understood, didYouMean, sections}); without, one list, for
+// apps that show one.
 func (s *Server) handleWatchSearch(w http.ResponseWriter, r *http.Request) {
 	q := strings.TrimSpace(r.URL.Query().Get("q"))
+	v2 := r.URL.Query().Get("v") == "2"
 	if q == "" {
-		writeJSON(w, http.StatusOK, []watchCard{})
+		if v2 {
+			writeJSON(w, http.StatusOK, watchSearchAnswer{Sections: []watchSearchRow{}})
+		} else {
+			writeJSON(w, http.StatusOK, []watchCard{})
+		}
 		return
 	}
 	if len(q) > 200 {
 		q = q[:200]
 	}
-	results, err := s.TMDB().SearchMulti(r.Context(), q)
-	if err != nil {
-		writeUpstreamError(w, "search TMDB", err)
+	ans := s.smartSearch(r.Context(), q)
+	prof, hasProf := s.activeProfile(r)
+	for i := range ans.Sections {
+		s.markSoon(r.Context(), ans.Sections[i].Items) // films not out yet show "Coming soon"
+		if hasProf {
+			ans.Sections[i].Items = s.ageFiltered(r.Context(), prof, ans.Sections[i].Items)
+		}
+	}
+	if v2 {
+		kept := ans.Sections[:0]
+		for _, sec := range ans.Sections {
+			if len(sec.Items) > 0 {
+				kept = append(kept, sec)
+			}
+		}
+		ans.Sections = kept
+		writeJSON(w, http.StatusOK, ans)
 		return
 	}
 	out := []watchCard{}
-	for _, m := range results {
-		if m.PosterPath == "" {
-			continue
+	seen := map[string]bool{}
+	for _, sec := range ans.Sections {
+		for _, c := range sec.Items {
+			if k := c.Kind + strconv.Itoa(c.TMDBID); !seen[k] {
+				seen[k] = true
+				out = append(out, c)
+			}
 		}
-		out = append(out, watchCard{Kind: m.MediaType, TMDBID: m.ID, Title: m.DisplayTitle(), Year: m.Year(), Overview: m.Overview,
-			PosterURL: metadata.PosterURL(m.PosterPath), BackdropURL: metadata.BackdropURL(m.BackdropPath), Rating: metadata.RoundRating(m.VoteAverage)})
-	}
-	s.markSoon(r.Context(), out) // films not out yet show "Coming soon"
-	if prof, ok := s.activeProfile(r); ok {
-		out = s.ageFiltered(r.Context(), prof, out)
 	}
 	writeJSON(w, http.StatusOK, out)
 }

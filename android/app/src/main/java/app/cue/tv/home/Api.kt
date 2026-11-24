@@ -196,6 +196,15 @@ class CueApi(ctx: Context, val server: String) {
         return h
     }
     suspend fun search(q: String): List<Tile> = arr("/api/watch/search?q=${q(q)}").cards()
+
+    /** Search, as rows: a person's films, what the search describes, a topic, titles named like it. */
+    suspend fun searchRows(q: String): SearchAnswer {
+        val o = obj("/api/watch/search?q=${q(q)}&v=2")
+        val secs = o.optJSONArray("sections") ?: JSONArray()
+        return SearchAnswer(o.str("understood"), o.str("didYouMean"),
+            (0 until secs.length()).map { i -> secs.getJSONObject(i).let { Shelf("search-" + it.optString("key"), it.optString("title"), (it.optJSONArray("items") ?: JSONArray()).cards()) } }
+                .filter { it.items.isNotEmpty() })
+    }
     /** A genre's most popular films or shows (Search's genre tabs). */
     suspend fun genre(kind: String, id: Int): List<Tile> = arr("/api/watch/genre?kind=$kind&genre=$id").cards()
     /** What a phone has typed for this TV's search (code from the QR), and its count. */
@@ -463,6 +472,8 @@ data class GameRow(
     // For Live TV's hero: when it starts (ms), where it's played, the league's key.
     val startMs: Long = 0, val venue: String = "", val leagueKey: String = "",
 )
+data class SearchAnswer(val understood: String?, val didYouMean: String?, val rows: List<Shelf>)
+
 data class SportsBoard(val big: GameRow?, val now: List<GameRow>, val soon: List<GameRow>)
 
 /** "Sun 1:00 PM" from an ISO time, in the TV's time zone. */

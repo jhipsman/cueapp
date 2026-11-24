@@ -148,6 +148,12 @@ export interface LiveChannel {
   divider?: boolean
   raw?: string // the provider's own name
 }
+export interface WatchSearchAnswer {
+  query: string
+  understood?: string // how it was read: "Comedy movies from the 1990s"
+  didYouMean?: string // the spelling that found something
+  sections: { key: 'titles' | 'intent' | 'person' | 'topic'; title: string; items: WatchCard[]; person?: { id: number; name: string; photo?: string } }[]
+}
 export interface LiveChannels {
   configured: boolean
   countries?: { code: string; name: string; count: number }[]
@@ -2529,6 +2535,9 @@ export const api = {
     get<null>(`/play/tmdb/${kind}/${tmdbId}${kind === 'tv' ? `/${season}/${episode}` : ''}?prefetch=1`).catch(() => null),
   watchHome: () => get<WatchHome>('/watch/home'),
   watchSearch: (q: string) => get<WatchCard[]>(`/watch/search?q=${encodeURIComponent(q)}`),
+  // Search as rows: a person's films, what the search describes ("funny 90s
+  // movies"), a topic ("zombies"), titles named like it.
+  watchSearchRows: (q: string) => get<WatchSearchAnswer>(`/watch/search?q=${encodeURIComponent(q)}&v=2`),
   watchTitle: (kind: WatchKind, tmdbId: number) => get<WatchTitle>(`/watch/${kind}/${tmdbId}`),
   watchSeason: (tmdbId: number, season: number) => get<WatchEpisode[]>(`/watch/tv/${tmdbId}/season/${season}`),
   watchSubtitles: (kind: 'movie' | 'tv', tmdbId: number, season: number, episode: number, release: string, choice = 0) =>

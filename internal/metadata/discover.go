@@ -14,6 +14,9 @@ const (
 	SortRating  = "rating"  // best rated first, among titles with enough votes
 	SortNewest  = "newest"  // latest release or first-air date first
 	SortOldest  = "oldest"
+	// SortVotes: the most voted for first (the best known). Not offered in
+	// browse (ValidSort), used by search's list of well-known titles.
+	SortVotes = "votes"
 )
 
 // minVotesForRating keeps a handful of five-star votes from putting an
@@ -88,6 +91,8 @@ func (q DiscoverQuery) params(dateField, yearParam string) url.Values {
 		v.Set("sort_by", dateField+".desc")
 	case SortOldest:
 		v.Set("sort_by", dateField+".asc")
+	case SortVotes:
+		v.Set("sort_by", "vote_count.desc")
 	default:
 		v.Set("sort_by", "popularity.desc")
 	}
@@ -312,6 +317,8 @@ type TopQuery struct {
 	Without string
 	// Until keeps titles first out on or before this day.
 	Until string
+	// Language keeps titles first made in this language ("ja").
+	Language string
 }
 
 func (q TopQuery) params(dateField string) url.Values {
@@ -384,6 +391,9 @@ func (q TopQuery) params(dateField string) url.Values {
 	}
 	if q.Without != "" {
 		v.Set("without_genres", q.Without)
+	}
+	if q.Language != "" {
+		v.Set("with_original_language", q.Language)
 	}
 	return v
 }

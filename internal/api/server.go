@@ -39,8 +39,9 @@ import (
 )
 
 type Server struct {
-	cfg config.Config
-	db  *sql.DB // for backups (VACUUM INTO); repos hold their own handles
+	titleBook titleBook // well-known titles, for search's spelling help (search_spell.go)
+	cfg       config.Config
+	db        *sql.DB // for backups (VACUUM INTO); repos hold their own handles
 
 	Auth              *auth.Service
 	Settings          *settings.Store
