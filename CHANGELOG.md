@@ -27,6 +27,7 @@ under [Unreleased]. How releases are cut: [docs/RELEASING.md](docs/RELEASING.md)
 - **Fire TV / Google TV: a side menu instead of the tabs along the top.** Search, Home, Shows, Movies, Sports, Live TV, My List and Browse are icons down the left, with your profile at the bottom; moving onto it opens it with the names. On the web, Browse takes Coming soon's place in the top bar (Coming soon is in Browse and in More).
 
 ### Security
+- Updated two libraries Cue uses indirectly for newly published advisories: OpenTelemetry to 1.47.0 (GO-2026-6974) and Gorilla WebSocket to its fixed commit (GO-2026-6278).
 - Releases are signed with a new update key, held only by the project owner. **Update now** installs only releases signed with it.
 
 ### Fixed
