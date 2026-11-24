@@ -17,7 +17,9 @@ type liveCatalog struct {
 	mainOf    map[string]string   // a copy's id -> the channel shown instead
 	spares    map[string][]string // a channel's id -> its copies, best first
 	countries []catalogCountry
-	home      string // the country to start on
+	home      string // the country to start on ("": every country)
+	real      int    // channels, one of each (no copies, no dividers)
+	noCountry int    // of those, ones whose country the list doesn't say
 }
 
 type catalogCountry struct {
@@ -55,14 +57,24 @@ func buildCatalog(cats []iptv.Category, chans []iptv.Channel) *liveCatalog {
 		copies = append(copies, chancat.Copy{ID: ch.ID, Num: ch.Num, Info: in, HasEPG: ch.EPGID != "", Picture: ch.Logo != ""})
 	}
 	c.mainOf, c.spares = chancat.Fold(copies)
+	// Channels whose country the list doesn't say show under every country
+	// (picking one must never hide them), so each country counts them too.
+	noCountry, real := 0, 0
 	for _, ch := range chans {
 		in := c.info[ch.ID]
-		if in.Divider || c.mainOf[ch.ID] != "" || in.Country == "" {
+		if in.Divider || c.mainOf[ch.ID] != "" {
+			continue
+		}
+		real++
+		if in.Country == "" {
+			noCountry++
 			continue
 		}
 		counts[in.Country]++
 	}
+	c.real, c.noCountry = real, noCountry
 	for code, n := range counts {
+		n += noCountry
 		name := chancat.CountryNames[code]
 		if name == "" {
 			name = code
@@ -76,8 +88,11 @@ func buildCatalog(cats []iptv.Category, chans []iptv.Channel) *liveCatalog {
 		return c.countries[i].Code < c.countries[j].Code
 	})
 	// Start where most people using Cue are: the US when the list has it,
-	// else the country with the most channels.
-	if counts["US"] > 0 {
+	// else the country with the most channels. A list that mostly doesn't
+	// say starts on every country.
+	if noCountry*2 > real {
+		c.home = ""
+	} else if counts["US"] > 0 {
 		c.home = "US"
 	} else if len(c.countries) > 0 {
 		c.home = c.countries[0].Code

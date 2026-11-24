@@ -34,10 +34,22 @@ class WalkThroughTest {
 
     // Screenshots go where the emulator's shell keeps them (CI pulls them
     // from there; they outlive the app being uninstalled after the run).
-    private fun shell(cmd: String) {
+    private fun shell(cmd: String): String =
         InstrumentationRegistry.getInstrumentation().uiAutomation.executeShellCommand(cmd).use { pfd ->
-            java.io.FileInputStream(pfd.fileDescriptor).use { it.readBytes() }
+            java.io.FileInputStream(pfd.fileDescriptor).use { String(it.readBytes()) }
         }
+
+    // How smoothly each stretch drew, from Android's own count of frames
+    // (dumpsys gfxinfo): frames drawn, how many were late, and the slow
+    // end. Written to frames.txt beside the screenshots and to the log, then
+    // the count starts again for the next stretch.
+    private val frames = StringBuilder()
+    private fun frames(stretch: String) {
+        val keep = Regex("(Total frames rendered|Janky frames|50th percentile|90th percentile|99th percentile|Number Slow UI thread|Number Slow bitmap uploads|Number Frame deadline missed)[^\\n]*")
+        val got = keep.findAll(shell("dumpsys gfxinfo ${ctx.packageName}")).map { it.value.trim() }.distinct().joinToString("; ")
+        frames.append(stretch).append(": ").append(got).append('\n')
+        android.util.Log.i("CueFrames", "$stretch: $got")
+        shell("dumpsys gfxinfo ${ctx.packageName} reset")
     }
 
     @Before
@@ -71,6 +83,7 @@ class WalkThroughTest {
 
     private fun shot(name: String) {
         step++
+        frames(name) // how the way here drew
         shell("screencap -p $SHOTS/%02d-%s.png".format(step, name))
     }
 
@@ -189,6 +202,8 @@ class WalkThroughTest {
             see("Continue watching")
             shot("home-again")
         }
+        // The frame counts, all together in the log (CueFrames).
+        android.util.Log.i("CueFrames", "all:\n$frames")
         // No crash saved along the way, and nothing asked of the server it didn't expect.
         assertFalse("the app crashed: " + File(ctx.filesDir, "last-crash.txt").takeIf { it.exists() }?.readText().orEmpty(),
             File(ctx.filesDir, "last-crash.txt").exists())

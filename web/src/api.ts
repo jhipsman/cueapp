@@ -158,6 +158,8 @@ export interface LiveChannels {
   configured: boolean
   countries?: { code: string; name: string; count: number }[]
   homeCountry?: string
+  channelCount?: number // one of each channel
+  copies?: number // HD/FHD/backup copies folded into their channel (its backups when it won't play)
   topics?: { key: string; name: string }[]
   categories?: { id: string; name: string }[]
   channels?: LiveChannel[]

@@ -128,6 +128,9 @@ jobs:
             mkdir -p ../walkthrough && adb pull /data/local/tmp/cue-shots ../walkthrough/ || true
             adb logcat -d > ../walkthrough/logcat.txt || true
             grep -E "AndroidRuntime|FATAL|CueWalkThrough" ../walkthrough/logcat.txt | tail -60 || true
+            # How smoothly each step drew (late frames, slow end), per screen.
+            grep "CueFrames" ../walkthrough/logcat.txt > ../walkthrough/frames.txt || true
+            cat ../walkthrough/frames.txt || true
             test ! -f ../walkthrough-failed
 
       - uses: actions/upload-artifact@v4

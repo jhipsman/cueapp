@@ -28,6 +28,8 @@ under [Unreleased]. How releases are cut: [docs/RELEASING.md](docs/RELEASING.md)
 - Releases are signed with a new update key, held only by the project owner. **Update now** installs only releases signed with it.
 
 ### Fixed
+- **Live TV's channel sorter could hide channels.** A channel whose name doesn't say a country now shows under every country (it used to disappear once a country was picked), and a list that mostly doesn't say starts on Every country. Only true duplicates (the same channel in HD, FHD or as a backup) are folded into one, and Live TV says how many; they're still used automatically when their channel won't play.
+- **Fire TV / Google TV: smoother scrolling.** Moving the highlight on Home and Live TV no longer rebuilds the whole screen at each press of the remote, and Live TV's Featured progress line no longer lays the card out again every frame. The emulator check on GitHub now also records how many frames each screen drops.
 
 - **Fire TV / Google TV: Back did nothing on the side menu after Ask Cue.** Leaving Ask Cue put the highlight back on its button a moment later, even when Back had already gone to the menu, so the next Back was lost. Also: the open side menu now dims the page behind it (no more page showing through beside the names), moving right from Search lands on Ask Cue, and Ask Cue's picks run to the edge of the screen like every row.
 

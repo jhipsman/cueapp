@@ -210,7 +210,7 @@ export default function LivePage() {
   const cat = params.get('cat') ?? (favCount > 0 ? 'fav' : 'all')
   const place = country ?? data?.homeCountry ?? ''
   const inGroup = useMemo(() => channelsIn(data, cat), [data, cat])
-  const inPlace = useMemo(() => (cat === 'all' && place ? inGroup.filter((c) => c.country === place) : inGroup), [inGroup, cat, place])
+  const inPlace = useMemo(() => (cat === 'all' && place ? inGroup.filter((c) => c.country === place || !c.country) : inGroup), [inGroup, cat, place])
   // The topics this country has, for the chips.
   const topicCounts = useMemo(() => {
     const m = new Map<string, number>()
@@ -757,6 +757,12 @@ export default function LivePage() {
                   ))}
               </span>
             </div>
+          )}
+          {cat === 'all' && (data.copies ?? 0) > 0 && (
+            <p className="wx-live-folded">
+              {(data.channelCount ?? 0).toLocaleString()} channels. {(data.copies ?? 0).toLocaleString()} duplicate copies (HD, FHD, backups) are folded into
+              their channel, and used automatically if it won't play.
+            </p>
           )}
           {cat !== 'recordings' && list.length === 0 && (
             <p className="wx-dim">{cat === 'all' ? 'No channels here. Try another country or topic.' : 'No channels here. Star a channel to add it to Favourites.'}</p>

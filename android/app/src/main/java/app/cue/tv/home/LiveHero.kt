@@ -32,6 +32,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -251,9 +252,13 @@ private fun FeaturedCard(g: GameRow, selected: Boolean, running: Boolean, modifi
             if (running) {
                 var started by remember(g.key) { mutableStateOf(false) }
                 LaunchedEffect(g.key) { started = true }
-                val p by androidx.compose.animation.core.animateFloatAsState(
+                val p = androidx.compose.animation.core.animateFloatAsState(
                     if (started) 1f else 0f, tween(ROTATE_MS.toInt(), easing = LinearEasing), label = "featured-bar")
-                Box(Modifier.align(Alignment.BottomStart).fillMaxWidth(p).height(2.dp).background(Color.White).zIndex(1f))
+                // Read only while drawing: each frame redraws the line, and
+                // nothing is composed or laid out again.
+                Box(Modifier.align(Alignment.BottomStart).fillMaxWidth().height(2.dp).zIndex(1f).drawBehind {
+                    drawRect(Color.White, size = size.copy(width = size.width * p.value))
+                })
             }
         }
     }

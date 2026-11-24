@@ -97,6 +97,7 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -777,7 +778,10 @@ fun HomeScreen(api: CueApi, only: String?, memory: FocusMemory, takeFocus: Boole
                setAmbient: (Tile?) -> Unit, onCard: (Tile) -> Unit, playback: Playback? = null) {
     var home by remember { mutableStateOf<Home?>(homeCache) }
     var problem by remember { mutableStateOf("") }
-    var spot by remember { mutableStateOf<Tile?>(null) }
+    // Where the highlight is. Held outside composition on purpose: reading it
+    // here would rebuild the whole page (every row and card) on each press
+    // of the remote; only the banner follows it, once it settles.
+    val spot = remember { mutableStateOf<Tile?>(null) }
     val listState = rememberLazyListState()
     LaunchedEffect(Unit) {
         // What this profile saw last time, at once; then the server's.
@@ -800,13 +804,14 @@ fun HomeScreen(api: CueApi, only: String?, memory: FocusMemory, takeFocus: Boole
         if (items.isEmpty()) null else Shelf(r.key, r.title, items)
     }
     val featured = h.hero?.takeIf { only == null || it.kind == only } ?: rows.flatMap { it.items }.firstOrNull { it.backdrop != null && !it.resumes }
-    val shown = spot ?: featured
     // The highlight settles before the banner follows it, so moving quickly
     // along a row doesn't redraw it for every poster passed.
-    var settled by remember { mutableStateOf(shown) }
-    LaunchedEffect(shown?.key) {
-        delay(300)
-        settled = shown
+    var settled by remember { mutableStateOf(featured) }
+    LaunchedEffect(featured?.key) {
+        androidx.compose.runtime.snapshotFlow { spot.value ?: featured }.collectLatest { t ->
+            delay(300)
+            settled = t
+        }
     }
     LaunchedEffect(settled?.key) { setAmbient(settled) }
     // The page takes the colour of the picture in the banner.
@@ -826,12 +831,12 @@ fun HomeScreen(api: CueApi, only: String?, memory: FocusMemory, takeFocus: Boole
             LazyColumn(state = listState, contentPadding = PaddingValues(top = 10.dp, bottom = 120.dp)) {
                 if (only == null && playback != null) item(key = "parties") { PartiesNow(api, playback) }
                 // The Movies and Shows tabs open with their own Top 10.
-                if (only != null && h.top10.isNotEmpty()) item(key = "top10-first") { TopTenRow(h.top10, only, memory, onFocus = { spot = it }, onClick = onCard) }
+                if (only != null && h.top10.isNotEmpty()) item(key = "top10-first") { TopTenRow(h.top10, only, memory, onFocus = { spot.value = it }, onClick = onCard) }
                 // The Top 10 comes after what you're watching (or the first row).
                 val topAt = maxOf(0, rows.count { it.key == "continue" || it.key == "new-episodes" || it.key == "out-now" } - 1)
                 rows.forEachIndexed { i, r ->
-                    item(key = r.key) { CardRow(r, memory, onFocus = { spot = it }, onClick = onCard) }
-                    if (only == null && i == topAt && h.top10.isNotEmpty()) item(key = "top10") { TopTenRow(h.top10, only, memory, onFocus = { spot = it }, onClick = onCard) }
+                    item(key = r.key) { CardRow(r, memory, onFocus = { spot.value = it }, onClick = onCard) }
+                    if (only == null && i == topAt && h.top10.isNotEmpty()) item(key = "top10") { TopTenRow(h.top10, only, memory, onFocus = { spot.value = it }, onClick = onCard) }
                 }
             }
         }
@@ -1155,6 +1160,13 @@ fun PosterGrid(items: List<Tile>, memory: FocusMemory, prefix: String, onCard: (
 // channels folds the hero away; back to the top row brings it again. A
 // channel plays in the player, where up and down change channel. Without
 // games, the highlighted channel shows at the top instead.
+// The banner for the channel the highlight is on: reads it itself, so only
+// the banner is drawn again as the highlight moves.
+@Composable
+private fun SpotBanner(api: CueApi, channel: () -> Channel?) {
+    channel()?.let { LiveBanner(api, it) }
+}
+
 @Composable
 fun LiveScreen(api: CueApi, playback: Playback, openWeb: (String) -> Unit) {
     var live by remember { mutableStateOf<LiveChannels?>(null) }
@@ -1194,7 +1206,8 @@ fun LiveScreen(api: CueApi, playback: Playback, openWeb: (String) -> Unit) {
     // channel (no copies, no dividers), in the picked country.
     val place = country.orEmpty()
     val real = remember(l) { l.channels.filter { !it.divider && !it.copy } }
-    val here = remember(real, place) { if (place.isEmpty()) real else real.filter { it.country == place } }
+    // A channel the list gives no country shows in every one.
+    val here = remember(real, place) { if (place.isEmpty()) real else real.filter { it.country == place || it.country.isEmpty() } }
     val topicCounts = remember(here) { here.groupingBy { it.topic }.eachCount() }
     val favorites = remember(l) { l.channels.filter { it.favorite } }
     val shown = remember(l, here, group, find) {
@@ -1210,13 +1223,15 @@ fun LiveScreen(api: CueApi, playback: Playback, openWeb: (String) -> Unit) {
     BackHandler(enabled = picking) { picking = false }
     BackHandler(enabled = find.isNotEmpty() && !picking) { find = "" }
     val hasGames = board.big != null || board.now.isNotEmpty() || board.soon.isNotEmpty()
-    var spot by remember { mutableStateOf<Channel?>(null) }
+    // Where the highlight is, held outside composition: reading it here would
+    // rebuild the whole screen on every press of the remote.
+    val spot = remember { mutableStateOf<Channel?>(null) }
     val gridState = androidx.compose.foundation.lazy.rememberLazyListState()
     // The row of channels the highlight is on (-1: none, or the hero): the
     // hero shows while it's on the first row or above, so Up from there
-    // reaches it.
-    var focusRow by remember { mutableIntStateOf(-1) }
-    val atTop = focusRow <= 0
+    // reaches it. (Only crossing that line changes anything.)
+    val focusRow = remember { mutableIntStateOf(-1) }
+    val atTop by remember { androidx.compose.runtime.derivedStateOf { focusRow.intValue <= 0 } }
     Column(Modifier.fillMaxSize()) {
         androidx.compose.animation.AnimatedVisibility(
             visible = atTop,
@@ -1229,7 +1244,7 @@ fun LiveScreen(api: CueApi, playback: Playback, openWeb: (String) -> Unit) {
                     // No channel matched: every channel whose name or show has the team in it.
                     if (ch != null) playback.playLive(ch, shown) else find = g.home.name
                 }
-                else (spot ?: shown.firstOrNull())?.let { LiveBanner(api, it) }
+                else SpotBanner(api) { spot.value ?: shown.firstOrNull() }
             }
         }
         Row(Modifier.fillMaxSize().padding(top = 16.dp)) {
@@ -1281,7 +1296,7 @@ fun LiveScreen(api: CueApi, playback: Playback, openWeb: (String) -> Unit) {
                     itemsIndexed(shown.chunked(2), key = { _, row -> row.first().id }) { i, row ->
                         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                             row.forEach { ch ->
-                                ChannelTile(api, ch, Modifier.weight(1f), onFocus = { spot = ch; focusRow = i }) { playback.playLive(ch, shown) }
+                                ChannelTile(api, ch, Modifier.weight(1f), onFocus = { spot.value = ch; focusRow.intValue = i }) { playback.playLive(ch, shown) }
                             }
                             if (row.size == 1) Box(Modifier.weight(1f))
                         }

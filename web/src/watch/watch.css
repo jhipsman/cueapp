@@ -8287,6 +8287,11 @@ button.wx-switch.on:hover {
   background: #fff;
   color: #0b0b0c;
 }
+.wx-live-folded {
+  margin: -6px 0 14px;
+  font-size: 0.76rem;
+  color: var(--wx-dim);
+}
 /* All channels: a country, then the topics it has, as chips. */
 .wx-live-catalog {
   display: flex;

@@ -317,6 +317,8 @@ func (s *Server) handleLiveChannels(w http.ResponseWriter, r *http.Request) {
 		"categories":   cats,
 		"countries":    cat.countries,
 		"homeCountry":  cat.home,
+		"channelCount": cat.real,        // one of each: every channel the lists can show
+		"copies":       len(cat.mainOf), // folded into their channel (its backups)
 		"topics":       catalogTopics(),
 		"channels":     out,
 		"guideReady":   guide != nil,
