@@ -79,6 +79,7 @@ suspend fun CueApi.browseFranchise(id: Int): List<Tile> =
 sealed interface BrowseAt {
     data object Soon : BrowseAt
     data object Top : BrowseAt
+    data object MyList : BrowseAt
     data class Service(val s: BrowseService) : BrowseAt
     data class Collection(val c: BrowseCollection) : BrowseAt
     data class Franchise(val f: BrowseFranchise) : BrowseAt
@@ -119,6 +120,7 @@ fun BrowseScreen(api: CueApi, memory: FocusMemory, state: BrowseState, onCard: (
         null -> BrowseMenu(api, takeFocus = state.cameBack, tookFocus = { state.cameBack = false }) { state.open(it) }
         BrowseAt.Soon -> ComingSoonScreen(api, onCard)
         BrowseAt.Top -> TopScreen(api, memory, onCard)
+        BrowseAt.MyList -> MyListScreen(api, page, true, {}, onCard)
         is BrowseAt.Service -> ServicePage(api, a.s, page, onCard)
         is BrowseAt.Collection -> GridPage(a.c.title, a.c.blurb, "col-${a.c.key}", page, onCard) { api.browseCollection(a.c.key) }
         is BrowseAt.Franchise -> GridPage(a.f.name, "In the order they came out.", "fr-${a.f.id}", page, onCard) { api.browseFranchise(a.f.id) }
@@ -149,6 +151,7 @@ private fun BrowseMenu(api: CueApi, takeFocus: Boolean, tookFocus: () -> Unit, o
                 Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
                     QuickTile("Coming soon", "New films and episodes on the way", listOf(Color(0xFF3E63DD), Color(0xFF1B2A6B)), Modifier.focusRequester(first)) { open(BrowseAt.Soon) }
                     QuickTile("Top 10", "By service, genre, decade and country", listOf(Color(0xFFD6409F), Color(0xFF5E1A47))) { open(BrowseAt.Top) }
+                    QuickTile("My List", "Everything you've saved", listOf(Color(0xFF52525B), Color(0xFF1C1C1F))) { open(BrowseAt.MyList) }
                 }
             }
         }

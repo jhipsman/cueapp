@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.ui.layout.layout
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -30,6 +31,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.focusGroup
+import androidx.compose.ui.focus.focusProperties
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -64,9 +69,27 @@ private val GENRES = listOf(
 
 private const val ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789" // no 0/O, 1/I/L
 
-@OptIn(ExperimentalLayoutApi::class)
+@OptIn(ExperimentalLayoutApi::class, androidx.compose.ui.ExperimentalComposeUiApi::class)
 @Composable
-fun SearchScreen(api: CueApi, memory: FocusMemory, listen: Boolean = false, listened: () -> Unit = {}, onCard: (Tile) -> Unit) {
+fun SearchScreen(api: CueApi, memory: FocusMemory, listen: Boolean = false, listened: () -> Unit = {}, onAsk: (() -> Unit)? = null, askFocus: Boolean = false, askFocused: () -> Unit = {}, onCard: (Tile) -> Unit) {
+    val askButton = remember { androidx.compose.ui.focus.FocusRequester() }
+    // Back from Ask Cue: the highlight onto its button. Asked again until
+    // it's there: just after Ask Cue closes (taking the highlighted idea
+    // with it) a TV can refuse the first ask, which left nothing
+    // highlighted.
+    var askLanded by remember { mutableStateOf(false) } // it got there (even if the remote has moved on since)
+    LaunchedEffect(askFocus) {
+        if (!askFocus) return@LaunchedEffect
+        askLanded = false
+        // Once it's there, done: the remote may move on at once (Back to
+        // the menu), and must not be pulled back.
+        for (i in 0 until 12) {
+            kotlinx.coroutines.delay(if (i == 0) 120L else 100L)
+            if (askLanded) break
+            runCatching { askButton.requestFocus() }
+        }
+        askFocused()
+    }
     val ctx = LocalContext.current
     var query by remember { mutableStateOf("") }
 
@@ -121,13 +144,16 @@ fun SearchScreen(api: CueApi, memory: FocusMemory, listen: Boolean = false, list
         val shows = g.tv?.let { runCatching { api.genre("tv", it) }.getOrDefault(emptyList()) } ?: emptyList()
         genreItems = (0 until maxOf(films.size, shows.size)).flatMap { i -> listOfNotNull(films.getOrNull(i), shows.getOrNull(i)) }
     }
-    var results by remember { mutableStateOf<List<Tile>?>(null) }
+    // What a search finds, as rows: a person's films, what it describes
+    // ("funny 90s movies"), a topic ("zombies"), titles named like it.
+    var answer by remember { mutableStateOf<SearchAnswer?>(null) }
     LaunchedEffect(query) {
         val q = query.trim()
-        if (q.length < 2) { results = null; return@LaunchedEffect }
+        if (q.length < 2) { answer = null; return@LaunchedEffect }
         delay(350)
-        results = runCatching { api.search(q) }.getOrDefault(results ?: emptyList())
+        answer = runCatching { api.searchRows(q) }.getOrDefault(answer ?: SearchAnswer(null, null, emptyList()))
     }
+    val results = answer?.rows?.flatMap { it.items }
     var recent by remember { mutableStateOf(recentSearches(ctx)) }
     val open: (Tile) -> Unit = { c ->
         val q = query.trim()
@@ -135,7 +161,11 @@ fun SearchScreen(api: CueApi, memory: FocusMemory, listen: Boolean = false, list
         onCard(c)
     }
 
-    Row(Modifier.fillMaxSize()) {
+    // Coming over from the side menu, the highlight lands on Ask Cue (top
+    // left), not on whatever on the right happens to be level with Search.
+    Row(Modifier.fillMaxSize().focusProperties {
+        if (onAsk != null) enter = { askButton }
+    }.focusGroup()) {
         // ---- the ways in ----
         Column(
             Modifier.width(400.dp).fillMaxHeight()
@@ -144,6 +174,12 @@ fun SearchScreen(api: CueApi, memory: FocusMemory, listen: Boolean = false, list
         ) {
             Text("Search", fontFamily = Type.display(), fontSize = 34.sp, fontWeight = FontWeight.Bold, color = Color.White, modifier = Modifier.rise(0))
             Spacer(Modifier.height(14.dp))
+            // Ask Cue lives here: first, so coming over from the side menu
+            // lands on it rather than on the typing box (and its keyboard).
+            if (onAsk != null) {
+                Box(Modifier.rise(30)) { Pill("✨  Ask Cue", primary = true, modifier = Modifier.focusRequester(askButton).onFocusChanged { if (it.hasFocus) askLanded = true }, onClick = onAsk) }
+                Spacer(Modifier.height(12.dp))
+            }
             OutlinedTextField(
                 query, { query = it }, singleLine = true, colors = fieldColors(),
                 placeholder = { androidx.compose.material3.Text("Movies and shows") },
@@ -175,6 +211,7 @@ fun SearchScreen(api: CueApi, memory: FocusMemory, listen: Boolean = false, list
                 shown == null && g != null -> g.name
                 shown == null -> "Popular right now"
                 shown.isEmpty() -> "Nothing matches “$q”"
+                answer?.didYouMean != null -> "Showing results for “${answer?.didYouMean}”"
                 else -> "Results for “$q”"
             }
             Text(heading, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = Color.White, modifier = Modifier.padding(start = 4.dp))
@@ -190,8 +227,26 @@ fun SearchScreen(api: CueApi, memory: FocusMemory, listen: Boolean = false, list
                     items(GENRES.size) { i -> ChoiceTab(GENRES[i].name, selected = g == GENRES[i]) { genre = GENRES[i] } }
                 }
             }
-            PosterGrid(shown ?: if (g != null) genreItems else popular, memory,
-                if (shown != null) "search" else g?.let { "genre-${it.name}" } ?: "popular", open, sidePadding = 4.dp)
+            val rows = answer?.rows.orEmpty()
+            if (rows.size > 1) {
+                // More than one kind of answer: a row each, under its heading.
+                androidx.compose.foundation.lazy.LazyColumn(contentPadding = PaddingValues(top = 6.dp, bottom = 48.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    // (Rows keep the screen's margin; here that's the column's edge.)
+                    items(rows.size, key = { rows[it].key }) { i ->
+                        Box(Modifier.layout { m, c ->
+                            // Wider by the margin, and moved left by it: lined up with the
+                            // heading, and still running off the screen's right edge.
+                            val extra = (Gutter - 4.dp).roundToPx()
+                            val p = m.measure(c.copy(minWidth = c.maxWidth + extra, maxWidth = c.maxWidth + extra))
+                            layout(c.maxWidth, p.height) { p.place(-extra, 0) }
+                        }) { CardRow(rows[i], memory, onClick = open) }
+                    }
+                }
+            } else {
+                PosterGrid(shown ?: if (g != null) genreItems else popular, memory,
+                    if (shown != null) "search" else g?.let { "genre-${it.name}" } ?: "popular", open, sidePadding = 4.dp)
+            }
         }
     }
 }

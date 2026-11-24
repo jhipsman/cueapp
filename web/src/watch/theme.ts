@@ -5,9 +5,12 @@ import type { WatchTheme } from '../api'
 // use, set here; the last one used is kept on the device, so Watch opens
 // in its colors straight away.
 
-export const DEFAULT_THEME: WatchTheme = { accent: '#34d1bf', glow: 'soft', background: 'midnight' }
+// Cue's own: graphite grays and a soft white accent (white pills and
+// highlights), no glow.
+export const DEFAULT_THEME: WatchTheme = { accent: '#e4e4e7', glow: 'off', background: 'graphite' }
 
 export const ACCENTS: { name: string; color: string }[] = [
+  { name: 'Cue white', color: '#e4e4e7' },
   { name: 'Cue cyan', color: '#34d1bf' },
   { name: 'Ocean', color: '#3b82f6' },
   { name: 'Sky', color: '#38bdf8' },
@@ -28,7 +31,8 @@ export const GLOWS: { value: WatchTheme['glow']; label: string }[] = [
 ]
 
 export const BACKGROUNDS: { value: WatchTheme['background']; label: string; hint: string }[] = [
-  { value: 'midnight', label: 'Midnight', hint: 'Cue’s own dark gray' },
+  { value: 'graphite', label: 'Graphite', hint: 'Cue’s own neutral grays' },
+  { value: 'midnight', label: 'Midnight', hint: 'A cool, slightly blue gray' },
   { value: 'black', label: 'Black', hint: 'True black, best on OLED' },
   { value: 'slate', label: 'Slate', hint: 'Deep blue-gray' },
   { value: 'tinted', label: 'Tinted', hint: 'A hint of your color' },
@@ -66,12 +70,13 @@ export function themeVars(t: WatchTheme): Record<string, string> {
   const light = luminance(a) > 0.32
   const glow = { off: 0, soft: 1, strong: 1.8 }[t.glow] ?? 1
   const bgs: Record<WatchTheme['background'], [RGB, RGB]> = {
+    graphite: [rgb('#0b0b0c'), rgb('#171719')],
     midnight: [rgb('#101114'), rgb('#1b1d22')],
     black: [rgb('#000000'), rgb('#141416')],
     slate: [rgb('#0e1522'), rgb('#1a2333')],
     tinted: [mix(rgb('#0d0e11'), a, 0.07), mix(rgb('#191b20'), a, 0.1)],
   }
-  const [bg, panel] = bgs[t.background] ?? bgs.midnight
+  const [bg, panel] = bgs[t.background] ?? bgs.graphite
   const ga = (x: number) => `rgba(${rgbList(a)}, ${Math.min(1, x * glow).toFixed(2)})`
   return {
     '--wx-accent': hex(a),

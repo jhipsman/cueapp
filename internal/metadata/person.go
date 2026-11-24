@@ -46,6 +46,7 @@ type PersonCredit struct {
 	Adult            bool     `json:"adult"`
 	Character        string   `json:"character"`
 	Job              string   `json:"job"`
+	Department       string   `json:"department"` // crew: Directing, Writing…
 	EpisodeCount     int      `json:"episode_count"`
 }
 
@@ -76,4 +77,41 @@ func (c *Client) GetPerson(ctx context.Context, id int) (*Person, error) {
 	}
 	c.pages.put(key, &p)
 	return &p, nil
+}
+
+// PersonHit is one person from a name search.
+type PersonHit struct {
+	ID          int     `json:"id"`
+	Name        string  `json:"name"`
+	Department  string  `json:"known_for_department"` // Acting, Directing, Writing…
+	Popularity  float64 `json:"popularity"`
+	ProfilePath string  `json:"profile_path"`
+}
+
+// SearchPeople finds people by name, the best known first.
+func (c *Client) SearchPeople(ctx context.Context, query string) ([]PersonHit, error) {
+	var page struct {
+		Results []PersonHit `json:"results"`
+	}
+	if err := c.get(ctx, "/search/person", url.Values{"query": {query}, "include_adult": {"false"}}, &page); err != nil {
+		return nil, err
+	}
+	return page.Results, nil
+}
+
+// Keyword is one of TMDB's topic tags ("zombie", "heist", "time travel").
+type Keyword struct {
+	ID   int    `json:"id"`
+	Name string `json:"name"`
+}
+
+// SearchKeywords finds topic tags by name.
+func (c *Client) SearchKeywords(ctx context.Context, query string) ([]Keyword, error) {
+	var page struct {
+		Results []Keyword `json:"results"`
+	}
+	if err := c.get(ctx, "/search/keyword", url.Values{"query": {query}}, &page); err != nil {
+		return nil, err
+	}
+	return page.Results, nil
 }

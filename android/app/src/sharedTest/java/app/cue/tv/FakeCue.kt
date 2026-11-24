@@ -13,6 +13,8 @@ import java.time.temporal.ChronoUnit
 // doesn't know gets a 404, as a server that's out of date would, so the
 // screens' handling of a failed answer is tested too.
 class FakeCue : Dispatcher() {
+    /** The server's own address, once started: cards then carry pictures from it. */
+    var base = ""
     val unknown = mutableListOf<String>()
     val asked: MutableList<String> = java.util.Collections.synchronizedList(mutableListOf())
 
@@ -23,6 +25,31 @@ class FakeCue : Dispatcher() {
         .put("kind", kind).put("tmdbId", 100 + i).put("title", names[i % names.size]).put("year", 2014 + i % 10)
         .put("overview", "A story told over one long summer in a small coastal town.")
         .put("rating", 7.4)
+        .apply {
+            if (base.isNotEmpty()) {
+                put("posterUrl", "$base/art/poster/${i % names.size}.png")
+                put("backdropUrl", "$base/art/backdrop/${i % names.size}.png")
+            }
+        }
+
+    // A picture for a card: soft light over a colour of its own, so the
+    // screens look like they do with real artwork.
+    private fun art(kind: String, i: Int): MockResponse {
+        val (w, h) = if (kind == "poster") 300 to 450 else 640 to 360
+        val bmp = android.graphics.Bitmap.createBitmap(w, h, android.graphics.Bitmap.Config.ARGB_8888)
+        val c = android.graphics.Canvas(bmp)
+        val hue = (i * 47f) % 360f
+        val deep = android.graphics.Color.HSVToColor(floatArrayOf(hue, 0.55f, 0.32f))
+        val bright = android.graphics.Color.HSVToColor(floatArrayOf((hue + 30f) % 360f, 0.45f, 0.78f))
+        val p = android.graphics.Paint()
+        p.shader = android.graphics.LinearGradient(0f, h.toFloat(), w.toFloat(), 0f, deep, bright, android.graphics.Shader.TileMode.CLAMP)
+        c.drawRect(0f, 0f, w.toFloat(), h.toFloat(), p)
+        p.shader = android.graphics.RadialGradient(w * 0.7f, h * 0.3f, w * 0.6f, 0x66FFFFFF, 0x00FFFFFF, android.graphics.Shader.TileMode.CLAMP)
+        c.drawRect(0f, 0f, w.toFloat(), h.toFloat(), p)
+        val out = okio.Buffer()
+        bmp.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, out.outputStream())
+        return MockResponse().setHeader("Content-Type", "image/png").setBody(out)
+    }
 
     private fun cards(n: Int, from: Int = 0, kind: String? = null) =
         JSONArray().apply { repeat(n) { put(if (kind == null) card(from + it) else card(from + it, kind)) } }
@@ -50,23 +77,46 @@ class FakeCue : Dispatcher() {
         repeat(6) { put(JSONObject().put("season", 1).put("episode", it + 1).put("title", "Episode ${it + 1}").put("runtime", 48)) }
     }
 
+    // Shaped like the server's catalog: plain names, a country and topic
+    // each; a copy of a channel and a divider, which the lists leave out.
     private fun channels() = JSONObject().put("configured", true)
         .put("categories", JSONArray().put(JSONObject().put("id", "news").put("name", "News")).put(JSONObject().put("id", "sports").put("name", "Sports")))
+        .put("countries", JSONArray().put(JSONObject().put("code", "US").put("name", "United States").put("count", 6))
+            .put(JSONObject().put("code", "UK").put("name", "United Kingdom").put("count", 1)))
+        .put("homeCountry", "US")
+        .put("topics", JSONArray().apply {
+            listOf("general" to "General", "news" to "News", "sports" to "Sports", "kids" to "Kids", "movies" to "Movies").forEach { (k, n) ->
+                put(JSONObject().put("key", k).put("name", n))
+            }
+        })
         .put("channels", JSONArray().apply {
-            listOf("News 24", "World News", "Sports One", "Sports Two").forEachIndexed { i, n ->
-                put(JSONObject().put("id", "c$i").put("num", i + 1).put("name", n).put("category", if (i < 2) "news" else "sports")
-                    .put("now", JSONObject().put("title", "Live coverage").put("start", iso(-0.5)).put("stop", iso(0.5))))
+            data class Ch(val name: String, val country: String, val topic: String, val show: String, val copyOf: String = "", val divider: Boolean = false)
+            listOf(
+                Ch("News 24", "US", "news", "Evening Report"), Ch("World News", "US", "news", "The World Tonight"),
+                Ch("Sports One", "US", "sports", "NFL Football: Bills at Chiefs"), Ch("Sports Two", "US", "sports", "College Basketball"),
+                Ch("Cartoon Club", "US", "kids", "Saturday Toons"), Ch("Cinema One", "US", "movies", "Night Harbor"),
+                Ch("BBC One", "UK", "general", "The Evening Report"),
+                Ch("News 24", "US", "news", "Evening Report", copyOf = "c0"), Ch("##### US BACKUP #####", "US", "general", "", divider = true),
+            ).forEachIndexed { i, c ->
+                put(JSONObject().put("id", "c$i").put("num", i + 1).put("name", c.name).put("category", if (c.topic == "news") "news" else "sports")
+                    .put("country", c.country).put("topic", c.topic).put("copyOf", c.copyOf).put("divider", c.divider)
+                    .put("now", JSONObject().put("title", c.show).put("start", iso(-0.5)).put("stop", iso(0.5))))
             }
         })
 
+    private val colors = mapOf("KC" to "e31837", "BUF" to "00338d", "BOS" to "007a33", "LAL" to "552583")
+
     private fun team(name: String, short: String, abbr: String, score: String) =
         JSONObject().put("id", abbr).put("name", name).put("short", short).put("abbr", abbr).put("score", score).put("record", "9-2")
+            .put("color", colors[abbr] ?: "")
 
     private fun sports() = JSONObject().put("source", "espn")
         .put("big", JSONObject().put("id", "1").put("league", "nfl").put("leagueName", "NFL").put("state", "in").put("detail", "Q3 4:12")
             .put("start", iso(-1.5)).put("title", "Bills at Chiefs").put("onNow", true)
             .put("home", team("Kansas City Chiefs", "Chiefs", "KC", "17")).put("away", team("Buffalo Bills", "Bills", "BUF", "21"))
-            .put("networks", JSONArray().put("CBS")))
+            .put("networks", JSONArray().put("CBS"))
+            .put("venue", "Arrowhead Stadium")
+            .put("channel", JSONObject().put("id", "c2").put("num", 3).put("name", "Sports One")))
         .put("now", JSONArray())
         .put("soon", JSONArray().put(JSONObject().put("id", "2").put("league", "nba").put("leagueName", "NBA").put("state", "pre")
             .put("start", iso(2.0)).put("title", "Lakers at Celtics")
@@ -89,6 +139,7 @@ class FakeCue : Dispatcher() {
         val path = request.requestUrl?.encodedPath ?: ""
         asked.add(request.method + " " + path)
         return when {
+            path.startsWith("/art/") -> path.removePrefix("/art/").removeSuffix(".png").split("/").let { (kind, i) -> art(kind, i.toInt()) }
             path == "/api/auth/me" -> ok(JSONObject().put("username", "sam").put("role", "admin"))
             path == "/api/profiles" -> ok(JSONObject().put("profiles", JSONArray().put(JSONObject().put("id", 1).put("name", "Sam").put("avatar", "teal").put("main", true))))
             path == "/api/watch/home" -> ok(home())
@@ -100,6 +151,12 @@ class FakeCue : Dispatcher() {
             path.startsWith("/api/watch/extras/") -> ok(JSONObject())
             path == "/api/watch/coming-soon" -> ok(cards(6, 5).also { a -> for (i in 0 until a.length()) a.getJSONObject(i).put("soon", true).put("outDate", "2026-12-0${i + 1}") })
             path == "/api/watch/this-week" -> ok(JSONArray())
+            path == "/api/watch/search" && request.requestUrl?.queryParameter("v") == "2" -> ok(JSONObject()
+                .put("query", request.requestUrl?.queryParameter("q")).put("understood", "Comedy movies and shows")
+                .put("sections", JSONArray()
+                    .put(JSONObject().put("key", "intent").put("title", "Comedy movies and shows").put("items", cards(10, 2)))
+                    .put(JSONObject().put("key", "person").put("title", "With Ana Reyes").put("items", cards(8, 5)))
+                    .put(JSONObject().put("key", "titles").put("title", "Titles").put("items", cards(4, 7)))))
             path == "/api/watch/search" -> ok(cards(9, 1))
             path == "/api/watch/genre" -> ok(cards(12, 2))
             path.startsWith("/api/watch/remote/") -> ok(JSONObject().put("q", "").put("seq", 0))

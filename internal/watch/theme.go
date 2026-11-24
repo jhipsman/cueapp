@@ -12,16 +12,17 @@ import (
 type Theme struct {
 	Accent     string `json:"accent"`     // "#rrggbb"
 	Glow       string `json:"glow"`       // "off", "soft" or "strong"
-	Background string `json:"background"` // "midnight", "black", "slate" or "tinted" (the accent, faintly)
+	Background string `json:"background"` // "graphite", "midnight", "black", "slate" or "tinted" (the accent, faintly)
 }
 
-// DefaultTheme is Cue's own: cyan, a soft glow, midnight.
-var DefaultTheme = Theme{Accent: "#34d1bf", Glow: "soft", Background: "midnight"}
+// DefaultTheme is Cue's own: graphite grays with a soft white accent (white
+// pills, white highlights), no glow. Profiles that chose colors keep them.
+var DefaultTheme = Theme{Accent: "#e4e4e7", Glow: "off", Background: "graphite"}
 
 var (
 	hexColor    = regexp.MustCompile(`^#[0-9a-f]{6}$`)
 	glows       = map[string]bool{"off": true, "soft": true, "strong": true}
-	backgrounds = map[string]bool{"midnight": true, "black": true, "slate": true, "tinted": true}
+	backgrounds = map[string]bool{"graphite": true, "midnight": true, "black": true, "slate": true, "tinted": true}
 )
 
 // Clean fills anything missing or unknown from DefaultTheme.

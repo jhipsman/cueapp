@@ -752,7 +752,7 @@ Every route the server exposes. Routes marked **public** need no sign-in; all ot
 | PUT | `/api/watch/remind/{kind}/{tmdbId}` | signed in | PUT and DELETE /api/watch/remind/{kind}/{tmdbId}: tell this profile when the title is out to stream (or not any more). |
 | GET | `/api/watch/remote/{code}` | signed in | GET /api/watch/remote/{code}: the words sent so far ({"q":"","seq":0} before any). |
 | PUT | `/api/watch/remote/{code}` | signed in | PUT /api/watch/remote/{code} {"q"}: the phone's words for the TV. |
-| GET | `/api/watch/search` | signed in | GET /api/watch/search?q=...: movies and shows, best match first. |
+| GET | `/api/watch/search` | signed in | GET /api/watch/search?q=...: movies and shows, best match first: titles named like it, and what it means (a person, a genre or decade or service, a topic; se... |
 | POST | `/api/watch/skips/learn` | signed in | POST /api/watch/skips/learn {"kind","tmdbId","season","segment","start","end","duration"}: the household skipped an intro (start to end) or the credits (pres... |
 | GET | `/api/watch/skips/{kind}/{tmdbId}` | signed in | GET /api/watch/skips/{kind}/{tmdbId}?season=&episode=&duration= |
 | GET | `/api/watch/subtitles/{kind}/{tmdbId}` | signed in | GET /api/watch/subtitles/{kind}/{tmdbId}?season=&episode=&release=&choice= is where the player gets the subtitle: {"url", "label", "choices"}. |

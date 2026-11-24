@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { api, type LiveHit, type WatchCard } from "../api";
+import { api, type LiveHit, type WatchSearchAnswer } from "../api";
 import { useDocumentTitle } from "../documentTitle";
 import ChannelLogo from "./ChannelLogo";
 import { liveHref } from "./LivePage";
-import { Card } from "./parts";
+import { Card, Row } from "./parts";
 import { useProfiles } from "./profiles";
 import { useReminders } from "./reminders";
 import Icon from "../components/Icon";
@@ -54,7 +54,7 @@ export default function SearchPage() {
   const q = params.get("q") ?? "";
   const [results, setResults] = useState<{
     q: string;
-    items: WatchCard[];
+    answer: WatchSearchAnswer;
   } | null>(null);
   const [live, setLive] = useState<{ q: string; hits: LiveHit[] } | null>(null);
   const [error, setError] = useState("");
@@ -83,10 +83,10 @@ export default function SearchPage() {
     if (!q.trim()) return;
     let current = true;
     api
-      .watchSearch(q)
-      .then((items) => {
+      .watchSearchRows(q)
+      .then((answer) => {
         if (current) {
-          setResults({ q, items });
+          setResults({ q, answer });
           setError("");
         }
       })
@@ -104,7 +104,13 @@ export default function SearchPage() {
     };
   }, [q, liveTV]);
 
-  const found = results?.q === q ? results.items : [];
+  // Each kind of answer is a row (a person's films, what the search
+  // describes, a topic, titles named like it); the pills narrow them all.
+  const answer = results?.q === q ? results.answer : null;
+  const rows = (answer?.sections ?? [])
+    .map((sec) => ({ ...sec, items: kind === "all" ? sec.items : sec.items.filter((c) => c.kind === kind) }))
+    .filter((sec) => sec.items.length > 0);
+  const found = (answer?.sections ?? []).flatMap((sec) => sec.items).filter((c, i, all) => all.findIndex((o) => o.kind === c.kind && o.tmdbId === c.tmdbId) === i);
   const items = kind === "all" ? found : found.filter((c) => c.kind === kind);
   const hits = live?.q === q ? live.hits : [];
   const shows = hits.filter((h) => h.show);
@@ -199,7 +205,7 @@ export default function SearchPage() {
       {error && <p className="wx-error">{error}</p>}
       {results?.q === q && found.length > 0 && (
         <div className="wx-search-top">
-          <h1>Results for “{q}”</h1>
+          <h1>{answer?.didYouMean ? <>Showing results for “{answer.didYouMean}”</> : <>Results for “{q}”</>}</h1>
           <Pills
             value={kind}
             onChange={setKind}
@@ -255,16 +261,17 @@ export default function SearchPage() {
         </section>
       )}
 
-      {items.length > 0 && (
+      {rows.length === 1 && (
         <section>
           {hits.length > 0 && <h2>Movies and shows</h2>}
           <div className="wx-grid">
-            {items.map((c) => (
+            {rows[0].items.map((c) => (
               <Card key={`${c.kind}-${c.tmdbId}`} card={c} />
             ))}
           </div>
         </section>
       )}
+      {rows.length > 1 && rows.map((sec) => <Row key={sec.key} rowKey={`search-${sec.key}`} title={sec.title} items={sec.items} />)}
 
       {later.length > 0 && (
         <section className="wx-search-live">

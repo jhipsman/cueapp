@@ -34,10 +34,22 @@ class WalkThroughTest {
 
     // Screenshots go where the emulator's shell keeps them (CI pulls them
     // from there; they outlive the app being uninstalled after the run).
-    private fun shell(cmd: String) {
+    private fun shell(cmd: String): String =
         InstrumentationRegistry.getInstrumentation().uiAutomation.executeShellCommand(cmd).use { pfd ->
-            java.io.FileInputStream(pfd.fileDescriptor).use { it.readBytes() }
+            java.io.FileInputStream(pfd.fileDescriptor).use { String(it.readBytes()) }
         }
+
+    // How smoothly each stretch drew, from Android's own count of frames
+    // (dumpsys gfxinfo): frames drawn, how many were late, and the slow
+    // end. Written to frames.txt beside the screenshots and to the log, then
+    // the count starts again for the next stretch.
+    private val frames = StringBuilder()
+    private fun frames(stretch: String) {
+        val keep = Regex("(Total frames rendered|Janky frames|50th percentile|90th percentile|99th percentile|Number Slow UI thread|Number Slow bitmap uploads|Number Frame deadline missed)[^\\n]*")
+        val got = keep.findAll(shell("dumpsys gfxinfo ${ctx.packageName}")).map { it.value.trim() }.distinct().joinToString("; ")
+        frames.append(stretch).append(": ").append(got).append('\n')
+        android.util.Log.i("CueFrames", "$stretch: $got")
+        shell("dumpsys gfxinfo ${ctx.packageName} reset")
     }
 
     @Before
@@ -46,6 +58,7 @@ class WalkThroughTest {
         server.dispatcher = fake
         server.start()
         val base = server.url("/").toString().trimEnd('/')
+        fake.base = base
         // Signed in on this TV already, with a profile chosen and the tour seen.
         ctx.getSharedPreferences("cue", Context.MODE_PRIVATE).edit().clear()
             .putString("server", base)
@@ -71,6 +84,7 @@ class WalkThroughTest {
 
     private fun shot(name: String) {
         step++
+        frames(name) // how the way here drew
         // In the log with its time, so the nightly polish run can find each
         // step in its screen recording.
         android.util.Log.i("CueWalkThrough", "step %02d %s".format(step, name))
@@ -129,11 +143,9 @@ class WalkThroughTest {
 
             // Down the menu, each place showing its page as the highlight rests on it.
             val pages = listOf(
-                "Shows" to "Continue watching",
                 "Movies" to "Top 10 on Netflix",
-                "Sports" to "Chiefs",
-                "Live TV" to "News 24",
-                "My List" to "Nothing here yet",
+                "Shows" to "Series", // the show up top
+                "Live TV" to "BILLS", // the game up top
                 "Browse" to "Streaming services",
             )
             for ((place, shows) in pages) {
@@ -167,27 +179,30 @@ class WalkThroughTest {
             see("Streaming services")
             shot("back-to-browse")
 
-            // Up the menu to Ask Cue: ask with one of the ideas, and the answer
-            // and its picks show; then Search, at the top.
+            // Up the menu to Search, and Ask Cue from its button: ask with one
+            // of the ideas, and the answer and its picks show; Back to Search.
             press(KeyEvent.KEYCODE_BACK) // to the side menu
-            press(KeyEvent.KEYCODE_DPAD_UP, 7)
+            press(KeyEvent.KEYCODE_DPAD_UP, 5)
+            see("Search from your phone")
+            shot("search")
+            // Into the page and up to the button (a TV's buttons take the
+            // remote's select, not a touch).
+            press(KeyEvent.KEYCODE_DPAD_RIGHT) // lands on Ask Cue
+            reach("✨  Ask Cue", KeyEvent.KEYCODE_DPAD_UP, tries = 2)
+            press(KeyEvent.KEYCODE_DPAD_CENTER)
             see("Something funny for tonight")
             shot("ask-cue")
-            // Into the page, down to the idea, and press it (a TV's buttons
-            // take the remote's select, not a touch).
-            press(KeyEvent.KEYCODE_DPAD_RIGHT)
-            press(KeyEvent.KEYCODE_DPAD_UP, 2) // the first row of ideas
             reach("Something funny for tonight", KeyEvent.KEYCODE_DPAD_LEFT, tries = 4)
             press(KeyEvent.KEYCODE_DPAD_CENTER)
             see("easy laughs")
             Thread.sleep(600)
             shot("ask-cue-answer")
-            press(KeyEvent.KEYCODE_BACK) // to the side menu
-            press(KeyEvent.KEYCODE_DPAD_UP)
+            press(KeyEvent.KEYCODE_BACK)
             see("Search from your phone")
-            shot("search")
+            reach("✨  Ask Cue", KeyEvent.KEYCODE_DPAD_UP, tries = 3)
 
-            // Back on the menu goes Home; Home's page again.
+            // Back to the side menu, and Back again goes Home.
+            press(KeyEvent.KEYCODE_BACK)
             press(KeyEvent.KEYCODE_BACK)
             see("Continue watching")
             shot("home-again")
@@ -213,6 +228,8 @@ class WalkThroughTest {
             press(KeyEvent.KEYCODE_BACK)
             see("Continue watching")
         }
+        // The frame counts, all together in the log (CueFrames).
+        android.util.Log.i("CueFrames", "all:\n$frames")
         // No crash saved along the way, and nothing asked of the server it didn't expect.
         assertFalse("the app crashed: " + File(ctx.filesDir, "last-crash.txt").takeIf { it.exists() }?.readText().orEmpty(),
             File(ctx.filesDir, "last-crash.txt").exists())

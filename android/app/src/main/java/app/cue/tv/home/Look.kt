@@ -376,8 +376,12 @@ fun Sheen(focused: Boolean, modifier: Modifier = Modifier) {
 // one after another.
 @Composable
 fun Modifier.rise(delayMs: Int = 0, distance: Dp = 16.dp): Modifier {
-    val a = remember { androidx.compose.animation.core.Animatable(0f) }
+    // A page shown while the remote moves down the side menu just fades in
+    // (LocalCalm): rising too, each page in turn would bounce.
+    val calm = LocalCalm.current
+    val a = remember { androidx.compose.animation.core.Animatable(if (calm) 1f else 0f) }
     LaunchedEffect(Unit) {
+        if (calm) return@LaunchedEffect
         kotlinx.coroutines.delay(delayMs.toLong())
         a.animateTo(1f, androidx.compose.animation.core.tween(560, easing = Settle))
     }
@@ -386,6 +390,9 @@ fun Modifier.rise(delayMs: Int = 0, distance: Dp = 16.dp): Modifier {
         translationY = (1f - a.value) * distance.toPx()
     }
 }
+
+/** True while a page is shown from the side menu: its parts don't rise into place. */
+val LocalCalm = androidx.compose.runtime.compositionLocalOf { false }
 
 // A picture that settles from a slight zoom when it first shows.
 @Composable

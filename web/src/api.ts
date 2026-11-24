@@ -138,9 +138,30 @@ export interface LiveChannel {
   catchupDays?: number // days back the provider keeps it (catch-up)
   now?: LiveProgramme
   next?: LiveProgramme
+  // From Cue's own channel catalog: the plain name ("ESPN" for "US ★ ESPN
+  // FHD"), country, topic; a copy of another channel (HD/FHD, a backup) says
+  // which; a heading in the provider's list ("##### UK #####") is a divider.
+  clean?: string
+  country?: string
+  topic?: string
+  copyOf?: string
+  spares?: number
+  divider?: boolean
+  raw?: string // the provider's own name
+}
+export interface WatchSearchAnswer {
+  query: string
+  understood?: string // how it was read: "Comedy movies from the 1990s"
+  didYouMean?: string // the spelling that found something
+  sections: { key: 'titles' | 'intent' | 'person' | 'topic'; title: string; items: WatchCard[]; person?: { id: number; name: string; photo?: string } }[]
 }
 export interface LiveChannels {
   configured: boolean
+  countries?: { code: string; name: string; count: number }[]
+  homeCountry?: string
+  channelCount?: number // one of each channel
+  copies?: number // HD/FHD/backup copies folded into their channel (its backups when it won't play)
+  topics?: { key: string; name: string }[]
   categories?: { id: string; name: string }[]
   channels?: LiveChannel[]
   guideReady?: boolean
@@ -182,9 +203,11 @@ export interface SportsGame {
   away: SportsTeam
   networks?: string[]
   note?: string
+  venue?: string
   postseason?: boolean
   title: string
   channel?: LiveChannel
+  more?: LiveChannel[] // other channels showing it
   streaming?: string
   favorite?: boolean
   onNow: boolean
@@ -253,7 +276,7 @@ export interface StreamPrefs {
 export interface WatchTheme {
   accent: string // "#rrggbb"
   glow: 'off' | 'soft' | 'strong'
-  background: 'midnight' | 'black' | 'slate' | 'tinted'
+  background: 'graphite' | 'midnight' | 'black' | 'slate' | 'tinted'
 }
 export interface WatchProfiles {
   profiles: WatchProfile[]
@@ -2516,6 +2539,9 @@ export const api = {
     get<null>(`/play/tmdb/${kind}/${tmdbId}${kind === 'tv' ? `/${season}/${episode}` : ''}?prefetch=1`).catch(() => null),
   watchHome: () => get<WatchHome>('/watch/home'),
   watchSearch: (q: string) => get<WatchCard[]>(`/watch/search?q=${encodeURIComponent(q)}`),
+  // Search as rows: a person's films, what the search describes ("funny 90s
+  // movies"), a topic ("zombies"), titles named like it.
+  watchSearchRows: (q: string) => get<WatchSearchAnswer>(`/watch/search?q=${encodeURIComponent(q)}&v=2`),
   watchTitle: (kind: WatchKind, tmdbId: number) => get<WatchTitle>(`/watch/${kind}/${tmdbId}`),
   watchSeason: (tmdbId: number, season: number) => get<WatchEpisode[]>(`/watch/tv/${tmdbId}/season/${season}`),
   watchSubtitles: (kind: 'movie' | 'tv', tmdbId: number, season: number, episode: number, release: string, choice = 0) =>

@@ -9,7 +9,6 @@ package app.cue.tv.home
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.focusGroup
-import androidx.compose.animation.core.animateDpAsState
 import androidx.activity.compose.BackHandler
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
@@ -54,6 +53,7 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -97,6 +97,7 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -538,21 +539,21 @@ fun avatarColor(avatar: String): Color = when (avatar.substringBefore('/')) {
 // rail's foot.
 private class NavItem(val name: String, val icon: Int, val page: Int)
 
+// Kept short, as the TV apps do: Ask Cue opens from Search, Sports leads
+// Live TV, and My List is in Browse.
 private val navItems = listOf(
     NavItem("Search", app.cue.tv.R.drawable.ic_nav_search, 4),
-    NavItem("Ask Cue", app.cue.tv.R.drawable.ic_nav_ask, 11),
     NavItem("Home", app.cue.tv.R.drawable.ic_nav_home, 0),
-    NavItem("Shows", app.cue.tv.R.drawable.ic_nav_shows, 1),
     NavItem("Movies", app.cue.tv.R.drawable.ic_nav_movies, 2),
-    NavItem("Sports", app.cue.tv.R.drawable.ic_nav_sports, 7),
+    NavItem("Shows", app.cue.tv.R.drawable.ic_nav_shows, 1),
     NavItem("Live TV", app.cue.tv.R.drawable.ic_nav_live, 3),
-    NavItem("My List", app.cue.tv.R.drawable.ic_nav_mylist, 5),
     NavItem("Browse", app.cue.tv.R.drawable.ic_nav_browse, 9),
 )
 private const val ProfilePage = 10
 private const val SettingsPage = 12
 private const val PageCount = 13
 private val RailWidth = 72.dp
+private val RailOpenWidth = 212.dp // the rail's box, closed too (only its names fade in)
 
 // The rail's place for a page: the places in navItems, then Settings, then
 // the profile last.
@@ -571,6 +572,9 @@ fun MainScreen(api: CueApi, playback: Playback, openWeb: (String) -> Unit, chang
     val memories = remember { List(PageCount) { FocusMemory() } }
     val titleMemory = remember { FocusMemory() }
     val browseState = remember { BrowseState() } // outlives a title opened over Browse
+    // Ask Cue, opened from Search (Back returns to Search).
+    var asking by remember { mutableStateOf(false) }
+    var askedBack by remember { mutableStateOf(false) } // Back from Ask: the highlight on its button again
     val tabFocus = remember { List(navItems.size + 2) { FocusRequester() } }
     var tabsFocused by remember { mutableStateOf(false) }
     // Whether a page may take the highlight when it shows: on opening the
@@ -631,6 +635,7 @@ fun MainScreen(api: CueApi, playback: Playback, openWeb: (String) -> Unit, chang
     else Box(Modifier.fillMaxSize().onPreviewKeyEvent {
         if (it.type == KeyEventType.KeyDown && (it.key == androidx.compose.ui.input.key.Key.Search || it.key == androidx.compose.ui.input.key.Key.VoiceAssist)) {
             tab = 4
+            asking = false
             listenNow = true
             true
         } else {
@@ -649,12 +654,15 @@ fun MainScreen(api: CueApi, playback: Playback, openWeb: (String) -> Unit, chang
                 label = "tab",
                 modifier = Modifier.fillMaxSize(),
             ) { showing ->
+                // Shown from the side menu: no rising into place (see rise).
+                CompositionLocalProvider(LocalCalm provides tabsFocused) {
                 when (showing) {
                     0 -> HomeScreen(api, null, memories[0], pageTakesFocus, tookFocus, setAmbient, onCard, playback)
                     1 -> HomeScreen(api, "tv", memories[1], pageTakesFocus, tookFocus, setAmbient, onCard)
                     2 -> HomeScreen(api, "movie", memories[2], pageTakesFocus, tookFocus, setAmbient, onCard)
                     3 -> LiveScreen(api, playback, openWeb)
-                    4 -> SearchScreen(api, memories[4], listen = listenNow, listened = { listenNow = false }, onCard = onCard)
+                    4 -> if (asking) AskScreen(api, memories[11], onCard, takeFocus = true, onClose = { asking = false; askedBack = true })
+                    else SearchScreen(api, memories[4], listen = listenNow, listened = { listenNow = false }, onAsk = { asking = true }, askFocus = askedBack, askFocused = { askedBack = false }, onCard = onCard)
                     5 -> MyListScreen(api, memories[5], pageTakesFocus, tookFocus, onCard)
                     6 -> ComingSoonScreen(api, onCard)
                     7 -> SportsScreen(api, playback)
@@ -667,8 +675,15 @@ fun MainScreen(api: CueApi, playback: Playback, openWeb: (String) -> Unit, chang
                         runCatching { tabFocus[railSlot(SettingsPage)].requestFocus() }
                     }
                 }
+                }
             }
         }
+        // The menu open: the page dims behind it, darkest at the menu, so
+        // nothing on the page shows through or beside the names.
+        val dim by animateFloatAsState(if (tabsFocused) 1f else 0f, tween(220), label = "rail-dim")
+        // (Always there, read only when drawn: opening it recomposes nothing.)
+        Box(Modifier.fillMaxSize().graphicsLayer { alpha = dim }
+            .background(Brush.horizontalGradient(0f to Background, 0.2f to Background.copy(alpha = 0.94f), 0.32f to Background.copy(alpha = 0.78f), 0.6f to Background.copy(alpha = 0.35f), 0.9f to Color.Transparent)))
         SideRail(
             api = api,
             current = tab,
@@ -680,7 +695,10 @@ fun MainScreen(api: CueApi, playback: Playback, openWeb: (String) -> Unit, chang
                 .focusGroup()
                 .onFocusChanged {
                     tabsFocused = it.hasFocus
-                    if (it.hasFocus) pageTakesFocus = false
+                    if (it.hasFocus) {
+                        pageTakesFocus = false
+                        askedBack = false // gone to the menu: Search mustn't pull the highlight back to Ask Cue
+                    }
                 },
             onFocusPage = { tab = it },
         )
@@ -693,13 +711,17 @@ fun MainScreen(api: CueApi, playback: Playback, openWeb: (String) -> Unit, chang
 // marked with a short bar in the profile's colour.
 @Composable
 private fun SideRail(api: CueApi, current: Int, focusers: List<FocusRequester>, expanded: Boolean, modifier: Modifier, onFocusPage: (Int) -> Unit) {
-    // Opens over 260 ms; closes in about two-thirds of that (T7, S5).
+    // One width throughout: opening only fades the names in (changing the
+    // width laid every item out again on every frame, which a slow TV
+    // can't keep up with). Opens over 260 ms; closes in about two-thirds
+    // of that (T7, S5).
     val railMs = if (expanded) 260 else 180
-    val width by animateDpAsState(if (expanded) 212.dp else RailWidth, tween(railMs, easing = Settle), label = "rail")
     val shade by animateFloatAsState(if (expanded) 1f else 0f, tween(railMs, easing = Settle), label = "rail-shade")
-    Box(modifier.fillMaxHeight().width(width)) {
+    Box(modifier.fillMaxHeight().width(RailOpenWidth)) {
         // Behind it: dark at the rail, fading out to the right.
-        Box(Modifier.matchParentSize().background(Brush.horizontalGradient(listOf(Color(0xF20B0C0F), Color(0xF20B0C0F).copy(alpha = 0.55f + 0.4f * shade), Color(0x000B0C0F)))))
+        // (Open, the dimmed page behind takes over: no edge where the rail ends.)
+        Box(Modifier.matchParentSize().graphicsLayer { alpha = 1f - shade }
+            .background(Brush.horizontalGradient(listOf(Background.copy(alpha = 0.95f), Background.copy(alpha = 0.55f), Color.Transparent))))
         Column(Modifier.fillMaxHeight().padding(start = 10.dp, end = 10.dp, top = 20.dp, bottom = 18.dp)) {
             androidx.compose.foundation.Image(
                 androidx.compose.ui.res.painterResource(app.cue.tv.R.drawable.ic_cue_mark), contentDescription = null,
@@ -707,19 +729,19 @@ private fun SideRail(api: CueApi, current: Int, focusers: List<FocusRequester>, 
             )
             Gap(28.dp)
             navItems.forEachIndexed { i, n ->
-                RailItem(n.name, selected = n.page == current, expanded = expanded, modifier = Modifier.focusRequester(focusers[i]),
+                RailItem(n.name, selected = n.page == current, expanded = expanded, reveal = { shade }, modifier = Modifier.focusRequester(focusers[i]),
                     onFocus = { onFocusPage(n.page) }) {
                     androidx.tv.material3.Icon(androidx.compose.ui.res.painterResource(n.icon), contentDescription = null, modifier = Modifier.size(20.dp))
                 }
                 Gap(4.dp)
             }
             Spacer(Modifier.weight(1f))
-            RailItem("Settings", selected = current == SettingsPage, expanded = expanded,
+            RailItem("Settings", selected = current == SettingsPage, expanded = expanded, reveal = { shade },
                 modifier = Modifier.focusRequester(focusers[navItems.size]), onFocus = { onFocusPage(SettingsPage) }) {
                 androidx.tv.material3.Icon(androidx.compose.ui.res.painterResource(app.cue.tv.R.drawable.ic_nav_settings), contentDescription = null, modifier = Modifier.size(20.dp))
             }
             Gap(4.dp)
-            RailItem(api.profileName.ifEmpty { "Profile" }, selected = current == ProfilePage, expanded = expanded,
+            RailItem(api.profileName.ifEmpty { "Profile" }, selected = current == ProfilePage, expanded = expanded, reveal = { shade },
                 modifier = Modifier.focusRequester(focusers[navItems.size + 1]), onFocus = { onFocusPage(ProfilePage) }) {
                 Box(Modifier.size(22.dp).clip(CircleShape).background(LocalAccent.current), contentAlignment = Alignment.Center) {
                     AvatarFace(api.profileAvatar, api.profileName, 11.sp,
@@ -731,12 +753,15 @@ private fun SideRail(api: CueApi, current: Int, focusers: List<FocusRequester>, 
 }
 
 @Composable
-private fun RailItem(label: String, selected: Boolean, expanded: Boolean, modifier: Modifier, onFocus: () -> Unit, icon: @Composable () -> Unit) {
+private fun RailItem(label: String, selected: Boolean, expanded: Boolean, reveal: () -> Float, modifier: Modifier, onFocus: () -> Unit, icon: @Composable () -> Unit) {
     val accent = LocalAccent.current
     Box(contentAlignment = Alignment.CenterStart) {
         Button(
             onClick = onFocus,
-            modifier = modifier.fillMaxWidth().height(40.dp).onFocusChanged { if (it.isFocused) onFocus() },
+            // Closed, just the icon's width (moving left from a page finds
+            // it); open, the full width, once, while the names fade in.
+            modifier = modifier.then(if (expanded) Modifier.fillMaxWidth() else Modifier.width(RailWidth - 20.dp))
+                .height(40.dp).onFocusChanged { if (it.isFocused) onFocus() },
             shape = ButtonDefaults.shape(RoundedCornerShape(10.dp)),
             scale = ButtonDefaults.scale(focusedScale = 1f, pressedScale = 0.98f),
             colors = ButtonDefaults.colors(
@@ -751,10 +776,10 @@ private fun RailItem(label: String, selected: Boolean, expanded: Boolean, modifi
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 icon()
-                if (expanded) {
-                    HGap(16.dp)
-                    Text(label, fontSize = 14.sp, fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium, maxLines = 1)
-                }
+                HGap(16.dp)
+                // Read in the drawing step only: the fade redraws, nothing recomposes.
+                Text(label, fontSize = 14.sp, fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium, maxLines = 1,
+                    modifier = Modifier.graphicsLayer { alpha = reveal() })
             }
         }
         // The page showing: a short bar at the rail's edge.
@@ -773,7 +798,10 @@ fun HomeScreen(api: CueApi, only: String?, memory: FocusMemory, takeFocus: Boole
                setAmbient: (Tile?) -> Unit, onCard: (Tile) -> Unit, playback: Playback? = null) {
     var home by remember { mutableStateOf<Home?>(homeCache) }
     var problem by remember { mutableStateOf("") }
-    var spot by remember { mutableStateOf<Tile?>(null) }
+    // Where the highlight is. Held outside composition on purpose: reading it
+    // here would rebuild the whole page (every row and card) on each press
+    // of the remote; only the banner follows it, once it settles.
+    val spot = remember { mutableStateOf<Tile?>(null) }
     val listState = rememberLazyListState()
     LaunchedEffect(Unit) {
         // What this profile saw last time, at once; then the server's.
@@ -796,13 +824,14 @@ fun HomeScreen(api: CueApi, only: String?, memory: FocusMemory, takeFocus: Boole
         if (items.isEmpty()) null else Shelf(r.key, r.title, items)
     }
     val featured = h.hero?.takeIf { only == null || it.kind == only } ?: rows.flatMap { it.items }.firstOrNull { it.backdrop != null && !it.resumes }
-    val shown = spot ?: featured
     // The highlight settles before the banner follows it, so moving quickly
     // along a row doesn't redraw it for every poster passed.
-    var settled by remember { mutableStateOf(shown) }
-    LaunchedEffect(shown?.key) {
-        delay(300)
-        settled = shown
+    var settled by remember { mutableStateOf(featured) }
+    LaunchedEffect(featured?.key) {
+        androidx.compose.runtime.snapshotFlow { spot.value ?: featured }.collectLatest { t ->
+            delay(300)
+            settled = t
+        }
     }
     LaunchedEffect(settled?.key) { setAmbient(settled) }
     // The page takes the colour of the picture in the banner.
@@ -822,12 +851,12 @@ fun HomeScreen(api: CueApi, only: String?, memory: FocusMemory, takeFocus: Boole
             LazyColumn(state = listState, contentPadding = PaddingValues(top = 10.dp, bottom = 120.dp)) {
                 if (only == null && playback != null) item(key = "parties") { PartiesNow(api, playback) }
                 // The Movies and Shows tabs open with their own Top 10.
-                if (only != null && h.top10.isNotEmpty()) item(key = "top10-first") { TopTenRow(h.top10, only, memory, onFocus = { spot = it }, onClick = onCard) }
+                if (only != null && h.top10.isNotEmpty()) item(key = "top10-first") { TopTenRow(h.top10, only, memory, onFocus = { spot.value = it }, onClick = onCard) }
                 // The Top 10 comes after what you're watching (or the first row).
                 val topAt = maxOf(0, rows.count { it.key == "continue" || it.key == "new-episodes" || it.key == "out-now" } - 1)
                 rows.forEachIndexed { i, r ->
-                    item(key = r.key) { CardRow(r, memory, onFocus = { spot = it }, onClick = onCard) }
-                    if (only == null && i == topAt && h.top10.isNotEmpty()) item(key = "top10") { TopTenRow(h.top10, only, memory, onFocus = { spot = it }, onClick = onCard) }
+                    item(key = r.key) { CardRow(r, memory, onFocus = { spot.value = it }, onClick = onCard) }
+                    if (only == null && i == topAt && h.top10.isNotEmpty()) item(key = "top10") { TopTenRow(h.top10, only, memory, onFocus = { spot.value = it }, onClick = onCard) }
                 }
             }
         }
@@ -1145,20 +1174,32 @@ fun PosterGrid(items: List<Tile>, memory: FocusMemory, prefix: String, onCard: (
 
 // ---- Live TV ----
 
-// Live TV: the groups down the left, the channels with what's on now (and
-// how far through) and next. A channel plays in the player, where up and
-// down change channel. The full guide is in the web version for now.
+// Live TV: the game that matters most at the top (LiveHero: both teams, a
+// countdown or the score, Featured beside it), then the groups down the
+// left and On now: a card per channel, two to a row. Moving down into the
+// channels folds the hero away; back to the top row brings it again. A
+// channel plays in the player, where up and down change channel. Without
+// games, the highlighted channel shows at the top instead.
+// The banner for the channel the highlight is on: reads it itself, so only
+// the banner is drawn again as the highlight moves.
+@Composable
+private fun SpotBanner(api: CueApi, channel: () -> Channel?) {
+    channel()?.let { LiveBanner(api, it) }
+}
+
 @Composable
 fun LiveScreen(api: CueApi, playback: Playback, openWeb: (String) -> Unit) {
     var live by remember { mutableStateOf<LiveChannels?>(null) }
     var problem by remember { mutableStateOf("") }
-    var group by remember { mutableStateOf("") }
-    // Sports: the channels with games, the next big game first.
-    var sports by remember { mutableStateOf(SportsInfo(emptyList(), null)) }
+    var group by remember { mutableStateOf("") } // "★" favourites, "*" every topic, else a topic's key
+    var country by remember { mutableStateOf<String?>(null) } // "" is every country
+    var picking by remember { mutableStateOf(false) } // the column lists the countries
+    var find by remember { mutableStateOf("") } // a game no channel was matched to: channels showing it
+    var board by remember { mutableStateOf(SportsBoard(null, emptyList(), emptyList())) }
     LaunchedEffect(Unit) {
         // Scores change: read again every minute while Live TV is open.
         while (true) {
-            runCatching { api.sports() }.getOrNull()?.let { sports = it }
+            runCatching { api.sportsBoard() }.getOrNull()?.let { board = it }
             delay(60_000)
         }
     }
@@ -1167,6 +1208,7 @@ fun LiveScreen(api: CueApi, playback: Playback, openWeb: (String) -> Unit) {
             val l = api.channels()
             live = l
             if (group.isEmpty()) group = if (l.channels.any { it.favorite }) "★" else "*"
+            if (country == null) country = api.liveCountry ?: l.home
         } catch (e: Exception) {
             problem = e.message ?: "Couldn't load Live TV."
         }
@@ -1180,46 +1222,108 @@ fun LiveScreen(api: CueApi, playback: Playback, openWeb: (String) -> Unit) {
         Centered { Text("Live TV isn't set up on this Cue yet: add your IPTV provider in Cue's settings.", color = Dim) }
         return
     }
-    val groups = buildList {
-        if (sports.channels.isNotEmpty() || sports.big != null) add("sports" to "Sports")
-        if (l.channels.any { it.favorite }) add("★" to "Favorites")
-        add("*" to "All channels")
-        val used = l.channels.map { it.category }.toSet()
-        addAll(l.groups.filter { it.first in used })
+    // Sorted by Cue's catalog, not the provider's groups: one of each
+    // channel (no copies, no dividers), in the picked country.
+    val place = country.orEmpty()
+    val real = remember(l) { l.channels.filter { !it.divider && !it.copy } }
+    // A channel the list gives no country shows in every one.
+    val here = remember(real, place) { if (place.isEmpty()) real else real.filter { it.country == place || it.country.isEmpty() } }
+    val topicCounts = remember(here) { here.groupingBy { it.topic }.eachCount() }
+    val favorites = remember(l) { l.channels.filter { it.favorite } }
+    val shown = remember(l, here, group, find) {
+        when {
+            find.isNotEmpty() -> real.filter { it.name.contains(find, true) || it.now?.title?.contains(find, true) == true }
+            group == "★" -> favorites
+            group == "*" || group.isEmpty() -> here
+            else -> here.filter { it.topic == group }
+        }.distinctBy { it.id }.take(400)
     }
-    val byId = remember(l) { l.channels.associateBy { it.id } }
-    val shown = when (group) {
-        "sports" -> sports.channels.mapNotNull { byId[it] }
-        "★" -> l.channels.filter { it.favorite }
-        "*", "" -> l.channels
-        else -> l.channels.filter { it.category == group }
-    }
-    // The highlighted channel, big at the top, as Home's banner is.
-    var spot by remember { mutableStateOf<Channel?>(null) }
-    val shownSpot = spot ?: shown.firstOrNull()
+    val countryName = l.countries.firstOrNull { it.first == place }?.second ?: "Every country"
+    // Back closes the country list, or the search for a game, first.
+    BackHandler(enabled = picking) { picking = false }
+    BackHandler(enabled = find.isNotEmpty() && !picking) { find = "" }
+    val hasGames = board.big != null || board.now.isNotEmpty() || board.soon.isNotEmpty()
+    // Where the highlight is, held outside composition: reading it here would
+    // rebuild the whole screen on every press of the remote.
+    val spot = remember { mutableStateOf<Channel?>(null) }
+    val gridState = androidx.compose.foundation.lazy.rememberLazyListState()
+    // The row of channels the highlight is on (-1: none, or the hero): the
+    // hero shows while it's on the first row or above, so Up from there
+    // reaches it. (Only crossing that line changes anything.)
+    val focusRow = remember { mutableIntStateOf(-1) }
+    val atTop by remember { androidx.compose.runtime.derivedStateOf { focusRow.intValue <= 0 } }
     Column(Modifier.fillMaxSize()) {
-    shownSpot?.let { LiveBanner(api, it) }
-    Row(Modifier.fillMaxSize().padding(top = 12.dp)) {
-        LazyColumn(Modifier.width(208.dp), contentPadding = PaddingValues(start = Gutter, bottom = 60.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            item {
-                Pill("Full guide") { openWeb("/watch/live") }
-                Gap(8.dp)
-            }
-            items(groups.distinctBy { it.first }, key = { it.first }) { (id, name) ->
-                ChoiceTab(name, selected = id == group, modifier = Modifier.fillMaxWidth()) { group = id }
+        androidx.compose.animation.AnimatedVisibility(
+            visible = atTop,
+            enter = androidx.compose.animation.expandVertically(tween(320, easing = Settle)) + fadeIn(tween(320)),
+            exit = androidx.compose.animation.shrinkVertically(tween(280, easing = Settle)) + fadeOut(tween(200)),
+        ) {
+            Box(Modifier.padding(top = 14.dp)) {
+                if (hasGames) LiveHero(board) { g ->
+                    val ch = g.channelId?.let { id -> l.channels.firstOrNull { it.id == id } }
+                    // No channel matched: every channel whose name or show has the team in it.
+                    if (ch != null) playback.playLive(ch, shown) else find = g.home.name
+                }
+                else SpotBanner(api) { spot.value ?: shown.firstOrNull() }
             }
         }
-        CompositionLocalProvider(LocalBringIntoViewSpec provides PivotSpec) {
-            LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(start = 20.dp, end = Gutter, top = 6.dp, bottom = 60.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                val big = sports.big
-                if (group == "sports" && big != null) item(key = "big") { BigGameCard(big) }
-                items(shown.distinctBy { it.id }.take(400), key = { it.id }) { ch ->
-                    ChannelCard(api, ch, onFocus = { spot = ch }) { playback.playLive(ch, shown) }
+        Row(Modifier.fillMaxSize().padding(top = 16.dp)) {
+            LazyColumn(Modifier.width(214.dp), contentPadding = PaddingValues(start = Gutter, bottom = 60.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                item {
+                    Text("CHANNELS", fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.5.sp, color = Dim,
+                        modifier = Modifier.padding(start = 6.dp, bottom = 6.dp))
+                }
+                if (picking) {
+                    // The countries, most channels first; then every country.
+                    items(l.countries + Triple("", "Every country", real.size), key = { "c-" + it.first }) { (code, name, n) ->
+                        ChoiceTab("$name  ·  $n", selected = code == place, modifier = Modifier.fillMaxWidth()) {
+                            country = code
+                            api.liveCountry = code
+                            picking = false
+                            find = ""
+                            if (group != "★") group = "*"
+                        }
+                    }
+                } else {
+                    if (favorites.isNotEmpty()) item(key = "★") {
+                        ChoiceTab("Favorites  ·  ${favorites.size}", selected = group == "★" && find.isEmpty(), modifier = Modifier.fillMaxWidth()) { group = "★"; find = "" }
+                    }
+                    if (l.countries.isNotEmpty()) item(key = "country") {
+                        ChoiceTab("$countryName  ›", selected = false, modifier = Modifier.fillMaxWidth()) { picking = true }
+                    }
+                    item(key = "*") {
+                        ChoiceTab("All topics  ·  ${here.size}", selected = group == "*" && find.isEmpty(), modifier = Modifier.fillMaxWidth()) { group = "*"; find = "" }
+                    }
+                    items(l.topics.filter { (topicCounts[it.first] ?: 0) > 0 }, key = { "t-" + it.first }) { (key, name) ->
+                        ChoiceTab("$name  ·  ${topicCounts[key] ?: 0}", selected = group == key && find.isEmpty(), modifier = Modifier.fillMaxWidth()) { group = key; find = "" }
+                    }
+                }
+                item {
+                    Gap(10.dp)
+                    Pill("Full guide") { openWeb("/watch/live") }
+                }
+            }
+            CompositionLocalProvider(LocalBringIntoViewSpec provides PivotSpec) {
+                LazyColumn(Modifier.fillMaxSize(), state = gridState, contentPadding = PaddingValues(start = 18.dp, end = Gutter, top = 2.dp, bottom = 60.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    item(key = "head") {
+                        Row(verticalAlignment = Alignment.Bottom) {
+                            Text(if (find.isNotEmpty()) "Showing “$find”" else "On now", fontFamily = Type.display(), fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                            HGap(10.dp)
+                            Text(if (find.isNotEmpty()) "${shown.size} channels, every country" else "${shown.size} channels live", fontSize = 11.sp, color = Dim, modifier = Modifier.padding(bottom = 2.dp))
+                        }
+                    }
+                    itemsIndexed(shown.chunked(2), key = { _, row -> row.first().id }) { i, row ->
+                        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                            row.forEach { ch ->
+                                ChannelTile(api, ch, Modifier.weight(1f), onFocus = { spot.value = ch; focusRow.intValue = i }) { playback.playLive(ch, shown) }
+                            }
+                            if (row.size == 1) Box(Modifier.weight(1f))
+                        }
+                    }
                 }
             }
         }
-    }
     }
 }
 
