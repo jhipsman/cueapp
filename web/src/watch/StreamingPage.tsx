@@ -20,6 +20,18 @@ const DEFAULTS: StreamPrefs = {
   lightSound: true,
 };
 
+// The services a profile can say it has (the server's watch.ServiceKeys).
+const SERVICES: [string, string][] = [
+  ["netflix", "Netflix"],
+  ["prime", "Prime Video"],
+  ["disney", "Disney+"],
+  ["max", "Max"],
+  ["hulu", "Hulu"],
+  ["peacock", "Peacock"],
+  ["paramount", "Paramount+"],
+  ["appletv", "Apple TV+"],
+];
+
 type Choice<T extends string> = { value: T; label: string; hint: string };
 
 const QUALITIES: Choice<StreamPrefs["quality"]>[] = [
@@ -199,6 +211,22 @@ export default function StreamingPage() {
             "Over TrueHD and DTS-HD, which most TVs can’t send to speakers",
             prefs.lightSound,
             () => set({ lightSound: !prefs.lightSound }),
+          )}
+        </div>
+      </section>
+
+      <section>
+        <h2>My services</h2>
+        <p className="wx-dim">
+          The streaming services you pay for. Titles on them get a Watch on button that opens them there (on Fire TV and Google TV, in
+          the service's own app), and Cue doesn't fetch them ahead of time.
+        </p>
+        <div className="wx-theme-options">
+          {SERVICES.map(([key, name]) =>
+            <span key={key} style={{ display: "contents" }}>{toggle(name, "", (prefs.services ?? []).includes(key), () => {
+              const have = prefs.services ?? [];
+              set({ services: have.includes(key) ? have.filter((k) => k !== key) : [...have, key] });
+            })}</span>,
           )}
         </div>
       </section>

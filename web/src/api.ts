@@ -278,6 +278,7 @@ export interface StreamPrefs {
   dolbyVision: 'prefer' | 'allow' | 'avoid'
   efficient: boolean // prefer HEVC and AV1
   lightSound: boolean // prefer Dolby Digital Plus / Atmos over TrueHD and DTS-HD
+  services?: string[] // My services: "netflix", "disney"… (Watch on, and not fetched ahead)
 }
 // A profile's colors in Watch.
 export interface WatchTheme {
@@ -521,6 +522,8 @@ export interface WatchProvider {
   name: string
   logo?: string
   url: string
+  key?: string // Cue's name for the service ("netflix")
+  mine?: boolean // one this profile has (My services), or a free one
 }
 
 // Where else a title streams (TMDB's list, from JustWatch).

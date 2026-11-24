@@ -629,9 +629,12 @@ fun MainScreen(api: CueApi, playback: Playback, openWeb: (String) -> Unit, chang
         },
         label = "screen",
     ) { t ->
-    // A title opened from a title (More Like This) takes its place, so Back
-    // always goes straight back to where you were.
-    if (t != null) TitleScreen(api, playback, t, titleMemory) { c -> open[open.lastIndex] = c }
+    // A title opened from a title (More Like This) goes on top of it, so
+    // Back returns to the one before (a few deep at most).
+    if (t != null) TitleScreen(api, playback, t, titleMemory) { c ->
+        open.add(c)
+        if (open.size > 8) open.removeAt(0)
+    }
     else Box(Modifier.fillMaxSize().onPreviewKeyEvent {
         if (it.type == KeyEventType.KeyDown && (it.key == androidx.compose.ui.input.key.Key.Search || it.key == androidx.compose.ui.input.key.Key.VoiceAssist)) {
             tab = 4
@@ -970,7 +973,10 @@ fun TitleScreen(api: CueApi, playback: Playback, card: Tile, memory: FocusMemory
         Box(Modifier.fillMaxSize().background(Brush.horizontalGradient(0f to shade(0.95f), 0.42f to shade(0.65f), 0.75f to shade(0.10f))))
         Box(Modifier.fillMaxSize().background(Brush.verticalGradient(0.45f to Color.Transparent, 1f to shade(0.95f))))
         CompositionLocalProvider(LocalBringIntoViewSpec provides GentleSpec) {
-        LazyColumn(contentPadding = PaddingValues(bottom = 120.dp)) {
+        // Back up at the buttons: the whole top again, title and all (only
+        // bringing the buttons into view left the title above the screen).
+        val pageState = androidx.compose.foundation.lazy.rememberLazyListState()
+        LazyColumn(state = pageState, contentPadding = PaddingValues(bottom = 120.dp)) {
             item {
                 Column(Modifier.padding(start = Gutter, top = 150.dp, bottom = 20.dp).width(520.dp)) {
                     Box(Modifier.rise(0, 24.dp)) { TitleMark(c.title, logo, maxWidth = 380.dp, maxHeight = 120.dp, fontSize = 40.sp) }
@@ -997,7 +1003,17 @@ fun TitleScreen(api: CueApi, playback: Playback, card: Tile, memory: FocusMemory
                         }
                     }
                     Gap(18.dp)
-                    Row(Modifier.rise(290), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    // Two buttons with words at most (Play, Watch on a service); the
+                    // rest are icons, named under the row while highlighted.
+                    var caption by remember(t) { mutableStateOf<String?>(null) }
+                    val ctx = androidx.compose.ui.platform.LocalContext.current
+                    var service by remember(c.key) { mutableStateOf<ServiceApp?>(null) }
+                    LaunchedEffect(c.key) {
+                        val p = runCatching { api.obj("/api/watch/providers/${c.kind}/${c.tmdbId}?region=US") }.getOrNull()
+                        service = p?.let { ServiceApps.pick(ctx, it) }
+                    }
+                    Row(Modifier.rise(290).onFocusChanged { if (it.hasFocus) scope.launch { pageState.animateScrollToItem(0) } },
+                        horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
                         val resumeTv = c.kind == "tv" && t.resumeSeason != null && t.resumeEpisode != null
                         val started = (t.resumePosition ?: 0.0) > 0
                         val notOut = t.notOut
@@ -1010,7 +1026,6 @@ fun TitleScreen(api: CueApi, playback: Playback, card: Tile, memory: FocusMemory
                                 val next = !reminding
                                 scope.launch { if (runCatching { api.setRemind(c.kind, c.tmdbId, next) }.isSuccess) reminding = next }
                             }
-                            Pill(notOut) {}
                         } else Pill(
                             if (started) "Resume" else "Play",
                             primary = true,
@@ -1025,34 +1040,44 @@ fun TitleScreen(api: CueApi, playback: Playback, card: Tile, memory: FocusMemory
                                 playback.playTitle("movie", c.tmdbId, 0, 0)
                             }
                         }
-                        if (t.theaterNote != null) Pill(if (reminding) "Reminding you" else "Remind me when it streams",
-                            icon = if (reminding) app.cue.tv.R.drawable.ic_cue_check else app.cue.tv.R.drawable.ic_cue_calendar) {
-                            val next = !reminding
-                            scope.launch { if (runCatching { api.setRemind(c.kind, c.tmdbId, next) }.isSuccess) reminding = next }
+                        // On a service this profile has: its own app, one press.
+                        service?.let { sv ->
+                            Pill("Watch on ${sv.name}") {
+                                if (!ServiceApps.open(ctx, sv.key, c.title)) caption = "Couldn't open ${sv.name} on this TV."
+                            }
                         }
-                        Pill("My List", icon = if (inList) app.cue.tv.R.drawable.ic_cue_check else app.cue.tv.R.drawable.ic_cue_add) {
+                        val say: (String?) -> Unit = { caption = it }
+                        if (t.theaterNote != null) IconAction(if (reminding) "Reminding you when it streams" else "Remind me when it streams",
+                            icon = if (reminding) app.cue.tv.R.drawable.ic_cue_check else app.cue.tv.R.drawable.ic_cue_calendar, on = reminding, onFocus = say) {
+                            val next = !reminding
+                            scope.launch { if (runCatching { api.setRemind(c.kind, c.tmdbId, next) }.isSuccess) { reminding = next; caption = if (next) "Reminding you when it streams" else "Remind me when it streams" } }
+                        }
+                        IconAction(if (inList) "In My List" else "Add to My List",
+                            icon = if (inList) app.cue.tv.R.drawable.ic_cue_check else app.cue.tv.R.drawable.ic_cue_add, on = inList, onFocus = say) {
                             scope.launch {
                                 val on = !inList
-                                if (runCatching { api.setInList(c.kind, c.tmdbId, on) }.isSuccess) inList = on
+                                if (runCatching { api.setInList(c.kind, c.tmdbId, on) }.isSuccess) { inList = on; caption = if (on) "In My List" else "Add to My List" }
                             }
                         }
                         // Thumbs: "Not for me" keeps it off Home.
                         var thumb by remember(t) { mutableStateOf(t.thumb) }
-                        Pill(if (thumb == "up") "Liked" else "Like", icon = if (thumb == "up") app.cue.tv.R.drawable.ic_cue_check else null) {
+                        IconAction(if (thumb == "up") "Liked" else "Like", glyph = "👍", on = thumb == "up", onFocus = say) {
                             val next = if (thumb == "up") "" else "up"
-                            scope.launch { if (runCatching { api.setThumb(c.kind, c.tmdbId, next) }.isSuccess) thumb = next }
+                            scope.launch { if (runCatching { api.setThumb(c.kind, c.tmdbId, next) }.isSuccess) { thumb = next; caption = if (next == "up") "Liked" else "Like" } }
                         }
-                        Pill(if (thumb == "down") "Not for me ✓" else "Not for me") {
+                        IconAction(if (thumb == "down") "Not for me (it stays off Home)" else "Not for me", glyph = "👎", on = thumb == "down", onFocus = say) {
                             val next = if (thumb == "down") "" else "down"
-                            scope.launch { if (runCatching { api.setThumb(c.kind, c.tmdbId, next) }.isSuccess) thumb = next }
+                            scope.launch { if (runCatching { api.setThumb(c.kind, c.tmdbId, next) }.isSuccess) { thumb = next; caption = if (next == "down") "Not for me (it stays off Home)" else "Not for me" } }
                         }
                         if (started || (c.kind == "tv" && t.resumeEpisode != null && (t.resumeEpisode != 1 || t.resumeSeason != t.seasons.firstOrNull()?.number))) {
                             var off by remember(t) { mutableStateOf(false) }
-                            Pill(if (off) "Hidden" else "Hide from row") {
-                                scope.launch { if (runCatching { api.hideFromContinue(c.kind, c.tmdbId) }.isSuccess) off = true }
+                            IconAction(if (off) "Hidden from Continue watching" else "Hide from Continue watching", glyph = "✕", on = off, onFocus = say) {
+                                scope.launch { if (runCatching { api.hideFromContinue(c.kind, c.tmdbId) }.isSuccess) { off = true; caption = "Hidden from Continue watching" } }
                             }
                         }
                     }
+                    // The highlighted icon's name (or when it's out, for a title not out yet).
+                    Text(caption ?: t.notOut ?: "", fontSize = 11.sp, color = Dim, maxLines = 1, modifier = Modifier.padding(start = 4.dp, top = 8.dp).height(16.dp))
                 }
             }
             if (c.kind == "tv" && t.seasons.isNotEmpty()) {
@@ -1478,23 +1503,14 @@ fun ProfileScreen(api: CueApi, switchProfile: () -> Unit, changeServer: () -> Un
             Text(api.profileName, fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color.White)
             Text(api.server, fontSize = 12.sp, color = Dim)
             Gap(20.dp)
+            // Just the few things people come here for; the rest (profiles,
+            // the server, Light mode, the tour, the web version) is in Settings.
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 if (AppUpdate.offer != null) Pill("Update Cue", primary = true) { AppUpdate.showing = true }
                 Pill("Switch profile", primary = AppUpdate.offer == null, onClick = switchProfile)
-                Pill("Your year in Cue") { openWeb("/watch/year") }
-                Pill("How Cue works") { Tour.showing = true }
-                Pill("Web version") { openWeb("/watch") }
-                Pill("Change server", onClick = changeServer)
-            }
-            Gap(12.dp)
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                Pill("Manage profiles") { managing = true }
                 Pill("Settings", onClick = openSettings)
-                Pill(if (light) "Light mode: on" else "Light mode: off") { LightMode.set(ctx, !light) }
+                Pill("Your year in Cue") { openWeb("/watch/year") }
             }
-            Gap(10.dp)
-            Text(if (light) "Still pictures instead of moving previews, for a smoother TV." else "Moving previews on. Turn Light mode on if this TV feels slow.",
-                fontSize = 11.sp, color = Dim)
         }
     }
 }

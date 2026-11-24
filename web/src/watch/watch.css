@@ -8565,3 +8565,12 @@ button.wx-switch.on:hover {
   background: var(--wx-accent);
   transition: width 0.6s ease;
 }
+
+/* A title not out yet: when it is, as a line beside Remind me. */
+.wx-not-out-note {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--wx-dim);
+  font-size: 0.88rem;
+}

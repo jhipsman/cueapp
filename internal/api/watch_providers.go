@@ -1,9 +1,11 @@
 package api
 
 import (
+	"context"
 	"net/http"
 	"net/url"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -17,6 +19,42 @@ type watchProvider struct {
 	Name string `json:"name"`
 	Logo string `json:"logo,omitempty"`
 	URL  string `json:"url"`
+	// Key is Cue's name for the service ("netflix"; "" for one it doesn't
+	// know), which the TV app opens in the service's own app.
+	Key string `json:"key,omitempty"`
+	// Mine: a service this profile has (My services), or a free one.
+	Mine bool `json:"mine,omitempty"`
+}
+
+// providerKeys are TMDB's provider ids for the services Cue knows by name
+// (with their ad tiers and channel versions); the free ones too.
+var providerKeys = map[int]string{
+	8: "netflix", 1796: "netflix",
+	9: "prime", 119: "prime", 2100: "prime",
+	337:  "disney",
+	1899: "max", 384: "max", 1825: "max",
+	15:  "hulu",
+	386: "peacock", 387: "peacock",
+	531: "paramount", 2303: "paramount", 2616: "paramount", 582: "paramount",
+	350: "appletv",
+	73:  "tubi", 300: "pluto", 207: "roku", 538: "plex", 613: "freevee",
+}
+
+// onMyService says a title streams on one of the services in services.
+func (s *Server) onMyService(ctx context.Context, kind string, tmdbID int, services []string) bool {
+	if len(services) == 0 || s.TMDB() == nil {
+		return false
+	}
+	wp, err := s.TMDB().GetWatchProviders(ctx, kind, tmdbID, "US")
+	if err != nil {
+		return false
+	}
+	for _, p := range wp.Subscription {
+		if slices.Contains(services, providerKeys[p.ID]) {
+			return true
+		}
+	}
+	return false
 }
 
 type watchProvidersAnswer struct {
@@ -84,8 +122,9 @@ func (s *Server) handleWatchProviders(w http.ResponseWriter, r *http.Request) {
 	} else if d, err := tm.GetShowFull(r.Context(), tmdbID); err == nil {
 		title = d.Name
 	}
+	services := s.profileStreamPrefs(r).Services
 	seen := map[int]bool{}
-	add := func(list []metadata.Provider) []watchProvider {
+	add := func(list []metadata.Provider, free bool) []watchProvider {
 		var res []watchProvider
 		for _, p := range list {
 			if seen[p.ID] {
@@ -96,11 +135,23 @@ func (s *Server) handleWatchProviders(w http.ResponseWriter, r *http.Request) {
 			if title != "" {
 				link = providerSearch(p.Name, title, wp.Link)
 			}
-			res = append(res, watchProvider{Name: p.Name, Logo: metadata.LogoURL(p.LogoPath), URL: link})
+			key := providerKeys[p.ID]
+			mine := free || (key != "" && slices.Contains(services, key))
+			res = append(res, watchProvider{Name: p.Name, Logo: metadata.LogoURL(p.LogoPath), URL: link, Key: key, Mine: mine})
 		}
 		return res
 	}
-	out.Free = append(out.Free, add(append(append([]metadata.Provider(nil), wp.Free...), wp.Ads...))...)
-	out.Subscription = append(out.Subscription, add(wp.Subscription)...)
+	out.Free = append(out.Free, add(append(append([]metadata.Provider(nil), wp.Free...), wp.Ads...), true)...)
+	out.Subscription = append(out.Subscription, add(wp.Subscription, false)...)
+	// Yours first: the button shows the first of them.
+	slices.SortStableFunc(out.Subscription, func(a, b watchProvider) int {
+		switch {
+		case a.Mine == b.Mine:
+			return 0
+		case a.Mine:
+			return -1
+		}
+		return 1
+	})
 	writeJSON(w, http.StatusOK, out)
 }

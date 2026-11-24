@@ -33,6 +33,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
@@ -194,6 +198,41 @@ fun TitleMark(title: String, logo: String?, maxWidth: Dp, maxHeight: Dp, fontSiz
 // solid white with dark words and grows a touch. One look throughout, so
 // it's always clear where the highlight is. An icon (a drawable) can sit
 // before the words.
+// A small round button with just an emoji or icon (👍, ＋), for the actions
+// that don't need words on a title page. Its name shows elsewhere while it
+// has the highlight (onFocus gets it, null when it leaves); on marks it as
+// done (liked, in My List).
+@Composable
+fun IconAction(label: String, glyph: String? = null, icon: Int? = null, on: Boolean = false, modifier: Modifier = Modifier,
+               onFocus: (String?) -> Unit = {}, onClick: () -> Unit) {
+    val shape = CircleShape
+    Button(
+        onClick = onClick,
+        modifier = modifier.size(36.dp).onFocusChanged { onFocus(if (it.isFocused) label else null) }
+            .semantics { contentDescription = label },
+        shape = ButtonDefaults.shape(shape),
+        scale = ButtonDefaults.scale(focusedScale = 1.1f, pressedScale = 0.95f),
+        colors = ButtonDefaults.colors(
+            containerColor = if (on) Color(0x59FFFFFF) else Color(0x24FFFFFF),
+            contentColor = Color.White,
+            focusedContainerColor = Color.White,
+            focusedContentColor = Color(0xFF0B0C0F),
+        ),
+        border = ButtonDefaults.border(
+            border = Border(BorderStroke(1.dp, if (on) Color(0x80FFFFFF) else Color(0x1FFFFFFF)), shape = shape),
+            focusedBorder = Border(BorderStroke(0.dp, Color.Transparent), shape = shape),
+        ),
+        contentPadding = PaddingValues(0.dp),
+    ) {
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            when {
+                icon != null -> androidx.tv.material3.Icon(androidx.compose.ui.res.painterResource(icon), contentDescription = null, modifier = Modifier.size(15.dp))
+                glyph != null -> Text(glyph, fontSize = 15.sp)
+            }
+        }
+    }
+}
+
 @Composable
 fun Pill(text: String, primary: Boolean = false, modifier: Modifier = Modifier, small: String? = null, icon: Int? = null, onClick: () -> Unit) {
     val shape = RoundedCornerShape(50)

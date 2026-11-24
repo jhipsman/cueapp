@@ -285,6 +285,9 @@ func (s *Server) prepareNews(ctx context.Context, pid int64, targets []prepareWa
 	if s.premiumizeClient() == nil {
 		return
 	}
+	// What's on a service this profile pays for is watched there: not
+	// fetched ahead of time (it would only use the Premiumize allowance).
+	services := s.WatchRepo.ProfileStreamPrefs(pid).Services
 	sent := 0
 	for _, want := range targets {
 		if sent >= 4 || ctx.Err() != nil {
@@ -300,6 +303,13 @@ func (s *Server) prepareNews(ctx context.Context, pid int64, targets []prepareWa
 			t, status, _ = s.tmdbEpisodeTarget(ctx, want.tmdbID, want.season, want.episode)
 		}
 		if status != 0 {
+			continue
+		}
+		kind := "tv"
+		if want.season == 0 && want.episode == 0 {
+			kind = "movie"
+		}
+		if s.onMyService(ctx, kind, want.tmdbID, services) {
 			continue
 		}
 		if e, ok := playCache.get(t.key); ok && len(e.candidates) > 0 {

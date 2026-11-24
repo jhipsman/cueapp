@@ -146,27 +146,42 @@ export default function TitlePage({ kind }: { kind: WatchKind }) {
           <div className="wx-actions">
             {title.notOut ? (
               <>
-                <span className="wx-btn wx-not-out" role="status">
-                  <Icon name="calendar" size={20} /> {title.notOut}
-                </span>
                 <button className="wx-btn play" onClick={() => void toggleRemind()} aria-pressed={reminding}>
                   <Icon name={reminding ? 'check' : 'clock'} size={20} /> {reminding ? 'Reminding you' : 'Remind me'}
                 </button>
+                <span className="wx-not-out-note" role="status">
+                  <Icon name="calendar" size={16} /> {title.notOut}
+                </span>
               </>
             ) : (
               <button className="wx-btn play" onClick={() => navigate(playHref(kind, tmdbId, title.resumeSeason, title.resumeEpisode))}>
                 <Icon name="play" size={22} /> {playLabel}
               </button>
             )}
-            <button className="wx-btn" onClick={() => void toggleList()} aria-pressed={inList}>
-              <Icon name={inList ? 'check' : 'plus'} size={20} strokeWidth={2.5} /> My List
+            {/* On a service this profile has (My services): there, in one click. */}
+            {!title.notOut && <WatchOnService kind={kind} tmdbId={tmdbId} />}
+            {!title.notOut && <PlayOnTV kind={kind} tmdbId={tmdbId} season={title.resumeSeason} episode={title.resumeEpisode} />}
+            {/* The rest: icons only, named when pointed at. */}
+            <button
+              className={`wx-btn wx-round${inList ? ' on' : ''}`}
+              onClick={() => void toggleList()}
+              aria-pressed={inList}
+              title={inList ? 'In My List' : 'Add to My List'}
+              aria-label={inList ? 'In My List' : 'Add to My List'}
+            >
+              <Icon name={inList ? 'check' : 'plus'} size={20} strokeWidth={2.5} />
             </button>
             {title.theaterNote && (
-              <button className="wx-btn" onClick={() => void toggleRemind()} aria-pressed={reminding} title="Tells you when it streams properly">
-                <Icon name={reminding ? 'check' : 'clock'} size={18} /> {reminding ? 'Reminding you' : 'Remind me when it streams'}
+              <button
+                className={`wx-btn wx-round${reminding ? ' on' : ''}`}
+                onClick={() => void toggleRemind()}
+                aria-pressed={reminding}
+                title={reminding ? 'Reminding you when it streams' : 'Remind me when it streams'}
+                aria-label={reminding ? 'Reminding you when it streams' : 'Remind me when it streams'}
+              >
+                <Icon name={reminding ? 'check' : 'clock'} size={18} />
               </button>
             )}
-            {!title.notOut && <PlayOnTV kind={kind} tmdbId={tmdbId} season={title.resumeSeason} episode={title.resumeEpisode} />}
             <button className={`wx-btn wx-round${thumb === 'up' ? ' on' : ''}`} onClick={() => void thumbIt('up')} aria-pressed={thumb === 'up'} title="I like this" aria-label="I like this">
               <Icon name="thumbs-up" size={20} />
             </button>
@@ -180,8 +195,14 @@ export default function TitlePage({ kind }: { kind: WatchKind }) {
               <Icon name="thumbs-down" size={20} />
             </button>
             {(resuming || startedShow) && (
-              <button className="wx-btn" disabled={offRow} onClick={() => void hideFromRow()} title="Where you were is kept">
-                <Icon name={offRow ? 'check' : 'x'} size={18} /> {offRow ? 'Off Continue Watching' : 'Remove from Continue Watching'}
+              <button
+                className={`wx-btn wx-round${offRow ? ' on' : ''}`}
+                disabled={offRow}
+                onClick={() => void hideFromRow()}
+                title={offRow ? 'Off Continue Watching' : 'Remove from Continue Watching (where you were is kept)'}
+                aria-label={offRow ? 'Off Continue Watching' : 'Remove from Continue Watching'}
+              >
+                <Icon name={offRow ? 'check' : 'x'} size={18} />
               </button>
             )}
           </div>
@@ -365,5 +386,30 @@ function CastRow({ people }: { people: WatchPerson[] }) {
         ))}
       </div>
     </section>
+  )
+}
+
+// WatchOnService: "Watch on Netflix" for a title on a service this profile
+// has (My services in Settings), opening it there. Nothing otherwise.
+function WatchOnService({ kind, tmdbId }: { kind: 'movie' | 'tv'; tmdbId: number }) {
+  const [p, setP] = useState<{ name: string; url: string } | null>(null)
+  useEffect(() => {
+    let live = true
+    api
+      .watchProviders(kind, tmdbId)
+      .then((w) => {
+        const mine = w.subscription.find((x) => x.mine)
+        if (live && mine) setP({ name: mine.name, url: mine.url })
+      })
+      .catch(() => undefined)
+    return () => {
+      live = false
+    }
+  }, [kind, tmdbId])
+  if (!p) return null
+  return (
+    <a className="wx-btn" href={p.url} target="_blank" rel="noreferrer">
+      <Icon name="play" size={18} /> Watch on {p.name}
+    </a>
   )
 }

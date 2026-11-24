@@ -150,6 +150,16 @@ func (r *Repo) Profile(userID, id int64) (Profile, error) {
 	return p, err
 }
 
+// ProfileStreamPrefs is a profile's streaming preferences by its id alone
+// (for the server's own rounds; the defaults when it can't be read).
+func (r *Repo) ProfileStreamPrefs(id int64) StreamPrefs {
+	p, err := scanProfile(r.db.QueryRow(`SELECT `+profileCols+` FROM profiles WHERE id = ?`, id))
+	if err != nil {
+		return DefaultStreamPrefs
+	}
+	return p.StreamPrefs
+}
+
 // AddProfile makes a new profile for userID.
 func (r *Repo) AddProfile(userID int64, name, avatar string) (Profile, error) {
 	name, err := cleanName(name)
