@@ -34,6 +34,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.foundation.focusGroup
 import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -72,10 +73,21 @@ private const val ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789" // no 0/O, 1/I/L
 @Composable
 fun SearchScreen(api: CueApi, memory: FocusMemory, listen: Boolean = false, listened: () -> Unit = {}, onAsk: (() -> Unit)? = null, askFocus: Boolean = false, askFocused: () -> Unit = {}, onCard: (Tile) -> Unit) {
     val askButton = remember { androidx.compose.ui.focus.FocusRequester() }
+    // Back from Ask Cue: the highlight onto its button. Asked again until
+    // it's there: just after Ask Cue closes (taking the highlighted idea
+    // with it) a TV can refuse the first ask, which left nothing
+    // highlighted.
+    var askLanded by remember { mutableStateOf(false) } // it got there (even if the remote has moved on since)
     LaunchedEffect(askFocus) {
         if (!askFocus) return@LaunchedEffect
-        kotlinx.coroutines.delay(150)
-        runCatching { askButton.requestFocus() }
+        askLanded = false
+        // Once it's there, done: the remote may move on at once (Back to
+        // the menu), and must not be pulled back.
+        for (i in 0 until 12) {
+            kotlinx.coroutines.delay(if (i == 0) 120L else 100L)
+            if (askLanded) break
+            runCatching { askButton.requestFocus() }
+        }
         askFocused()
     }
     val ctx = LocalContext.current
@@ -165,7 +177,7 @@ fun SearchScreen(api: CueApi, memory: FocusMemory, listen: Boolean = false, list
             // Ask Cue lives here: first, so coming over from the side menu
             // lands on it rather than on the typing box (and its keyboard).
             if (onAsk != null) {
-                Box(Modifier.rise(30)) { Pill("✨  Ask Cue", primary = true, modifier = Modifier.focusRequester(askButton), onClick = onAsk) }
+                Box(Modifier.rise(30)) { Pill("✨  Ask Cue", primary = true, modifier = Modifier.focusRequester(askButton).onFocusChanged { if (it.hasFocus) askLanded = true }, onClick = onAsk) }
                 Spacer(Modifier.height(12.dp))
             }
             OutlinedTextField(

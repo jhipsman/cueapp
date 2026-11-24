@@ -85,6 +85,23 @@ class ScreensTest {
         compose.mainClock.advanceTimeBy(400)
     }
 
+    // Waits for the highlight to be on something with this text.
+    private fun focusedOn(text: String) {
+        val until = System.currentTimeMillis() + 5_000
+        val node = androidx.compose.ui.test.hasText(text, substring = true) and androidx.compose.ui.test.isFocused()
+        val inside = node or androidx.compose.ui.test.hasAnyDescendant(node) or
+            (androidx.compose.ui.test.isFocused() and androidx.compose.ui.test.hasAnyDescendant(androidx.compose.ui.test.hasText(text, substring = true)))
+        while (compose.onAllNodes(inside, useUnmergedTree = true).fetchSemanticsNodes().isEmpty()) {
+            if (System.currentTimeMillis() > until) {
+                compose.onRoot().captureRoboImage("build/screens/not-focused-" + text.replace(Regex("[^A-Za-z0-9]+"), "-") + ".png")
+                val focused = compose.onAllNodes(androidx.compose.ui.test.isFocused(), useUnmergedTree = true).fetchSemanticsNodes()
+                throw AssertionError("the highlight isn't on \"$text\"; focused: ${focused.map { it.config }}")
+            }
+            Thread.sleep(50)
+            compose.mainClock.advanceTimeBy(100)
+        }
+    }
+
     private fun shot(name: String) {
         compose.mainClock.advanceTimeBy(900) // let it settle
         n++
@@ -133,6 +150,8 @@ class ScreensTest {
         // A title, from Home's first row.
         press(KeyEvent.KEYCODE_BACK) // Ask Cue to Search
         see("Search from your phone")
+        // The highlight back on Ask Cue's button (as on the emulator walk-through).
+        focusedOn("Ask Cue")
         press(KeyEvent.KEYCODE_BACK) // to the menu
         press(KeyEvent.KEYCODE_BACK) // Home
         see("Continue watching")
