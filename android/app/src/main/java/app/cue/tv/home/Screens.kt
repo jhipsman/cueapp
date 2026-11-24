@@ -1140,7 +1140,10 @@ fun PosterGrid(items: List<Tile>, memory: FocusMemory, prefix: String, onCard: (
 fun LiveScreen(api: CueApi, playback: Playback, openWeb: (String) -> Unit) {
     var live by remember { mutableStateOf<LiveChannels?>(null) }
     var problem by remember { mutableStateOf("") }
-    var group by remember { mutableStateOf("") }
+    var group by remember { mutableStateOf("") } // "★" favourites, "*" every topic, else a topic's key
+    var country by remember { mutableStateOf<String?>(null) } // "" is every country
+    var picking by remember { mutableStateOf(false) } // the column lists the countries
+    var find by remember { mutableStateOf("") } // a game no channel was matched to: channels showing it
     var board by remember { mutableStateOf(SportsBoard(null, emptyList(), emptyList())) }
     LaunchedEffect(Unit) {
         // Scores change: read again every minute while Live TV is open.
@@ -1154,6 +1157,7 @@ fun LiveScreen(api: CueApi, playback: Playback, openWeb: (String) -> Unit) {
             val l = api.channels()
             live = l
             if (group.isEmpty()) group = if (l.channels.any { it.favorite }) "★" else "*"
+            if (country == null) country = api.liveCountry ?: l.home
         } catch (e: Exception) {
             problem = e.message ?: "Couldn't load Live TV."
         }
@@ -1167,18 +1171,25 @@ fun LiveScreen(api: CueApi, playback: Playback, openWeb: (String) -> Unit) {
         Centered { Text("Live TV isn't set up on this Cue yet: add your IPTV provider in Cue's settings.", color = Dim) }
         return
     }
-    val groups = buildList {
-        if (l.channels.any { it.favorite }) add("★" to "Favorites")
-        add("*" to "All channels")
-        val used = l.channels.map { it.category }.toSet()
-        addAll(l.groups.filter { it.first in used })
+    // Sorted by Cue's catalog, not the provider's groups: one of each
+    // channel (no copies, no dividers), in the picked country.
+    val place = country.orEmpty()
+    val real = remember(l) { l.channels.filter { !it.divider && !it.copy } }
+    val here = remember(real, place) { if (place.isEmpty()) real else real.filter { it.country == place } }
+    val topicCounts = remember(here) { here.groupingBy { it.topic }.eachCount() }
+    val favorites = remember(l) { l.channels.filter { it.favorite } }
+    val shown = remember(l, here, group, find) {
+        when {
+            find.isNotEmpty() -> real.filter { it.name.contains(find, true) || it.now?.title?.contains(find, true) == true }
+            group == "★" -> favorites
+            group == "*" || group.isEmpty() -> here
+            else -> here.filter { it.topic == group }
+        }.distinctBy { it.id }.take(400)
     }
-    val counts = remember(l) { l.channels.groupingBy { it.category }.eachCount() }
-    val shown = when (group) {
-        "★" -> l.channels.filter { it.favorite }
-        "*", "" -> l.channels
-        else -> l.channels.filter { it.category == group }
-    }.distinctBy { it.id }.take(400)
+    val countryName = l.countries.firstOrNull { it.first == place }?.second ?: "Every country"
+    // Back closes the country list, or the search for a game, first.
+    BackHandler(enabled = picking) { picking = false }
+    BackHandler(enabled = find.isNotEmpty() && !picking) { find = "" }
     val hasGames = board.big != null || board.now.isNotEmpty() || board.soon.isNotEmpty()
     var spot by remember { mutableStateOf<Channel?>(null) }
     val gridState = androidx.compose.foundation.lazy.rememberLazyListState()
@@ -1194,7 +1205,11 @@ fun LiveScreen(api: CueApi, playback: Playback, openWeb: (String) -> Unit) {
             exit = androidx.compose.animation.shrinkVertically(tween(280, easing = Settle)) + fadeOut(tween(200)),
         ) {
             Box(Modifier.padding(top = 14.dp)) {
-                if (hasGames) LiveHero(board) { id -> l.channels.firstOrNull { it.id == id }?.let { playback.playLive(it, shown) } }
+                if (hasGames) LiveHero(board) { g ->
+                    val ch = g.channelId?.let { id -> l.channels.firstOrNull { it.id == id } }
+                    // No channel matched: every channel whose name or show has the team in it.
+                    if (ch != null) playback.playLive(ch, shown) else find = g.home.name
+                }
                 else (spot ?: shown.firstOrNull())?.let { LiveBanner(api, it) }
             }
         }
@@ -1204,13 +1219,30 @@ fun LiveScreen(api: CueApi, playback: Playback, openWeb: (String) -> Unit) {
                     Text("CHANNELS", fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.5.sp, color = Dim,
                         modifier = Modifier.padding(start = 6.dp, bottom = 6.dp))
                 }
-                items(groups.distinctBy { it.first }, key = { it.first }) { (id, name) ->
-                    val n = when (id) {
-                        "★" -> l.channels.count { it.favorite }
-                        "*" -> l.channels.size
-                        else -> counts[id] ?: 0
+                if (picking) {
+                    // The countries, most channels first; then every country.
+                    items(l.countries + Triple("", "Every country", real.size), key = { "c-" + it.first }) { (code, name, n) ->
+                        ChoiceTab("$name  ·  $n", selected = code == place, modifier = Modifier.fillMaxWidth()) {
+                            country = code
+                            api.liveCountry = code
+                            picking = false
+                            find = ""
+                            if (group != "★") group = "*"
+                        }
                     }
-                    ChoiceTab("$name  ·  $n", selected = id == group, modifier = Modifier.fillMaxWidth()) { group = id }
+                } else {
+                    if (favorites.isNotEmpty()) item(key = "★") {
+                        ChoiceTab("Favorites  ·  ${favorites.size}", selected = group == "★" && find.isEmpty(), modifier = Modifier.fillMaxWidth()) { group = "★"; find = "" }
+                    }
+                    if (l.countries.isNotEmpty()) item(key = "country") {
+                        ChoiceTab("$countryName  ›", selected = false, modifier = Modifier.fillMaxWidth()) { picking = true }
+                    }
+                    item(key = "*") {
+                        ChoiceTab("All topics  ·  ${here.size}", selected = group == "*" && find.isEmpty(), modifier = Modifier.fillMaxWidth()) { group = "*"; find = "" }
+                    }
+                    items(l.topics.filter { (topicCounts[it.first] ?: 0) > 0 }, key = { "t-" + it.first }) { (key, name) ->
+                        ChoiceTab("$name  ·  ${topicCounts[key] ?: 0}", selected = group == key && find.isEmpty(), modifier = Modifier.fillMaxWidth()) { group = key; find = "" }
+                    }
                 }
                 item {
                     Gap(10.dp)
@@ -1222,9 +1254,9 @@ fun LiveScreen(api: CueApi, playback: Playback, openWeb: (String) -> Unit) {
                     verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     item(key = "head") {
                         Row(verticalAlignment = Alignment.Bottom) {
-                            Text("On now", fontFamily = Type.display(), fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                            Text(if (find.isNotEmpty()) "Showing “$find”" else "On now", fontFamily = Type.display(), fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.White)
                             HGap(10.dp)
-                            Text("${shown.size} channels live", fontSize = 11.sp, color = Dim, modifier = Modifier.padding(bottom = 2.dp))
+                            Text(if (find.isNotEmpty()) "${shown.size} channels, every country" else "${shown.size} channels live", fontSize = 11.sp, color = Dim, modifier = Modifier.padding(bottom = 2.dp))
                         }
                     }
                     itemsIndexed(shown.chunked(2), key = { _, row -> row.first().id }) { i, row ->

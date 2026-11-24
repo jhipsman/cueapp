@@ -8287,6 +8287,84 @@ button.wx-switch.on:hover {
   background: #fff;
   color: #0b0b0c;
 }
+/* All channels: a country, then the topics it has, as chips. */
+.wx-live-catalog {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+  min-width: 0;
+}
+.wx-live-country {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 4px 0 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+.wx-live-country select {
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 7px 6px;
+  cursor: pointer;
+}
+.wx-live-country select option {
+  color: #0b0b0c;
+}
+.wx-live-topics {
+  display: flex;
+  gap: 4px;
+  padding-left: 10px;
+  border-left: 1px solid rgba(255, 255, 255, 0.12);
+  overflow-x: auto;
+  scrollbar-width: none;
+  min-width: 0;
+}
+.wx-live-topics button {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: 0;
+  background: none;
+  color: var(--wx-dim);
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 7px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    color 0.15s;
+}
+.wx-live-topics button:hover {
+  color: #fff;
+}
+.wx-live-topics button.on {
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+}
+@media (max-width: 640px) {
+  .wx-live-catalog {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .wx-live-country {
+    align-self: flex-start;
+  }
+  .wx-live-topics {
+    border-left: 0;
+    padding-left: 0;
+  }
+}
 .wx-chan-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));

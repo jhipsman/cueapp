@@ -137,9 +137,22 @@ export interface LiveChannel {
   catchupDays?: number // days back the provider keeps it (catch-up)
   now?: LiveProgramme
   next?: LiveProgramme
+  // From Cue's own channel catalog: the plain name ("ESPN" for "US ★ ESPN
+  // FHD"), country, topic; a copy of another channel (HD/FHD, a backup) says
+  // which; a heading in the provider's list ("##### UK #####") is a divider.
+  clean?: string
+  country?: string
+  topic?: string
+  copyOf?: string
+  spares?: number
+  divider?: boolean
+  raw?: string // the provider's own name
 }
 export interface LiveChannels {
   configured: boolean
+  countries?: { code: string; name: string; count: number }[]
+  homeCountry?: string
+  topics?: { key: string; name: string }[]
   categories?: { id: string; name: string }[]
   channels?: LiveChannel[]
   guideReady?: boolean
@@ -185,6 +198,7 @@ export interface SportsGame {
   postseason?: boolean
   title: string
   channel?: LiveChannel
+  more?: LiveChannel[] // other channels showing it
   streaming?: string
   favorite?: boolean
   onNow: boolean

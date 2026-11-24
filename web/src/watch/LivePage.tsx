@@ -33,8 +33,26 @@ export function channelsIn(data: LiveChannels | null, cat: string): LiveChannel[
       .map((id) => byId.get(id))
       .filter((c): c is LiveChannel => !!c)
   }
-  if (cat === 'all' || !cat) return all
-  return all.filter((c) => c.category === cat)
+  // Everything else: channels only, one of each (no dividers, no copies).
+  const real = all.filter((c) => !c.divider && !c.copyOf)
+  if (cat === 'all' || !cat) return real
+  return real.filter((c) => c.category === cat)
+}
+
+// The country picked in All channels, kept per device.
+function stored(key: string): string | null {
+  try {
+    return localStorage.getItem(key)
+  } catch {
+    return null
+  }
+}
+function store(key: string, v: string) {
+  try {
+    localStorage.setItem(key, v)
+  } catch {
+    // Not kept: fine.
+  }
 }
 
 // liveHref opens a channel full screen (from search, for one).
@@ -87,6 +105,14 @@ export default function LivePage() {
     }
   })
   const [sort, setSort] = useState<'az' | 'num'>('az')
+  // All channels sorts by Cue's catalog: a country ("" is every country) and a topic ("" is all).
+  const [country, setCountryState] = useState<string | null>(() => stored('cue-live-country'))
+  const [topic, setTopic] = useState('')
+  const setCountry = (c: string) => {
+    setCountryState(c)
+    setTopic('')
+    store('cue-live-country', c)
+  }
   const chooseView = (v: 'now' | 'guide') => {
     setView(v)
     try {
@@ -182,11 +208,22 @@ export default function LivePage() {
   const favCount = data?.channels?.filter((c) => c.favorite).length ?? 0
   const recentCount = useMemo(() => channelsIn(data, 'recent').length, [data, ch]) // eslint-disable-line react-hooks/exhaustive-deps
   const cat = params.get('cat') ?? (favCount > 0 ? 'fav' : 'all')
-  const list = useMemo(() => channelsIn(data, cat), [data, cat])
+  const place = country ?? data?.homeCountry ?? ''
+  const inGroup = useMemo(() => channelsIn(data, cat), [data, cat])
+  const inPlace = useMemo(() => (cat === 'all' && place ? inGroup.filter((c) => c.country === place) : inGroup), [inGroup, cat, place])
+  // The topics this country has, for the chips.
+  const topicCounts = useMemo(() => {
+    const m = new Map<string, number>()
+    for (const c of inPlace) if (c.topic) m.set(c.topic, (m.get(c.topic) ?? 0) + 1)
+    return m
+  }, [inPlace])
+  const list = useMemo(() => (cat === 'all' && topic ? inPlace.filter((c) => c.topic === topic) : inPlace), [inPlace, cat, topic])
   // What shows: the group, narrowed by the search box, in the chosen order.
   const findText = find.trim().toLowerCase()
   const shownList = useMemo(() => {
-    const found = findText ? list.filter((c) => c.name.toLowerCase().includes(findText)) : list
+    const found = findText
+      ? list.filter((c) => c.name.toLowerCase().includes(findText) || (c.now?.title ?? '').toLowerCase().includes(findText))
+      : list
     if (cat === 'recent') return found
     return [...found].sort((a, b) => (sort === 'num' ? (Number(a.num) || 1e9) - (Number(b.num) || 1e9) : a.name.localeCompare(b.name)))
   }, [list, findText, sort, cat])
@@ -197,7 +234,7 @@ export default function LivePage() {
   useEffect(() => {
     setShown(PAGE)
     scroller.current?.scrollTo({ top: 0 })
-  }, [cat, findText, sort])
+  }, [cat, findText, sort, place, topic])
 
   // Tune: look the channel's address up, and remember it as recent. Moving
   // within a catch-up show (cuOffset) asks again from there, without
@@ -436,12 +473,14 @@ export default function LivePage() {
   }
 
   const counts = new Map<string, number>()
-  for (const c of data.channels ?? []) counts.set(c.category, (counts.get(c.category) ?? 0) + 1)
-  const cats = (data.categories ?? []).filter((c) => counts.has(c.id))
+  for (const c of channelsIn(data, 'all')) counts.set(c.category, (counts.get(c.category) ?? 0) + 1)
+  // The provider's own groups, after; not its dividers ("##### UK #####").
+  const cats = (data.categories ?? []).filter((c) => counts.has(c.id) && !/[#*=_~•▬-]{3,}/.test(c.name))
+  const allCount = channelsIn(data, 'all').length
   const groups = [
     ...(recentCount > 0 ? [{ id: 'recent', name: 'Recent', count: recentCount, fixed: true }] : []),
     ...(favCount > 0 ? [{ id: 'fav', name: 'Favourites', count: favCount, fixed: true }] : []),
-    { id: 'all', name: 'All channels', count: data.channels?.length ?? 0, fixed: true },
+    { id: 'all', name: 'All channels', count: allCount, fixed: true },
     { id: 'recordings', name: 'Recordings', count: recs.list.length, fixed: true },
     ...cats.map((c) => ({ id: c.id, name: c.name, count: counts.get(c.id) ?? 0, fixed: false })),
   ]
@@ -460,7 +499,17 @@ export default function LivePage() {
   return (
     <div className={`wx-page wx-live${browserFull ? ' is-full' : ''}`}>
       {/* Nothing playing: the game that matters most, as an event. */}
-      {!ch && !picked && <LiveHero onWatch={(id) => setPlaying(id)} />}
+      {!ch && !picked && (
+        <LiveHero
+          onWatch={(id) => setPlaying(id)}
+          onFind={(q) => {
+            // Every channel, every country: whatever's on with the team in it.
+            setParams({ cat: 'all' }, { replace: true })
+            setCountry('')
+            setFind(q)
+          }}
+        />
+      )}
       {/* The channel playing, and what's on it. */}
       {(ch || picked) && (
       <section className="wx-live-top" aria-label="Now playing">
@@ -633,7 +682,7 @@ export default function LivePage() {
             <>
               <h2>Live TV</h2>
               <p className="wx-dim">
-                {data.channels?.length ?? 0} channels. Pick one to watch it here while you browse the guide; pick it again, or Full screen, to fill the screen.
+                {allCount} channels. Pick one to watch it here while you browse the guide; pick it again, or Full screen, to fill the screen.
               </p>
               {!data.guideReady && <p className="wx-dim">The TV guide is loading; channels play already.</p>}
             </>
@@ -681,7 +730,37 @@ export default function LivePage() {
 
         <div className="wx-live-main">
           {cat === 'recordings' && <RecordingsList list={recs.list} onRemove={(id) => void recs.remove(id)} />}
-          {cat !== 'recordings' && list.length === 0 && <p className="wx-dim">No channels here. Star a channel to add it to Favourites.</p>}
+          {cat === 'all' && (data.countries?.length ?? 0) > 0 && (
+            <div className="wx-live-catalog" role="group" aria-label="Country and topic">
+              <label className="wx-live-country">
+                <Icon name="globe" size={14} />
+                <span className="sr-only">Country</span>
+                <select value={place} onChange={(e) => setCountry(e.target.value)}>
+                  {data.countries!.map((c) => (
+                    <option key={c.code} value={c.code}>
+                      {c.name} ({c.count})
+                    </option>
+                  ))}
+                  <option value="">Every country</option>
+                </select>
+              </label>
+              <span className="wx-live-topics">
+                <button className={topic === '' ? 'on' : ''} aria-pressed={topic === ''} onClick={() => setTopic('')}>
+                  {topic === '' && <Icon name="check" size={12} />} All topics
+                </button>
+                {(data.topics ?? [])
+                  .filter((t) => topicCounts.has(t.key))
+                  .map((t) => (
+                    <button key={t.key} className={topic === t.key ? 'on' : ''} aria-pressed={topic === t.key} onClick={() => setTopic(t.key)}>
+                      {topic === t.key && <Icon name="check" size={12} />} {t.name}
+                    </button>
+                  ))}
+              </span>
+            </div>
+          )}
+          {cat !== 'recordings' && list.length === 0 && (
+            <p className="wx-dim">{cat === 'all' ? 'No channels here. Try another country or topic.' : 'No channels here. Star a channel to add it to Favourites.'}</p>
+          )}
           {cat !== 'recordings' && list.length > 0 && (
             <div className="wx-live-head">
               <h3>{view === 'now' ? 'On now' : 'Guide'}</h3>

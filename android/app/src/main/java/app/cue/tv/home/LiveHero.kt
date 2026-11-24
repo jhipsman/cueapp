@@ -75,7 +75,9 @@ private fun leagueMark(key: String): String? =
     if (key in setOf("nfl", "nba", "nhl", "mlb", "wnba", "mls")) "https://a.espncdn.com/i/teamlogos/leagues/500/$key.png" else null
 
 @Composable
-fun LiveHero(board: SportsBoard, onWatch: (String) -> Unit) {
+// onGame: the game picked (its channel plays; without one, Live TV looks
+// for it among every channel).
+fun LiveHero(board: SportsBoard, onGame: (GameRow) -> Unit) {
     val games = remember(board) { listOfNotNull(board.big).plus(board.now).plus(board.soon).distinctBy { it.key }.take(4) }
     if (games.isEmpty()) return
     var index by remember { mutableIntStateOf(0) }
@@ -94,7 +96,7 @@ fun LiveHero(board: SportsBoard, onWatch: (String) -> Unit) {
     }
     val g = games[index.coerceIn(0, games.lastIndex)]
     Row(Modifier.fillMaxWidth().height(250.dp).padding(horizontal = Gutter), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-        HeroCard(g, now, Modifier.weight(1f).fillMaxHeight()) { g.channelId?.let(onWatch) }
+        HeroCard(g, now, Modifier.weight(1f).fillMaxHeight()) { onGame(g) }
         if (games.size > 1) {
             Column(Modifier.width(236.dp).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Row(Modifier.fillMaxWidth().padding(horizontal = 2.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -106,7 +108,7 @@ fun LiveHero(board: SportsBoard, onWatch: (String) -> Unit) {
                         onFocus = { focused ->
                             held = focused
                             if (focused) index = i
-                        }) { f.channelId?.let(onWatch) }
+                        }) { onGame(f) }
                 }
             }
         }
@@ -147,9 +149,9 @@ private fun HeroCard(g: GameRow, now: Long, modifier: Modifier, onClick: () -> U
                     Row(Modifier.fillMaxWidth().background(Color(0x59000000)).padding(vertical = 8.dp), horizontalArrangement = Arrangement.Center,
                         verticalAlignment = Alignment.CenterVertically) {
                         if (game.venue.isNotEmpty()) Text(game.venue, fontSize = 11.sp, color = Color(0xBFFFFFFF))
-                        if (game.venue.isNotEmpty() && game.where.isNotEmpty()) HGap(16.dp)
-                        if (game.where.isNotEmpty()) {
-                            Text(if (game.channelId != null) "▶  Watch on ${game.where}" else game.where, fontSize = 11.sp,
+                        if (game.venue.isNotEmpty()) HGap(16.dp)
+                        if (game.where.isNotEmpty() || game.channelId == null) {
+                            Text(if (game.channelId != null) "▶  Watch on ${game.where}" else "Find it on Live TV" + (if (game.where.isNotEmpty()) "  ·  ${game.where}" else ""), fontSize = 11.sp,
                                 fontWeight = FontWeight.SemiBold, color = Color.White)
                         }
                     }

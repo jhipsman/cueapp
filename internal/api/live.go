@@ -63,6 +63,7 @@ type liveState struct {
 	byID    map[string]iptv.Channel
 	listAt  time.Time
 	listing chan struct{} // closed when the running list load ends
+	catalog *liveCatalog  // the list sorted like a TV's (built from chans when asked)
 
 	guide        iptv.Guide
 	guideAt      time.Time
@@ -165,6 +166,7 @@ func (s *Server) liveChannels(ctx context.Context) ([]iptv.Category, []iptv.Chan
 		return nil, nil, err
 	}
 	s.live.cats, s.live.chans = cats, chans
+	s.live.catalog = nil // built again from the new list
 	if stErr == nil {
 		s.live.status = st
 	}
@@ -257,6 +259,17 @@ type liveChannel struct {
 	Catchup  int             `json:"catchupDays,omitempty"` // days back the provider keeps it
 	Now      *iptv.Programme `json:"now,omitempty"`
 	Next     *iptv.Programme `json:"next,omitempty"`
+	// From the catalog (internal/chancat): the plain name, country, topic;
+	// for a copy of another channel, that channel; for a channel with
+	// copies, how many (its spares, tried when it doesn't play); and
+	// whether it's a heading the provider put in the list, not a channel.
+	Clean   string `json:"clean,omitempty"`
+	Country string `json:"country,omitempty"`
+	Topic   string `json:"topic,omitempty"`
+	CopyOf  string `json:"copyOf,omitempty"`
+	Spares  int    `json:"spares,omitempty"`
+	Divider bool   `json:"divider,omitempty"`
+	Raw     string `json:"raw,omitempty"` // the provider's own name
 }
 
 // GET /api/live/channels: every channel with what's on now and next.
@@ -278,9 +291,16 @@ func (s *Server) handleLiveChannels(w http.ResponseWriter, r *http.Request) {
 	favs, _ := s.WatchRepo.LiveFavorites(pid)
 	guide, loading := s.liveGuide()
 	now := time.Now()
+	cat := s.liveCatalogFor(cats, chans)
 	out := make([]liveChannel, 0, len(chans))
 	for _, ch := range chans {
 		lc := liveChannel{ID: ch.ID, Num: ch.Num, Name: ch.Name, Category: ch.Category, Favorite: favs[ch.ID], Catchup: ch.CatchupDays}
+		in := cat.info[ch.ID]
+		lc.Clean, lc.Country, lc.Topic, lc.Divider = in.Clean, in.Country, in.Topic, in.Divider
+		if in.Clean != "" && !in.Divider { // the plain name shows everywhere; the provider's is kept
+			lc.Name, lc.Raw = in.Clean, ch.Name
+		}
+		lc.CopyOf, lc.Spares = cat.mainOf[ch.ID], len(cat.spares[ch.ID])
 		if ch.Logo != "" {
 			lc.Logo = "/api/live/logo/" + url.PathEscape(ch.ID)
 		}
@@ -295,6 +315,9 @@ func (s *Server) handleLiveChannels(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]any{
 		"configured":   true,
 		"categories":   cats,
+		"countries":    cat.countries,
+		"homeCountry":  cat.home,
+		"topics":       catalogTopics(),
 		"channels":     out,
 		"guideReady":   guide != nil,
 		"guideLoading": loading,
@@ -403,7 +426,20 @@ func (s *Server) handleLivePlay(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, "Couldn't start that channel.")
 		return
 	}
-	alts, err := s.sealAlts([]struct{ kind, link string }{{"hls", c.StreamURL(ch.ID, "m3u8")}, {"ts", c.StreamURL(ch.ID, "ts")}})
+	// Then its copies (the same channel in another picture, a backup): when
+	// this one doesn't play, the player moves on to them.
+	tries := []struct{ kind, link string }{{"hls", c.StreamURL(ch.ID, "m3u8")}, {"ts", c.StreamURL(ch.ID, "ts")}}
+	var spares []string
+	if cats, chans, err := s.liveChannels(r.Context()); err == nil {
+		for _, id := range s.liveCatalogFor(cats, chans).spares[ch.ID] {
+			if len(spares) == 3 {
+				break
+			}
+			spares = append(spares, id)
+			tries = append(tries, struct{ kind, link string }{"hls", c.StreamURL(id, "m3u8")})
+		}
+	}
+	alts, err := s.sealAlts(tries)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "Couldn't start that channel.")
 		return
@@ -426,6 +462,13 @@ func (s *Server) handleLivePlay(w http.ResponseWriter, r *http.Request) {
 			format = "m3u8"
 		}
 		out["direct"] = c.StreamURL(ch.ID, format)
+		var more []string
+		for _, id := range spares {
+			more = append(more, c.StreamURL(id, format))
+		}
+		if len(more) > 0 {
+			out["directAlts"] = more
+		}
 	} else if strings.Contains(r.UserAgent(), "CueAppleTV/") {
 		// The Apple TV app's player plays HLS, not a bare MPEG-TS stream.
 		out["direct"] = c.StreamURL(ch.ID, "m3u8")

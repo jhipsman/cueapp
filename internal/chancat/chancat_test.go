@@ -1,0 +1,48 @@
+package chancat
+
+import "testing"
+
+func TestRead(t *testing.T) {
+	cases := []struct {
+		name, group    string
+		clean, country string
+		topic          string
+		divider        bool
+	}{
+		{"US ★ ESPN FHD ◉", "USA SPORTS", "ESPN", "US", "sports", false},
+		{"UK: BBC One HD", "UK | ENTERTAINMENT", "BBC One", "UK", "general", false},
+		{"|UK| Sky News", "", "Sky News", "UK", "news", false},
+		{"[US] Cartoon Network", "", "Cartoon Network", "US", "kids", false},
+		{"BBC Two ᴴᴰ", "UK | ENTERTAINMENT FHD", "BBC Two", "UK", "general", false},
+		{"##### UK BACKUP #####", "UK | ENTERTAINMENT", "UK BACKUP", "UK", "general", true},
+		{"-----------", "", "-----------", "", "general", true},
+		{"USA Network", "USA ENTERTAINMENT", "USA Network", "US", "general", false},
+		{"US: CBS New York (WCBS)", "US LOCALS", "CBS New York (WCBS)", "US", "local", false},
+		{"Friends 24/7", "UK | 24/7", "Friends 24/7", "UK", "247", false},
+		{"HBO", "", "HBO", "", "movies", false},
+		{"DE: Das Erste HD", "DE | VOLLPROGRAMM HD", "Das Erste", "DE", "general", false},
+	}
+	for _, c := range cases {
+		got := Read(c.name, c.group)
+		if got.Clean != c.clean || got.Country != c.country || got.Topic != c.topic || got.Divider != c.divider {
+			t.Errorf("Read(%q, %q) = %+v; want clean %q country %q topic %q divider %v", c.name, c.group, got, c.clean, c.country, c.topic, c.divider)
+		}
+	}
+}
+
+func TestFold(t *testing.T) {
+	list := []Copy{
+		{ID: "1", Num: 10, Info: Read("US: ESPN SD", "")},
+		{ID: "2", Num: 11, Info: Read("US: ESPN FHD", "")},
+		{ID: "3", Num: 12, Info: Read("US: ESPN HD", "")},
+		{ID: "4", Num: 13, Info: Read("UK: ESPN", "")},
+		{ID: "5", Num: 14, Info: Read("US: ESPN Backup", "")}, // a different name: its own channel
+	}
+	mainOf, copies := Fold(list)
+	if mainOf["1"] != "2" || mainOf["3"] != "2" || mainOf["4"] != "" || mainOf["2"] != "" {
+		t.Errorf("mainOf = %v", mainOf)
+	}
+	if len(copies["2"]) != 2 || copies["2"][0] != "3" {
+		t.Errorf("copies = %v (want the HD copy before the SD one)", copies)
+	}
+}

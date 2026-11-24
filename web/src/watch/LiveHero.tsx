@@ -68,7 +68,9 @@ function Side({ team, align }: { team: SportsTeam; align: 'left' | 'right' }) {
   )
 }
 
-export default function LiveHero({ onWatch }: { onWatch: (channelId: string) => void }) {
+// onFind searches Live TV for a game no channel was matched to (lists
+// carry most games somewhere: an event channel, a backup).
+export default function LiveHero({ onWatch, onFind }: { onWatch: (channelId: string) => void; onFind: (query: string) => void }) {
   const [data, setData] = useState<SportsAnswer | null>(null)
   const [pickedId, setPickedId] = useState<string | null>(null)
   const [paused, setPaused] = useState(false)
@@ -124,9 +126,8 @@ export default function LiveHero({ onWatch }: { onWatch: (channelId: string) => 
         style={{
           background: `radial-gradient(120% 140% at 0% 50%, ${color(g.away, 0.55)} 0%, transparent 55%), radial-gradient(120% 140% at 100% 50%, ${color(g.home, 0.55)} 0%, transparent 55%), linear-gradient(180deg, #1a1a1c, #0e0e10)`,
         }}
-        onClick={() => g.channel && onWatch(g.channel.id)}
-        disabled={!g.channel}
-        title={g.channel ? `Watch on ${g.channel.name}` : undefined}
+        onClick={() => (g.channel ? onWatch(g.channel.id) : onFind(g.home.short || g.home.name))}
+        title={g.channel ? `Watch on ${g.channel.name}` : `Find ${g.away.short} at ${g.home.short} on Live TV`}
       >
         <div className="wx-lh-match">
           <Side team={g.away} align="left" />
@@ -159,10 +160,10 @@ export default function LiveHero({ onWatch }: { onWatch: (channelId: string) => 
         </div>
         <div className="wx-lh-foot">
           {g.venue && <span>{g.venue}</span>}
-          {where && (
+          {(where || !g.channel) && (
             <span className="wx-lh-on">
-              {g.channel ? <Icon name="play" size={12} /> : null}
-              {g.channel ? `Watch on ${g.channel.name}` : `On ${where}`}
+              <Icon name={g.channel ? 'play' : 'search'} size={12} />
+              {g.channel ? `Watch on ${g.channel.name}` : `Find it on Live TV${where ? ` · on ${where}` : ''}`}
             </span>
           )}
         </div>

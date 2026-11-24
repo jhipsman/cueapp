@@ -261,6 +261,11 @@ class CueApi(ctx: Context, val server: String) {
     // ---- Live TV ----
 
     suspend fun channels(): LiveChannels = LiveChannels.from(obj("/api/live/channels"))
+
+    /** The country Live TV lists, as picked on this TV (null: the catalog's own pick). */
+    var liveCountry: String?
+        get() = prefs.getString("live-country", null)
+        set(v) { prefs.edit().putString("live-country", v).apply() }
     /** The Sports tab: ESPN's games (none when Cue reads them from the TV guide instead). */
     suspend fun sportsBoard(): SportsBoard {
         val o = obj("/api/live/sports")
@@ -506,22 +511,37 @@ data class Show(val title: String, val start: Long, val stop: Long) {
 data class Channel(
     val id: String, val num: Int, val name: String, val category: String, val logo: String?,
     val favorite: Boolean, val now: Show?, val next: Show?,
+    // From Cue's channel catalog: country ("US"), topic ("news"); a copy of
+    // another channel (its HD/FHD/backup twin) and the provider's dividers
+    // ("##### UK #####") are left out of the lists.
+    val country: String = "", val topic: String = "", val copy: Boolean = false, val divider: Boolean = false,
 ) {
     companion object {
-        fun from(o: JSONObject) = Channel(o.optString("id"), o.optInt("num"), o.optString("name"), o.optString("category"),
-            o.str("logo"), o.optBoolean("favorite"), Show.from(o.optJSONObject("now")), Show.from(o.optJSONObject("next")))
+        // Shown by its plain name ("ESPN" for "US ★ ESPN FHD").
+        fun from(o: JSONObject) = Channel(o.optString("id"), o.optInt("num"), o.str("clean") ?: o.optString("name"), o.optString("category"),
+            o.str("logo"), o.optBoolean("favorite"), Show.from(o.optJSONObject("now")), Show.from(o.optJSONObject("next")),
+            o.optString("country"), o.optString("topic"), o.optString("copyOf").isNotEmpty(), o.optBoolean("divider"))
     }
 }
 
-data class LiveChannels(val configured: Boolean, val groups: List<Pair<String, String>>, val channels: List<Channel>) {
+data class LiveChannels(
+    val configured: Boolean, val groups: List<Pair<String, String>>, val channels: List<Channel>,
+    // The catalog's countries (code, name, count) and topics (key, name), and the country to start on.
+    val countries: List<Triple<String, String, Int>> = emptyList(), val topics: List<Pair<String, String>> = emptyList(), val home: String = "",
+) {
     companion object {
         fun from(o: JSONObject): LiveChannels {
             val c = o.optJSONArray("categories") ?: JSONArray()
             val ch = o.optJSONArray("channels") ?: JSONArray()
+            val co = o.optJSONArray("countries") ?: JSONArray()
+            val to = o.optJSONArray("topics") ?: JSONArray()
             return LiveChannels(
                 o.optBoolean("configured"),
                 (0 until c.length()).map { c.getJSONObject(it).let { x -> x.optString("id") to x.optString("name") } },
                 (0 until ch.length()).map { Channel.from(ch.getJSONObject(it)) },
+                (0 until co.length()).map { co.getJSONObject(it).let { x -> Triple(x.optString("code"), x.optString("name"), x.optInt("count")) } },
+                (0 until to.length()).map { to.getJSONObject(it).let { x -> x.optString("key") to x.optString("name") } },
+                o.optString("homeCountry"),
             )
         }
     }

@@ -528,7 +528,7 @@ var networkAliases = map[string][]string{
 	"tnt":                {"tnt"},
 	"tbs":                {"tbs"},
 	"trutv":              {"trutv", "tru tv"},
-	"usa net":            {"usa network", "usa"},
+	"usa net":            {"usa network"},
 	"nfl net":            {"nfl network"},
 	"nfl network":        {"nfl network"},
 	"nba tv":             {"nba tv"},

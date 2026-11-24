@@ -6,14 +6,10 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
-	"net/url"
-	"regexp"
 	"sort"
 	"strings"
-	"sync"
 	"time"
 
-	"github.com/jhipsman/cueapp/internal/iptv"
 	"github.com/jhipsman/cueapp/internal/sports"
 	"github.com/jhipsman/cueapp/internal/watch"
 )
@@ -29,11 +25,12 @@ var espn = sports.New("")
 
 type espnGame struct {
 	sports.Game
-	Title     string       `json:"title"`
-	Channel   *liveChannel `json:"channel,omitempty"` // where to watch on Live TV
-	Streaming string       `json:"streaming,omitempty"`
-	Favorite  bool         `json:"favorite,omitempty"`
-	OnNow     bool         `json:"onNow"`
+	Title     string        `json:"title"`
+	Channel   *liveChannel  `json:"channel,omitempty"` // where to watch on Live TV
+	More      []liveChannel `json:"more,omitempty"`    // other channels showing it
+	Streaming string        `json:"streaming,omitempty"`
+	Favorite  bool          `json:"favorite,omitempty"`
+	OnNow     bool          `json:"onNow"`
 }
 
 // GET /api/live/sports
@@ -60,13 +57,13 @@ func (s *Server) handleLiveSports(w http.ResponseWriter, r *http.Request) {
 		fav[t.League+":"+t.TeamID] = true
 	}
 	// The channels, when Live TV is set up.
-	var chans []iptv.Channel
-	var favCh map[string]bool
-	if _, cs, err := s.liveChannels(ctx); err == nil {
-		chans = cs
-		favCh, _ = s.WatchRepo.LiveFavorites(pid)
-	}
 	now := time.Now()
+	var match *gameMatcher
+	if cats, cs, err := s.liveChannels(ctx); err == nil {
+		favCh, _ := s.WatchRepo.LiveFavorites(pid)
+		guide, _ := s.liveGuide()
+		match = newGameMatcher(cs, s.liveCatalogFor(cats, cs), guide, favCh, now)
+	}
 	nowList, soon := []espnGame{}, []espnGame{}
 	var big *espnGame
 	var bigScore float64
@@ -83,15 +80,12 @@ func (s *Server) handleLiveSports(w http.ResponseWriter, r *http.Request) {
 		}
 		eg := espnGame{Game: g, Title: g.Title(), OnNow: g.State == "in", Favorite: fav[g.League+":"+g.Home.ID] || fav[g.League+":"+g.Away.ID]}
 		for _, n := range g.Networks {
-			if name, ok := sports.Streaming[strings.ToLower(n)]; ok {
-				if eg.Streaming == "" {
-					eg.Streaming = name
-				}
-				continue
+			if name, ok := sports.Streaming[strings.ToLower(n)]; ok && eg.Streaming == "" {
+				eg.Streaming = name
 			}
-			if eg.Channel == nil {
-				eg.Channel = matchChannel(chans, n, favCh)
-			}
+		}
+		if match != nil {
+			eg.Channel, eg.More = match.find(g)
 		}
 		if eg.OnNow {
 			nowList = append(nowList, eg)
@@ -132,78 +126,6 @@ func (s *Server) handleLiveSports(w http.ResponseWriter, r *http.Request) {
 		out["big"] = big
 	}
 	writeJSON(w, http.StatusOK, out)
-}
-
-var (
-	netResMu sync.Mutex
-	netRes   = map[string]*regexp.Regexp{}
-)
-
-// networkRes are the whole-word patterns for a network's channel words,
-// compiled once.
-func networkRes(words []string) []*regexp.Regexp {
-	netResMu.Lock()
-	defer netResMu.Unlock()
-	out := make([]*regexp.Regexp, 0, len(words))
-	for _, wd := range words {
-		re, ok := netRes[wd]
-		if !ok {
-			re = regexp.MustCompile(`\b` + regexp.QuoteMeta(wd) + `\b`)
-			netRes[wd] = re
-		}
-		out = append(out, re)
-	}
-	return out
-}
-
-var notThisNetwork = regexp.MustCompile(`(?i)\b(news|business|deportes|life|kids|classic|movies?|weather)\b`)
-
-// matchChannel is the household's channel for a TV network ("CBS" → "US:
-// CBS New York HD"): a favorite first, then the lowest number. A channel
-// for the network's news or sister channels (CBS News, FOX Business) isn't
-// it, nor is a sports channel when the network isn't one (FOX vs FOX
-// Sports 1).
-func matchChannel(chans []iptv.Channel, network string, favs map[string]bool) *liveChannel {
-	words := sports.ChannelWords(network)
-	if len(words) == 0 {
-		return nil
-	}
-	sportsNet := strings.Contains(strings.ToLower(network), "sport")
-	for _, wd := range words {
-		if strings.Contains(wd, "sport") {
-			sportsNet = true
-		}
-	}
-	res := networkRes(words)
-	var best *iptv.Channel
-	for i := range chans {
-		ch := chans[i]
-		name := strings.ToLower(ch.Name)
-		hit := false
-		for _, re := range res {
-			if re.MatchString(name) {
-				hit = true
-				break
-			}
-		}
-		if !hit || notThisNetwork.MatchString(name) {
-			continue
-		}
-		if !sportsNet && strings.Contains(name, "sport") && !strings.Contains(strings.ToLower(network), "espn") {
-			continue
-		}
-		if best == nil || (favs[ch.ID] && !favs[best.ID]) || (favs[ch.ID] == favs[best.ID] && ch.Num > 0 && (best.Num == 0 || ch.Num < best.Num)) {
-			best = &chans[i]
-		}
-	}
-	if best == nil {
-		return nil
-	}
-	lc := liveChannel{ID: best.ID, Num: best.Num, Name: best.Name, Category: best.Category, Favorite: favs[best.ID], Catchup: best.CatchupDays}
-	if best.Logo != "" {
-		lc.Logo = "/api/live/logo/" + url.PathEscape(best.ID)
-	}
-	return &lc
 }
 
 // GET /api/live/sports/teams?league=nfl: the league's teams to follow, and
