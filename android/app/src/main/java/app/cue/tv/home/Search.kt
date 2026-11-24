@@ -30,6 +30,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -66,7 +67,14 @@ private const val ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789" // no 0/O, 1/I/L
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun SearchScreen(api: CueApi, memory: FocusMemory, listen: Boolean = false, listened: () -> Unit = {}, onCard: (Tile) -> Unit) {
+fun SearchScreen(api: CueApi, memory: FocusMemory, listen: Boolean = false, listened: () -> Unit = {}, onAsk: (() -> Unit)? = null, askFocus: Boolean = false, askFocused: () -> Unit = {}, onCard: (Tile) -> Unit) {
+    val askButton = remember { androidx.compose.ui.focus.FocusRequester() }
+    LaunchedEffect(askFocus) {
+        if (!askFocus) return@LaunchedEffect
+        kotlinx.coroutines.delay(150)
+        runCatching { askButton.requestFocus() }
+        askFocused()
+    }
     val ctx = LocalContext.current
     var query by remember { mutableStateOf("") }
 
@@ -144,6 +152,12 @@ fun SearchScreen(api: CueApi, memory: FocusMemory, listen: Boolean = false, list
         ) {
             Text("Search", fontFamily = Type.display(), fontSize = 34.sp, fontWeight = FontWeight.Bold, color = Color.White, modifier = Modifier.rise(0))
             Spacer(Modifier.height(14.dp))
+            // Ask Cue lives here: first, so coming over from the side menu
+            // lands on it rather than on the typing box (and its keyboard).
+            if (onAsk != null) {
+                Box(Modifier.rise(30)) { Pill("✨  Ask Cue", primary = true, modifier = Modifier.focusRequester(askButton), onClick = onAsk) }
+                Spacer(Modifier.height(12.dp))
+            }
             OutlinedTextField(
                 query, { query = it }, singleLine = true, colors = fieldColors(),
                 placeholder = { androidx.compose.material3.Text("Movies and shows") },

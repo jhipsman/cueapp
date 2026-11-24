@@ -124,11 +124,9 @@ class WalkThroughTest {
 
             // Down the menu, each place showing its page as the highlight rests on it.
             val pages = listOf(
-                "Shows" to "Continue watching",
                 "Movies" to "Top 10 on Netflix",
-                "Sports" to "Chiefs",
-                "Live TV" to "News 24",
-                "My List" to "Nothing here yet",
+                "Shows" to "Continue watching",
+                "Live TV" to "BILLS", // the game up top
                 "Browse" to "Streaming services",
             )
             for ((place, shows) in pages) {
@@ -162,27 +160,30 @@ class WalkThroughTest {
             see("Streaming services")
             shot("back-to-browse")
 
-            // Up the menu to Ask Cue: ask with one of the ideas, and the answer
-            // and its picks show; then Search, at the top.
+            // Up the menu to Search, and Ask Cue from its button: ask with one
+            // of the ideas, and the answer and its picks show; Back to Search.
             press(KeyEvent.KEYCODE_BACK) // to the side menu
-            press(KeyEvent.KEYCODE_DPAD_UP, 7)
+            press(KeyEvent.KEYCODE_DPAD_UP, 5)
+            see("Search from your phone")
+            shot("search")
+            // Into the page and up to the button (a TV's buttons take the
+            // remote's select, not a touch).
+            press(KeyEvent.KEYCODE_DPAD_RIGHT)
+            reach("✨  Ask Cue", KeyEvent.KEYCODE_DPAD_UP, tries = 5)
+            press(KeyEvent.KEYCODE_DPAD_CENTER)
             see("Something funny for tonight")
             shot("ask-cue")
-            // Into the page, down to the idea, and press it (a TV's buttons
-            // take the remote's select, not a touch).
-            press(KeyEvent.KEYCODE_DPAD_RIGHT)
-            press(KeyEvent.KEYCODE_DPAD_UP, 2) // the first row of ideas
             reach("Something funny for tonight", KeyEvent.KEYCODE_DPAD_LEFT, tries = 4)
             press(KeyEvent.KEYCODE_DPAD_CENTER)
             see("easy laughs")
             Thread.sleep(600)
             shot("ask-cue-answer")
-            press(KeyEvent.KEYCODE_BACK) // to the side menu
-            press(KeyEvent.KEYCODE_DPAD_UP)
+            press(KeyEvent.KEYCODE_BACK)
             see("Search from your phone")
-            shot("search")
+            reach("✨  Ask Cue", KeyEvent.KEYCODE_DPAD_UP, tries = 3)
 
-            // Back on the menu goes Home; Home's page again.
+            // Back to the side menu, and Back again goes Home.
+            press(KeyEvent.KEYCODE_BACK)
             press(KeyEvent.KEYCODE_BACK)
             see("Continue watching")
             shot("home-again")

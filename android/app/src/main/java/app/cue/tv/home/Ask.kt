@@ -27,6 +27,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -71,7 +72,16 @@ private val ideas = listOf(
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun AskScreen(api: CueApi, memory: FocusMemory, onCard: (Tile) -> Unit) {
+fun AskScreen(api: CueApi, memory: FocusMemory, onCard: (Tile) -> Unit, takeFocus: Boolean = false, onClose: (() -> Unit)? = null) {
+    // Opened from Search: Back goes back there.
+    if (onClose != null) androidx.activity.compose.BackHandler { onClose() }
+    // Opened from a button that's now gone: the highlight onto the first idea.
+    val firstIdea = remember { androidx.compose.ui.focus.FocusRequester() }
+    LaunchedEffect(Unit) {
+        if (!takeFocus) return@LaunchedEffect
+        kotlinx.coroutines.delay(150)
+        runCatching { firstIdea.requestFocus() }
+    }
     val ctx = LocalContext.current
     val scope = rememberCoroutineScope()
     var ready by remember { mutableStateOf<Boolean?>(null) }
@@ -139,7 +149,9 @@ fun AskScreen(api: CueApi, memory: FocusMemory, onCard: (Tile) -> Unit) {
             Text("TRY", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Dim, letterSpacing = 1.5.sp)
             Spacer(Modifier.height(8.dp))
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.rise(140)) {
-                ideas.forEach { idea -> Pill(idea) { question = idea; send(idea) } }
+                ideas.forEachIndexed { i, idea ->
+                    Pill(idea, modifier = if (i == 0) Modifier.focusRequester(firstIdea) else Modifier) { question = idea; send(idea) }
+                }
             }
             Spacer(Modifier.height(22.dp))
             Text("OR ASK YOUR OWN", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Dim, letterSpacing = 1.5.sp)

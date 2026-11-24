@@ -54,6 +54,7 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -538,15 +539,14 @@ fun avatarColor(avatar: String): Color = when (avatar.substringBefore('/')) {
 // rail's foot.
 private class NavItem(val name: String, val icon: Int, val page: Int)
 
+// Kept short, as the TV apps do: Ask Cue opens from Search, Sports leads
+// Live TV, and My List is in Browse.
 private val navItems = listOf(
     NavItem("Search", app.cue.tv.R.drawable.ic_nav_search, 4),
-    NavItem("Ask Cue", app.cue.tv.R.drawable.ic_nav_ask, 11),
     NavItem("Home", app.cue.tv.R.drawable.ic_nav_home, 0),
-    NavItem("Shows", app.cue.tv.R.drawable.ic_nav_shows, 1),
     NavItem("Movies", app.cue.tv.R.drawable.ic_nav_movies, 2),
-    NavItem("Sports", app.cue.tv.R.drawable.ic_nav_sports, 7),
+    NavItem("Shows", app.cue.tv.R.drawable.ic_nav_shows, 1),
     NavItem("Live TV", app.cue.tv.R.drawable.ic_nav_live, 3),
-    NavItem("My List", app.cue.tv.R.drawable.ic_nav_mylist, 5),
     NavItem("Browse", app.cue.tv.R.drawable.ic_nav_browse, 9),
 )
 private const val ProfilePage = 10
@@ -563,6 +563,9 @@ fun MainScreen(api: CueApi, playback: Playback, openWeb: (String) -> Unit, chang
     val memories = remember { List(PageCount) { FocusMemory() } }
     val titleMemory = remember { FocusMemory() }
     val browseState = remember { BrowseState() } // outlives a title opened over Browse
+    // Ask Cue, opened from Search (Back returns to Search).
+    var asking by remember { mutableStateOf(false) }
+    var askedBack by remember { mutableStateOf(false) } // Back from Ask: the highlight on its button again
     val tabFocus = remember { List(navItems.size + 1) { FocusRequester() } }
     var tabsFocused by remember { mutableStateOf(false) }
     // Whether a page may take the highlight when it shows: on opening the
@@ -622,6 +625,7 @@ fun MainScreen(api: CueApi, playback: Playback, openWeb: (String) -> Unit, chang
     else Box(Modifier.fillMaxSize().onPreviewKeyEvent {
         if (it.type == KeyEventType.KeyDown && (it.key == androidx.compose.ui.input.key.Key.Search || it.key == androidx.compose.ui.input.key.Key.VoiceAssist)) {
             tab = 4
+            asking = false
             listenNow = true
             true
         } else {
@@ -645,7 +649,8 @@ fun MainScreen(api: CueApi, playback: Playback, openWeb: (String) -> Unit, chang
                     1 -> HomeScreen(api, "tv", memories[1], pageTakesFocus, tookFocus, setAmbient, onCard)
                     2 -> HomeScreen(api, "movie", memories[2], pageTakesFocus, tookFocus, setAmbient, onCard)
                     3 -> LiveScreen(api, playback, openWeb)
-                    4 -> SearchScreen(api, memories[4], listen = listenNow, listened = { listenNow = false }, onCard = onCard)
+                    4 -> if (asking) AskScreen(api, memories[11], onCard, takeFocus = true, onClose = { asking = false; askedBack = true })
+                    else SearchScreen(api, memories[4], listen = listenNow, listened = { listenNow = false }, onAsk = { asking = true }, askFocus = askedBack, askFocused = { askedBack = false }, onCard = onCard)
                     5 -> MyListScreen(api, memories[5], pageTakesFocus, tookFocus, onCard)
                     6 -> ComingSoonScreen(api, onCard)
                     7 -> SportsScreen(api, playback)
@@ -1125,20 +1130,22 @@ fun PosterGrid(items: List<Tile>, memory: FocusMemory, prefix: String, onCard: (
 
 // ---- Live TV ----
 
-// Live TV: the groups down the left, the channels with what's on now (and
-// how far through) and next. A channel plays in the player, where up and
-// down change channel. The full guide is in the web version for now.
+// Live TV: the game that matters most at the top (LiveHero: both teams, a
+// countdown or the score, Featured beside it), then the groups down the
+// left and On now: a card per channel, two to a row. Moving down into the
+// channels folds the hero away; back to the top row brings it again. A
+// channel plays in the player, where up and down change channel. Without
+// games, the highlighted channel shows at the top instead.
 @Composable
 fun LiveScreen(api: CueApi, playback: Playback, openWeb: (String) -> Unit) {
     var live by remember { mutableStateOf<LiveChannels?>(null) }
     var problem by remember { mutableStateOf("") }
     var group by remember { mutableStateOf("") }
-    // Sports: the channels with games, the next big game first.
-    var sports by remember { mutableStateOf(SportsInfo(emptyList(), null)) }
+    var board by remember { mutableStateOf(SportsBoard(null, emptyList(), emptyList())) }
     LaunchedEffect(Unit) {
         // Scores change: read again every minute while Live TV is open.
         while (true) {
-            runCatching { api.sports() }.getOrNull()?.let { sports = it }
+            runCatching { api.sportsBoard() }.getOrNull()?.let { board = it }
             delay(60_000)
         }
     }
@@ -1161,45 +1168,76 @@ fun LiveScreen(api: CueApi, playback: Playback, openWeb: (String) -> Unit) {
         return
     }
     val groups = buildList {
-        if (sports.channels.isNotEmpty() || sports.big != null) add("sports" to "Sports")
         if (l.channels.any { it.favorite }) add("★" to "Favorites")
         add("*" to "All channels")
         val used = l.channels.map { it.category }.toSet()
         addAll(l.groups.filter { it.first in used })
     }
-    val byId = remember(l) { l.channels.associateBy { it.id } }
+    val counts = remember(l) { l.channels.groupingBy { it.category }.eachCount() }
     val shown = when (group) {
-        "sports" -> sports.channels.mapNotNull { byId[it] }
         "★" -> l.channels.filter { it.favorite }
         "*", "" -> l.channels
         else -> l.channels.filter { it.category == group }
-    }
-    // The highlighted channel, big at the top, as Home's banner is.
+    }.distinctBy { it.id }.take(400)
+    val hasGames = board.big != null || board.now.isNotEmpty() || board.soon.isNotEmpty()
     var spot by remember { mutableStateOf<Channel?>(null) }
-    val shownSpot = spot ?: shown.firstOrNull()
+    val gridState = androidx.compose.foundation.lazy.rememberLazyListState()
+    // The row of channels the highlight is on (-1: none, or the hero): the
+    // hero shows while it's on the first row or above, so Up from there
+    // reaches it.
+    var focusRow by remember { mutableIntStateOf(-1) }
+    val atTop = focusRow <= 0
     Column(Modifier.fillMaxSize()) {
-    shownSpot?.let { LiveBanner(api, it) }
-    Row(Modifier.fillMaxSize().padding(top = 12.dp)) {
-        LazyColumn(Modifier.width(208.dp), contentPadding = PaddingValues(start = Gutter, bottom = 60.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            item {
-                Pill("Full guide") { openWeb("/watch/live") }
-                Gap(8.dp)
-            }
-            items(groups.distinctBy { it.first }, key = { it.first }) { (id, name) ->
-                ChoiceTab(name, selected = id == group, modifier = Modifier.fillMaxWidth()) { group = id }
+        androidx.compose.animation.AnimatedVisibility(
+            visible = atTop,
+            enter = androidx.compose.animation.expandVertically(tween(320, easing = Settle)) + fadeIn(tween(320)),
+            exit = androidx.compose.animation.shrinkVertically(tween(280, easing = Settle)) + fadeOut(tween(200)),
+        ) {
+            Box(Modifier.padding(top = 14.dp)) {
+                if (hasGames) LiveHero(board) { id -> l.channels.firstOrNull { it.id == id }?.let { playback.playLive(it, shown) } }
+                else (spot ?: shown.firstOrNull())?.let { LiveBanner(api, it) }
             }
         }
-        CompositionLocalProvider(LocalBringIntoViewSpec provides PivotSpec) {
-            LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(start = 20.dp, end = Gutter, top = 6.dp, bottom = 60.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                val big = sports.big
-                if (group == "sports" && big != null) item(key = "big") { BigGameCard(big) }
-                items(shown.distinctBy { it.id }.take(400), key = { it.id }) { ch ->
-                    ChannelCard(api, ch, onFocus = { spot = ch }) { playback.playLive(ch, shown) }
+        Row(Modifier.fillMaxSize().padding(top = 16.dp)) {
+            LazyColumn(Modifier.width(214.dp), contentPadding = PaddingValues(start = Gutter, bottom = 60.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                item {
+                    Text("CHANNELS", fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.5.sp, color = Dim,
+                        modifier = Modifier.padding(start = 6.dp, bottom = 6.dp))
+                }
+                items(groups.distinctBy { it.first }, key = { it.first }) { (id, name) ->
+                    val n = when (id) {
+                        "★" -> l.channels.count { it.favorite }
+                        "*" -> l.channels.size
+                        else -> counts[id] ?: 0
+                    }
+                    ChoiceTab("$name  ·  $n", selected = id == group, modifier = Modifier.fillMaxWidth()) { group = id }
+                }
+                item {
+                    Gap(10.dp)
+                    Pill("Full guide") { openWeb("/watch/live") }
+                }
+            }
+            CompositionLocalProvider(LocalBringIntoViewSpec provides PivotSpec) {
+                LazyColumn(Modifier.fillMaxSize(), state = gridState, contentPadding = PaddingValues(start = 18.dp, end = Gutter, top = 2.dp, bottom = 60.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    item(key = "head") {
+                        Row(verticalAlignment = Alignment.Bottom) {
+                            Text("On now", fontFamily = Type.display(), fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                            HGap(10.dp)
+                            Text("${shown.size} channels live", fontSize = 11.sp, color = Dim, modifier = Modifier.padding(bottom = 2.dp))
+                        }
+                    }
+                    itemsIndexed(shown.chunked(2), key = { _, row -> row.first().id }) { i, row ->
+                        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                            row.forEach { ch ->
+                                ChannelTile(api, ch, Modifier.weight(1f), onFocus = { spot = ch; focusRow = i }) { playback.playLive(ch, shown) }
+                            }
+                            if (row.size == 1) Box(Modifier.weight(1f))
+                        }
+                    }
                 }
             }
         }
-    }
     }
 }
 

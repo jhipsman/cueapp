@@ -265,7 +265,13 @@ class CueApi(ctx: Context, val server: String) {
     suspend fun sportsBoard(): SportsBoard {
         val o = obj("/api/live/sports")
         if (o.optString("source") != "espn") return SportsBoard(null, emptyList(), emptyList())
-        fun side(t: JSONObject?) = GameSide(t?.optString("short")?.ifEmpty { t.optString("name") }.orEmpty(), t?.str("logo"), t?.optString("score").orEmpty(), t?.optString("record").orEmpty())
+        fun side(t: JSONObject?): GameSide {
+            val short = t?.optString("short")?.ifEmpty { t.optString("name") }.orEmpty()
+            val full = t?.optString("name").orEmpty()
+            val city = if (full.endsWith(short) && full.length > short.length) full.dropLast(short.length).trim() else ""
+            return GameSide(short, t?.str("logo"), t?.optString("score").orEmpty(), t?.optString("record").orEmpty(),
+                city, t?.optString("color").orEmpty())
+        }
         fun game(g: JSONObject): GameRow {
             val live = g.optString("state") == "in"
             val ch = g.optJSONObject("channel")
@@ -274,7 +280,8 @@ class CueApi(ctx: Context, val server: String) {
             return GameRow(g.optString("league") + "-" + g.optString("id"), g.optString("leagueName") + (g.str("note")?.let { " · $it" } ?: ""),
                 side(g.optJSONObject("away")), side(g.optJSONObject("home")),
                 if (live) g.optString("detail") else shortTime(g.optString("start")), live, g.optBoolean("favorite"),
-                ch?.optString("id")?.takeIf { it.isNotEmpty() }, where)
+                ch?.optString("id")?.takeIf { it.isNotEmpty() }, where,
+                startMs = Show.parseTime(g.optString("start")), venue = g.optString("venue"), leagueKey = g.optString("league"))
         }
         fun list(k: String) = (o.optJSONArray(k) ?: JSONArray()).let { a -> (0 until a.length()).map { game(a.getJSONObject(it)) } }
         val big = o.optJSONObject("big")?.let { game(it) }
@@ -438,7 +445,9 @@ data class Title(
     }
 }
 
-data class GameSide(val name: String, val logo: String?, val score: String, val record: String)
+data class GameSide(val name: String, val logo: String?, val score: String, val record: String,
+    // For Live TV's hero: the city ("Los Angeles"), and the team's color ("111111", or "").
+    val city: String = "", val color: String = "")
 data class BigGame(val tag: String, val away: GameSide?, val home: GameSide?, val title: String, val detail: String, val live: Boolean)
 data class SportsInfo(val channels: List<String>, val big: BigGame?)
 
@@ -446,6 +455,8 @@ data class SportsInfo(val channels: List<String>, val big: BigGame?)
 data class GameRow(
     val key: String, val league: String, val away: GameSide, val home: GameSide, val detail: String,
     val live: Boolean, val favorite: Boolean, val channelId: String?, val where: String,
+    // For Live TV's hero: when it starts (ms), where it's played, the league's key.
+    val startMs: Long = 0, val venue: String = "", val leagueKey: String = "",
 )
 data class SportsBoard(val big: GameRow?, val now: List<GameRow>, val soon: List<GameRow>)
 
