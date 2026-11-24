@@ -5,7 +5,8 @@
 # Releases (release.yml) publish to the same image name with version tags and
 # :latest. Until the first release exists this workflow also moves :latest, so
 # servers set up with deploy/cloud/install.sh (which follow :latest) pick up
-# main builds in their nightly update; after that :latest is left to releases.
+# main builds within a few minutes (they check every 5 minutes); after that
+# :latest is left to releases.
 name: Cloud image
 
 on:
