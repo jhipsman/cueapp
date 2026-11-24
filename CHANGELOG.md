@@ -17,6 +17,9 @@ under [Unreleased]. How releases are cut: [docs/RELEASING.md](docs/RELEASING.md)
 
 ### Changed
 - **The web app opens like the TV app.** Its loading screen is now the TV's opening logo: the Cue mark grows and turns into place with a soft glow breathing behind it, and "cue" slides in beside it, in the same teal and on the same background as the TV (the profile's colour once signed in). It plays once per page load, and no longer flashes light on a computer set to light mode.
+- Fire TV / Google TV: in Settings, a section's page fades in, rising a little, instead of swapping in at once.
+- **A livelier demo on the front page.** Instead of one clip, the app plays scene by scene (Home with its trailer, a poster previewing as it's hovered, a title's page, the player, Live TV), cross-fading from one to the next, with the scenes named underneath and a soft glow of what's playing behind the screen, which settles flat as it scrolls into view. No mouse pointer in any of it, and the ad is gone, so the page is about 10 MB lighter.
+- **A cleaner front page.** The page someone sees before signing in is now just the headline, the app playing (with Watch the ad on it) and how to get Cue on each screen. The features grid, the poster wall and the 3D phone are gone, and so is three.js, so the page loads less.
 - **Ask Cue picks better.** It now thinks of the titles that fit from what it knows about film and TV (not only the most popular titles in a genre), looks them all up at once with their running time, genres and rating, and keeps to everything asked for: length, decade, mood, who's watching, a service, and "like X" (with what people who liked X also liked). Broad asks favour the best rated over the most popular. It runs on Claude Sonnet by default (Haiku and Opus are still in Settings › Movie info), and never answers with a blank reply.
 - **Fire TV / Google TV opens straight to Home.** Signed in already, the app no longer holds on the logo while it checks with the server: it opens on the Home you saw last (kept on the TV), then refreshes it; the Cue logo still plays as it opens, over Home loading underneath. Only a first start, or a sign-in the server has dropped, waits.
 - Fire TV / Google TV: Back from a title opened in Browse returns to the service, collection or film series it came from, on the same title (it went back to Browse's front page).
@@ -25,6 +28,7 @@ under [Unreleased]. How releases are cut: [docs/RELEASING.md](docs/RELEASING.md)
 - **Fire TV / Google TV: a side menu instead of the tabs along the top.** Search, Home, Shows, Movies, Sports, Live TV, My List and Browse are icons down the left, with your profile at the bottom; moving onto it opens it with the names. On the web, Browse takes Coming soon's place in the top bar (Coming soon is in Browse and in More).
 
 ### Security
+- Updated two libraries Cue uses indirectly for newly published advisories: OpenTelemetry to 1.47.0 (GO-2026-6974) and Gorilla WebSocket to its fixed commit (GO-2026-6278).
 - Releases are signed with a new update key, held only by the project owner. **Update now** installs only releases signed with it.
 
 ### Fixed
