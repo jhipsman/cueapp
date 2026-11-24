@@ -1,0 +1,63 @@
+# Updates the cloud server (deploy/cloud) as soon as a new image of main is
+# built: after each successful "Cloud image" run, it connects to the server
+# over SSH and the server pulls the new image and restarts Cue if it changed.
+# It can also be started by hand (Actions > Deploy to cloud server > Run
+# workflow).
+#
+# The SSH key it uses can do nothing but that: on the server it is tied to
+# /opt/cue/update.sh (restrict,command=...), so it can't open a shell, run
+# anything else or forward ports. The server's own host key is pinned, so the
+# key is never offered to anything else. Setting it up: docs/cloud.md,
+# "Update on every merge". Without the secrets this does nothing.
+name: Deploy to cloud server
+
+on:
+  workflow_run:
+    workflows: ["Cloud image"]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: deploy-cloud
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.head_branch == 'main' &&
+       github.event.workflow_run.event == 'push')
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Update the server
+        env:
+          HOST: ${{ secrets.DROPLET_HOST }}
+          USER_NAME: ${{ secrets.DROPLET_USER }}
+          SSH_KEY: ${{ secrets.DROPLET_SSH_KEY }}
+          HOST_KEY: ${{ secrets.DROPLET_HOST_KEY }}
+        run: |
+          if [ -z "$HOST" ] || [ -z "$SSH_KEY" ] || [ -z "$HOST_KEY" ]; then
+            echo "::notice::No cloud server set up to update (DROPLET_HOST, DROPLET_SSH_KEY and DROPLET_HOST_KEY); see docs/cloud.md."
+            exit 0
+          fi
+          dir="$RUNNER_TEMP/ssh"
+          mkdir -m 700 "$dir"
+          printf '%s\n' "$SSH_KEY" > "$dir/key"
+          chmod 600 "$dir/key"
+          # The server's host key (the line in /etc/ssh/ssh_host_ed25519_key.pub),
+          # so this connects only to that server.
+          printf '%s %s\n' "$HOST" "$HOST_KEY" > "$dir/known_hosts"
+          ssh -i "$dir/key" \
+            -o IdentitiesOnly=yes \
+            -o BatchMode=yes \
+            -o StrictHostKeyChecking=yes \
+            -o UserKnownHostsFile="$dir/known_hosts" \
+            -o ConnectTimeout=20 \
+            -o ServerAliveInterval=15 \
+            "${USER_NAME:-root}@${HOST}" update
+          rm -rf "$dir"

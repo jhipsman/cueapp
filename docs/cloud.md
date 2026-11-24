@@ -74,6 +74,45 @@ cd /opt/cue && docker compose pull && docker compose up -d
 
 Everything Cue keeps (settings, accounts, profiles) is in `/opt/cue/config`. Copy that folder to back it up.
 
+### Update on every merge
+
+GitHub can update the server itself a few minutes after each change to `main`: once the "Cloud image" build finishes, the **Deploy to cloud server** workflow connects to the server and it pulls the new image. It uses an SSH key that can only run the update (no shell, nothing else), and it checks the server's identity first. Set it up once:
+
+1. **On the server** (DigitalOcean: the droplet's **Console**), as root, paste:
+
+   ```sh
+   cat > /opt/cue/update.sh <<'EOF'
+   #!/bin/sh
+   # Run by GitHub after each build of main: pull the newest Cue, restart it if it changed.
+   set -e
+   cd /opt/cue
+   docker compose pull -q
+   docker compose up -d --remove-orphans
+   docker image prune -f >/dev/null
+   docker compose ps
+   EOF
+   chmod 755 /opt/cue/update.sh
+   ssh-keygen -q -t ed25519 -N "" -C cue-deploy -f /root/cue-deploy
+   mkdir -p /root/.ssh && chmod 700 /root/.ssh
+   echo "restrict,command=\"/opt/cue/update.sh\" $(cat /root/cue-deploy.pub)" >> /root/.ssh/authorized_keys
+   chmod 600 /root/.ssh/authorized_keys
+   echo "----- DROPLET_SSH_KEY -----"; cat /root/cue-deploy
+   echo "----- DROPLET_HOST_KEY -----"; cat /etc/ssh/ssh_host_ed25519_key.pub
+   ```
+
+2. **On GitHub**, in the repository's **Settings > Secrets and variables > Actions**, add three repository secrets with **New repository secret**:
+   - `DROPLET_HOST`: the server's IP address (or its name, like `cuetv.me`, if its DNS points straight at the server).
+   - `DROPLET_SSH_KEY`: everything printed under `DROPLET_SSH_KEY`, from `-----BEGIN OPENSSH PRIVATE KEY-----` to `-----END OPENSSH PRIVATE KEY-----`.
+   - `DROPLET_HOST_KEY`: the one line printed under `DROPLET_HOST_KEY` (it starts with `ssh-ed25519`).
+
+   (Add `DROPLET_USER` too only if you log in as someone other than `root`.)
+
+3. **Back on the server**, delete the key file: `rm /root/cue-deploy /root/cue-deploy.pub`. GitHub has the only copy now.
+
+4. **Try it**: in the repository's **Actions** tab, open **Deploy to cloud server**, press **Run workflow**, and watch the run: it ends by listing Cue's containers. From then on it runs by itself after every merge.
+
+To stop it, delete the line ending in `cue-deploy` from `/root/.ssh/authorized_keys` on the server (and the secrets on GitHub). The nightly update keeps running either way.
+
 ## If something isn't right
 
 - **The address doesn't open, or says the certificate is wrong**: ports 80 and 443 must be open to the internet (in the provider's firewall, or Oracle's security list). The certificate comes on the first visit and can take a minute.
