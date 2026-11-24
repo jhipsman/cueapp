@@ -3,7 +3,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { api, profileToken, type LiveChannel, type LiveChannels, type LivePlay, type LiveProgramme } from '../api'
 import Icon from '../components/Icon'
 import { useDocumentTitle } from '../documentTitle'
-import SportsHub from './SportsHub'
+import LiveHero from './LiveHero'
 import ChannelLogo from './ChannelLogo'
 import { recentChannels, rememberChannel, useLiveStream } from './liveStream'
 import { useReminders } from './reminders'
@@ -77,6 +77,24 @@ export default function LivePage() {
   const [error, setError] = useState('')
   const [shown, setShown] = useState(PAGE)
   const [find, setFind] = useState('')
+  // How the channels show: "now", a card each with what's on (the default),
+  // or "guide", the grid of what's on through the evening. Kept per device.
+  const [view, setView] = useState<'now' | 'guide'>(() => {
+    try {
+      return localStorage.getItem('cue-live-view') === 'guide' ? 'guide' : 'now'
+    } catch {
+      return 'now'
+    }
+  })
+  const [sort, setSort] = useState<'az' | 'num'>('az')
+  const chooseView = (v: 'now' | 'guide') => {
+    setView(v)
+    try {
+      localStorage.setItem('cue-live-view', v)
+    } catch {
+      // Not kept: fine.
+    }
+  }
   const [guide, setGuide] = useState<Record<string, LiveProgramme[]>>({})
   const asked = useRef(new Set<string>())
   const [now, setNow] = useState(() => Date.now())
@@ -165,14 +183,21 @@ export default function LivePage() {
   const recentCount = useMemo(() => channelsIn(data, 'recent').length, [data, ch]) // eslint-disable-line react-hooks/exhaustive-deps
   const cat = params.get('cat') ?? (favCount > 0 ? 'fav' : 'all')
   const list = useMemo(() => channelsIn(data, cat), [data, cat])
-  const visible = list.slice(0, shown)
+  // What shows: the group, narrowed by the search box, in the chosen order.
+  const findText = find.trim().toLowerCase()
+  const shownList = useMemo(() => {
+    const found = findText ? list.filter((c) => c.name.toLowerCase().includes(findText)) : list
+    if (cat === 'recent') return found
+    return [...found].sort((a, b) => (sort === 'num' ? (Number(a.num) || 1e9) - (Number(b.num) || 1e9) : a.name.localeCompare(b.name)))
+  }, [list, findText, sort, cat])
+  const visible = shownList.slice(0, shown)
   const channel = data?.channels?.find((c) => c.id === ch)
   useDocumentTitle(channel ? channel.name : 'Live TV')
 
   useEffect(() => {
     setShown(PAGE)
     scroller.current?.scrollTo({ top: 0 })
-  }, [cat])
+  }, [cat, findText, sort])
 
   // Tune: look the channel's address up, and remember it as recent. Moving
   // within a catch-up show (cuOffset) asks again from there, without
@@ -347,7 +372,7 @@ export default function LivePage() {
 
   // Fetch the guide for channels as they come into view.
   useEffect(() => {
-    if (!data?.guideReady) return
+    if (!data?.guideReady || view !== 'guide') return
     const want = visible.map((c) => c.id).filter((id) => !asked.current.has(id))
     if (want.length === 0) return
     want.forEach((id) => asked.current.add(id))
@@ -355,7 +380,7 @@ export default function LivePage() {
       .liveGuide(want, start, HOURS)
       .then((g) => setGuide((old) => ({ ...old, ...g.programmes })))
       .catch(() => want.forEach((id) => asked.current.delete(id)))
-  }, [visible, data?.guideReady, start])
+  }, [visible, data?.guideReady, start, view])
   useEffect(() => {
     asked.current.clear()
     setGuide({})
@@ -370,7 +395,7 @@ export default function LivePage() {
     })
     io.observe(el)
     return () => io.disconnect()
-  }, [list.length, shown])
+  }, [shownList.length, shown, view])
 
   async function toggleFavorite(c: LiveChannel) {
     const on = !c.favorite
@@ -420,7 +445,6 @@ export default function LivePage() {
     { id: 'recordings', name: 'Recordings', count: recs.list.length, fixed: true },
     ...cats.map((c) => ({ id: c.id, name: c.name, count: counts.get(c.id) ?? 0, fixed: false })),
   ]
-  const findText = find.trim().toLowerCase()
   // How far back the guide goes: the longest catch-up of any channel.
   const maxBack = Math.min(3, Math.max(0, ...(data.channels ?? []).map((c) => c.catchupDays ?? 0))) * 86_400_000
   const slots: number[] = []
@@ -435,7 +459,10 @@ export default function LivePage() {
 
   return (
     <div className={`wx-page wx-live${browserFull ? ' is-full' : ''}`}>
+      {/* Nothing playing: the game that matters most, as an event. */}
+      {!ch && !picked && <LiveHero onWatch={(id) => setPlaying(id)} />}
       {/* The channel playing, and what's on it. */}
+      {(ch || picked) && (
       <section className="wx-live-top" aria-label="Now playing">
         <div className={`wx-live-preview${browserFull ? ' is-full' : ''}`}>
           {ch && !onTVPlayer && <video ref={videoRef} autoPlay playsInline onClick={() => !browserFull && goFull()} />}
@@ -613,20 +640,18 @@ export default function LivePage() {
           )}
         </div>
       </section>
-
-      {/* Sports: the next big game, and what's on now and coming up. */}
-      {!browserFull && <SportsHub />}
+      )}
 
       <div className="wx-live-body">
         {/* The groups: a side menu (on a phone, a picker). */}
         <nav className="wx-live-side" aria-label="Channel groups">
-          {cats.length > 12 && (
-            <input className="wx-live-find" value={find} onChange={(e) => setFind(e.target.value)} placeholder="Find a group" aria-label="Find a group" />
-          )}
+          <label className="wx-live-search">
+            <Icon name="search" size={14} />
+            <input value={find} onChange={(e) => setFind(e.target.value)} placeholder="Search channels" aria-label="Search channels" />
+          </label>
+          <h4>Channels</h4>
           <ul>
-            {groups
-              .filter((g) => !findText || g.name.toLowerCase().includes(findText) || g.fixed)
-              .map((g) => (
+            {groups.map((g) => (
                 <li key={g.id}>
                   <button
                     className={cat === g.id ? 'active' : ''}
@@ -657,7 +682,80 @@ export default function LivePage() {
         <div className="wx-live-main">
           {cat === 'recordings' && <RecordingsList list={recs.list} onRemove={(id) => void recs.remove(id)} />}
           {cat !== 'recordings' && list.length === 0 && <p className="wx-dim">No channels here. Star a channel to add it to Favourites.</p>}
-          {list.length > 0 && (
+          {cat !== 'recordings' && list.length > 0 && (
+            <div className="wx-live-head">
+              <h3>{view === 'now' ? 'On now' : 'Guide'}</h3>
+              <small>
+                {shownList.length} {shownList.length === 1 ? 'channel' : 'channels'}
+                {findText ? ` matching “${find.trim()}”` : view === 'now' ? ' live' : ''}
+              </small>
+              <span className="wx-live-head-tools">
+                {cat !== 'recent' && (
+                  <label className="wx-live-sort">
+                    <span className="sr-only">Order</span>
+                    <select value={sort} onChange={(e) => setSort(e.target.value as 'az' | 'num')}>
+                      <option value="az">Sorted A–Z</option>
+                      <option value="num">By channel number</option>
+                    </select>
+                  </label>
+                )}
+                <span className="wx-live-views" role="group" aria-label="View">
+                  <button className={view === 'now' ? 'on' : ''} onClick={() => chooseView('now')} aria-pressed={view === 'now'}>
+                    On now
+                  </button>
+                  <button className={view === 'guide' ? 'on' : ''} onClick={() => chooseView('guide')} aria-pressed={view === 'guide'}>
+                    Guide
+                  </button>
+                </span>
+              </span>
+            </div>
+          )}
+          {cat !== 'recordings' && view === 'now' && visible.length > 0 && (
+            <div className="wx-chan-grid">
+              {visible.map((c) => {
+                const n = c.now
+                const s0 = n ? Date.parse(n.start) : 0
+                const e0 = n ? Date.parse(n.stop) : 0
+                const pct = n ? Math.min(1, Math.max(0, (now - s0) / (e0 - s0))) : 0
+                const left = n ? Math.max(0, Math.round((e0 - now) / 60000)) : 0
+                return (
+                  <div className={`wx-chan-card${c.id === ch ? ' playing' : ''}`} key={c.id}>
+                    <button className="wx-chan-card-main" onClick={() => pick(c)} title={c.id === ch ? `${c.name}: full screen` : `Watch ${c.name}`}>
+                      <span className="wx-chan-card-logo">
+                        <ChannelLogo name={c.name} src={c.logo} />
+                      </span>
+                      <span className="wx-chan-card-text">
+                        <small>
+                          <i className="wx-chan-live" aria-hidden="true" />
+                          {c.id === ch ? `Playing · ${c.name}` : c.name}
+                        </small>
+                        <b>{n?.title ?? (data.guideReady ? c.name : 'Loading the guide…')}</b>
+                        {n?.desc && <span className="wx-chan-card-desc">{n.desc}</span>}
+                        {n && (
+                          <span className="wx-chan-card-prog">
+                            <span>
+                              <i style={{ width: `${pct * 100}%` }} />
+                            </span>
+                            <small>{left < 60 ? `${left}m left` : `${Math.floor(left / 60)}h ${left % 60}m left`}</small>
+                          </span>
+                        )}
+                      </span>
+                    </button>
+                    <button
+                      className={`wx-chan-star${c.favorite ? ' on' : ''}`}
+                      onClick={() => void toggleFavorite(c)}
+                      aria-label={c.favorite ? `Remove ${c.name} from Favourites` : `Add ${c.name} to Favourites`}
+                      aria-pressed={c.favorite}
+                    >
+                      <Icon name="star" size={16} />
+                    </button>
+                  </div>
+                )
+              })}
+              {shown < shownList.length && <div ref={more} style={{ height: 40 }} />}
+            </div>
+          )}
+          {view === 'guide' && list.length > 0 && (
             <div className="wx-guide-bar">
               <button className="wx-btn small" onClick={() => setShift((n) => n - 1)} disabled={start - 3 * 3_600_000 < Date.now() - maxBack}>
                 <Icon name="chevron-left" size={16} /> Earlier
@@ -672,7 +770,7 @@ export default function LivePage() {
               {maxBack > 0 && shift === 0 && <span className="wx-dim wx-guide-bar-hint">⟲ shows on channels that keep them can be watched again</span>}
             </div>
           )}
-          {list.length > 0 && (
+          {view === 'guide' && list.length > 0 && (
             <div className="wx-guide" ref={scroller}>
               <div className="wx-guide-inner" style={{ width: `calc(var(--wx-chan-w) + ${width}px)` }}>
                 <div className="wx-guide-times">
@@ -756,7 +854,7 @@ export default function LivePage() {
                   )
                 })}
                 <div className="wx-guide-now" style={{ left: `calc(var(--wx-chan-w) + ${x(now)}px)` }} aria-hidden="true" />
-                {shown < list.length && <div ref={more} style={{ height: 40 }} />}
+                {shown < shownList.length && <div ref={more} style={{ height: 40 }} />}
               </div>
             </div>
           )}

@@ -7931,3 +7931,526 @@ button.wx-switch.on:hover {
     min-height: 92px;
   }
 }
+
+/* ---- Live TV: the sports hero, Featured, and the channel cards.
+   Quiet graphite panels, white type, one red for "live". */
+.wx-lh {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 260px;
+  gap: 14px;
+  margin: 0 0 26px;
+}
+.wx-lh-hero {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 340px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 18px;
+  overflow: hidden;
+  color: #fff;
+  text-align: center;
+  cursor: pointer;
+  padding: 0;
+  animation: wx-lh-in 0.5s ease both;
+}
+.wx-lh-hero:disabled {
+  cursor: default;
+}
+.wx-lh-hero::after {
+  /* a soft vignette, so the type sits well on any team colors */
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(80% 90% at 50% 45%, transparent 40%, rgba(0, 0, 0, 0.45));
+  pointer-events: none;
+}
+@keyframes wx-lh-in {
+  from {
+    opacity: 0;
+    transform: scale(1.01);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.wx-lh-match {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 12px;
+  padding: 30px 28px 18px;
+}
+.wx-lh-team {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+.wx-lh-team img {
+  width: clamp(88px, 11vw, 132px);
+  height: clamp(88px, 11vw, 132px);
+  object-fit: contain;
+  margin-bottom: 14px;
+  filter: drop-shadow(0 6px 18px rgba(0, 0, 0, 0.45));
+}
+.wx-lh-abbr {
+  font-size: 2.6rem;
+  font-weight: 800;
+  margin-bottom: 14px;
+}
+.wx-lh-team small {
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.75);
+}
+.wx-lh-team b {
+  font-size: clamp(1.5rem, 3vw, 2.3rem);
+  font-weight: 800;
+  line-height: 1.05;
+  text-transform: uppercase;
+}
+.wx-lh-team span {
+  margin-top: 6px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.85);
+}
+.wx-lh-mid {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  min-width: 150px;
+}
+.wx-lh-league {
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+  opacity: 0.9;
+  margin-bottom: 8px;
+}
+.wx-lh-league-name {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.7);
+}
+.wx-lh-kicker {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  color: rgba(255, 255, 255, 0.75);
+}
+.wx-lh-kicker.live {
+  color: #ff5a6e;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.wx-lh-kicker.live i,
+.wx-chan-live {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #ff3b52;
+  box-shadow: 0 0 0 3px rgba(255, 59, 82, 0.18);
+}
+.wx-lh-big {
+  font-size: clamp(2.4rem, 5vw, 3.6rem);
+  font-weight: 800;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.wx-lh-big.small {
+  font-size: 1.4rem;
+}
+.wx-lh-when {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.95rem;
+}
+.wx-lh-foot {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 18px;
+  padding: 12px 18px;
+  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.75);
+  background: rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(8px);
+}
+.wx-lh-on {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #fff;
+  font-weight: 600;
+}
+.wx-lh-featured {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.wx-lh-featured-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 0 2px 2px;
+}
+.wx-lh-featured-head b {
+  font-size: 0.9rem;
+}
+.wx-lh-featured-head small {
+  color: var(--wx-dim);
+  font-size: 0.72rem;
+}
+.wx-lh-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 12px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(255, 255, 255, 0.035);
+  color: #fff;
+  text-align: left;
+  cursor: pointer;
+  overflow: hidden;
+  transition: background 0.2s, border-color 0.2s;
+}
+.wx-lh-card:hover {
+  background: rgba(255, 255, 255, 0.07);
+}
+.wx-lh-card.on {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.22);
+}
+.wx-lh-card-league {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--wx-dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.wx-lh-card-row {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 6px;
+}
+.wx-lh-card-team {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+.wx-lh-card-team.right {
+  justify-content: flex-end;
+}
+.wx-lh-card-team img {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+}
+.wx-lh-card-time {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 1.15;
+}
+.wx-lh-card-time b {
+  font-size: 0.82rem;
+  font-variant-numeric: tabular-nums;
+}
+.wx-lh-card-time small {
+  font-size: 0.62rem;
+  color: var(--wx-dim);
+}
+.wx-lh-card-time small.live {
+  color: #ff5a6e;
+}
+.wx-lh-card-bar {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 2px;
+  background: #fff;
+  animation: wx-lh-bar 8s linear forwards;
+}
+.wx-lh-card-bar.paused {
+  animation-play-state: paused;
+}
+@keyframes wx-lh-bar {
+  from {
+    width: 0;
+  }
+  to {
+    width: 100%;
+  }
+}
+
+/* The channel list: search, then the groups, quiet. */
+.wx-live-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  height: 36px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--wx-dim);
+  margin-bottom: 18px;
+}
+.wx-live-search input {
+  flex: 1;
+  min-width: 0;
+  background: none;
+  border: 0;
+  outline: none;
+  color: var(--wx-text);
+  font: inherit;
+  font-size: 0.85rem;
+}
+.wx-live-side h4 {
+  margin: 0 0 6px 4px;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--wx-dim);
+}
+
+/* On now: a header with the order and the view, then the cards. */
+.wx-live-head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin: 0 0 14px;
+  flex-wrap: wrap;
+}
+.wx-live-head h3 {
+  margin: 0;
+  font-size: 1.25rem;
+}
+.wx-live-head > small {
+  color: var(--wx-dim);
+  font-size: 0.8rem;
+}
+.wx-live-head-tools {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+.wx-live-sort select {
+  background: transparent;
+  border: 0;
+  color: var(--wx-dim);
+  font: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+.wx-live-views {
+  display: inline-flex;
+  padding: 3px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+}
+.wx-live-views button {
+  border: 0;
+  background: none;
+  color: var(--wx-dim);
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 5px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+.wx-live-views button.on {
+  background: #fff;
+  color: #0b0b0c;
+}
+.wx-chan-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 10px;
+}
+.wx-chan-card {
+  position: relative;
+  min-width: 0; /* long show names shorten with "…" instead of widening the card */
+  display: flex;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  transition: background 0.2s, border-color 0.2s, transform 0.2s;
+}
+.wx-chan-card:hover,
+.wx-chan-card:focus-within {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(255, 255, 255, 0.16);
+}
+.wx-chan-card.playing {
+  border-color: rgba(255, 255, 255, 0.4);
+}
+.wx-chan-card-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 44px 12px 12px;
+  background: none;
+  border: 0;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+}
+.wx-chan-card-logo {
+  flex: 0 0 auto;
+  width: 96px;
+  height: 64px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.04);
+  overflow: hidden;
+}
+.wx-chan-card-logo img {
+  max-width: 78%;
+  max-height: 70%;
+  object-fit: contain;
+}
+.wx-chan-card-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.wx-chan-card-text > small {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.7);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.wx-chan-card-text b {
+  font-size: 0.95rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.wx-chan-card-desc {
+  font-size: 0.76rem;
+  color: var(--wx-dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.wx-chan-card-prog {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 4px;
+}
+.wx-chan-card-prog > span {
+  flex: 1;
+  height: 3px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.14);
+  overflow: hidden;
+}
+.wx-chan-card-prog > span i {
+  display: block;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.85);
+}
+.wx-chan-card-prog small {
+  font-size: 0.68rem;
+  color: var(--wx-dim);
+  white-space: nowrap;
+}
+.wx-chan-star {
+  position: absolute;
+  top: 50%;
+  right: 10px;
+  transform: translateY(-50%);
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  border: 0;
+  background: none;
+  color: rgba(255, 255, 255, 0.45);
+  cursor: pointer;
+}
+.wx-chan-star:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.08);
+}
+.wx-chan-star.on {
+  color: #f5c518;
+}
+.wx-chan-star.on svg {
+  fill: currentColor;
+}
+@media (max-width: 900px) {
+  .wx-lh {
+    grid-template-columns: 1fr;
+  }
+  .wx-lh-featured {
+    flex-direction: row;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .wx-lh-featured-head {
+    display: none;
+  }
+  .wx-lh-card {
+    flex: 0 0 210px;
+  }
+}
+@media (max-width: 560px) {
+  .wx-lh-hero {
+    min-height: 280px;
+  }
+  .wx-lh-match {
+    padding: 22px 12px 12px;
+    gap: 6px;
+  }
+  .wx-lh-mid {
+    min-width: 96px;
+  }
+  .wx-chan-grid {
+    grid-template-columns: 1fr;
+  }
+  .wx-chan-card-logo {
+    width: 72px;
+    height: 52px;
+  }
+}

@@ -181,6 +181,7 @@ export interface SportsGame {
   away: SportsTeam
   networks?: string[]
   note?: string
+  venue?: string
   postseason?: boolean
   title: string
   channel?: LiveChannel
