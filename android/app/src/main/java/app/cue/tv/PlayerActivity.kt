@@ -959,7 +959,8 @@ class PlayerActivity : Activity() {
                 addView(pill("", R.drawable.ic_cue_forward) { seekBy(10_000) })
             }
             addView(View(context), LinearLayout.LayoutParams(0, 1, 1f))
-            if (!live) addView(speedGroup())
+            // A short row: what's used most, the rest in two menus (Sound,
+            // and More) instead of a dozen icons, several of them the same.
             if (isShow && !live && !catchup) {
                 nextButton = pill("Next episode", R.drawable.ic_cue_next) {
                     learnCredits()
@@ -969,24 +970,20 @@ class PlayerActivity : Activity() {
             if (hasOther && !live && !catchup) {
                 otherButton = iconPill("Other version", R.drawable.ic_cue_versions) { end("other") }.also { addView(it) }
             }
-            // Not this title at all (a different video with the same name):
-            // Cue never uses this version for it again, and tries the next.
-            if (!live && !catchup && info.optString("release").isNotEmpty()) {
-                addView(iconPill("Wrong video", R.drawable.ic_cue_versions) { end("wrong", info.optString("release")) })
-            }
             if (!live && !catchup) {
-                partyButton = iconPill("Watch party", R.drawable.ic_cue_party) { partyPressed() }.also { addView(it) }
+                // Kept for their labels (the menus read them); not on the row.
+                partyButton = iconPill("Watch party", R.drawable.ic_cue_party) { partyPressed() }
+                listenButton = iconPill("Listen on phone", R.drawable.ic_cue_audio) { listenOnPhone() }
                 reactButton = iconPill("React", R.drawable.ic_cue_react) { showReactions() }.also {
-                    it.visibility = View.GONE
+                    it.visibility = View.GONE // shown in a watch party
                     addView(it)
                 }
             }
-            addView(iconPill("Audio", R.drawable.ic_cue_audio) { chooseTrack(C.TRACK_TYPE_AUDIO, "Audio") })
-            if (!live && !catchup) listenButton = iconPill("Listen on phone", R.drawable.ic_cue_audio) { listenOnPhone() }.also { addView(it) }
-            boostButton = iconPill("Volume boost", R.drawable.ic_cue_audio) { toggleBoost() }.also { addView(it) }
-            if (!live && !catchup) addView(iconPill("Report", R.drawable.ic_cue_flag) { reportProblem() })
+            boostButton = iconPill("Volume boost", R.drawable.ic_cue_audio) { toggleBoost() }
+            soundButton = iconPill(soundLabel(), R.drawable.ic_cue_audio) { setSurround(!surround) }
             addView(iconPill("Subtitles", R.drawable.ic_cue_subtitles) { subtitlesPressed() })
-            soundButton = iconPill(soundLabel(), R.drawable.ic_cue_audio) { setSurround(!surround) }.also { addView(it) }
+            addView(iconPill("Sound", R.drawable.ic_cue_sound) { soundMenu() })
+            addView(iconPill("More", R.drawable.ic_cue_more) { moreMenu() })
         }
         val panel = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
@@ -1017,55 +1014,45 @@ class PlayerActivity : Activity() {
 
     // The speeds, as a group of chips: the one playing is lit, the one the
     // remote is on is white.
-    private fun speedGroup(): View = LinearLayout(this).apply {
-        orientation = LinearLayout.HORIZONTAL
-        gravity = Gravity.CENTER_VERTICAL
-        setPadding(px(4), px(4), px(4), px(4))
-        background = GradientDrawable().apply {
-            cornerRadius = px(22).toFloat()
-            setColor(0x1AFFFFFF)
-        }
-        val chips = mutableListOf<TextView>()
-        for (sp in listOf(0.5f, 1f, 1.5f, 2f)) {
-            val chip = TextView(this@PlayerActivity).apply {
-                text = (if (sp % 1f == 0f) "${sp.toInt()}" else "$sp") + "x"
-                size(10f)
-                typeface = Fonts.text(this@PlayerActivity, 600)
-                gravity = Gravity.CENTER
-                setPadding(px(11), 0, px(11), 0)
-                setTextColor(ColorStateList(
-                    arrayOf(intArrayOf(android.R.attr.state_focused), intArrayOf(android.R.attr.state_selected), intArrayOf()),
-                    intArrayOf(0xFF0B0C0F.toInt(), 0xFF0B0C0F.toInt(), 0xFFC7C8CC.toInt()),
-                ))
-                background = StateListDrawable().apply {
-                    addState(intArrayOf(android.R.attr.state_focused), GradientDrawable().apply {
-                        cornerRadius = px(18).toFloat()
-                        setColor(Color.WHITE)
-                    })
-                    addState(intArrayOf(android.R.attr.state_selected), GradientDrawable().apply {
-                        cornerRadius = px(18).toFloat()
-                        setColor(0xE6FFFFFF.toInt())
-                    })
-                    addState(intArrayOf(), GradientDrawable().apply {
-                        cornerRadius = px(18).toFloat()
-                        setColor(Color.TRANSPARENT)
-                    })
-                }
-                isSelected = sp == speed
-                isFocusable = true
-                isFocusableInTouchMode = true
-                setOnClickListener {
-                    speed = sp
-                    player.setPlaybackSpeed(sp)
-                    chips.forEach { c -> c.isSelected = c === this }
-                    scheduleHide()
-                }
+    // A list to pick from, in the same look as the audio and subtitle
+    // choosers; the controls stay up while it's open.
+    private fun menu(title: String, items: List<Pair<String, () -> Unit>>) {
+        main.removeCallbacks(hider)
+        android.app.AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert)
+            .setTitle(title)
+            .setItems(items.map { it.first }.toTypedArray()) { d, i ->
+                d.dismiss()
+                items[i].second()
             }
-            chips += chip
-            addView(chip, LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, px(24)))
-        }
-        layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { marginEnd = px(10) }
+            .setOnDismissListener { scheduleHide() }
+            .show()
     }
+
+    // Sound: the language or track, Surround, Volume boost, Listen on phone.
+    private fun soundMenu() = menu("Sound", buildList {
+        add("Audio track…" to { chooseTrack(C.TRACK_TYPE_AUDIO, "Audio") })
+        add((if (surround) "Surround: on" else "Surround: off") to { setSurround(!surround) })
+        add((if (booster != null) "Volume boost: on" else "Volume boost: off") to { toggleBoost() })
+        listenButton?.let { b -> add(((b.tag as? String) ?: "Listen on phone") to { listenOnPhone() }) }
+    })
+
+    // More: speed, the versions, a watch party, and reporting a problem.
+    private fun moreMenu() = menu("More", buildList {
+        if (!live) add("Speed: ${speedText(speed)}" to { speedMenu() })
+        if (hasOther && !live && !catchup) add("Other version" to { end("other") })
+        if (!live && !catchup && info.optString("release").isNotEmpty()) add("Wrong video (never use this one again)" to { end("wrong", info.optString("release")) })
+        partyButton?.let { b -> add((if (b.text.isNullOrEmpty() || b.text == "Watch party") "Watch party" else "Party") to { partyPressed() }) }
+        if (!live && !catchup) add("Report a problem" to { reportProblem() })
+    })
+
+    private fun speedText(sp: Float) = (if (sp % 1f == 0f) "${sp.toInt()}" else "$sp") + "×"
+
+    private fun speedMenu() = menu("Speed", listOf(0.5f, 0.75f, 1f, 1.25f, 1.5f, 2f).map { sp ->
+        (speedText(sp) + if (sp == speed) "  ✓" else "") to {
+            speed = sp
+            player.setPlaybackSpeed(sp)
+        }
+    })
 
     // iconPill is a round icon button that shows its name while the remote
     // is on it, so the row stays tidy.
