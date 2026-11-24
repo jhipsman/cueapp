@@ -131,6 +131,7 @@ jobs:
             # How smoothly each step drew (late frames, slow end), per screen.
             grep "CueFrames" ../walkthrough/logcat.txt > ../walkthrough/frames.txt || true
             cat ../walkthrough/frames.txt || true
+            sh ci/walkthrough-report.sh || true
             test ! -f ../walkthrough-failed
 
       - uses: actions/upload-artifact@v4
