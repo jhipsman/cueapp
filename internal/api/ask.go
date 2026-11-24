@@ -32,20 +32,36 @@ import (
 // It needs a Claude API key, added by the owner in Settings (or the
 // ANTHROPIC_API_KEY environment variable).
 
-// Ask Cue's models: Haiku by default (a fraction of a cent a question,
-// plenty for picking something to watch), Opus when the owner wants the
-// smartest answers (about 40 times the cost).
+// Ask Cue's models: Sonnet by default (it knows films and shows well and
+// keeps to "like X, but Y"; a cent or two a question), Haiku when the owner
+// wants it cheapest, Opus when they want the smartest answers.
 const (
-	askModelHaiku = "claude-haiku-5-5"
-	askModelOpus  = "claude-opus-5-5"
+	askModelHaiku  = "claude-haiku-5-5"
+	askModelSonnet = "claude-sonnet-5-5"
+	askModelOpus   = "claude-opus-5-5"
 )
 
-// askModel is the model the owner chose in Settings (Haiku unless "opus").
+// askModel is the model the owner chose in Settings (Sonnet unless "haiku"
+// or "opus").
 func (s *Server) askModel() string {
-	if v, _ := s.Settings.Get(settings.KeyAnthropicModel); v == "opus" {
+	switch v, _ := s.Settings.Get(settings.KeyAnthropicModel); v {
+	case "opus":
 		return askModelOpus
+	case "haiku":
+		return askModelHaiku
 	}
-	return askModelHaiku
+	return askModelSonnet
+}
+
+// askModelName is the Settings name of the model in use.
+func (s *Server) askModelName() string {
+	switch s.askModel() {
+	case askModelOpus:
+		return "opus"
+	case askModelHaiku:
+		return "haiku"
+	}
+	return "sonnet"
 }
 
 // anthropicKey is Ask Cue's key: the one saved in Settings, else the
@@ -132,19 +148,22 @@ func (s *Server) handleAsk(w http.ResponseWriter, r *http.Request) {
 	model := s.askModel()
 	params := anthropic.BetaMessageNewParams{
 		Model:     model,
-		MaxTokens: 4000,
+		MaxTokens: 16000,
 		System:    []anthropic.BetaTextBlockParam{{Text: askSystem(prof)}},
 		Messages:  msgs,
-		// A quick, chatty answer: no long reasoning needed.
-		OutputConfig: anthropic.BetaOutputConfigParam{Effort: anthropic.BetaOutputConfigEffortLow},
+		// Medium: enough thought to weigh picks against everything asked
+		// (low gave the first popular titles that roughly fit).
+		OutputConfig: anthropic.BetaOutputConfigParam{Effort: anthropic.BetaOutputConfigEffortMedium},
 	}
-	if model == askModelOpus {
-		// A declined request is answered by another model instead (Opus
-		// only: Haiku has no such fallback).
+	if model != askModelHaiku {
+		// A declined request is answered by another model instead (Sonnet
+		// and Opus: Haiku has no such fallback).
 		params.Betas = []anthropic.AnthropicBeta{"server-side-fallback-2026-07-01"}
 		params.Fallbacks = anthropic.BetaFallbacksParamOfDefault()
 	}
-	runner := client.Beta.Messages.NewToolRunner(tools, anthropic.BetaToolRunnerParams{BetaMessageNewParams: params, MaxIterations: 6})
+	// Room to think of candidates, look them up, check them and widen the
+	// search once, before showing them.
+	runner := client.Beta.Messages.NewToolRunner(tools, anthropic.BetaToolRunnerParams{BetaMessageNewParams: params, MaxIterations: 10})
 	msg, err := runner.RunToCompletion(ctx)
 	if err != nil {
 		slog.Warn("ask cue", "err", err)
@@ -164,6 +183,19 @@ func (s *Server) handleAsk(w http.ResponseWriter, r *http.Request) {
 	ans := a.ans
 	a.mu.Unlock()
 	ans.Reply = strings.Join(reply, "\n\n")
+	if ans.Reply == "" {
+		// Out of turns (or a reply of tool calls only): never a blank answer.
+		switch {
+		case ans.Play != nil:
+			ans.Reply = "Playing it now."
+		case ans.Open != nil:
+			ans.Reply = "Here it is."
+		case len(ans.Cards) > 0:
+			ans.Reply = "Here's what I found."
+		default:
+			ans.Reply = "I couldn't find a good match for that. Try saying it another way, or tell me a film or show you liked."
+		}
+	}
 	if ans.Cards == nil {
 		ans.Cards = []watchCard{}
 	}
@@ -172,15 +204,24 @@ func (s *Server) handleAsk(w http.ResponseWriter, r *http.Request) {
 
 func askSystem(p watch.Profile) string {
 	var b strings.Builder
-	b.WriteString(`You are Ask Cue, the assistant in Cue, a family's home streaming app. People ask you for something to watch ("something funny for tonight", "a film like Dune under two hours"), to play a title, or about a film, a show or a person.
+	b.WriteString(`You are Ask Cue, the assistant in Cue, a family's home streaming app. People ask you for something to watch ("something funny for tonight", "a film like Dune but shorter", "a cozy mystery show"), to play a title, or about a film, a show or a person.
 
-How to answer:
-- Find titles with the tools. Only offer titles a tool returned: they are already limited to what this profile may watch. Never name a title you didn't get from a tool as a suggestion.
-- When you suggest titles, call show_titles once with your picks (4 to 12, best first) and a short heading. Then reply in one or two friendly sentences; the titles appear as posters under your reply, so don't list them all in text.
-- When someone asks to play a specific title ("play Dune", "put on the next Bluey"), find it and call play_title. For a show, play the episode they asked for, or leave season and episode at 0 to carry on where they were.
-- When someone wants to see a title's page ("show me Dune"), call open_title.
+Picking titles is the main job, and the picks should feel chosen by a friend who knows film and TV well, not pulled from a popularity chart:
+- Read the request closely and treat every constraint as a hard rule: films or shows, length, decade, mood, tone, genre, service, who's watching (kids, a date, the whole family), and anything they said they didn't want. A pick that breaks one is a bad pick, however popular.
+- Start from your own knowledge: think of the titles that fit best, including well-loved and lesser-known ones, then look them all up at once with find_titles. It returns each title's running time, genres, rating and seasons, so check the constraints against them and drop what doesn't fit.
+- For "like X", look X up and use similar_titles too, then keep only what shares what the person liked about X (its tone, premise, style), not just its genre.
+- browse is for broad asks ("a good documentary", "best rated sci-fi of the 90s"); sort by best_rated rather than popular unless they want what's big right now.
+- my_titles shows what this person is watching and saved: use it for taste, and don't suggest what they're already watching unless asked.
+- Only offer titles a tool returned: they're already limited to what this profile may watch. If something you thought of wasn't found, leave it out.
+- Call show_titles once with 4 to 8 picks, best fit first, and a short heading that says what they are. Then reply in one or two warm sentences: why these fit, naming the first pick or two. The posters appear under your reply, so don't list every title.
+- If a request is vague, still make good picks, and say in a few words what you went for.
+
+Other requests:
+- To play a specific title ("play Dune", "put on the next Bluey"), find it and call play_title. For a show, play the episode they asked for, or leave season and episode at 0 to carry on where they were.
+- To see a title's page ("show me Dune"), call open_title.
 - For questions (who directed it, how long is it, who's in it), look it up with title_info and answer briefly.
-- Keep replies short and warm, plain text, no markdown, no lists.
+
+Keep replies short, plain text, no markdown, no lists.
 `)
 	b.WriteString(fmt.Sprintf("\nToday is %s. The person asking is %q.", time.Now().Format("Monday, January 2, 2006"), p.Name))
 	if p.MaxRating != "" {
@@ -240,6 +281,17 @@ type askBrowseIn struct {
 	MaxMinutes int     `json:"max_minutes,omitempty" jsonschema:"description=Longest running time in minutes; 0 for any"`
 	MinRating  float64 `json:"min_rating,omitempty" jsonschema:"description=Lowest audience score out of 10; 0 for any"`
 	Service    string  `json:"service,omitempty" jsonschema:"description=Only what's on one service: netflix, prime, appletv, disney, hulu, max, peacock or paramount"`
+	Sort       string  `json:"sort,omitempty" jsonschema:"enum=best_rated,enum=well_known,enum=popular,description=best_rated (highly rated with enough votes; the default), well_known (the most voted for) or popular (what's big right now)"`
+}
+
+type askFindIn struct {
+	Titles []askFindTitle `json:"titles" jsonschema:"required,description=The titles you have in mind, up to 15"`
+}
+
+type askFindTitle struct {
+	Title string `json:"title" jsonschema:"required"`
+	Year  int    `json:"year,omitempty" jsonschema:"description=Its year, if you know it: tells same-named titles apart"`
+	Kind  string `json:"kind,omitempty" jsonschema:"enum=movie,enum=tv,description=movie or tv, if you know it"`
 }
 
 type askTitleIn struct {
@@ -295,13 +347,133 @@ func (a *asker) tools() ([]anthropic.BetaTool, error) {
 	if err != nil {
 		return nil, err
 	}
-	browse, err := toolrunner.NewBetaToolFromJSONSchema("browse", "Find popular films or shows by genre, decade, length, score or streaming service.",
+	find, err := toolrunner.NewBetaToolFromJSONSchema("find_titles", "Look up the films and shows you have in mind, all at once: each comes back with its id, year, running time, genres, rating, seasons and story, or is missing if it wasn't found.",
+		func(ctx context.Context, in askFindIn) (anthropic.BetaToolResultBlockParamContentUnion, error) {
+			tm := a.s.TMDB()
+			if tm == nil {
+				return textResult("Search isn't available."), nil
+			}
+			wanted := in.Titles
+			if len(wanted) > 15 {
+				wanted = wanted[:15]
+			}
+			found := make([]*askFound, len(wanted))
+			var wg sync.WaitGroup
+			sem := make(chan struct{}, 6)
+			for i, t := range wanted {
+				wg.Add(1)
+				go func(i int, t askFindTitle) {
+					defer wg.Done()
+					sem <- struct{}{}
+					defer func() { <-sem }()
+					found[i] = a.findOne(ctx, tm, t)
+				}(i, t)
+			}
+			wg.Wait()
+			var cards []watchCard
+			facts := map[string]*askFound{}
+			var missing []string
+			for i, f := range found {
+				if f == nil {
+					missing = append(missing, wanted[i].Title)
+					continue
+				}
+				cards = append(cards, f.card)
+				facts[cardKey(f.card.Kind, f.card.TMDBID)] = f
+			}
+			allowed := filter(cards)
+			kept := map[string]bool{}
+			for _, c := range allowed {
+				kept[cardKey(c.Kind, c.TMDBID)] = true
+			}
+			a.note(allowed)
+			type out struct {
+				Kind    string   `json:"kind"`
+				ID      int      `json:"id"`
+				Title   string   `json:"title"`
+				Year    int      `json:"year,omitempty"`
+				Minutes int      `json:"minutes,omitempty"`
+				Seasons int      `json:"seasons,omitempty"`
+				Genres  []string `json:"genres,omitempty"`
+				Rated   string   `json:"rated,omitempty"`
+				Score   float64  `json:"score,omitempty"`
+				Story   string   `json:"story,omitempty"`
+			}
+			res := struct {
+				Found    []out    `json:"found"`
+				NotFound []string `json:"not_found,omitempty"`
+				Hidden   int      `json:"hidden_by_age_limit,omitempty"`
+			}{Found: []out{}, NotFound: missing}
+			for _, c := range cards {
+				k := cardKey(c.Kind, c.TMDBID)
+				if !kept[k] {
+					res.Hidden++
+					continue
+				}
+				f := facts[k]
+				res.Found = append(res.Found, out{c.Kind, c.TMDBID, c.Title, c.Year, f.minutes, f.seasons, f.genres, f.rated, c.Rating, truncate(c.Overview, 200)})
+			}
+			js, _ := json.Marshal(res)
+			return textResult(string(js)), nil
+		})
+	if err != nil {
+		return nil, err
+	}
+	similar, err := toolrunner.NewBetaToolFromJSONSchema("similar_titles", "What people who liked a film or show also liked (by its id from a tool result).",
+		func(ctx context.Context, in askTitleIn) (anthropic.BetaToolResultBlockParamContentUnion, error) {
+			tm := a.s.TMDB()
+			if tm == nil {
+				return textResult("Not available."), nil
+			}
+			var cards []watchCard
+			if in.Kind == "movie" {
+				ms, err := tm.RelatedMovies(ctx, in.ID, metadata.RelatedRecommended)
+				if err == nil && len(ms) == 0 {
+					ms, err = tm.RelatedMovies(ctx, in.ID, metadata.RelatedSimilar)
+				}
+				if err != nil {
+					return textResult("Couldn't find titles like that one."), nil
+				}
+				for _, m := range ms {
+					if m.PosterPath != "" {
+						cards = append(cards, movieCard(m))
+					}
+				}
+			} else {
+				ss, err := tm.RelatedShows(ctx, in.ID, metadata.RelatedRecommended)
+				if err == nil && len(ss) == 0 {
+					ss, err = tm.RelatedShows(ctx, in.ID, metadata.RelatedSimilar)
+				}
+				if err != nil {
+					return textResult("Couldn't find titles like that one."), nil
+				}
+				for _, sh := range ss {
+					if sh.PosterPath != "" {
+						cards = append(cards, showCard(sh))
+					}
+				}
+			}
+			if len(cards) > 20 {
+				cards = cards[:20]
+			}
+			return textResult(a.note(filter(cards))), nil
+		})
+	if err != nil {
+		return nil, err
+	}
+	browse, err := toolrunner.NewBetaToolFromJSONSchema("browse", "Find well-rated (or popular) films or shows by genre, decade, length, score or streaming service.",
 		func(ctx context.Context, in askBrowseIn) (anthropic.BetaToolResultBlockParamContentUnion, error) {
 			tm := a.s.TMDB()
 			if tm == nil {
 				return textResult("Browsing isn't available."), nil
 			}
-			q := metadata.TopQuery{Region: "US", MaxRuntime: in.MaxMinutes, MinRating: in.MinRating}
+			q := metadata.TopQuery{Region: "US", MaxRuntime: in.MaxMinutes, MinRating: in.MinRating, Sort: "rating"}
+			switch in.Sort {
+			case "well_known":
+				q.Sort = "votes"
+			case "popular":
+				q.Sort = ""
+			}
 			if in.Decade >= 1920 && in.Decade%10 == 0 {
 				q.Decade = in.Decade
 			}
@@ -437,7 +609,93 @@ func (a *asker) tools() ([]anthropic.BetaTool, error) {
 	if err != nil {
 		return nil, err
 	}
-	return []anthropic.BetaTool{search, browse, info, mine, show, play, open}, nil
+	return []anthropic.BetaTool{find, similar, search, browse, info, mine, show, play, open}, nil
+}
+
+// askFound is one title find_titles found, with the facts to check it by.
+type askFound struct {
+	card    watchCard
+	minutes int
+	seasons int
+	genres  []string
+	rated   string
+}
+
+// findOne looks up one title Claude has in mind: the search result that
+// best matches its name, kind and year, with its running time, genres and
+// rating (or seasons, for a show).
+func (a *asker) findOne(ctx context.Context, tm *metadata.Client, t askFindTitle) *askFound {
+	name := strings.TrimSpace(t.Title)
+	if name == "" {
+		return nil
+	}
+	res, err := tm.SearchMulti(ctx, truncate(name, 200))
+	if err != nil {
+		return nil
+	}
+	best, bestScore := -1, 0
+	for i, m := range res {
+		if (m.MediaType != "movie" && m.MediaType != "tv") || m.PosterPath == "" {
+			continue
+		}
+		score := 0
+		switch {
+		case sameTitle(m.DisplayTitle(), name):
+			score += 5
+		case titleContains(m.DisplayTitle(), name):
+			score += 2
+		}
+		if t.Kind != "" && m.MediaType == t.Kind {
+			score += 2
+		}
+		if t.Year > 0 {
+			switch d := m.Year() - t.Year; {
+			case d == 0:
+				score += 3
+			case d >= -1 && d <= 1:
+				score += 2
+			}
+		}
+		if score > bestScore {
+			best, bestScore = i, score
+		}
+	}
+	// Nothing named like it (or of its kind and year): not found, rather
+	// than a different title that merely came up in the search.
+	if best < 0 || bestScore < 4 {
+		return nil
+	}
+	m := res[best]
+	f := &askFound{card: watchCard{Kind: m.MediaType, TMDBID: m.ID, Title: m.DisplayTitle(), Year: m.Year(), Overview: m.Overview,
+		PosterURL: metadata.PosterURL(m.PosterPath), BackdropURL: metadata.BackdropURL(m.BackdropPath), Rating: metadata.RoundRating(m.VoteAverage)}}
+	if m.MediaType == "movie" {
+		if d, err := tm.GetMovieDetail(ctx, m.ID); err == nil {
+			f.minutes, f.genres, f.rated = d.Runtime, genreNames(d.Genres), d.Certification()
+		}
+	} else if d, err := tm.GetShowFull(ctx, m.ID); err == nil {
+		f.seasons, f.genres, f.rated = d.NumberOfSeasons, genreNames(d.Genres), d.ContentRating()
+	}
+	return f
+}
+
+// sameTitle compares two titles ignoring case, punctuation and a leading "the".
+func sameTitle(a, b string) bool { return normTitle(a) == normTitle(b) }
+
+// titleContains says whether one title holds the other ("Dune" and "Dune:
+// Part One").
+func titleContains(a, b string) bool {
+	na, nb := normTitle(a), normTitle(b)
+	return na != "" && nb != "" && (strings.Contains(na, nb) || strings.Contains(nb, na))
+}
+
+func normTitle(s string) string {
+	var out strings.Builder
+	for _, r := range strings.ToLower(s) {
+		if (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') || r > 127 {
+			out.WriteRune(r)
+		}
+	}
+	return strings.TrimPrefix(out.String(), "the")
 }
 
 // testAnthropicKey asks Anthropic about Ask Cue's model with the key (no

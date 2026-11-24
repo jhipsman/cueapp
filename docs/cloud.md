@@ -66,10 +66,20 @@ Then, as on your computer: create your account, then **Settings > Streaming** fo
 
 ## Keeping it up to date
 
-The server fetches the latest Cue every night at 4:17 (server time) and restarts it only when there is a new version. Until Cue's first release, "latest" is the newest build of `main`; after that it is the newest release. To keep following every `main` build, put `CUE_IMAGE=ghcr.io/jhipsman/cue:edge` in `/opt/cue/.env`. To update now:
+The server checks for a new Cue every 5 minutes and restarts it only when there is one, so a change merged to `main` reaches it a few minutes after GitHub's "Cloud image" build finishes. (A check that finds nothing new only asks the registry; Cue keeps running.) Until Cue's first release, "latest" is the newest build of `main`; after that it is the newest release. To keep following every `main` build, put `CUE_IMAGE=ghcr.io/jhipsman/cue:edge` in `/opt/cue/.env`.
+
+To update now, run these one at a time:
 
 ```sh
-cd /opt/cue && docker compose pull && docker compose up -d
+cd /opt/cue
+docker compose pull
+docker compose up -d
+```
+
+A server set up before this checked only once a night (at 4:17). To switch it to every 5 minutes, run the installer again; it keeps your settings:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/jhipsman/cueapp/HEAD/deploy/cloud/install.sh | sudo bash
 ```
 
 Everything Cue keeps (settings, accounts, profiles) is in `/opt/cue/config`. Copy that folder to back it up.

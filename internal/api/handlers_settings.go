@@ -75,10 +75,12 @@ type settingsPayload struct {
 	// ships with the app) is different from leaving the field out.
 	OpenSubtitlesAPIKey *string `json:"openSubtitlesApiKey,omitempty"`
 	// Ask Cue's Claude API key (write-only; HasAnthropicAPIKey says whether one is saved).
-	AnthropicAPIKey        *string `json:"anthropicApiKey,omitempty"`
-	HasAnthropicAPIKey     bool    `json:"hasAnthropicApiKey"`
-	AskModel               *string `json:"askModel,omitempty"` // Ask Cue's model: haiku or opus
-	HasOpenSubtitlesAPIKey bool    `json:"hasOpenSubtitlesApiKey"`
+	AnthropicAPIKey    *string `json:"anthropicApiKey,omitempty"`
+	HasAnthropicAPIKey bool    `json:"hasAnthropicApiKey"`
+	AskModel           *string `json:"askModel,omitempty"` // Ask Cue's model: haiku, sonnet or opus
+	// HideAdult leaves adult Live TV channels and adult releases out (on unless switched off).
+	HideAdult              *bool `json:"hideAdult,omitempty"`
+	HasOpenSubtitlesAPIKey bool  `json:"hasOpenSubtitlesApiKey"`
 
 	// Optional OpenSubtitles.com account (raises the daily download limit).
 	OpenSubtitlesUsername    *string `json:"openSubtitlesUsername,omitempty"`
@@ -205,10 +207,8 @@ func (s *Server) containerFolders() *containerFolders {
 // never logged/exposed in plaintext beyond what's needed); HasTMDBAPIKey
 // tells the UI whether one is already configured.
 func (s *Server) handleGetSettings(w http.ResponseWriter, r *http.Request) {
-	askModelName := "haiku"
-	if s.askModel() == askModelOpus {
-		askModelName = "opus"
-	}
+	askModelName := s.askModelName()
+	hideAdult := s.hideAdult()
 	moviesPath := s.moviesRoot()
 	downloadsPath := s.downloadsRoot()
 	namingPreset, _ := s.Settings.Get(settings.KeyNamingPreset)
@@ -285,6 +285,7 @@ func (s *Server) handleGetSettings(w http.ResponseWriter, r *http.Request) {
 		HasOpenSubtitlesAPIKey:   s.Subtitles().HasAPIKey(),
 		HasAnthropicAPIKey:       s.anthropicKey() != "",
 		AskModel:                 &askModelName,
+		HideAdult:                &hideAdult,
 		HasOpenSubtitlesAccount:  s.Subtitles().HasCredentials(),
 		OpenSubtitlesAccountName: osUser,
 		TMDBKeyBuiltIn:           s.builtin.TMDB != "",
@@ -513,10 +514,21 @@ func (s *Server) handlePutSettings(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
+	if req.HideAdult != nil {
+		v := "0"
+		if *req.HideAdult {
+			v = "1"
+		}
+		if err := s.Settings.Set(settings.KeyHideAdult, v, false); err != nil {
+			writeError(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+		s.forgetLiveChannels()
+	}
 	if req.AskModel != nil {
 		m := strings.TrimSpace(*req.AskModel)
-		if m != "haiku" && m != "opus" {
-			writeError(w, http.StatusBadRequest, `Ask Cue's model is "haiku" or "opus".`)
+		if m != "haiku" && m != "sonnet" && m != "opus" {
+			writeError(w, http.StatusBadRequest, `Ask Cue's model is "haiku", "sonnet" or "opus".`)
 			return
 		}
 		if err := s.Settings.Set(settings.KeyAnthropicModel, m, false); err != nil {

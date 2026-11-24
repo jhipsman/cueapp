@@ -10,7 +10,7 @@ The keys the app stores in its settings table. You normally change these from th
 | `accounts.invite_expires` |  |
 | `accounts.invite_token` |  |
 | `ai.anthropic_api_key` | encrypted: Ask Cue's key (Claude API) |
-| `ai.model` | Ask Cue's model: "" or "haiku" (the default, cheapest), "opus" (the smartest) |
+| `ai.model` | Ask Cue's model: "" or "sonnet" (the default), "haiku" (the cheapest), "opus" (the smartest) |
 | `app.streaming_only` | "1" streaming only (Watch is the app, the download jobs rest), "0" the full library manager; unset = CUE_STREAMING_ONLY (on unless "0") |
 | `audiobooks.path` | audiobooks library folder; falls back to the AUDIOBOOKS_DIR env default (/audiobooks) when unset |
 | `auth.proxy_addresses` | where that proxy connects from: IP addresses or CIDR ranges, comma-separated ("private" is refused). The header is only believed from these |
@@ -63,6 +63,7 @@ The keys the app stores in its settings table. You normally change these from th
 | `music.default_profile_id` | id of the music profile artists without one of their own use; unset = the first |
 | `music.enabled` | older name of modules.music; still honoured while modules.music is unset, and kept in step with it |
 | `music.path` | music library folder; falls back to the MUSIC_DIR env default (/music) when unset |
+| `notify.crash_alerts` | "0" stops phone alerts when the TV or web app crashes in a way not seen before; unset or "1" sends them to administrators' phones that have alerts on |
 | `notify.on_problems` | "1" sends a notification (to the targets that listen for Health) when a new error is added to the problem log; unset or "0" sends none |
 | `notify.quiet_hours` | hours when everyday messages wait, "23-7" (server time); unset = none. Problems are always sent at once |
 | `onboarding.done` | "1" once the first-run wizard completes |
@@ -72,6 +73,7 @@ The keys the app stores in its settings table. You normally change these from th
 | `premiumize.use_for` | "torrents" (the default when unset) \| "usenet" \| "both" |
 | `push.vapid` | the key phone alerts are signed with (made by the app, encrypted; not user-editable) |
 | `quality.language` | the audio language wanted, as a name like "English" (the default when unset); a release clearly in another language only is not picked automatically |
+| `safety.hide_adult` | "0" shows adult Live TV channels and adult releases in release search; unset or "1" hides them |
 | `scripts.after_import` | JSON: script (a file name in /config/scripts; empty = off) and timeoutSec (default 300). Only a signed-in browser session can set it, not an API key |
 | `scripts.last_run` | what the last run did (JSON; set by the app, not user-editable) |
 | `server.public_url` | the address you open Cue at from your own devices (like https://cue.example.com); links in notification messages use it; unset = no links |

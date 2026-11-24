@@ -7,6 +7,7 @@ import { outsideService, slowServiceMessage } from './outsideService'
 import { signalFor } from './requestSignal'
 import type { Diagnostics } from './supportReport'
 import type { ProblemCounts, ProblemList } from './problemsView'
+import type { Crash, CrashList } from './crashReport'
 
 const BASE = '/api'
 
@@ -841,7 +842,8 @@ export interface Settings {
   traktClientId?: string
   anthropicApiKey?: string // Ask Cue's Claude key (write-only)
   hasAnthropicApiKey?: boolean
-  askModel?: 'haiku' | 'opus' // Ask Cue's model: Haiku (cheapest, the default) or Opus (smartest)
+  askModel?: 'haiku' | 'sonnet' | 'opus' // Ask Cue's model: Sonnet (the default), Haiku (cheapest) or Opus (smartest)
+  hideAdult?: boolean // adult Live TV channels and adult releases left out (on unless switched off)
   hasTraktClientId: boolean
   onboardingDone: boolean
   torrentListenPort?: string
@@ -2778,6 +2780,10 @@ export const api = {
   problemCounts: () => get<{ counts: ProblemCounts }>('/system/problems?summary=1').then((r) => r.counts),
   markProblemsRead: (req: { ids?: number[]; all?: boolean }) => post<{ marked: number; counts: ProblemCounts }>('/system/problems/read', req),
   setNotifyOnProblems: (enabled: boolean) => put<{ notifyOnProblems: boolean }>('/system/problems/notify', { enabled }),
+  crashes: () => get<CrashList>('/system/crashes'),
+  setCrashFixed: (id: number, fixed: boolean) => post<Crash>(`/system/crashes/${id}/fixed`, { fixed }),
+  deleteCrash: (id: number) => del<void>(`/system/crashes/${id}`),
+  setCrashAlerts: (enabled: boolean) => put<{ alerts: boolean }>('/system/crashes/alerts', { enabled }),
   flareSolverrStatus: () => get<FlareSolverrStatus>('/flaresolverr/status'),
   cleanupReport: () => get<CleanupReport>('/system/cleanup'),
   runCleanup: () => post<{ removedBytes: number; removed?: unknown[]; prunedQueueItems?: number; prunedActivity?: number; errors?: unknown }>('/system/cleanup'),

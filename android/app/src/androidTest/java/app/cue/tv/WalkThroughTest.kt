@@ -67,6 +67,7 @@ class WalkThroughTest {
             .putBoolean("tour.v1", true)
             .commit()
         File(ctx.filesDir, "last-crash.txt").delete()
+        File(ctx.filesDir, "crash-history.json").delete()
         File(ctx.filesDir, "home-1.json").delete()
         shell("rm -rf $SHOTS")
         shell("mkdir -p $SHOTS")
@@ -84,6 +85,9 @@ class WalkThroughTest {
     private fun shot(name: String) {
         step++
         frames(name) // how the way here drew
+        // In the log with its time, so the nightly polish run can find each
+        // step in its screen recording.
+        android.util.Log.i("CueWalkThrough", "step %02d %s".format(step, name))
         shell("screencap -p $SHOTS/%02d-%s.png".format(step, name))
     }
 
@@ -118,6 +122,7 @@ class WalkThroughTest {
 
     private fun press(key: Int, times: Int = 1) {
         repeat(times) {
+            android.util.Log.i("CueWalkThrough", "press " + KeyEvent.keyCodeToString(key))
             device.pressKeyCode(key)
             Thread.sleep(350)
         }
@@ -201,6 +206,27 @@ class WalkThroughTest {
             press(KeyEvent.KEYCODE_BACK)
             see("Continue watching")
             shot("home-again")
+
+            // Settings, near the bottom of the menu: each section shows as
+            // the highlight rests on it, like the menu's own places.
+            press(KeyEvent.KEYCODE_DPAD_LEFT, 3)
+            reach("Settings", KeyEvent.KEYCODE_DPAD_DOWN, tries = 12)
+            see("Account and server")
+            shot("settings")
+            press(KeyEvent.KEYCODE_DPAD_RIGHT) // onto the sections
+            press(KeyEvent.KEYCODE_DPAD_DOWN)
+            see("Surround sound")
+            shot("settings-playback")
+            press(KeyEvent.KEYCODE_DPAD_DOWN)
+            see("No crashes on this TV")
+            see("Release should only be called once") // every TV's, as an administrator
+            shot("settings-problems")
+            press(KeyEvent.KEYCODE_DPAD_DOWN)
+            see("Version 2.1.9")
+            shot("settings-about")
+            press(KeyEvent.KEYCODE_BACK) // to the side menu
+            press(KeyEvent.KEYCODE_BACK)
+            see("Continue watching")
         }
         // The frame counts, all together in the log (CueFrames).
         android.util.Log.i("CueFrames", "all:\n$frames")

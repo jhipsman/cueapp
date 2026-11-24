@@ -36,7 +36,7 @@ func (s *Server) knownTitles(ctx context.Context) []string {
 	var mu sync.Mutex
 	set := map[string]string{}
 	keep := func(name string) {
-		if n := normTitle(name); n != "" {
+		if n := searchNorm(name); n != "" {
 			mu.Lock()
 			set[n] = name
 			mu.Unlock()
@@ -97,7 +97,7 @@ func (s *Server) knownTitles(ctx context.Context) []string {
 // closestTitle is the well-known title the search is a letter or two from
 // (one for short names, more for long ones), or "".
 func closestTitle(q string, names []string) string {
-	nq := normTitle(q)
+	nq := searchNorm(q)
 	if len(nq) < 4 {
 		return ""
 	}

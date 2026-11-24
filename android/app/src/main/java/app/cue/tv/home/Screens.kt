@@ -550,12 +550,20 @@ private val navItems = listOf(
     NavItem("Browse", app.cue.tv.R.drawable.ic_nav_browse, 9),
 )
 private const val ProfilePage = 10
-private const val PageCount = 12
+private const val SettingsPage = 12
+private const val PageCount = 13
 private val RailWidth = 72.dp
 private val RailOpenWidth = 212.dp // the rail's box, closed too (only its names fade in)
 
-// The rail's place for a page (the profile is the last).
-private fun railSlot(page: Int): Int = navItems.indexOfFirst { it.page == page }.let { if (it < 0) navItems.size else it }
+// The rail's place for a page: the places in navItems, then Settings, then
+// the profile last.
+private fun railSlot(page: Int): Int = navItems.indexOfFirst { it.page == page }.let {
+    when {
+        it >= 0 -> it
+        page == SettingsPage -> navItems.size
+        else -> navItems.size + 1
+    }
+}
 
 @Composable
 fun MainScreen(api: CueApi, playback: Playback, openWeb: (String) -> Unit, changeServer: () -> Unit, switchProfile: () -> Unit) {
@@ -567,7 +575,7 @@ fun MainScreen(api: CueApi, playback: Playback, openWeb: (String) -> Unit, chang
     // Ask Cue, opened from Search (Back returns to Search).
     var asking by remember { mutableStateOf(false) }
     var askedBack by remember { mutableStateOf(false) } // Back from Ask: the highlight on its button again
-    val tabFocus = remember { List(navItems.size + 1) { FocusRequester() } }
+    val tabFocus = remember { List(navItems.size + 2) { FocusRequester() } }
     var tabsFocused by remember { mutableStateOf(false) }
     // Whether a page may take the highlight when it shows: on opening the
     // app and on coming back from a title, but not while the remote moves
@@ -603,7 +611,8 @@ fun MainScreen(api: CueApi, playback: Playback, openWeb: (String) -> Unit, chang
     }
 
     // Opening a title zooms it in over Home; Back zooms it away again, Home
-    // settling back into place. (Short, so a slow TV keeps up.)
+    // settling back into place. The fade is 320 ms, the short end of T6,
+    // so a slow TV keeps up.
     AnimatedContent(
         targetState = open.lastOrNull(),
         contentKey = { it?.key ?: "home" },
@@ -611,9 +620,9 @@ fun MainScreen(api: CueApi, playback: Playback, openWeb: (String) -> Unit, chang
             val opening = targetState != null && initialState == null
             val closing = targetState == null
             when {
-                opening -> (fadeIn(tween(240, easing = Settle)) + scaleIn(tween(320, easing = Settle), initialScale = 1.05f)) togetherWith
+                opening -> (fadeIn(tween(320, easing = Settle)) + scaleIn(tween(320, easing = Settle), initialScale = 1.05f)) togetherWith
                     (fadeOut(tween(160)) + scaleOut(tween(320, easing = Settle), targetScale = 0.96f))
-                closing -> (fadeIn(tween(240, easing = Settle)) + scaleIn(tween(320, easing = Settle), initialScale = 0.96f)) togetherWith
+                closing -> (fadeIn(tween(320, easing = Settle)) + scaleIn(tween(320, easing = Settle), initialScale = 0.96f)) togetherWith
                     (fadeOut(tween(160)) + scaleOut(tween(320, easing = Settle), targetScale = 1.05f))
                 else -> fadeIn(tween(260, delayMillis = 60)) togetherWith fadeOut(tween(140))
             }
@@ -660,7 +669,11 @@ fun MainScreen(api: CueApi, playback: Playback, openWeb: (String) -> Unit, chang
                     8 -> TopScreen(api, memories[8], onCard)
                     9 -> BrowseScreen(api, memories[9], browseState, onCard)
                     11 -> AskScreen(api, memories[11], onCard)
-                    else -> ProfileScreen(api, switchProfile, changeServer, openWeb)
+                    SettingsPage -> SettingsScreen(api, switchProfile, changeServer, openWeb)
+                    else -> ProfileScreen(api, switchProfile, changeServer, openWeb) {
+                        tab = SettingsPage
+                        runCatching { tabFocus[railSlot(SettingsPage)].requestFocus() }
+                    }
                 }
                 }
             }
@@ -700,8 +713,10 @@ fun MainScreen(api: CueApi, playback: Playback, openWeb: (String) -> Unit, chang
 private fun SideRail(api: CueApi, current: Int, focusers: List<FocusRequester>, expanded: Boolean, modifier: Modifier, onFocusPage: (Int) -> Unit) {
     // One width throughout: opening only fades the names in (changing the
     // width laid every item out again on every frame, which a slow TV
-    // can't keep up with).
-    val shade by animateFloatAsState(if (expanded) 1f else 0f, tween(200, easing = Settle), label = "rail-shade")
+    // can't keep up with). Opens over 260 ms; closes in about two-thirds
+    // of that (T7, S5).
+    val railMs = if (expanded) 260 else 180
+    val shade by animateFloatAsState(if (expanded) 1f else 0f, tween(railMs, easing = Settle), label = "rail-shade")
     Box(modifier.fillMaxHeight().width(RailOpenWidth)) {
         // Behind it: dark at the rail, fading out to the right.
         // (Open, the dimmed page behind takes over: no edge where the rail ends.)
@@ -721,8 +736,13 @@ private fun SideRail(api: CueApi, current: Int, focusers: List<FocusRequester>, 
                 Gap(4.dp)
             }
             Spacer(Modifier.weight(1f))
+            RailItem("Settings", selected = current == SettingsPage, expanded = expanded, reveal = { shade },
+                modifier = Modifier.focusRequester(focusers[navItems.size]), onFocus = { onFocusPage(SettingsPage) }) {
+                androidx.tv.material3.Icon(androidx.compose.ui.res.painterResource(app.cue.tv.R.drawable.ic_nav_settings), contentDescription = null, modifier = Modifier.size(20.dp))
+            }
+            Gap(4.dp)
             RailItem(api.profileName.ifEmpty { "Profile" }, selected = current == ProfilePage, expanded = expanded, reveal = { shade },
-                modifier = Modifier.focusRequester(focusers[navItems.size]), onFocus = { onFocusPage(ProfilePage) }) {
+                modifier = Modifier.focusRequester(focusers[navItems.size + 1]), onFocus = { onFocusPage(ProfilePage) }) {
                 Box(Modifier.size(22.dp).clip(CircleShape).background(LocalAccent.current), contentAlignment = Alignment.Center) {
                     AvatarFace(api.profileAvatar, api.profileName, 11.sp,
                         letterColor = if (LocalAccent.current.luminance() > 0.45f) Color.Black else Color.White)
@@ -1440,7 +1460,7 @@ fun ChannelCard(api: CueApi, ch: Channel, onFocus: () -> Unit = {}, onClick: () 
 // ---- The profile ----
 
 @Composable
-fun ProfileScreen(api: CueApi, switchProfile: () -> Unit, changeServer: () -> Unit, openWeb: (String) -> Unit) {
+fun ProfileScreen(api: CueApi, switchProfile: () -> Unit, changeServer: () -> Unit, openWeb: (String) -> Unit, openSettings: () -> Unit = {}) {
     var managing by remember { mutableStateOf(false) }
     if (managing) {
         ManageProfilesScreen(api) { managing = false }
@@ -1468,6 +1488,7 @@ fun ProfileScreen(api: CueApi, switchProfile: () -> Unit, changeServer: () -> Un
             Gap(12.dp)
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Pill("Manage profiles") { managing = true }
+                Pill("Settings", onClick = openSettings)
                 Pill(if (light) "Light mode: on" else "Light mode: off") { LightMode.set(ctx, !light) }
             }
             Gap(10.dp)

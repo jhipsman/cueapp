@@ -42,6 +42,16 @@ The same problem happening again within 10 minutes is counted on the same row ("
 - A **red dot** appears next to **Settings** in the sidebar while there are errors from the last 24 hours that nobody has marked as read. Once Settings is open, the dot is next to **System**, and the number of them is next to **Logs and errors**.
 - The **dashboard** shows "N new errors in the last 24 hours" in its "Needs your attention" box, with a link to this page.
 
+## Crashes of the TV app and the website (Problems)
+
+**Settings > System > Problems** lists crashes of Cue's own apps: the Fire TV / Google TV app (sent the next time the app starts) and the website (sent when a page fails to draw). The same crash, on any TV and in any build, is one line with a count, the devices and versions it was seen on, and the latest stack trace.
+
+- **Copy for Claude** copies what crashed, where, how often and the stack trace, with what to do, ready to paste into a Claude Code session on the Cue repository. It holds no addresses, names or keys.
+- **Mark fixed** once the fix is installed. If the crash happens again it opens again and alerts again.
+- **Alert my phone about new crashes** (on unless switched off) sends a phone alert to every administrator's phone where alerts are on (in Watch: Settings, Notifications), once for each new kind of crash, at most five an hour. With **Messages about errors** on, the alert also goes to the notification targets that listen for Health.
+
+Crashes are also written to the server log as `tv app crashed` or `web app crashed`.
+
 ## Copy for support and the log file
 
 - **Copy for support** copies the same report as **Settings > System > Server and backup > Help and support**: version, database, setup warnings, the latest problems from this page and the last 500 lines of the log.

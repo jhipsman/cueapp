@@ -54,7 +54,7 @@ const searchRowMax = 20
 func (s *Server) smartSearch(ctx context.Context, q string) watchSearchAnswer {
 	ans := watchSearchAnswer{Query: q, Sections: []watchSearchRow{}}
 	in := readSearch(q)
-	norm := normTitle(q)
+	norm := searchNorm(q)
 
 	var (
 		wg                         sync.WaitGroup
@@ -137,7 +137,7 @@ func (s *Server) smartSearch(ctx context.Context, q string) watchSearchAnswer {
 			tries = append([]string{near}, tries...)
 		}
 		for _, v := range tries {
-			if cards, _ := s.smartTitles(ctx, v, normTitle(v)); len(cards) > 0 {
+			if cards, _ := s.smartTitles(ctx, v, searchNorm(v)); len(cards) > 0 {
 				ans.DidYouMean = v
 				ans.Sections = append(ans.Sections, watchSearchRow{Key: "titles", Title: "Titles", Items: cards})
 				break
@@ -162,13 +162,13 @@ func (s *Server) smartTitles(ctx context.Context, q, norm string) ([]watchCard, 
 		}
 		c := watchCard{Kind: m.MediaType, TMDBID: m.ID, Title: m.DisplayTitle(), Year: m.Year(), Overview: m.Overview,
 			PosterURL: metadata.PosterURL(m.PosterPath), BackdropURL: metadata.BackdropURL(m.BackdropPath), Rating: metadata.RoundRating(m.VoteAverage)}
-		if normTitle(c.Title) == norm {
+		if searchNorm(c.Title) == norm {
 			exact = true
 		}
 		out = append(out, c)
 	}
 	sort.SliceStable(out, func(i, j int) bool {
-		return normTitle(out[i].Title) == norm && normTitle(out[j].Title) != norm
+		return searchNorm(out[i].Title) == norm && searchNorm(out[j].Title) != norm
 	})
 	return out, exact
 }
@@ -307,7 +307,7 @@ func (s *Server) searchPerson(ctx context.Context, q, norm string) (*metadata.Pe
 		return nil, nil, false
 	}
 	h := hits[0]
-	name := normTitle(h.Name)
+	name := searchNorm(h.Name)
 	exact := name == norm
 	// A search that's a whole word of a well-known name ("nolan", "zendaya").
 	partial := false
@@ -394,8 +394,8 @@ func interleave(a, b []watchCard, n int) []watchCard {
 	return out
 }
 
-// normTitle is a name without case, punctuation or extra spaces.
-func normTitle(s string) string {
+// searchNorm is a name without case, punctuation or extra spaces.
+func searchNorm(s string) string {
 	return strings.Join(strings.Fields(strings.Map(func(r rune) rune {
 		if unicode.IsLetter(r) || unicode.IsDigit(r) {
 			return unicode.ToLower(r)
@@ -420,8 +420,8 @@ func sameTopic(a, b string) bool {
 		}
 		return out
 	}
-	for _, x := range forms(normTitle(a)) {
-		for _, y := range forms(normTitle(b)) {
+	for _, x := range forms(searchNorm(a)) {
+		for _, y := range forms(searchNorm(b)) {
 			if x == y {
 				return true
 			}

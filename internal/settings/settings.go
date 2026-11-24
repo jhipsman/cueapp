@@ -65,7 +65,7 @@ const (
 	KeySubtitleUpgrade       = "subtitles.upgrade"                // "0" stops swapping a subtitle for one made for the exact video file later; on by default, and only while subtitles download automatically
 	KeyOpenSubtitlesAPIKey   = "subtitles.opensubtitles_api_key"  // encrypted
 	KeyAnthropicAPIKey       = "ai.anthropic_api_key"             // encrypted: Ask Cue's key (Claude API)
-	KeyAnthropicModel        = "ai.model"                         // Ask Cue's model: "" or "haiku" (the default, cheapest), "opus" (the smartest)
+	KeyAnthropicModel        = "ai.model"                         // Ask Cue's model: "" or "sonnet" (the default), "haiku" (the cheapest), "opus" (the smartest)
 
 	// Phase 3 — curated/public list import (Discover). Trakt's
 	// public list-items endpoint only needs a client ID (an app
@@ -103,7 +103,9 @@ const (
 
 	KeyPublicURL = "server.public_url" // the address you open Cue at from your own devices (like https://cue.example.com); links in notification messages use it; unset = no links
 
-	KeyNotifyOnProblems = "notify.on_problems" // "1" sends a notification (to the targets that listen for Health) when a new error is added to the problem log; unset or "0" sends none
+	KeyHideAdult        = "safety.hide_adult"   // "0" shows adult Live TV channels and adult releases in release search; unset or "1" hides them
+	KeyCrashAlerts      = "notify.crash_alerts" // "0" stops phone alerts when the TV or web app crashes in a way not seen before; unset or "1" sends them to administrators' phones that have alerts on
+	KeyNotifyOnProblems = "notify.on_problems"  // "1" sends a notification (to the targets that listen for Health) when a new error is added to the problem log; unset or "0" sends none
 
 	// A download keeps its place until it has been repaired, unpacked and
 	// imported; the others wait in line.
