@@ -2,6 +2,8 @@ package app.cue.tv.home
 
 import android.content.Context
 import android.os.Build
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -87,12 +89,26 @@ fun SettingsScreen(api: CueApi, switchProfile: () -> Unit, changeServer: () -> U
             }
         }
         HGap(40.dp)
-        Box(Modifier.weight(1f).fillMaxHeight()) {
-            when (section) {
-                SettingsSection.Account -> AccountSettings(api, switchProfile, changeServer, openWeb) { managing = true }
-                SettingsSection.Playback -> PlaybackSettings()
-                SettingsSection.Problems -> ProblemsSettings(api)
-                SettingsSection.About -> AboutSettings(api)
+        // A section's panel fades in, rising a little, as the one before
+        // fades out a touch quicker (motion rulebook S3, S5).
+        val rise = with(androidx.compose.ui.platform.LocalDensity.current) { 12.dp.roundToPx() }
+        androidx.compose.animation.AnimatedContent(
+            targetState = section,
+            transitionSpec = {
+                (androidx.compose.animation.fadeIn(tween(240, delayMillis = 40, easing = Settle)) +
+                    androidx.compose.animation.slideInVertically(tween(280, easing = Settle)) { rise }) togetherWith
+                    androidx.compose.animation.fadeOut(tween(160, easing = Settle))
+            },
+            label = "settings-section",
+            modifier = Modifier.weight(1f).fillMaxHeight(),
+        ) { showing ->
+            Box(Modifier.fillMaxSize()) {
+                when (showing) {
+                    SettingsSection.Account -> AccountSettings(api, switchProfile, changeServer, openWeb) { managing = true }
+                    SettingsSection.Playback -> PlaybackSettings()
+                    SettingsSection.Problems -> ProblemsSettings(api)
+                    SettingsSection.About -> AboutSettings(api)
+                }
             }
         }
     }
