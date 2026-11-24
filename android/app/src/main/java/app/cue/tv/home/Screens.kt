@@ -1225,7 +1225,8 @@ fun LiveScreen(api: CueApi, playback: Playback, openWeb: (String) -> Unit) {
     // Sorted by Cue's catalog, not the provider's groups: one of each
     // channel (no copies, no dividers), in the picked country.
     val place = country.orEmpty()
-    val real = remember(l) { l.channels.filter { !it.divider && !it.copy } }
+    // The big networks first; the 24/7 loops, events and adult last; then by number.
+    val real = remember(l) { l.channels.filter { !it.divider && !it.copy }.sortedWith(compareBy({ it.rank }, { if (it.num > 0) it.num else Int.MAX_VALUE })) }
     // A channel the list gives no country shows in every one.
     val here = remember(real, place) { if (place.isEmpty()) real else real.filter { it.country == place || it.country.isEmpty() } }
     val topicCounts = remember(here) { here.groupingBy { it.topic }.eachCount() }

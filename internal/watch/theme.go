@@ -40,12 +40,21 @@ func (t Theme) Clean() Theme {
 	return t
 }
 
+// oldDefault is the theme Cue started with (teal on midnight). A profile
+// saved with exactly it never really picked colours (it was what showed),
+// so it follows today's default instead.
+var oldDefault = Theme{Accent: "#34d1bf", Glow: "soft", Background: "midnight"}
+
 func parseTheme(s string) Theme {
 	var t Theme
 	if s != "" {
 		_ = json.Unmarshal([]byte(s), &t)
 	}
-	return t.Clean()
+	t = t.Clean()
+	if strings.EqualFold(t.Accent, oldDefault.Accent) && t.Glow == oldDefault.Glow && t.Background == oldDefault.Background {
+		return DefaultTheme
+	}
+	return t
 }
 
 // SetTheme saves one of userID's profiles' theme.

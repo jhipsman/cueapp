@@ -148,6 +148,7 @@ export interface LiveChannel {
   spares?: number
   divider?: boolean
   raw?: string // the provider's own name
+  rank?: number // 0 the big networks, 1 the rest, then events, 24/7 loops, adult: the default order
 }
 export interface WatchSearchAnswer {
   query: string

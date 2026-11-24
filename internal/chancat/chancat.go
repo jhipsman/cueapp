@@ -10,6 +10,7 @@
 package chancat
 
 import (
+	"regexp"
 	"sort"
 	"strings"
 	"unicode"
@@ -102,7 +103,13 @@ func country(s string) string {
 // A space alone is only taken as the end of a country in a group's name: a
 // channel's ("USA Network", "UK Gold") is the channel's own.
 func prefix(s string, group bool) (code, rest string) {
-	t := strings.TrimSpace(s)
+	// Any symbol between a country and the rest ("US ❖ ABC") is a separator.
+	t := strings.TrimSpace(strings.Map(func(r rune) rune {
+		if unicode.Is(unicode.So, r) {
+			return '|'
+		}
+		return r
+	}, s))
 	t = strings.TrimLeft(t, "★•*#|[( ")
 	// Up to a separator.
 	if i := strings.IndexAny(t, "|:])★•-"); i > 0 && i <= 16 {
@@ -189,7 +196,10 @@ func Read(name, group string) Info {
 func clean(s string) (string, int) {
 	s = strings.Map(func(r rune) rune {
 		switch {
-		case r == '◉' || r == '●' || r == '★' || r == '☆' || r == '•' || r == '|' || r == '#' || r == '✪' || r == '♦' || r == '◆':
+		case r == '|' || r == '#' || r == '•' || r == '·':
+			return ' '
+		// Any other symbol a provider decorates names with (● ⬤ ★ ❖ ✪ ◉ 🔴…).
+		case unicode.Is(unicode.So, r) || unicode.Is(unicode.Sk, r) || unicode.Is(unicode.Co, r) || (r >= 0xFE00 && r <= 0xFE0F) || r == 0x200D:
 			return ' '
 		case r >= 0x1D2C && r <= 0x1DBF: // superscript letters ("ᴴᴰ")
 			return -1
@@ -218,12 +228,22 @@ func clean(s string) (string, int) {
 	if quality == 0 {
 		quality = 2
 	}
-	// Words left empty by trimming ("-" alone).
+	// Words left empty by trimming ("-" alone), stray commas, and a "24/7"
+	// said twice ("24/7 ,24/7 Trust Me").
 	var keep []string
+	seen247 := false
 	for _, w := range out {
-		if w != "" {
-			keep = append(keep, w)
+		w = strings.Trim(w, ",;")
+		if w == "" {
+			continue
 		}
+		if w == "24/7" {
+			if seen247 {
+				continue
+			}
+			seen247 = true
+		}
+		keep = append(keep, w)
 	}
 	return strings.Join(keep, " "), quality
 }
@@ -325,4 +345,42 @@ func Fold(list []Copy) (mainOf map[string]string, copies map[string][]string) {
 		}
 	}
 	return mainOf, copies
+}
+
+// Rank orders a list the way people look for channels: the big networks
+// first, then the rest of the real channels, then events, the 24/7 loops of
+// one show, and adult channels last. Lower comes first.
+func Rank(in Info) int {
+	switch in.Topic {
+	case "adult":
+		return 4
+	case "247":
+		return 3
+	case "events":
+		return 2
+	}
+	if majorChannel.MatchString(strings.ToLower(in.Clean)) {
+		return 0
+	}
+	return 1
+}
+
+// majorChannel are the networks most people look for first.
+var majorChannel = regexp.MustCompile(`^(abc|cbs|nbc|fox|cw|pbs|cnn|msnbc|cnbc|fox news|fox business|espn|espn2|espnu|fs1|fs2|tnt|tbs|trutv|usa network|amc|fx|fxx|hbo|hbo 2|cinemax|showtime|starz|discovery|history|hgtv|food network|tlc|bravo|e!|comedy central|nickelodeon|disney channel|disney junior|cartoon network|nfl network|nba tv|mlb network|nhl network|golf channel|big ten network|sec network|acc network|a&e|lifetime|syfy|paramount network|mtv|bet|freeform|tcm|national geographic|nat geo|animal planet|the weather channel|weather channel|bbc one|bbc two|bbc news|itv1|itv|channel 4|channel 5|sky one|sky news|sky sports main event|sky sports premier league|tsn|sportsnet|cbc|ctv|global)( |$)`)
+
+// TidyGroup is a provider's group name without its symbols: "US ❖ ABC" is
+// "US · ABC", "★ VIP ★ SPORTS" is "VIP · SPORTS".
+func TidyGroup(name string) string {
+	var parts []string
+	for _, p := range strings.FieldsFunc(name, func(r rune) bool {
+		return unicode.Is(unicode.So, r) || r == '|' || r == '#' || r == '•' || r == '·'
+	}) {
+		if p = strings.TrimSpace(p); p != "" {
+			parts = append(parts, p)
+		}
+	}
+	if len(parts) == 0 {
+		return strings.TrimSpace(name)
+	}
+	return strings.Join(parts, " · ")
 }

@@ -14,4 +14,12 @@ func TestThemeClean(t *testing.T) {
 	if got := (Theme{Accent: "red; background:url(x)"}).Clean(); got.Accent != DefaultTheme.Accent {
 		t.Errorf("bad accent kept: %+v", got)
 	}
+	// The old default, saved on a profile: today's default.
+	if got := parseTheme(`{"accent":"#34D1BF","glow":"soft","background":"midnight"}`); got != DefaultTheme {
+		t.Errorf("old default = %+v", got)
+	}
+	// Colours someone picked: kept.
+	if got := parseTheme(`{"accent":"#34d1bf","glow":"soft","background":"tinted"}`); got.Background != "tinted" {
+		t.Errorf("picked = %+v", got)
+	}
 }
