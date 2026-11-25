@@ -694,7 +694,11 @@ fun MainScreen(api: CueApi, playback: Playback, openWeb: (String) -> Unit, chang
             expanded = tabsFocused,
             modifier = Modifier
                 .align(Alignment.CenterStart)
-                .focusProperties { enter = { tabFocus[railSlot(tab)] } }
+                // Back from Ask Cue: the idea that had the highlight goes, and
+                // the highlight would fall into the menu (its own place) before
+                // Search can put it on Ask Cue's button. The menu turns it away
+                // until it's there; moving onto the menu works again just after.
+                .focusProperties { enter = { if (askedBack) FocusRequester.Cancel else tabFocus[railSlot(tab)] } }
                 .focusGroup()
                 .onFocusChanged {
                     tabsFocused = it.hasFocus
