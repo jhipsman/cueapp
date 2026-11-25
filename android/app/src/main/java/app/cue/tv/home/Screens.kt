@@ -62,6 +62,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -946,8 +947,18 @@ fun TitleScreen(api: CueApi, playback: Playback, card: Tile, memory: FocusMemory
         if (card.kind == "tv" && season >= 0 && title != null) episodes = runCatching { api.season(card.tmdbId, season) }.getOrDefault(emptyList())
     }
     val t = title
+    // Shown while the title's details load: what the card already knows
+    // (picture, name, story) with Play highlighted, so the page is there at
+    // once instead of a blank screen with nothing highlighted. The full page
+    // then takes over in place, without rising in a second time.
+    var previewed by remember(card.key) { mutableStateOf(false) }
     if (t == null) {
-        Centered { Text(problem.ifEmpty { "Loading…" }, color = Dim) }
+        if (problem.isNotEmpty()) {
+            Centered { Text(problem, color = Dim) }
+            return
+        }
+        SideEffect { previewed = true }
+        TitlePreview(card, playFocus)
         return
     }
     val c = t.card
@@ -956,6 +967,7 @@ fun TitleScreen(api: CueApi, playback: Playback, card: Tile, memory: FocusMemory
     val titleExtras = rememberExtras(api, c.kind, c.tmdbId)
     val pageTint = LocalTint.current
     LaunchedEffect(titleExtras?.colour) { titleExtras?.colour?.let { pageTint.value = it } }
+    CompositionLocalProvider(LocalCalm provides previewed) {
     Box(Modifier.fillMaxSize().background(Background).rise(0, 0.dp)) {
         // Rest here a moment and the picture comes alive. It plays under the
         // picture, which fades away once it's really playing.
@@ -969,7 +981,7 @@ fun TitleScreen(api: CueApi, playback: Playback, card: Tile, memory: FocusMemory
         }
         // The picture fills the screen; the words sit on its darker left.
         AsyncImage(model = c.backdrop, contentDescription = null, contentScale = ContentScale.Crop,
-            modifier = Modifier.fillMaxSize().graphicsLayer { alpha = still }.settleIn())
+            modifier = Modifier.fillMaxSize().graphicsLayer { alpha = still }.settleIn(settled = previewed))
         Box(Modifier.fillMaxSize().background(Brush.horizontalGradient(0f to shade(0.95f), 0.42f to shade(0.65f), 0.75f to shade(0.10f))))
         Box(Modifier.fillMaxSize().background(Brush.verticalGradient(0.45f to Color.Transparent, 1f to shade(0.95f))))
         CompositionLocalProvider(LocalBringIntoViewSpec provides GentleSpec) {
@@ -1130,6 +1142,48 @@ fun TitleScreen(api: CueApi, playback: Playback, card: Tile, memory: FocusMemory
                 }
             }
         }
+        }
+    }
+    }
+}
+
+// A title's page while its details load, from what its card already knows:
+// the picture behind, the name (or logo), the story, and Play highlighted,
+// laid out where the full page puts them so it can take over in place.
+@Composable
+private fun TitlePreview(card: Tile, playFocus: FocusRequester) {
+    LaunchedEffect(card.key) {
+        delay(60)
+        runCatching { playFocus.requestFocus() }
+    }
+    Box(Modifier.fillMaxSize().background(Background)) {
+        AsyncImage(model = card.backdrop, contentDescription = null, contentScale = ContentScale.Crop,
+            modifier = Modifier.fillMaxSize().settleIn())
+        Box(Modifier.fillMaxSize().background(Brush.horizontalGradient(0f to shade(0.95f), 0.42f to shade(0.65f), 0.75f to shade(0.10f))))
+        Box(Modifier.fillMaxSize().background(Brush.verticalGradient(0.45f to Color.Transparent, 1f to shade(0.95f))))
+        Column(Modifier.padding(start = Gutter, top = 150.dp, bottom = 20.dp).width(520.dp)) {
+            Box(Modifier.rise(0, 24.dp)) { TitleMark(card.title, card.logo, maxWidth = 380.dp, maxHeight = 120.dp, fontSize = 40.sp) }
+            // Where the facts (rating, year, length) will be.
+            Gap(14.dp)
+            Gap(20.dp)
+            card.overview?.let {
+                Gap(10.dp)
+                Text(it, fontSize = 12.sp, color = Color(0xD9FFFFFF), maxLines = 3, overflow = TextOverflow.Ellipsis, lineHeight = 17.sp,
+                    modifier = Modifier.rise(170))
+            }
+            Gap(18.dp)
+            // Play, highlighted at once; it works when the page has loaded,
+            // a moment later, and takes the highlight with it.
+            Pill(
+                when {
+                    card.soon -> "Remind me"
+                    (card.progress ?: 0.0) > 0 -> "Resume"
+                    else -> "Play"
+                },
+                primary = true,
+                icon = if (card.soon) app.cue.tv.R.drawable.ic_cue_calendar else app.cue.tv.R.drawable.ic_cue_play,
+                modifier = Modifier.rise(290).focusRequester(playFocus),
+            ) {}
         }
     }
 }
