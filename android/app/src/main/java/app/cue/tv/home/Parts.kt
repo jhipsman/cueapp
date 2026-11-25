@@ -277,12 +277,19 @@ val PivotSpec = object : BringIntoViewSpec {
 @Composable
 fun rememberRowsSpec(): BringIntoViewSpec {
     val above = with(androidx.compose.ui.platform.LocalDensity.current) { 46.dp.toPx() } // the title and the row's top padding
-    return remember(above) {
+    val slack = with(androidx.compose.ui.platform.LocalDensity.current) { 24.dp.toPx() }
+    return remember(above, slack) {
         object : BringIntoViewSpec {
             override val scrollAnimationSpec: androidx.compose.animation.core.AnimationSpec<Float> =
                 androidx.compose.animation.core.tween(320, easing = Settle)
 
-            override fun calculateScrollDistance(offset: Float, size: Float, containerSize: Float): Float = offset - above
+            // Already in place, give or take the highlighted poster's lift
+            // (it grows a little, which moved the row by a few pixels and
+            // back at every press: the page bounced along a row).
+            override fun calculateScrollDistance(offset: Float, size: Float, containerSize: Float): Float {
+                val d = offset - above
+                return if (kotlin.math.abs(d) < slack) 0f else d
+            }
         }
     }
 }

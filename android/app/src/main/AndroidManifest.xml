@@ -15,6 +15,31 @@
         <intent>
             <action android:name="android.speech.action.RECOGNIZE_SPEECH" />
         </intent>
+        <!-- Watch on Netflix (and the rest): the streaming services' own apps (ServiceApps.kt). -->
+        <intent>
+            <action android:name="android.intent.action.SEARCH" />
+        </intent>
+        <package android:name="com.netflix.ninja" />
+        <package android:name="com.netflix.mediaclient" />
+        <package android:name="com.amazon.amazonvideo.livingroom" />
+        <package android:name="com.amazon.avod" />
+        <package android:name="com.amazon.firebat" />
+        <package android:name="com.amazon.avod.thirdpartyclient" />
+        <package android:name="com.disney.disneyplus" />
+        <package android:name="com.wbd.stream" />
+        <package android:name="com.hbo.hbonow" />
+        <package android:name="com.hulu.livingroomplus" />
+        <package android:name="com.hulu.plus" />
+        <package android:name="com.peacocktv.peacockandroid" />
+        <package android:name="com.cbs.ott" />
+        <package android:name="com.cbs.app" />
+        <package android:name="com.apple.atve.androidtv.appletv" />
+        <package android:name="com.apple.atve.amazon.appletv" />
+        <package android:name="com.tubitv" />
+        <package android:name="tv.pluto.android" />
+        <package android:name="com.roku.web.trc" />
+        <package android:name="com.roku.trc" />
+        <package android:name="com.plexapp.android" />
     </queries>
 
     <application

@@ -67,7 +67,9 @@ class ScreensTest {
     // them to be still would wait forever.
     private fun see(text: String) {
         val until = System.currentTimeMillis() + 15_000
-        while (compose.onAllNodes(hasText(text, substring = true)).fetchSemanticsNodes().isEmpty()) {
+        // Its words, or an icon button's name.
+        val node = hasText(text, substring = true) or androidx.compose.ui.test.hasContentDescription(text, substring = true)
+        while (compose.onAllNodes(node).fetchSemanticsNodes().isEmpty()) {
             if (System.currentTimeMillis() > until) {
                 compose.onRoot().captureRoboImage("build/screens/never-saw-" + text.replace(Regex("[^A-Za-z0-9]+"), "-") + ".png")
                 throw AssertionError("never saw \"$text\"")
@@ -157,7 +159,23 @@ class ScreensTest {
         see("Continue watching")
         press(KeyEvent.KEYCODE_DPAD_RIGHT) // into Home: its first card
         press(KeyEvent.KEYCODE_DPAD_CENTER)
-        see("Not for me")
+        see("Add to My List")
         shot("title")
+        // Down to More Like This, into one of them, and Back: the title
+        // before, its name in view at the top again.
+        repeat(8) {
+            if (compose.onAllNodes(hasText("More Like This")).fetchSemanticsNodes().isEmpty()) press(KeyEvent.KEYCODE_DPAD_DOWN)
+        }
+        see("More Like This")
+        press(KeyEvent.KEYCODE_DPAD_DOWN)
+        shot("more-like-this")
+        press(KeyEvent.KEYCODE_DPAD_CENTER)
+        compose.mainClock.advanceTimeBy(1500)
+        shot("from-more-like-this")
+        press(KeyEvent.KEYCODE_BACK)
+        see("Paper Moons")
+        repeat(10) { press(KeyEvent.KEYCODE_DPAD_UP) }
+        see("Add to My List")
+        shot("back-to-the-title")
     }
 }

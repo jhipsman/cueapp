@@ -104,7 +104,9 @@ export default function LivePage() {
       return 'now'
     }
   })
-  const [sort, setSort] = useState<'az' | 'num'>('az')
+  // "top": the big networks first, the 24/7 loops and events last (the
+  // server's rank), then by number.
+  const [sort, setSort] = useState<'top' | 'az' | 'num'>('top')
   // All channels sorts by Cue's catalog: a country ("" is every country) and a topic ("" is all).
   const [country, setCountryState] = useState<string | null>(() => stored('cue-live-country'))
   const [topic, setTopic] = useState('')
@@ -225,9 +227,39 @@ export default function LivePage() {
       ? list.filter((c) => c.name.toLowerCase().includes(findText) || (c.now?.title ?? '').toLowerCase().includes(findText))
       : list
     if (cat === 'recent') return found
-    return [...found].sort((a, b) => (sort === 'num' ? (Number(a.num) || 1e9) - (Number(b.num) || 1e9) : a.name.localeCompare(b.name)))
+    const byNum = (a: LiveChannel, b: LiveChannel) => (Number(a.num) || 1e9) - (Number(b.num) || 1e9)
+    return [...found].sort((a, b) =>
+      sort === 'num' ? byNum(a, b) : sort === 'top' ? (a.rank ?? 1) - (b.rank ?? 1) || byNum(a, b) : a.name.localeCompare(b.name),
+    )
   }, [list, findText, sort, cat])
   const visible = shownList.slice(0, shown)
+
+  // A channel picked from elsewhere (the game up top, Sports, a search):
+  // the list shows it, scrolled to and marked as playing. Its country and
+  // all topics, if the ones picked don't have it; enough of the list drawn
+  // to reach it.
+  const shownCh = useRef('')
+  useEffect(() => {
+    if (!ch || !data?.channels || shownCh.current === ch) return
+    const c = data.channels.find((x) => x.id === ch)
+    if (!c) return
+    if (cat === 'all' && !list.some((x) => x.id === ch)) {
+      setTopic('')
+      if (place && c.country && c.country !== place) setCountryState(c.country)
+      else if (place && !c.country) setCountryState('')
+      return // again once the list has it
+    }
+    const i = shownList.findIndex((x) => x.id === ch)
+    if (i < 0) return
+    if (i >= shown) {
+      setShown(i + PAGE)
+      return
+    }
+    shownCh.current = ch
+    requestAnimationFrame(() =>
+      document.querySelector(`[data-ch="${CSS.escape(ch)}"]`)?.scrollIntoView({ block: 'center', behavior: 'smooth' }),
+    )
+  }, [ch, data, cat, list, place, shownList, shown])
   const channel = data?.channels?.find((c) => c.id === ch)
   useDocumentTitle(channel ? channel.name : 'Live TV')
 
@@ -778,7 +810,8 @@ export default function LivePage() {
                 {cat !== 'recent' && (
                   <label className="wx-live-sort">
                     <span className="sr-only">Order</span>
-                    <select value={sort} onChange={(e) => setSort(e.target.value as 'az' | 'num')}>
+                    <select value={sort} onChange={(e) => setSort(e.target.value as 'top' | 'az' | 'num')}>
+                      <option value="top">Top channels</option>
                       <option value="az">Sorted A–Z</option>
                       <option value="num">By channel number</option>
                     </select>
@@ -804,7 +837,7 @@ export default function LivePage() {
                 const pct = n ? Math.min(1, Math.max(0, (now - s0) / (e0 - s0))) : 0
                 const left = n ? Math.max(0, Math.round((e0 - now) / 60000)) : 0
                 return (
-                  <div className={`wx-chan-card${c.id === ch ? ' playing' : ''}`} key={c.id}>
+                  <div className={`wx-chan-card${c.id === ch ? ' playing' : ''}`} key={c.id} data-ch={c.id}>
                     <button className="wx-chan-card-main" onClick={() => pick(c)} title={c.id === ch ? `${c.name}: full screen` : `Watch ${c.name}`}>
                       <span className="wx-chan-card-logo">
                         <ChannelLogo name={c.name} src={c.logo} />
@@ -872,7 +905,7 @@ export default function LivePage() {
                   const progs = guide[c.id] ?? (c.now ? [c.now, ...(c.next ? [c.next] : [])] : [])
                   const playing = c.id === ch
                   return (
-                    <div className={`wx-guide-row${playing ? ' playing' : ''}`} key={c.id}>
+                    <div className={`wx-guide-row${playing ? ' playing' : ''}`} key={c.id} data-ch={c.id}>
                       <div className="wx-guide-chan">
                         <button className="wx-guide-chan-play" onClick={() => pick(c)} title={playing ? `${c.name}: full screen` : `Watch ${c.name}`}>
                           <span className="wx-guide-logo">

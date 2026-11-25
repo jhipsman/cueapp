@@ -261,20 +261,25 @@ func (s *Server) queueNews(ctx context.Context, pid int64) int {
 	cont := s.continueWatching(ctx, pid)
 	cands := append([]watchCard{}, cont...)
 	cands = append(cands, s.newEpisodes(ctx, pid, cont)...)
+	// Day one: what's just come out, sent to Premiumize ahead of time
+	// (play_prepare.go), in the background so the alerts don't wait.
+	var wants []prepareWant
 	for _, c := range cands {
 		if c.Kind != watch.KindTV || !c.New || c.Episode < 1 {
 			continue
 		}
 		key := fmt.Sprintf("ep:%d:%d:%d", c.TMDBID, c.Season, c.Episode)
-		if s.WatchRepo.AlreadyTold(pid, key) {
-			continue
-		}
 		eps, err := tm.GetSeasonCached(ctx, c.TMDBID, c.Season)
 		if err != nil {
 			continue
 		}
+		told := s.WatchRepo.AlreadyTold(pid, key)
 		for _, e := range eps {
-			if e.Episode == c.Episode && recentlyAired(e.AirDate, pushNewWithin) {
+			// Out in the last two days: ready ahead of time (told or not).
+			if e.Episode == c.Episode && recentlyAired(e.AirDate, 2) {
+				wants = append(wants, prepareWant{tmdbID: c.TMDBID, season: c.Season, episode: c.Episode, link: fmt.Sprintf("/watch/tv/%d", c.TMDBID)})
+			}
+			if !told && e.Episode == c.Episode && recentlyAired(e.AirDate, pushNewWithin) {
 				body := fmt.Sprintf("S%d:E%d", c.Season, c.Episode)
 				if c.EpisodeTitle != "" {
 					body += " · " + c.EpisodeTitle
@@ -284,6 +289,18 @@ func (s *Server) queueNews(ctx context.Context, pid int64) int {
 		}
 	}
 	out, _ := s.remindedCards(ctx, pid)
+	for _, c := range out {
+		if c.Kind == watch.KindMovie {
+			wants = append(wants, prepareWant{tmdbID: c.TMDBID, link: fmt.Sprintf("/watch/movie/%d", c.TMDBID)})
+		}
+	}
+	if len(wants) > 0 {
+		go func() {
+			pctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+			defer cancel()
+			s.prepareNews(pctx, pid, wants)
+		}()
+	}
 	for _, c := range out {
 		tell(fmt.Sprintf("out:%s:%d", c.Kind, c.TMDBID), c.Title+" is out", "You asked to be told: it's ready to watch on Cue.",
 			fmt.Sprintf("/watch/%s/%d", c.Kind, c.TMDBID))

@@ -75,6 +75,10 @@ type playEntry struct {
 	// indexers, nothing found, no torrents, nothing cached); set only when
 	// candidates is empty.
 	nothing string
+	// uncached: versions found but not yet in Premiumize's cloud, best
+	// first (a new release on its first day): what Get it ready sends there
+	// (play_prepare.go).
+	uncached []playCandidate
 }
 
 // playLists keeps the streamable releases per title ("movie:12", "ep:4:1:2").
@@ -108,6 +112,13 @@ func (p *playLists) put(key string, e playEntry) {
 	}
 	e.at = now
 	p.entries[key] = e
+}
+
+// del forgets one title's list (it's been made ready: look again).
+func (p *playLists) del(key string) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	delete(p.entries, key)
 }
 
 // clear forgets every list (the stream add-ons changed).
@@ -271,22 +282,47 @@ func (s *Server) handlePlayTMDBMovie(w http.ResponseWriter, r *http.Request) {
 		s.servePlay(w, r, movieTarget(m))
 		return
 	}
-	d, err := s.TMDB().GetMovieDetail(r.Context(), tmdbID)
-	if err != nil {
-		writeUpstreamError(w, "look the movie up on TMDB", err)
+	t, status, msg := s.tmdbMovieTarget(r.Context(), tmdbID)
+	if status != 0 {
+		writeError(w, status, msg)
 		return
 	}
+	s.servePlay(w, r, t)
+}
+
+// tmdbMovieTarget is what to play for any film by its TMDB id (the
+// library's entry when it has one); a status and message when there's none.
+func (s *Server) tmdbMovieTarget(ctx context.Context, tmdbID int) (playTarget, int, string) {
+	if m, ok, err := s.MovieRepo.GetByTMDBID(tmdbID); err == nil && ok {
+		return movieTarget(m), 0, ""
+	}
+	d, err := s.TMDB().GetMovieDetail(ctx, tmdbID)
+	if err != nil {
+		return playTarget{}, http.StatusBadGateway, "Couldn't look the movie up on TMDB right now."
+	}
 	// Not released anywhere yet: nothing to play. In theaters only: camera
-	// recordings are let in (they're usually all there is).
-	f := filmOutOf(d, time.Now())
+	// recordings are let in (they're usually all there is). On a streaming
+	// service already: out (filmOutNow).
+	f := s.filmOutNow(ctx, tmdbID)
 	if f.upcoming(time.Now()) {
 		note := f.notOutNote(time.Now())
-		writeError(w, http.StatusNotFound, fmt.Sprintf("%s isn't out yet (%s).", d.Title, strings.ToLower(note[:1])+note[1:]))
-		return
+		return playTarget{}, http.StatusNotFound, fmt.Sprintf("%s isn't out yet (%s).", d.Title, strings.ToLower(note[:1])+note[1:])
 	}
 	t := movieTarget(library.Movie{TMDBID: tmdbID, Title: d.Title, Year: d.Year()})
 	t.inTheaters = f.inTheaters(time.Now())
-	s.servePlay(w, r, t)
+	return t, 0, ""
+}
+
+// tmdbEpisodeTarget is what to play for any episode of any show by its TMDB id.
+func (s *Server) tmdbEpisodeTarget(ctx context.Context, tmdbID, season, episode int) (playTarget, int, string) {
+	if series, ok, err := s.MovieRepo.GetSeriesByTMDBID(tmdbID); err == nil && ok {
+		return episodeTarget(series, season, episode), 0, ""
+	}
+	d, err := s.TMDB().GetShowFull(ctx, tmdbID)
+	if err != nil {
+		return playTarget{}, http.StatusBadGateway, "Couldn't look the show up on TMDB right now."
+	}
+	return episodeTarget(library.Series{TMDBID: tmdbID, Title: d.Name, Year: d.Year()}, season, episode), 0, ""
 }
 
 // GET /api/play/tmdb/tv/{tmdbId}/{season}/{episode}: any episode of any show.
@@ -691,12 +727,17 @@ func (s *Server) findStreamable(ctx context.Context, pm *premiumize.Client, t pl
 			"addons", addonsTook.Round(time.Millisecond), "search", searchTook.Round(time.Millisecond), "total", time.Since(started).Round(time.Millisecond))
 	}()
 	for i, ok := range cached {
-		if ok {
+		if ok || s.prepared(cands[i].Hash) {
 			entry.candidates = append(entry.candidates, cands[i])
+		} else if len(entry.uncached) < prepareTries {
+			entry.uncached = append(entry.uncached, cands[i])
 		}
 	}
 	if len(entry.candidates) == 0 {
 		entry.nothing = strings.TrimSpace(addonNote + " " + st.message(t.label, len(items)))
+		if len(entry.uncached) > 0 {
+			entry.nothing += " Get it ready sends one to Premiumize; a new release usually takes a few minutes."
+		}
 	}
 	return entry, nil
 }

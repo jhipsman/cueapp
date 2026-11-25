@@ -9,7 +9,6 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.UiDevice
-import androidx.test.uiautomator.Until
 import app.cue.tv.home.HomeActivity
 import okhttp3.mockwebserver.MockWebServer
 import org.junit.After
@@ -94,7 +93,10 @@ class WalkThroughTest {
     // Waits for text on screen (part of it is enough), failing with a
     // screenshot of what showed instead.
     private fun see(text: String, timeout: Long = 15_000) {
-        if (!device.wait(Until.hasObject(By.textContains(text)), timeout)) {
+        // Its words, or an icon button's name.
+        val until = System.currentTimeMillis() + timeout
+        while (!device.hasObject(By.textContains(text)) && !device.hasObject(By.descContains(text)) && System.currentTimeMillis() < until) Thread.sleep(250)
+        if (!device.hasObject(By.textContains(text)) && !device.hasObject(By.descContains(text))) {
             shot("missing-" + text.replace(Regex("[^A-Za-z0-9]+"), "-"))
             throw AssertionError("\"$text\" never showed. On screen: ${onScreen()}. Asked of the server: ${fake.asked.takeLast(15)}")
         }
@@ -170,7 +172,7 @@ class WalkThroughTest {
 
             // A title from the service's page, then Back to it, then Back to Browse.
             press(KeyEvent.KEYCODE_DPAD_CENTER)
-            see("More Like This")
+            see("Add to My List") // the title page's My List button (an icon: its name is its description)
             Thread.sleep(800)
             shot("title")
             press(KeyEvent.KEYCODE_BACK)

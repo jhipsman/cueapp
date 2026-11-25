@@ -46,3 +46,19 @@ func TestFold(t *testing.T) {
 		t.Errorf("copies = %v (want the HD copy before the SD one)", copies)
 	}
 }
+
+func TestCleanSymbolsAndRank(t *testing.T) {
+	for name, want := range map[string]string{
+		"⬤LOCAL NEWS ⬤":              "LOCAL NEWS",
+		"24/7 ,24/7 Trust Me (2017)": "24/7 Trust Me (2017)",
+		"US ❖ ABC HD":                "ABC",
+		"🔴 ESPN":                     "ESPN",
+	} {
+		if got := Read(name, "").Clean; got != want {
+			t.Errorf("%q: %q, want %q", name, got, want)
+		}
+	}
+	if Rank(Read("US: ABC", "")) != 0 || Rank(Read("US: Hallmark", "")) != 1 || Rank(Read("24/7 Friends", "24/7")) != 3 {
+		t.Errorf("ranks: %d %d %d", Rank(Read("US: ABC", "")), Rank(Read("US: Hallmark", "")), Rank(Read("24/7 Friends", "24/7")))
+	}
+}

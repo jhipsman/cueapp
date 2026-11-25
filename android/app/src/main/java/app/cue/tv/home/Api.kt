@@ -526,12 +526,13 @@ data class Channel(
     // another channel (its HD/FHD/backup twin) and the provider's dividers
     // ("##### UK #####") are left out of the lists.
     val country: String = "", val topic: String = "", val copy: Boolean = false, val divider: Boolean = false,
+    val rank: Int = 1, // 0 the big networks … 4 adult: the order lists start in
 ) {
     companion object {
         // Shown by its plain name ("ESPN" for "US ★ ESPN FHD").
         fun from(o: JSONObject) = Channel(o.optString("id"), o.optInt("num"), o.str("clean") ?: o.optString("name"), o.optString("category"),
             o.str("logo"), o.optBoolean("favorite"), Show.from(o.optJSONObject("now")), Show.from(o.optJSONObject("next")),
-            o.optString("country"), o.optString("topic"), o.optString("copyOf").isNotEmpty(), o.optBoolean("divider"))
+            o.optString("country"), o.optString("topic"), o.optString("copyOf").isNotEmpty(), o.optBoolean("divider"), o.optInt("rank", 1))
     }
 }
 

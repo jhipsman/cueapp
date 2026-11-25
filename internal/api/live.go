@@ -37,6 +37,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/jhipsman/cueapp/internal/chancat"
 	"github.com/jhipsman/cueapp/internal/iptv"
 	"github.com/jhipsman/cueapp/internal/settings"
 	"github.com/jhipsman/cueapp/internal/watch"
@@ -272,7 +273,8 @@ type liveChannel struct {
 	CopyOf  string `json:"copyOf,omitempty"`
 	Spares  int    `json:"spares,omitempty"`
 	Divider bool   `json:"divider,omitempty"`
-	Raw     string `json:"raw,omitempty"` // the provider's own name
+	Raw     string `json:"raw,omitempty"`  // the provider's own name
+	Rank    int    `json:"rank,omitempty"` // 0 the big networks … 4 adult (chancat.Rank): the default order
 }
 
 // GET /api/live/channels: every channel with what's on now and next.
@@ -304,6 +306,7 @@ func (s *Server) handleLiveChannels(w http.ResponseWriter, r *http.Request) {
 			lc.Name, lc.Raw = in.Clean, ch.Name
 		}
 		lc.CopyOf, lc.Spares = cat.mainOf[ch.ID], len(cat.spares[ch.ID])
+		lc.Rank = chancat.Rank(in)
 		if ch.Logo != "" {
 			lc.Logo = "/api/live/logo/" + url.PathEscape(ch.ID)
 		}
@@ -315,6 +318,14 @@ func (s *Server) handleLiveChannels(w http.ResponseWriter, r *http.Request) {
 	if cats == nil {
 		cats = []iptv.Category{}
 	}
+	// The provider's group names, without their decoration ("US ❖ ABC" is
+	// "US · ABC").
+	named := make([]iptv.Category, 0, len(cats))
+	for _, c := range cats {
+		c.Name = chancat.TidyGroup(c.Name)
+		named = append(named, c)
+	}
+	cats = named
 	writeJSON(w, http.StatusOK, map[string]any{
 		"configured":   true,
 		"categories":   cats,

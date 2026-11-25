@@ -3,6 +3,7 @@ package watch
 import (
 	"encoding/json"
 	"fmt"
+	"slices"
 )
 
 // StreamPrefs is how a profile wants versions picked when it presses Play,
@@ -29,7 +30,15 @@ type StreamPrefs struct {
 	// LightSound: prefer Dolby Digital Plus and Atmos over TrueHD and DTS-HD
 	// (much bigger, and most TVs can't send them to speakers anyway).
 	LightSound bool `json:"lightSound"`
+	// Services are the streaming services this profile pays for
+	// ("netflix", "disney"…): their titles get a button that opens the
+	// service's own app, and Cue doesn't fetch them ahead of time.
+	Services []string `json:"services"`
 }
+
+// ServiceKeys are the services a profile can say it has, in the order
+// Settings lists them.
+var ServiceKeys = []string{"netflix", "prime", "disney", "max", "hulu", "peacock", "paramount", "appletv"}
 
 // DefaultStreamPrefs: 4K at the size streaming services use, no Remux.
 var DefaultStreamPrefs = StreamPrefs{Quality: "4k", Size: "smart", Remux: "avoid", HDR: "prefer", DolbyVision: "allow", Efficient: true, LightSound: true}
@@ -57,6 +66,17 @@ func (p StreamPrefs) Clean() StreamPrefs {
 	if p.DolbyVision != "prefer" && p.DolbyVision != "allow" && p.DolbyVision != "avoid" {
 		p.DolbyVision = d.DolbyVision
 	}
+	known := map[string]bool{}
+	for _, k := range ServiceKeys {
+		known[k] = true
+	}
+	var services []string
+	for _, k := range p.Services {
+		if known[k] && !slices.Contains(services, k) {
+			services = append(services, k)
+		}
+	}
+	p.Services = services
 	return p
 }
 
