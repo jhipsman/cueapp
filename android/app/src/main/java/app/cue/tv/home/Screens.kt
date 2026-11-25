@@ -587,7 +587,14 @@ fun MainScreen(api: CueApi, playback: Playback, openWeb: (String) -> Unit, chang
     }
     // Back in a page goes over to the rail; on the rail, to Home; on Home's
     // tab it leaves the app.
-    BackHandler(enabled = open.isEmpty() && !tabsFocused) { runCatching { tabFocus[railSlot(tab)].requestFocus() } }
+    // Asking for the menu with Back always gets it, even while the menu is
+    // turning the highlight away (just back from Ask Cue, or a Browse page
+    // opening): that hold is for the highlight falling in by itself.
+    BackHandler(enabled = open.isEmpty() && !tabsFocused) {
+        askedBack = false
+        browseState.handing = false
+        runCatching { tabFocus[railSlot(tab)].requestFocus() }
+    }
     BackHandler(enabled = open.isEmpty() && tabsFocused && tab != 0) {
         tab = 0
         runCatching { tabFocus[railSlot(0)].requestFocus() }
