@@ -35,10 +35,15 @@ class TopTenBounceTest {
         compose.mainClock.autoAdvance = false
         val sc = ActivityScenario.launch(HomeActivity::class.java)
         fun press(k: Int) { sc.onActivity { it.dispatchKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, k)); it.dispatchKeyEvent(KeyEvent(KeyEvent.ACTION_UP, k)) } }
-        fun waitFor(t: String) { repeat(300) { if (compose.onAllNodes(hasText(t, substring = true)).fetchSemanticsNodes().isNotEmpty()) return; Thread.sleep(50); compose.mainClock.advanceTimeBy(100) } }
+        // Waits (up to a minute: a slow build machine) for text on screen, or fails.
+        fun waitFor(t: String) {
+            repeat(1200) { if (compose.onAllNodes(hasText(t, substring = true)).fetchSemanticsNodes().isNotEmpty()) return; Thread.sleep(50); compose.mainClock.advanceTimeBy(100) }
+            throw AssertionError("never saw \"$t\"")
+        }
         waitFor("Continue watching")
         press(KeyEvent.KEYCODE_DPAD_LEFT); compose.mainClock.advanceTimeBy(500)
         press(KeyEvent.KEYCODE_DPAD_DOWN); compose.mainClock.advanceTimeBy(1500) // Movies: Top 10 first
+        waitFor("Top 10 on")
         press(KeyEvent.KEYCODE_DPAD_RIGHT); compose.mainClock.advanceTimeBy(1500)
         repeat(3) {
             // Hold the highlight on the row: down to the posters if on the tabs.
