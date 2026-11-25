@@ -9,6 +9,7 @@ export interface HeroInfo {
   title: string
   year?: number
   posterUrl?: string
+  backdropUrl?: string // the wide still behind the page, as on the TV
   genres?: string[]
   rating?: number
   voteCount?: number
@@ -31,7 +32,8 @@ function runtimeLabel(min?: number): string {
 
 // The top of a movie or show page: poster on the left, everything worth
 // knowing stacked on the right (title, rating, age rating, genres, summary,
-// trailer links, cast), with the page's own action buttons passed in.
+// the page's own action buttons, then facts, trailer links and cast), over
+// the title's wide still when there is one.
 export default function TitleHero({ info, status, actions, children }: { info: HeroInfo; status?: ReactNode; actions?: ReactNode; children?: ReactNode }) {
   const trailers = (info.trailers ?? []).slice(0, 3)
   const trailerNames = trailerLabels(trailers)
@@ -43,6 +45,11 @@ export default function TitleHero({ info, status, actions, children }: { info: H
 
   return (
     <section className={`title-hero kind-${info.kind}`}>
+      {info.backdropUrl && (
+        <div className="title-hero-still" aria-hidden="true">
+          <img src={info.backdropUrl} alt="" />
+        </div>
+      )}
       {info.posterUrl && <div className="title-hero-bg" style={{ backgroundImage: `url("${encodeURI(info.posterUrl).replace(/"/g, '%22')}")` }} aria-hidden="true" />}
       <div className="title-poster">{info.posterUrl ? <img src={info.posterUrl} alt={info.title} /> : <PosterFallback />}</div>
       <div className="title-info">
@@ -83,6 +90,9 @@ export default function TitleHero({ info, status, actions, children }: { info: H
 
         {info.overview && <p className="title-overview">{info.overview}</p>}
 
+        {/* What you came to do, before the details (Play first, as on the TV). */}
+        {actions && <div className="title-actions">{actions}</div>}
+
         {facts.length > 0 && (
           <dl className="title-facts">
             {facts.map((f) => (
@@ -118,7 +128,6 @@ export default function TitleHero({ info, status, actions, children }: { info: H
           </p>
         )}
 
-        {actions && <div className="title-actions">{actions}</div>}
         {children}
       </div>
     </section>
