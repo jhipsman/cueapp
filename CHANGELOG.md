@@ -43,6 +43,7 @@ under [Unreleased]. How releases are cut: [docs/RELEASING.md](docs/RELEASING.md)
 - Releases are signed with a new update key, held only by the project owner. **Update now** installs only releases signed with it.
 
 ### Fixed
+- Web: the loading screen no longer logs a Content Security Policy error on every page, and its logo no longer starts over as the app loads.
 - **Fire TV / Google TV: rows bounced while moving along them** (the Top 10 most). The highlighted poster grows a little, and the page re-lined the row up around it at every press, nudging everything up and back down; it now leaves a row that's already in place alone. A test on the build machine traces the poster frame by frame to keep it that way.
 - **Fire TV / Google TV: More Like This.** Opening a title from More Like This (or a series or a cast row) now goes on top of the one you were on, so Back returns to it, and coming back up to the buttons brings the whole top of the page back into view, title and all.
 - A film already on a streaming service is out, even when TMDB's dates list only its premiere (some streaming originals were labelled In theaters).

@@ -50,11 +50,7 @@
         </div>
         <span class="splash-label quiet">Loading Cue</span>
       </div>
-      <script>
-        window.__cueSplashAt = performance.now()
-        // Cue is dark unless light was chosen (main.tsx does the same, later).
-        try { if (localStorage.getItem('cue-theme') === 'light') document.documentElement.dataset.theme = 'light' } catch (e) {}
-      </script>
+      <script src="/boot.js"></script>
     </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
