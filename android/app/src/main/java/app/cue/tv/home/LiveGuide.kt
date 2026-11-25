@@ -73,6 +73,7 @@ private val CellGap = 4.dp
 private val RowHeight = 44.dp
 private val LiveRed = Color(0xFFE5484D)
 
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 fun LiveScreen(api: CueApi, playback: Playback, openWeb: (String) -> Unit) {
     var live by remember { mutableStateOf<LiveChannels?>(null) }
@@ -218,7 +219,7 @@ fun LiveScreen(api: CueApi, playback: Playback, openWeb: (String) -> Unit) {
     }
 }
 
-private val HeroHeight = 206.dp
+private val HeroHeight = 192.dp
 
 // The top: the highlighted channel's show, big, with the channel playing on
 // the right. The words fade and rise in as the highlight moves.
