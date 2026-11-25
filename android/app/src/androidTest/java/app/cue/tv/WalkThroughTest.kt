@@ -162,7 +162,7 @@ class WalkThroughTest {
             val pages = listOf(
                 "Movies" to "Top 10 on Netflix",
                 "Shows" to "Series", // the show up top
-                "Live TV" to "BILLS", // the game up top
+                "Live TV" to "Late Night Live", // in the guide
                 "Browse" to "Streaming services",
             )
             for ((place, shows) in pages) {

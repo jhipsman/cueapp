@@ -98,11 +98,25 @@ class FakeCue : Dispatcher() {
                 Ch("BBC One", "UK", "general", "The Evening Report"),
                 Ch("News 24", "US", "news", "Evening Report", copyOf = "c0"), Ch("##### US BACKUP #####", "US", "general", "", divider = true),
             ).forEachIndexed { i, c ->
+                nowShows["c$i"] = c.show
                 put(JSONObject().put("id", "c$i").put("num", i + 1).put("name", c.name).put("category", if (c.topic == "news") "news" else "sports")
                     .put("country", c.country).put("topic", c.topic).put("copyOf", c.copyOf).put("divider", c.divider)
                     .put("now", JSONObject().put("title", c.show).put("start", iso(-0.5)).put("stop", iso(0.5))))
             }
         })
+
+    // Each channel's guide: what's on now (from the channel list), then two more.
+    private fun guide(ids: List<String>) = JSONObject().put("programmes", JSONObject().apply {
+        ids.filter { it.isNotBlank() }.forEachIndexed { i, id ->
+            put(id, JSONArray()
+                .put(JSONObject().put("title", "Earlier Edition").put("start", iso(-1.5)).put("stop", iso(-0.5)))
+                .put(JSONObject().put("title", nowShows[id] ?: "Live").put("desc", "Tonight's top stories, with the weather and sport.").put("start", iso(-0.5)).put("stop", iso(0.5 + (i % 2) * 0.5)))
+                .put(JSONObject().put("title", if (i % 2 == 0) "Late Night Live" else "The Week Ahead").put("start", iso(0.5 + (i % 2) * 0.5)).put("stop", iso(2.0)))
+                .put(JSONObject().put("title", "Overnight").put("start", iso(2.0)).put("stop", iso(4.0))))
+        }
+    })
+
+    private val nowShows = mutableMapOf<String, String>()
 
     private val colors = mapOf("KC" to "e31837", "BUF" to "00338d", "BOS" to "007a33", "LAL" to "552583")
 
@@ -174,6 +188,7 @@ class FakeCue : Dispatcher() {
             path.startsWith("/api/watch/person/") -> ok(JSONObject().put("credits", cards(6, 2)))
             path == "/api/live/channels" -> ok(channels())
             path == "/api/live/sports" -> ok(sports())
+            path == "/api/live/guide" -> ok(guide(request.requestUrl?.queryParameter("ids").orEmpty().split(",")))
             path == "/api/parties" -> ok(JSONArray())
             path.startsWith("/api/live/") -> ok(JSONArray())
             path == "/api/play/crash" -> MockResponse().setResponseCode(204)

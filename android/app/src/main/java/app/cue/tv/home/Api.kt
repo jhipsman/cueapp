@@ -271,6 +271,17 @@ class CueApi(ctx: Context, val server: String) {
 
     suspend fun channels(): LiveChannels = LiveChannels.from(obj("/api/live/channels"))
 
+    /** The guide for these channels, from [fromMs] for [hours]: each channel's shows in time order (none when the provider has no guide for it). */
+    suspend fun guide(ids: List<String>, fromMs: Long, hours: Int): Map<String, List<GuideShow>> {
+        if (ids.isEmpty()) return emptyMap()
+        val q = ids.take(300).joinToString(",") { java.net.URLEncoder.encode(it, "UTF-8") }
+        val p = obj("/api/live/guide?ids=$q&from=${fromMs / 1000}&hours=$hours").optJSONObject("programmes") ?: return emptyMap()
+        return p.keys().asSequence().associateWith { id ->
+            val a = p.optJSONArray(id) ?: JSONArray()
+            (0 until a.length()).mapNotNull { i -> a.optJSONObject(i)?.let(GuideShow::from) }
+        }
+    }
+
     /** The country Live TV lists, as picked on this TV (null: the catalog's own pick). */
     var liveCountry: String?
         get() = prefs.getString("live-country", null)
@@ -494,6 +505,13 @@ data class Episode(
     companion object {
         fun from(o: JSONObject) = Episode(o.optInt("season"), o.optInt("episode"), o.optString("title"), o.str("overview"),
             o.str("stillUrl"), o.int("runtime"), o.dbl("progress"), o.optBoolean("finished"))
+    }
+}
+
+// A show in the guide: what it is, when, and what it's about.
+data class GuideShow(val title: String, val desc: String, val start: Long, val stop: Long) {
+    companion object {
+        fun from(o: JSONObject) = GuideShow(o.optString("title"), o.optString("desc"), Show.parseTime(o.optString("start")), Show.parseTime(o.optString("stop")))
     }
 }
 

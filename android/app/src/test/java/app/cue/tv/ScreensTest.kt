@@ -123,16 +123,18 @@ class ScreensTest {
         press(KeyEvent.KEYCODE_DPAD_LEFT, 3)
         see("Browse")
         shot("side-menu")
-        for ((place, marker) in listOf("movies" to "Top 10 on Netflix", "shows" to "Series", "live-tv" to "BILLS", "browse" to "Streaming services")) {
+        for ((place, marker) in listOf("movies" to "Top 10 on Netflix", "shows" to "Series", "live-tv" to "Late Night Live", "browse" to "Streaming services")) {
             press(KeyEvent.KEYCODE_DPAD_DOWN)
             see(marker)
             shot(place)
         }
-        // Live TV with the highlight on the channels, the menu closed.
+        // Live TV with the highlight in the guide, the menu closed: past the
+        // game on now and the topics, onto the second channel.
         press(KeyEvent.KEYCODE_DPAD_UP)
-        see("BILLS")
+        see("Late Night Live")
         press(KeyEvent.KEYCODE_DPAD_RIGHT)
-        press(KeyEvent.KEYCODE_DPAD_RIGHT, 2)
+        see("Bills")
+        press(KeyEvent.KEYCODE_DPAD_DOWN, 3)
         shot("live-tv-channels")
         press(KeyEvent.KEYCODE_BACK)
         press(KeyEvent.KEYCODE_DPAD_UP, 4)
