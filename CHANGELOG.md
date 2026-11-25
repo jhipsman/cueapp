@@ -45,6 +45,7 @@ under [Unreleased]. How releases are cut: [docs/RELEASING.md](docs/RELEASING.md)
 - Releases are signed with a new update key, held only by the project owner. **Update now** installs only releases signed with it.
 
 ### Fixed
+- **Fire TV / Google TV: opening a title shows it at once.** The title page used to be blank, with nothing highlighted, for a moment while its details loaded; now its picture, name, summary and a highlighted Play show straight away, and the rest fills in without the page moving again.
 - **Fire TV / Google TV:** Back from Ask Cue puts the highlight on its button again (it used to fall onto the side menu); opening a Browse page no longer flashes the side menu open while the page loads; and Back from a service's page lands on that service's tile, not on Coming soon.
 - Web: opening Cue goes straight to Watch; it no longer flashes the manager's layout and a second loading screen on the way.
 - Web: the loading screen no longer logs a Content Security Policy error on every page, and its logo no longer starts over as the app loads.
