@@ -77,6 +77,16 @@ suspend fun CueApi.browseFranchise(id: Int): List<Tile> =
     (obj("/api/watch/browse/franchise/$id").optJSONArray("items") ?: JSONArray()).cards()
 
 sealed interface BrowseAt {
+    // The Browse tile that opens it (Back puts the highlight there again).
+    val tileKey: String
+        get() = when (this) {
+            Soon -> "soon"
+            Top -> "top"
+            MyList -> "mylist"
+            is Service -> "svc-${s.key}"
+            is Collection -> "col-${c.key}"
+            is Franchise -> "fr-${f.id}"
+        }
     data object Soon : BrowseAt
     data object Top : BrowseAt
     data object MyList : BrowseAt
@@ -91,12 +101,22 @@ sealed interface BrowseAt {
 class BrowseState {
     var at by mutableStateOf<BrowseAt?>(null)
     var cameBack by mutableStateOf(false)
+    // The tile that opened the page, so Back lands on it again.
+    var openedFrom by mutableStateOf<String?>(null)
+        private set
+    // A page has just opened and is about to put the highlight on its first
+    // title: the side menu turns the highlight away meanwhile (the tile that
+    // had it is gone), so the menu doesn't flash open. Cleared by the main
+    // screen once the page has the highlight.
+    var handing by mutableStateOf(false)
     // The open page's own memory (a new page starts on its first title).
     var pageMemory = FocusMemory()
         private set
 
     fun open(to: BrowseAt) {
+        openedFrom = to.tileKey
         at = to
+        handing = true
         pageMemory = FocusMemory()
     }
 
@@ -117,7 +137,7 @@ fun BrowseScreen(api: CueApi, memory: FocusMemory, state: BrowseState, onCard: (
     BackHandler(enabled = state.at != null) { state.back() }
     val page = state.pageMemory
     when (val a = state.at) {
-        null -> BrowseMenu(api, takeFocus = state.cameBack, tookFocus = { state.cameBack = false }) { state.open(it) }
+        null -> BrowseMenu(api, takeFocus = state.cameBack, returnTo = state.openedFrom, tookFocus = { state.cameBack = false }) { state.open(it) }
         BrowseAt.Soon -> ComingSoonScreen(api, onCard)
         BrowseAt.Top -> TopScreen(api, memory, onCard)
         BrowseAt.MyList -> MyListScreen(api, page, true, {}, onCard)
@@ -128,7 +148,7 @@ fun BrowseScreen(api: CueApi, memory: FocusMemory, state: BrowseState, onCard: (
 }
 
 @Composable
-private fun BrowseMenu(api: CueApi, takeFocus: Boolean, tookFocus: () -> Unit, open: (BrowseAt) -> Unit) {
+private fun BrowseMenu(api: CueApi, takeFocus: Boolean, returnTo: String?, tookFocus: () -> Unit, open: (BrowseAt) -> Unit) {
     var home by remember { mutableStateOf(browseCache) }
     var problem by remember { mutableStateOf("") }
     LaunchedEffect(Unit) {
@@ -137,10 +157,21 @@ private fun BrowseMenu(api: CueApi, takeFocus: Boolean, tookFocus: () -> Unit, o
             .onFailure { if (home == null) problem = it.message ?: "Couldn't load Browse." }
     }
     val first = remember { FocusRequester() }
+    // Each tile's own requester, by its key, so Back can land on the one
+    // that was opened.
+    val tiles = remember { mutableMapOf<String, FocusRequester>() }
+    val tile = { key: String -> tiles.getOrPut(key) { FocusRequester() } }
     LaunchedEffect(Unit) {
         if (!takeFocus) return@LaunchedEffect
-        delay(120)
-        runCatching { first.requestFocus() }
+        // Back here: the highlight on the tile that was opened (asked a few
+        // times while the rows come in), else on the first tile.
+        var landed = false
+        for (i in 0 until 8) {
+            delay(if (i == 0) 120L else 100L)
+            val target = returnTo?.let { tiles[it] } ?: break
+            if (runCatching { target.requestFocus() }.isSuccess) { landed = true; break }
+        }
+        if (!landed) runCatching { first.requestFocus() }
         tookFocus() // once: coming here from the side menu later mustn't take it
     }
     LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(top = 18.dp, bottom = 48.dp), verticalArrangement = Arrangement.spacedBy(22.dp)) {
@@ -149,9 +180,9 @@ private fun BrowseMenu(api: CueApi, takeFocus: Boolean, tookFocus: () -> Unit, o
                 Text("Browse", fontSize = 26.sp, fontWeight = FontWeight.Bold, color = Color.White)
                 Gap(14.dp)
                 Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-                    QuickTile("Coming soon", "New films and episodes on the way", listOf(Color(0xFF3E63DD), Color(0xFF1B2A6B)), Modifier.focusRequester(first)) { open(BrowseAt.Soon) }
-                    QuickTile("Top 10", "By service, genre, decade and country", listOf(Color(0xFFD6409F), Color(0xFF5E1A47))) { open(BrowseAt.Top) }
-                    QuickTile("My List", "Everything you've saved", listOf(Color(0xFF52525B), Color(0xFF1C1C1F))) { open(BrowseAt.MyList) }
+                    QuickTile("Coming soon", "New films and episodes on the way", listOf(Color(0xFF3E63DD), Color(0xFF1B2A6B)), Modifier.focusRequester(first).focusRequester(tile("soon"))) { open(BrowseAt.Soon) }
+                    QuickTile("Top 10", "By service, genre, decade and country", listOf(Color(0xFFD6409F), Color(0xFF5E1A47)), Modifier.focusRequester(tile("top"))) { open(BrowseAt.Top) }
+                    QuickTile("My List", "Everything you've saved", listOf(Color(0xFF52525B), Color(0xFF1C1C1F)), Modifier.focusRequester(tile("mylist"))) { open(BrowseAt.MyList) }
                 }
             }
         }
@@ -162,17 +193,17 @@ private fun BrowseMenu(api: CueApi, takeFocus: Boolean, tookFocus: () -> Unit, o
         }
         if (h.services.isNotEmpty()) item(key = "services") {
             Section("Streaming services") {
-                items(h.services, key = { it.key }) { s -> ServiceTile(s) { open(BrowseAt.Service(s)) } }
+                items(h.services, key = { it.key }) { s -> ServiceTile(s, Modifier.focusRequester(tile("svc-${s.key}"))) { open(BrowseAt.Service(s)) } }
             }
         }
         if (h.collections.isNotEmpty()) item(key = "collections") {
             Section("Collections") {
-                items(h.collections, key = { it.key }) { c -> CollectionTile(c) { open(BrowseAt.Collection(c)) } }
+                items(h.collections, key = { it.key }) { c -> CollectionTile(c, Modifier.focusRequester(tile("col-${c.key}"))) { open(BrowseAt.Collection(c)) } }
             }
         }
         if (h.franchises.isNotEmpty()) item(key = "franchises") {
             Section("Film series") {
-                items(h.franchises, key = { it.id }) { f -> FranchiseTile(f) { open(BrowseAt.Franchise(f)) } }
+                items(h.franchises, key = { it.id }) { f -> FranchiseTile(f, Modifier.focusRequester(tile("fr-${f.id}"))) { open(BrowseAt.Franchise(f)) } }
             }
         }
     }
@@ -212,8 +243,8 @@ private fun QuickTile(title: String, blurb: String, colors: List<Color>, modifie
 }
 
 @Composable
-private fun ServiceTile(s: BrowseService, onClick: () -> Unit) {
-    TileCard(onClick, Modifier.width(132.dp).height(112.dp)) {
+private fun ServiceTile(s: BrowseService, modifier: Modifier = Modifier, onClick: () -> Unit) {
+    TileCard(onClick, modifier.width(132.dp).height(112.dp)) {
         Column(Modifier.fillMaxSize().padding(10.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
             if (s.logo != null) {
                 AsyncImage(model = s.logo, contentDescription = null, contentScale = ContentScale.Crop,
@@ -237,8 +268,8 @@ private fun collectionColors(key: String): List<Color> = when (key) {
 }
 
 @Composable
-private fun CollectionTile(c: BrowseCollection, onClick: () -> Unit) {
-    TileCard(onClick, Modifier.width(240.dp).height(112.dp)) {
+private fun CollectionTile(c: BrowseCollection, modifier: Modifier = Modifier, onClick: () -> Unit) {
+    TileCard(onClick, modifier.width(240.dp).height(112.dp)) {
         Column(Modifier.fillMaxSize().background(Brush.linearGradient(collectionColors(c.key))).padding(horizontal = 16.dp, vertical = 12.dp), verticalArrangement = Arrangement.Bottom) {
             Text(c.title, fontSize = 17.sp, fontWeight = FontWeight.Bold, color = Color.White, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Gap(3.dp)
@@ -248,9 +279,9 @@ private fun CollectionTile(c: BrowseCollection, onClick: () -> Unit) {
 }
 
 @Composable
-private fun FranchiseTile(f: BrowseFranchise, onClick: () -> Unit) {
+private fun FranchiseTile(f: BrowseFranchise, modifier: Modifier = Modifier, onClick: () -> Unit) {
     Column(Modifier.width(118.dp)) {
-        TileCard(onClick, Modifier.fillMaxWidth().aspectRatio(2f / 3f)) {
+        TileCard(onClick, modifier.fillMaxWidth().aspectRatio(2f / 3f)) {
             AsyncImage(model = f.poster, contentDescription = f.name, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
         }
         Gap(6.dp)

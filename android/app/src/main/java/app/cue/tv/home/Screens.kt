@@ -603,6 +603,15 @@ fun MainScreen(api: CueApi, playback: Playback, openWeb: (String) -> Unit, chang
     var hero by remember { mutableStateOf<Tile?>(null) }
     val setAmbient: (Tile?) -> Unit = { hero = it }
 
+    // A Browse page that never takes the highlight (it failed to load, or
+    // has nothing in it) mustn't keep the menu closed to the remote.
+    LaunchedEffect(browseState.handing) {
+        if (browseState.handing) {
+            delay(2000)
+            browseState.handing = false
+        }
+    }
+
     var page by remember { mutableIntStateOf(0) }
     LaunchedEffect(tab) {
         if (page == tab) return@LaunchedEffect
@@ -647,7 +656,9 @@ fun MainScreen(api: CueApi, playback: Playback, openWeb: (String) -> Unit, chang
     }) {
         if (page <= 2) HomeBackdrop(api, hero) else AmbientBackground(null)
         // The pages sit right of the rail; the rail opens over them.
-        Box(Modifier.fillMaxSize().padding(start = RailWidth)) {
+        Box(Modifier.fillMaxSize().padding(start = RailWidth)
+            // A Browse page has the highlight now: the menu takes it again.
+            .onFocusChanged { if (it.hasFocus) browseState.handing = false }) {
             // The page follows the highlight once it rests on a tab (passing
             // over one doesn't build its page), and the old page has faded
             // before the new one shows, so two pages never overlap.
@@ -694,11 +705,12 @@ fun MainScreen(api: CueApi, playback: Playback, openWeb: (String) -> Unit, chang
             expanded = tabsFocused,
             modifier = Modifier
                 .align(Alignment.CenterStart)
-                // Back from Ask Cue: the idea that had the highlight goes, and
-                // the highlight would fall into the menu (its own place) before
-                // Search can put it on Ask Cue's button. The menu turns it away
+                // Back from Ask Cue, or a Browse tile opening its page: the
+                // thing that had the highlight goes, and the highlight would
+                // fall into the menu (its own place, which opens it) before
+                // the page can put it where it belongs. The menu turns it away
                 // until it's there; moving onto the menu works again just after.
-                .focusProperties { enter = { if (askedBack) FocusRequester.Cancel else tabFocus[railSlot(tab)] } }
+                .focusProperties { enter = { if (askedBack || browseState.handing) FocusRequester.Cancel else tabFocus[railSlot(tab)] } }
                 .focusGroup()
                 .onFocusChanged {
                     tabsFocused = it.hasFocus
