@@ -110,6 +110,20 @@ class WalkThroughTest {
         return Regex("text=\"([^\"]+)\"").findAll(out.toString()).map { it.groupValues[1] }.distinct().take(40).toList()
     }
 
+    // For a failure: every element that can take the highlight, and which one
+    // has it, with its place on screen (the run's log shows these lines).
+    private fun logFocusables() {
+        val out = java.io.ByteArrayOutputStream()
+        runCatching { device.dumpWindowHierarchy(out) }
+        val attr = { node: String, name: String -> Regex("$name=\"([^\"]*)\"").find(node)?.groupValues?.get(1).orEmpty() }
+        Regex("<node [^>]*>").findAll(out.toString()).map { it.value }
+            .filter { attr(it, "focusable") == "true" || attr(it, "focused") == "true" }
+            .forEach { n ->
+                android.util.Log.i("CueWalkThrough", "focusable${if (attr(n, "focused") == "true") " FOCUSED" else ""}: " +
+                    "class=${attr(n, "class")} text='${attr(n, "text")}' desc='${attr(n, "content-desc")}' bounds=${attr(n, "bounds")}")
+            }
+    }
+
     // Moves the highlight with a key until it rests on the thing showing
     // this text, failing if it never does.
     private fun reach(text: String, key: Int, tries: Int = 8) {
@@ -119,6 +133,7 @@ class WalkThroughTest {
             press(key)
         }
         shot("unreached-" + text.replace(Regex("[^A-Za-z0-9]+"), "-"))
+        logFocusables()
         throw AssertionError("never reached \"$text\". Focused: ${device.findObject(By.focused(true))?.let { o -> o.text ?: o.className }}. On screen: ${onScreen()}")
     }
 

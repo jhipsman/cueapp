@@ -242,30 +242,37 @@ function SeriesPage() {
             ...(tv?.networks?.length ? [{ label: 'Network', value: tv.networks.join(', ') }] : []),
           ],
         }}
-        actions={
-          <>
-            <button className="primary btn-with-icon" onClick={() => searchNow()} disabled={searchingNow}>
-              <Icon name="search" size={16} /> {searchingNow ? 'Searching…' : 'Find missing episodes'}
-            </button>
-            <button className="btn-with-icon" onClick={refresh}>
-              <Icon name="refresh" size={16} /> Refresh episodes
-            </button>
-            {series.downloadedCount > 0 && <WatchLinks tmdbId={series.tmdbId} kind="tv" />}
-            {admin && (
-              <button className="btn-with-icon danger-ghost" onClick={remove}>
-                <Icon name="trash" size={16} /> Remove
-              </button>
-            )}
-          </>
-        }
+        actions={series.downloadedCount > 0 ? <WatchLinks tmdbId={series.tmdbId} kind="tv" /> : undefined}
       >
-        <div className="title-controls">
-          <Switch checked={series.monitored} onChange={toggleSeries} label="Monitored" description="Keeps looking for missing episodes." />
-          <ProfilePicker kind="series" itemId={seriesId} />
-          <SeriesTypePicker id={seriesId} value={series.seriesType ?? 'standard'} onChange={(t) => setSeries((cur) => (cur ? { ...cur, seriesType: t } : cur))} />
-        </div>
-        <TitleTags kind="tv" id={seriesId} />
         <WatchedLine kind="tv" id={seriesId} />
+        {/* Looking after the show: out of the way once there's something
+            to watch, open while there's nothing yet. */}
+        <details className="title-manage" open={series.downloadedCount === 0}>
+          <summary>
+            <span className="chev"><Icon name="chevron-right" size={16} /></span> Manage
+          </summary>
+          <div className="title-manage-body">
+            <div className="title-actions">
+              <button className="primary btn-with-icon" onClick={() => searchNow()} disabled={searchingNow}>
+                <Icon name="search" size={16} /> {searchingNow ? 'Searching…' : 'Find missing episodes'}
+              </button>
+              <button className="btn-with-icon" onClick={refresh}>
+                <Icon name="refresh" size={16} /> Refresh episodes
+              </button>
+              {admin && (
+                <button className="btn-with-icon danger-ghost" onClick={remove}>
+                  <Icon name="trash" size={16} /> Remove
+                </button>
+              )}
+            </div>
+            <div className="title-controls">
+              <Switch checked={series.monitored} onChange={toggleSeries} label="Monitored" description="Keeps looking for missing episodes." />
+              <ProfilePicker kind="series" itemId={seriesId} />
+              <SeriesTypePicker id={seriesId} value={series.seriesType ?? 'standard'} onChange={(t) => setSeries((cur) => (cur ? { ...cur, seriesType: t } : cur))} />
+            </div>
+            <TitleTags kind="tv" id={seriesId} />
+          </div>
+        </details>
       </TitleHero>
 
       {error && <p className="error-text">{error}</p>}
