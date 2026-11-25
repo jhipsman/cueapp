@@ -108,6 +108,12 @@ function Gate() {
   if (needsWizard) {
     return <Onboarding startStep={1} />
   }
+  // Set up as a streaming app, Cue's front door is Watch: go there before
+  // drawing anything, rather than drawing the manager's layout first and
+  // then leaving it (which flashed one layout and then the other).
+  if (streamingOnly && location.pathname === '/') {
+    return <Navigate to={'/watch' + location.search + location.hash} replace />
+  }
 
   return (
     <Routes>
