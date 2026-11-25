@@ -39,15 +39,11 @@
   --on-sec: #ffffff;
 }
 
-.app-shell { --sec: var(--c-dashboard); }
-.app-shell[data-section='discover'] { --sec: var(--c-discover); }
-.app-shell[data-section='library'] { --sec: var(--c-library); }
-.app-shell[data-section='wanted'] { --sec: var(--c-wanted); }
-.app-shell[data-section='calendar'] { --sec: var(--c-calendar); }
-.app-shell[data-section='activity'] { --sec: var(--c-activity); }
-.app-shell[data-section='settings'] { --sec: var(--c-settings); }
-.app-shell[data-section='profile'] { --sec: var(--c-profile); }
-.app-shell[data-section='about'] { --sec: var(--c-about); }
+/* One colour for the whole app, as on the TV: the profile's accent (Cue's
+   teal unless the profile picked another) for buttons, chips, focus and the
+   glow behind each page. The section colours above stay for the little
+   icons and tags that name a kind of thing (movies, shows, music). */
+.app-shell { --sec: var(--accent); }
 
 .app-shell {
   --sec-soft: color-mix(in srgb, var(--sec) 14%, transparent);
