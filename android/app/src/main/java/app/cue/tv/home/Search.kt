@@ -88,6 +88,9 @@ fun SearchScreen(api: CueApi, memory: FocusMemory, listen: Boolean = false, list
             if (askLanded) break
             runCatching { askButton.requestFocus() }
         }
+        // A moment for the highlight to settle there before the menu takes
+        // visitors again (see MainScreen).
+        kotlinx.coroutines.delay(150)
         askFocused()
     }
     val ctx = LocalContext.current

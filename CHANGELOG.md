@@ -45,6 +45,7 @@ under [Unreleased]. How releases are cut: [docs/RELEASING.md](docs/RELEASING.md)
 - Releases are signed with a new update key, held only by the project owner. **Update now** installs only releases signed with it.
 
 ### Fixed
+- **Fire TV / Google TV:** Back from Ask Cue puts the highlight on its button again (it used to fall onto the side menu); opening a Browse page no longer flashes the side menu open while the page loads; and Back from a service's page lands on that service's tile, not on Coming soon.
 - Web: opening Cue goes straight to Watch; it no longer flashes the manager's layout and a second loading screen on the way.
 - Web: the loading screen no longer logs a Content Security Policy error on every page, and its logo no longer starts over as the app loads.
 - **Fire TV / Google TV: rows bounced while moving along them** (the Top 10 most). The highlighted poster grows a little, and the page re-lined the row up around it at every press, nudging everything up and back down; it now leaves a row that's already in place alone. A test on the build machine traces the poster frame by frame to keep it that way.

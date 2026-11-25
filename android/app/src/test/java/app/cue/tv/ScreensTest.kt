@@ -72,7 +72,11 @@ class ScreensTest {
         while (compose.onAllNodes(node).fetchSemanticsNodes().isEmpty()) {
             if (System.currentTimeMillis() > until) {
                 compose.onRoot().captureRoboImage("build/screens/never-saw-" + text.replace(Regex("[^A-Za-z0-9]+"), "-") + ".png")
-                throw AssertionError("never saw \"$text\"")
+                // Where it got to, and the words showing instead.
+                val words = compose.onAllNodes(hasText("", substring = true), useUnmergedTree = true).fetchSemanticsNodes()
+                    .flatMap { node -> val key = androidx.compose.ui.semantics.SemanticsProperties.Text; if (key in node.config) node.config[key].map { t -> t.text } else emptyList() }
+                    .distinct().take(30)
+                throw AssertionError("never saw \"$text\" (after shot $n). On screen: $words")
             }
             Thread.sleep(50) // the stand-in server answers on its own thread
             compose.mainClock.advanceTimeBy(100)
