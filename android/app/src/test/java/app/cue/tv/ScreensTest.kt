@@ -72,7 +72,11 @@ class ScreensTest {
         while (compose.onAllNodes(node).fetchSemanticsNodes().isEmpty()) {
             if (System.currentTimeMillis() > until) {
                 compose.onRoot().captureRoboImage("build/screens/never-saw-" + text.replace(Regex("[^A-Za-z0-9]+"), "-") + ".png")
-                throw AssertionError("never saw \"$text\"")
+                // Where it got to, and the words showing instead.
+                val words = compose.onAllNodes(hasText("", substring = true), useUnmergedTree = true).fetchSemanticsNodes()
+                    .flatMap { node -> val key = androidx.compose.ui.semantics.SemanticsProperties.Text; if (key in node.config) node.config[key].map { t -> t.text } else emptyList() }
+                    .distinct().take(30)
+                throw AssertionError("never saw \"$text\" (after shot $n). On screen: $words")
             }
             Thread.sleep(50) // the stand-in server answers on its own thread
             compose.mainClock.advanceTimeBy(100)
@@ -119,16 +123,18 @@ class ScreensTest {
         press(KeyEvent.KEYCODE_DPAD_LEFT, 3)
         see("Browse")
         shot("side-menu")
-        for ((place, marker) in listOf("movies" to "Top 10 on Netflix", "shows" to "Series", "live-tv" to "BILLS", "browse" to "Streaming services")) {
+        for ((place, marker) in listOf("movies" to "Top 10 on Netflix", "shows" to "Series", "live-tv" to "Late Night Live", "browse" to "Streaming services")) {
             press(KeyEvent.KEYCODE_DPAD_DOWN)
             see(marker)
             shot(place)
         }
-        // Live TV with the highlight on the channels, the menu closed.
+        // Live TV with the highlight in the guide, the menu closed: past the
+        // game on now and the topics, onto the second channel.
         press(KeyEvent.KEYCODE_DPAD_UP)
-        see("BILLS")
+        see("Late Night Live")
         press(KeyEvent.KEYCODE_DPAD_RIGHT)
-        press(KeyEvent.KEYCODE_DPAD_RIGHT, 2)
+        see("Bills")
+        press(KeyEvent.KEYCODE_DPAD_DOWN, 3)
         shot("live-tv-channels")
         press(KeyEvent.KEYCODE_BACK)
         press(KeyEvent.KEYCODE_DPAD_UP, 4)

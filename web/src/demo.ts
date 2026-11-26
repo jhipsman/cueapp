@@ -49,6 +49,15 @@ function poster(seed: number): string {
   return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`
 }
 
+// The same art, wide: a title's backdrop.
+function backdrop(seed: number): string {
+  const h1 = (seed * 47) % 360
+  const h2 = (h1 + 40 + ((seed * 13) % 90)) % 360
+  const sun = 300 + ((seed * 29) % 300)
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720"><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="hsl(${h1} 65% 40%)"/><stop offset="1" stop-color="hsl(${h2} 70% 12%)"/></linearGradient></defs><rect width="1280" height="720" fill="url(#g)"/><circle cx="${sun}" cy="${220 + (seed % 5) * 20}" r="${110 + (seed % 4) * 15}" fill="hsl(${h1} 90% 78%)" opacity=".5"/><path d="M0 560 L${200 + (seed % 7) * 30} ${380 + (seed % 5) * 20} L${520 + (seed % 3) * 40} 520 L${860 + (seed % 4) * 30} ${360 + (seed % 6) * 15} L1280 540 V720 H0Z" fill="hsl(${h2} 60% 8%)" opacity=".85"/></svg>`
+  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`
+}
+
 const ago = (min: number) => new Date(Date.now() - min * 60000).toISOString()
 const day = (offset: number) => {
   const d = new Date()
@@ -261,6 +270,7 @@ const titleDetail = (m: Movie): MovieDetail => {
     year: m.year,
     overview: m.overview,
     posterUrl: m.posterUrl,
+    backdropUrl: backdrop(m.id),
     libraryId: m.id,
     status: m.status,
     quality: m.quality,
@@ -292,6 +302,7 @@ const tvDetail = (tmdbId: number): TVDetail | null => {
     year: seed.year,
     overview: seed.overview,
     posterUrl: poster(seed.id),
+    backdropUrl: backdrop(seed.id),
     libraryId: seed.id,
     genres: seed.genres,
     rating: seed.rating,

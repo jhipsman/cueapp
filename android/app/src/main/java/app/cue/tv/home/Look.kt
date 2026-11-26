@@ -435,8 +435,10 @@ val LocalCalm = androidx.compose.runtime.compositionLocalOf { false }
 
 // A picture that settles from a slight zoom when it first shows.
 @Composable
-fun Modifier.settleIn(from: Float = 1.06f): Modifier {
-    val a = remember { androidx.compose.animation.core.Animatable(0f) }
+fun Modifier.settleIn(from: Float = 1.06f, settled: Boolean = false): Modifier {
+    // settled: already on screen (a title's page taking over from its
+    // preview), so it doesn't zoom and fade in a second time.
+    val a = remember { androidx.compose.animation.core.Animatable(if (settled) 1f else 0f) }
     LaunchedEffect(Unit) { a.animateTo(1f, androidx.compose.animation.core.tween(1400, easing = Settle)) }
     return graphicsLayer {
         val z = from - (from - 1f) * a.value

@@ -62,6 +62,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -587,7 +588,14 @@ fun MainScreen(api: CueApi, playback: Playback, openWeb: (String) -> Unit, chang
     }
     // Back in a page goes over to the rail; on the rail, to Home; on Home's
     // tab it leaves the app.
-    BackHandler(enabled = open.isEmpty() && !tabsFocused) { runCatching { tabFocus[railSlot(tab)].requestFocus() } }
+    // Asking for the menu with Back always gets it, even while the menu is
+    // turning the highlight away (just back from Ask Cue, or a Browse page
+    // opening): that hold is for the highlight falling in by itself.
+    BackHandler(enabled = open.isEmpty() && !tabsFocused) {
+        askedBack = false
+        browseState.handing = false
+        runCatching { tabFocus[railSlot(tab)].requestFocus() }
+    }
     BackHandler(enabled = open.isEmpty() && tabsFocused && tab != 0) {
         tab = 0
         runCatching { tabFocus[railSlot(0)].requestFocus() }
@@ -602,6 +610,15 @@ fun MainScreen(api: CueApi, playback: Playback, openWeb: (String) -> Unit, chang
     // rows, fading into the page, as on a title's page.
     var hero by remember { mutableStateOf<Tile?>(null) }
     val setAmbient: (Tile?) -> Unit = { hero = it }
+
+    // A Browse page that never takes the highlight (it failed to load, or
+    // has nothing in it) mustn't keep the menu closed to the remote.
+    LaunchedEffect(browseState.handing) {
+        if (browseState.handing) {
+            delay(2000)
+            browseState.handing = false
+        }
+    }
 
     var page by remember { mutableIntStateOf(0) }
     LaunchedEffect(tab) {
@@ -647,7 +664,9 @@ fun MainScreen(api: CueApi, playback: Playback, openWeb: (String) -> Unit, chang
     }) {
         if (page <= 2) HomeBackdrop(api, hero) else AmbientBackground(null)
         // The pages sit right of the rail; the rail opens over them.
-        Box(Modifier.fillMaxSize().padding(start = RailWidth)) {
+        Box(Modifier.fillMaxSize().padding(start = RailWidth)
+            // A Browse page has the highlight now: the menu takes it again.
+            .onFocusChanged { if (it.hasFocus) browseState.handing = false }) {
             // The page follows the highlight once it rests on a tab (passing
             // over one doesn't build its page), and the old page has faded
             // before the new one shows, so two pages never overlap.
@@ -694,7 +713,12 @@ fun MainScreen(api: CueApi, playback: Playback, openWeb: (String) -> Unit, chang
             expanded = tabsFocused,
             modifier = Modifier
                 .align(Alignment.CenterStart)
-                .focusProperties { enter = { tabFocus[railSlot(tab)] } }
+                // Back from Ask Cue, or a Browse tile opening its page: the
+                // thing that had the highlight goes, and the highlight would
+                // fall into the menu (its own place, which opens it) before
+                // the page can put it where it belongs. The menu turns it away
+                // until it's there; moving onto the menu works again just after.
+                .focusProperties { enter = { if (askedBack || browseState.handing) FocusRequester.Cancel else tabFocus[railSlot(tab)] } }
                 .focusGroup()
                 .onFocusChanged {
                     tabsFocused = it.hasFocus
@@ -946,8 +970,18 @@ fun TitleScreen(api: CueApi, playback: Playback, card: Tile, memory: FocusMemory
         if (card.kind == "tv" && season >= 0 && title != null) episodes = runCatching { api.season(card.tmdbId, season) }.getOrDefault(emptyList())
     }
     val t = title
+    // Shown while the title's details load: what the card already knows
+    // (picture, name, story) with Play highlighted, so the page is there at
+    // once instead of a blank screen with nothing highlighted. The full page
+    // then takes over in place, without rising in a second time.
+    var previewed by remember(card.key) { mutableStateOf(false) }
     if (t == null) {
-        Centered { Text(problem.ifEmpty { "Loading…" }, color = Dim) }
+        if (problem.isNotEmpty()) {
+            Centered { Text(problem, color = Dim) }
+            return
+        }
+        SideEffect { previewed = true }
+        TitlePreview(card, playFocus)
         return
     }
     val c = t.card
@@ -956,6 +990,7 @@ fun TitleScreen(api: CueApi, playback: Playback, card: Tile, memory: FocusMemory
     val titleExtras = rememberExtras(api, c.kind, c.tmdbId)
     val pageTint = LocalTint.current
     LaunchedEffect(titleExtras?.colour) { titleExtras?.colour?.let { pageTint.value = it } }
+    CompositionLocalProvider(LocalCalm provides previewed) {
     Box(Modifier.fillMaxSize().background(Background).rise(0, 0.dp)) {
         // Rest here a moment and the picture comes alive. It plays under the
         // picture, which fades away once it's really playing.
@@ -969,7 +1004,7 @@ fun TitleScreen(api: CueApi, playback: Playback, card: Tile, memory: FocusMemory
         }
         // The picture fills the screen; the words sit on its darker left.
         AsyncImage(model = c.backdrop, contentDescription = null, contentScale = ContentScale.Crop,
-            modifier = Modifier.fillMaxSize().graphicsLayer { alpha = still }.settleIn())
+            modifier = Modifier.fillMaxSize().graphicsLayer { alpha = still }.settleIn(settled = previewed))
         Box(Modifier.fillMaxSize().background(Brush.horizontalGradient(0f to shade(0.95f), 0.42f to shade(0.65f), 0.75f to shade(0.10f))))
         Box(Modifier.fillMaxSize().background(Brush.verticalGradient(0.45f to Color.Transparent, 1f to shade(0.95f))))
         CompositionLocalProvider(LocalBringIntoViewSpec provides GentleSpec) {
@@ -1132,6 +1167,48 @@ fun TitleScreen(api: CueApi, playback: Playback, card: Tile, memory: FocusMemory
         }
         }
     }
+    }
+}
+
+// A title's page while its details load, from what its card already knows:
+// the picture behind, the name (or logo), the story, and Play highlighted,
+// laid out where the full page puts them so it can take over in place.
+@Composable
+private fun TitlePreview(card: Tile, playFocus: FocusRequester) {
+    LaunchedEffect(card.key) {
+        delay(60)
+        runCatching { playFocus.requestFocus() }
+    }
+    Box(Modifier.fillMaxSize().background(Background)) {
+        AsyncImage(model = card.backdrop, contentDescription = null, contentScale = ContentScale.Crop,
+            modifier = Modifier.fillMaxSize().settleIn())
+        Box(Modifier.fillMaxSize().background(Brush.horizontalGradient(0f to shade(0.95f), 0.42f to shade(0.65f), 0.75f to shade(0.10f))))
+        Box(Modifier.fillMaxSize().background(Brush.verticalGradient(0.45f to Color.Transparent, 1f to shade(0.95f))))
+        Column(Modifier.padding(start = Gutter, top = 150.dp, bottom = 20.dp).width(520.dp)) {
+            Box(Modifier.rise(0, 24.dp)) { TitleMark(card.title, card.logo, maxWidth = 380.dp, maxHeight = 120.dp, fontSize = 40.sp) }
+            // Where the facts (rating, year, length) will be.
+            Gap(14.dp)
+            Gap(20.dp)
+            card.overview?.let {
+                Gap(10.dp)
+                Text(it, fontSize = 12.sp, color = Color(0xD9FFFFFF), maxLines = 3, overflow = TextOverflow.Ellipsis, lineHeight = 17.sp,
+                    modifier = Modifier.rise(170))
+            }
+            Gap(18.dp)
+            // Play, highlighted at once; it works when the page has loaded,
+            // a moment later, and takes the highlight with it.
+            Pill(
+                when {
+                    card.soon -> "Remind me"
+                    (card.progress ?: 0.0) > 0 -> "Resume"
+                    else -> "Play"
+                },
+                primary = true,
+                icon = if (card.soon) app.cue.tv.R.drawable.ic_cue_calendar else app.cue.tv.R.drawable.ic_cue_play,
+                modifier = Modifier.rise(290).focusRequester(playFocus),
+            ) {}
+        }
+    }
 }
 
 @Composable
@@ -1197,161 +1274,7 @@ fun PosterGrid(items: List<Tile>, memory: FocusMemory, prefix: String, onCard: (
     }
 }
 
-// ---- Live TV ----
-
-// Live TV: the game that matters most at the top (LiveHero: both teams, a
-// countdown or the score, Featured beside it), then the groups down the
-// left and On now: a card per channel, two to a row. Moving down into the
-// channels folds the hero away; back to the top row brings it again. A
-// channel plays in the player, where up and down change channel. Without
-// games, the highlighted channel shows at the top instead.
-// The banner for the channel the highlight is on: reads it itself, so only
-// the banner is drawn again as the highlight moves.
-@Composable
-private fun SpotBanner(api: CueApi, channel: () -> Channel?) {
-    channel()?.let { LiveBanner(api, it) }
-}
-
-@Composable
-fun LiveScreen(api: CueApi, playback: Playback, openWeb: (String) -> Unit) {
-    var live by remember { mutableStateOf<LiveChannels?>(null) }
-    var problem by remember { mutableStateOf("") }
-    var group by remember { mutableStateOf("") } // "★" favourites, "*" every topic, else a topic's key
-    var country by remember { mutableStateOf<String?>(null) } // "" is every country
-    var picking by remember { mutableStateOf(false) } // the column lists the countries
-    var find by remember { mutableStateOf("") } // a game no channel was matched to: channels showing it
-    var board by remember { mutableStateOf(SportsBoard(null, emptyList(), emptyList())) }
-    LaunchedEffect(Unit) {
-        // Scores change: read again every minute while Live TV is open.
-        while (true) {
-            runCatching { api.sportsBoard() }.getOrNull()?.let { board = it }
-            delay(60_000)
-        }
-    }
-    LaunchedEffect(Unit) {
-        try {
-            val l = api.channels()
-            live = l
-            if (group.isEmpty()) group = if (l.channels.any { it.favorite }) "★" else "*"
-            if (country == null) country = api.liveCountry ?: l.home
-        } catch (e: Exception) {
-            problem = e.message ?: "Couldn't load Live TV."
-        }
-    }
-    val l = live
-    if (l == null) {
-        Centered { Text(problem.ifEmpty { "Loading…" }, color = Dim) }
-        return
-    }
-    if (!l.configured) {
-        Centered { Text("Live TV isn't set up on this Cue yet: add your IPTV provider in Cue's settings.", color = Dim) }
-        return
-    }
-    // Sorted by Cue's catalog, not the provider's groups: one of each
-    // channel (no copies, no dividers), in the picked country.
-    val place = country.orEmpty()
-    // The big networks first; the 24/7 loops, events and adult last; then by number.
-    val real = remember(l) { l.channels.filter { !it.divider && !it.copy }.sortedWith(compareBy({ it.rank }, { if (it.num > 0) it.num else Int.MAX_VALUE })) }
-    // A channel the list gives no country shows in every one.
-    val here = remember(real, place) { if (place.isEmpty()) real else real.filter { it.country == place || it.country.isEmpty() } }
-    val topicCounts = remember(here) { here.groupingBy { it.topic }.eachCount() }
-    val favorites = remember(l) { l.channels.filter { it.favorite } }
-    val shown = remember(l, here, group, find) {
-        when {
-            find.isNotEmpty() -> real.filter { it.name.contains(find, true) || it.now?.title?.contains(find, true) == true }
-            group == "★" -> favorites
-            group == "*" || group.isEmpty() -> here
-            else -> here.filter { it.topic == group }
-        }.distinctBy { it.id }.take(400)
-    }
-    val countryName = l.countries.firstOrNull { it.first == place }?.second ?: "Every country"
-    // Back closes the country list, or the search for a game, first.
-    BackHandler(enabled = picking) { picking = false }
-    BackHandler(enabled = find.isNotEmpty() && !picking) { find = "" }
-    val hasGames = board.big != null || board.now.isNotEmpty() || board.soon.isNotEmpty()
-    // Where the highlight is, held outside composition: reading it here would
-    // rebuild the whole screen on every press of the remote.
-    val spot = remember { mutableStateOf<Channel?>(null) }
-    val gridState = androidx.compose.foundation.lazy.rememberLazyListState()
-    // The row of channels the highlight is on (-1: none, or the hero): the
-    // hero shows while it's on the first row or above, so Up from there
-    // reaches it. (Only crossing that line changes anything.)
-    val focusRow = remember { mutableIntStateOf(-1) }
-    val atTop by remember { androidx.compose.runtime.derivedStateOf { focusRow.intValue <= 0 } }
-    Column(Modifier.fillMaxSize()) {
-        androidx.compose.animation.AnimatedVisibility(
-            visible = atTop,
-            enter = androidx.compose.animation.expandVertically(tween(320, easing = Settle)) + fadeIn(tween(320)),
-            exit = androidx.compose.animation.shrinkVertically(tween(280, easing = Settle)) + fadeOut(tween(200)),
-        ) {
-            Box(Modifier.padding(top = 14.dp)) {
-                if (hasGames) LiveHero(board) { g ->
-                    val ch = g.channelId?.let { id -> l.channels.firstOrNull { it.id == id } }
-                    // No channel matched: every channel whose name or show has the team in it.
-                    if (ch != null) playback.playLive(ch, shown) else find = g.home.name
-                }
-                else SpotBanner(api) { spot.value ?: shown.firstOrNull() }
-            }
-        }
-        Row(Modifier.fillMaxSize().padding(top = 16.dp)) {
-            LazyColumn(Modifier.width(214.dp), contentPadding = PaddingValues(start = Gutter, bottom = 60.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                item {
-                    Text("CHANNELS", fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.5.sp, color = Dim,
-                        modifier = Modifier.padding(start = 6.dp, bottom = 6.dp))
-                }
-                if (picking) {
-                    // The countries, most channels first; then every country.
-                    items(l.countries + Triple("", "Every country", real.size), key = { "c-" + it.first }) { (code, name, n) ->
-                        ChoiceTab("$name  ·  $n", selected = code == place, modifier = Modifier.fillMaxWidth()) {
-                            country = code
-                            api.liveCountry = code
-                            picking = false
-                            find = ""
-                            if (group != "★") group = "*"
-                        }
-                    }
-                } else {
-                    if (favorites.isNotEmpty()) item(key = "★") {
-                        ChoiceTab("Favorites  ·  ${favorites.size}", selected = group == "★" && find.isEmpty(), modifier = Modifier.fillMaxWidth()) { group = "★"; find = "" }
-                    }
-                    if (l.countries.isNotEmpty()) item(key = "country") {
-                        ChoiceTab("$countryName  ›", selected = false, modifier = Modifier.fillMaxWidth()) { picking = true }
-                    }
-                    item(key = "*") {
-                        ChoiceTab("All topics  ·  ${here.size}", selected = group == "*" && find.isEmpty(), modifier = Modifier.fillMaxWidth()) { group = "*"; find = "" }
-                    }
-                    items(l.topics.filter { (topicCounts[it.first] ?: 0) > 0 }, key = { "t-" + it.first }) { (key, name) ->
-                        ChoiceTab("$name  ·  ${topicCounts[key] ?: 0}", selected = group == key && find.isEmpty(), modifier = Modifier.fillMaxWidth()) { group = key; find = "" }
-                    }
-                }
-                item {
-                    Gap(10.dp)
-                    Pill("Full guide") { openWeb("/watch/live") }
-                }
-            }
-            CompositionLocalProvider(LocalBringIntoViewSpec provides PivotSpec) {
-                LazyColumn(Modifier.fillMaxSize(), state = gridState, contentPadding = PaddingValues(start = 18.dp, end = Gutter, top = 2.dp, bottom = 60.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    item(key = "head") {
-                        Row(verticalAlignment = Alignment.Bottom) {
-                            Text(if (find.isNotEmpty()) "Showing “$find”" else "On now", fontFamily = Type.display(), fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                            HGap(10.dp)
-                            Text(if (find.isNotEmpty()) "${shown.size} channels, every country" else "${shown.size} channels live", fontSize = 11.sp, color = Dim, modifier = Modifier.padding(bottom = 2.dp))
-                        }
-                    }
-                    itemsIndexed(shown.chunked(2), key = { _, row -> row.first().id }) { i, row ->
-                        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                            row.forEach { ch ->
-                                ChannelTile(api, ch, Modifier.weight(1f), onFocus = { spot.value = ch; focusRow.intValue = i }) { playback.playLive(ch, shown) }
-                            }
-                            if (row.size == 1) Box(Modifier.weight(1f))
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
+// ---- Live TV ---- (LiveGuide.kt)
 
 // The highlighted channel at the top of Live TV: its logo, what's on now
 // (with a red LIVE pill, the time and how far through), and what's next.

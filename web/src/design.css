@@ -39,15 +39,11 @@
   --on-sec: #ffffff;
 }
 
-.app-shell { --sec: var(--c-dashboard); }
-.app-shell[data-section='discover'] { --sec: var(--c-discover); }
-.app-shell[data-section='library'] { --sec: var(--c-library); }
-.app-shell[data-section='wanted'] { --sec: var(--c-wanted); }
-.app-shell[data-section='calendar'] { --sec: var(--c-calendar); }
-.app-shell[data-section='activity'] { --sec: var(--c-activity); }
-.app-shell[data-section='settings'] { --sec: var(--c-settings); }
-.app-shell[data-section='profile'] { --sec: var(--c-profile); }
-.app-shell[data-section='about'] { --sec: var(--c-about); }
+/* One colour for the whole app, as on the TV: the profile's accent (Cue's
+   teal unless the profile picked another) for buttons, chips, focus and the
+   glow behind each page. The section colours above stay for the little
+   icons and tags that name a kind of thing (movies, shows, music). */
+.app-shell { --sec: var(--accent); }
 
 .app-shell {
   --sec-soft: color-mix(in srgb, var(--sec) 14%, transparent);
@@ -540,8 +536,22 @@ a.cal-chip:hover { text-decoration: none; border-color: var(--kc); background: c
 }
 .title-hero.kind-movie { --hc: var(--c-movie); }
 .title-hero.kind-tv { --hc: var(--c-tv); }
-.title-hero-bg { position: absolute; inset: -30px; z-index: -1; background-size: cover; background-position: center; filter: blur(46px) saturate(1.3); opacity: 0.28; transform: scale(1.1); }
-.title-hero::after { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(90deg, color-mix(in srgb, var(--surface) 88%, transparent), color-mix(in srgb, var(--surface) 60%, transparent)); }
+.title-hero-bg { position: absolute; inset: -30px; z-index: -3; background-size: cover; background-position: center; filter: blur(46px) saturate(1.3); opacity: 0.28; transform: scale(1.1); }
+.title-hero-still { position: absolute; inset: 0 0 auto auto; width: min(72%, 980px); aspect-ratio: 16 / 9; z-index: -1; pointer-events: none;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 45%), linear-gradient(180deg, #000 55%, transparent);
+  -webkit-mask-composite: source-in; mask-image: linear-gradient(90deg, transparent, #000 45%), linear-gradient(180deg, #000 55%, transparent); mask-composite: intersect; }
+.title-hero-still img { width: 100%; height: 100%; object-fit: cover; display: block; opacity: 0.42; animation: still-in 0.6s ease-out both; }
+@keyframes still-in { from { opacity: 0; } }
+:root[data-theme="light"] .title-hero-still img { opacity: 0.3; }
+@media (prefers-reduced-motion: reduce) { .title-hero-still img { animation: none; } }
+.title-manage { border-top: 1px solid var(--border); padding-top: 10px; }
+.title-manage > summary { cursor: pointer; display: inline-flex; align-items: center; gap: 8px; font-weight: 600; color: var(--text-dim); list-style: none; padding: 4px 0; }
+.title-manage > summary::-webkit-details-marker { display: none; }
+.title-manage > summary:hover { color: var(--text); }
+.title-manage > summary .chev { display: inline-flex; transition: transform 0.15s ease; }
+.title-manage[open] > summary .chev { transform: rotate(90deg); }
+.title-manage-body { display: grid; gap: 12px; padding-top: 10px; }
+.title-hero::after { content: ''; position: absolute; inset: 0; z-index: -2; background: linear-gradient(90deg, color-mix(in srgb, var(--surface) 88%, transparent), color-mix(in srgb, var(--surface) 60%, transparent)); }
 .title-poster { aspect-ratio: 2 / 3; border-radius: 14px; overflow: hidden; box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45); border: 1px solid color-mix(in srgb, var(--hc) 40%, transparent); background: var(--surface-2); align-self: start; }
 .title-poster img, .title-poster .poster-fallback { width: 100%; height: 100%; object-fit: cover; display: block; }
 .title-info { display: grid; gap: 12px; align-content: start; min-width: 0; }
@@ -573,6 +583,7 @@ a.cal-chip:hover { text-decoration: none; border-color: var(--kc); background: c
   .title-hero { grid-template-columns: 120px minmax(0, 1fr); }
   .title-hero .title-info { grid-column: 1 / -1; }
   .title-poster { grid-row: 1; }
+  .title-hero-still { width: 100%; }
 }
 
 /* ---- Buttons and small tags used on title pages ----------------------- */

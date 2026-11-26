@@ -194,22 +194,7 @@ function MoviePage() {
                   <Icon name="play" size={18} /> Play
                 </button>
               )}
-              {can(me, 'manage') && (
-                <button className="primary btn-with-icon" onClick={searchNow} disabled={searchingNow || movie.status === 'downloading'}>
-                  <Icon name="search" size={16} /> {searchingNow ? 'Searching…' : movie.status === 'downloaded' ? 'Look for a better copy' : 'Find and download now'}
-                </button>
-              )}
-              {can(me, 'releases') && (
-                <button className="btn-with-icon" onClick={chooseRelease} disabled={searching}>
-                  <Icon name="list" size={16} /> {searching ? 'Loading…' : 'Choose a release'}
-                </button>
-              )}
               {movie.status === 'downloaded' && <WatchLinks tmdbId={movie.tmdbId} kind="movie" />}
-              {admin && (
-                <button className="btn-with-icon danger-ghost" onClick={onRemove}>
-                  <Icon name="trash" size={16} /> Remove
-                </button>
-              )}
             </>
           ) : (
             <>
@@ -226,15 +211,41 @@ function MoviePage() {
         }
       >
         {inLibrary && movie.status === 'missing' && movie.libraryId && <SearchStatus kind="movie" id={movie.libraryId} />}
-        {inLibrary && (
-          <div className="title-controls">
-            <Switch checked={monitored ?? true} onChange={toggleMonitored} label="Monitored" description="Keeps looking until it finds this movie." />
-            <ProfilePicker kind="movie" itemId={movie.libraryId!} />
-            {movie.filePath && <code className="filepath">{movie.filePath}</code>}
-          </div>
-        )}
-        {inLibrary && movie.libraryId && <TitleTags kind="movie" id={movie.libraryId} />}
         {inLibrary && movie.libraryId && <WatchedLine kind="movie" id={movie.libraryId} />}
+        {/* Looking after the copy: out of the way once it's here, open
+            while Cue is still getting it. */}
+        {inLibrary && (
+          <details className="title-manage" open={movie.status !== 'downloaded'}>
+            <summary>
+              <span className="chev"><Icon name="chevron-right" size={16} /></span> Manage
+            </summary>
+            <div className="title-manage-body">
+              <div className="title-actions">
+                {can(me, 'manage') && (
+                  <button className="primary btn-with-icon" onClick={searchNow} disabled={searchingNow || movie.status === 'downloading'}>
+                    <Icon name="search" size={16} /> {searchingNow ? 'Searching…' : movie.status === 'downloaded' ? 'Look for a better copy' : 'Find and download now'}
+                  </button>
+                )}
+                {can(me, 'releases') && (
+                  <button className="btn-with-icon" onClick={chooseRelease} disabled={searching}>
+                    <Icon name="list" size={16} /> {searching ? 'Loading…' : 'Choose a release'}
+                  </button>
+                )}
+                {admin && (
+                  <button className="btn-with-icon danger-ghost" onClick={onRemove}>
+                    <Icon name="trash" size={16} /> Remove
+                  </button>
+                )}
+              </div>
+              <div className="title-controls">
+                <Switch checked={monitored ?? true} onChange={toggleMonitored} label="Monitored" description="Keeps looking until it finds this movie." />
+                <ProfilePicker kind="movie" itemId={movie.libraryId!} />
+                {movie.filePath && <code className="filepath">{movie.filePath}</code>}
+              </div>
+              {movie.libraryId && <TitleTags kind="movie" id={movie.libraryId} />}
+            </div>
+          </details>
+        )}
       </TitleHero>
 
       {!inLibrary && <CastCard cast={movie.cast ?? []} />}
