@@ -234,6 +234,8 @@ var memberRoutes = []string{
 	"PUT /api/live/reminders",
 	"DELETE /api/live/reminders",
 	"GET /api/live/hls",
+	"GET /api/live/timeshift/{id}",
+	"DELETE /api/live/timeshift",
 	"GET /api/live/recordings",
 	"PUT /api/live/recordings",
 	"DELETE /api/live/recordings/{id}",

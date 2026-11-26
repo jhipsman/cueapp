@@ -272,6 +272,9 @@ export interface LivePlay {
   // MPEG-TS stream).
   alts?: { kind: 'hls' | 'ts'; url: string }[]
   directAlts?: string[] // the TV app's others to try
+  // Pausing and going back: where to ask for the server's copy of the
+  // channel (it keeps the last half hour or so). Absent when it's off.
+  timeshift?: string
 }
 export interface IPTVSettings {
   set: boolean
@@ -281,6 +284,7 @@ export interface IPTVSettings {
   channels?: number
   guideChannels?: number
   guideProblem?: string
+  timeshift?: { minutes: number; available: boolean; running: number }
 }
 
 // Watch profiles: a profile per person in the household.
@@ -2691,6 +2695,12 @@ export const api = {
       ? put<{ mine: FavoriteTeam[] }>(`/live/sports/teams/${league}/${encodeURIComponent(t.id)}`, { name: t.name, logo: t.logo })
       : del<{ mine: FavoriteTeam[] }>(`/live/sports/teams/${league}/${encodeURIComponent(t.id)}`),
   liveSearch: (q: string) => get<{ hits: LiveHit[]; guideReady?: boolean }>(`/live/search?q=${encodeURIComponent(q)}`),
+  // The server's copy of a live channel, for pausing and going back
+  // (viewer: this player's own id, so changing channel stops the old copy).
+  liveTimeshift: (path: string, viewer: string) =>
+    get<{ url: string; minutes: number }>(`${path.replace(/^\/api/, '')}?v=${encodeURIComponent(viewer)}`),
+  leaveTimeshift: (viewer: string) => del<null>(`/live/timeshift?v=${encodeURIComponent(viewer)}`),
+  saveTimeshift: (minutes: number) => put<{ minutes: number; available: boolean }>('/settings/iptv/timeshift', { minutes }),
   liveCatchup: (id: string, start: number, stop: number) =>
     get<LivePlay>(`/live/catchup/${encodeURIComponent(id)}?start=${Math.floor(start / 1000)}&stop=${Math.floor(stop / 1000)}`),
   liveReminders: () => get<LiveReminder[]>('/live/reminders'),

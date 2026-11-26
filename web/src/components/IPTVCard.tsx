@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { api, type IPTVSettings } from '../api'
 import GuideSources from './GuideSources'
+import TimeshiftSetting from './TimeshiftSetting'
 import { useToast } from './Toast'
 
 // Settings > Streaming: the IPTV provider for Live TV, an Xtream Codes login
@@ -97,6 +98,7 @@ export default function IPTVCard() {
         </div>
         {error && <p className="error-text">{error}</p>}
       </div>
+      {st?.set && st.timeshift && <TimeshiftSetting value={st.timeshift} />}
       {st?.set && <GuideSources />}
     </section>
   )

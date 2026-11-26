@@ -47,6 +47,7 @@ const (
 	KeyIPTV                = "iptv.account"            // encrypted JSON {server, username, password}: an Xtream Codes login for Live TV; unset = no Live TV
 	KeyIPTVGuideSources    = "iptv.guide_sources"      // encrypted JSON list of XMLTV addresses: guides beside the provider's, for channels it has none for; unset = the provider's only
 	KeyIPTVGuideMatch      = "iptv.guide_match"        // JSON {channel id: guide id}: channels matched to a guide channel by hand ("s1:cnn.us" is the first extra source's); unset = none
+	KeyIPTVTimeshift       = "iptv.timeshift"          // minutes of a live channel the server keeps, for pausing and going back ("0" = off); unset = 30
 	KeyYouTubeAPIKey       = "youtube.api_key"         // encrypted; a YouTube Data API key: Play searches YouTube for a full episode or film when nothing else is found. Unset = no YouTube
 	KeyPremiumizeUseFor    = "premiumize.use_for"      // "torrents" (the default when unset) | "usenet" | "both"
 

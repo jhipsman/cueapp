@@ -96,6 +96,14 @@ class PlayerActivity : Activity() {
     // (providers serve catch-up in different ways).
     private val alts = ArrayDeque<String>()
     private var started = false
+    // Live TV the server keeps a while (its "timeshift"): playing its copy,
+    // the channel can be paused, moved back in and caught up. viewer is this
+    // player's id with the server, so changing channel stops the old copy.
+    private var shifting = false
+    private var shiftUrl = ""
+    private val viewer = java.util.UUID.randomUUID().toString()
+    private var liveBadgeText: TextView? = null
+    private val liveButtons = mutableListOf<View>()
 
     // Catch-up: the show's start and end (ms since 1970), where in it the
     // stream began (providers start a catch-up stream at a whole minute and
@@ -518,11 +526,32 @@ class PlayerActivity : Activity() {
         }
         player.addListener(listener)
 
-        player.setMediaItem(mediaItem(info.optString("subtitleUrl")))
-        val start = (info.optDouble("startSec", 0.0) * 1000).toLong()
-        if (start > 0 && !live) player.seekTo(start)
-        player.prepare()
-        player.playWhenReady = true
+        val shiftPath = if (live) info.optString("timeshift") else ""
+        if (shiftPath.isNotEmpty()) {
+            // The server's copy first (pausing, going back); the provider's
+            // own address if it doesn't answer.
+            Thread {
+                val got = shiftAddress(shiftPath)
+                runOnUiThread {
+                    if (finished) return@runOnUiThread
+                    if (got != null) {
+                        alts.addFirst(info.optString("url"))
+                        useShift(got)
+                        player.setMediaItem(MediaItem.fromUri(got))
+                    } else {
+                        player.setMediaItem(mediaItem(info.optString("subtitleUrl")))
+                    }
+                    player.prepare()
+                    player.playWhenReady = true
+                }
+            }.start()
+        } else {
+            player.setMediaItem(mediaItem(info.optString("subtitleUrl")))
+            val start = (info.optDouble("startSec", 0.0) * 1000).toLong()
+            if (start > 0 && !live) player.seekTo(start)
+            player.prepare()
+            player.playWhenReady = true
+        }
         if (!live && !catchup) main.postDelayed(saver, SAVE_EVERY_MS)
         main.post(ticker)
         main.postDelayed(freezeWatch, 4000)
@@ -934,7 +963,7 @@ class PlayerActivity : Activity() {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
             if (live) {
-                addView(liveBadge())
+                addView(liveBadge().also { liveBadgeText = it as TextView })
                 addView(TextView(this@PlayerActivity).also { liveNowText = it }.apply {
                     text = info.optString("subtitle")
                     setTextColor(0xFFE6E7EA.toInt())
@@ -959,6 +988,16 @@ class PlayerActivity : Activity() {
             if (!live) {
                 addView(pill("", R.drawable.ic_cue_replay) { seekBy(-10_000) })
                 addView(pill("", R.drawable.ic_cue_forward) { seekBy(10_000) })
+            } else {
+                // Kept live TV: back, on, and back to live (shown once the
+                // server's copy is playing).
+                liveButtons += pill("", R.drawable.ic_cue_replay) { seekBy(-10_000) }
+                liveButtons += pill("", R.drawable.ic_cue_forward) { seekBy(10_000) }
+                liveButtons += pill("Live", R.drawable.ic_cue_next) { goLive() }
+                liveButtons.forEach { b ->
+                    b.visibility = if (shifting) View.VISIBLE else View.GONE
+                    addView(b)
+                }
             }
             addView(View(context), LinearLayout.LayoutParams(0, 1, 1f))
             // A short row: what's used most, the rest in two menus (Sound,
@@ -1340,7 +1379,10 @@ class PlayerActivity : Activity() {
         if (catchup && cuStop > cuStart) cuStop - cuStart else player.duration.let { if (it == C.TIME_UNSET) 0L else it }
 
     private fun refreshTime() {
-        if (live) return
+        if (live) {
+            refreshLiveBadge()
+            return
+        }
         val dur = length()
         val pos = if (pendingSeek >= 0) pendingSeek else position()
         timeBar.update(pos, dur, if (catchup) cuOffset + player.bufferedPosition else player.bufferedPosition)
@@ -1419,6 +1461,108 @@ class PlayerActivity : Activity() {
         main.postDelayed(hider, 4500)
     }
 
+    // ---- Kept live TV ----
+
+    // shiftAddress asks Cue for its copy of the channel (blocking: call it
+    // off the main thread): the playlist's address, or null.
+    private fun shiftAddress(path: String): String? {
+        if (server.isEmpty()) return null
+        return try {
+            val h = URL("$server$path?v=$viewer").openConnection() as HttpURLConnection
+            h.connectTimeout = 8000
+            h.readTimeout = 25000
+            h.setRequestProperty("User-Agent", "CueTV/1 (native)")
+            CookieManager.getInstance().getCookie(server)?.let { h.setRequestProperty("Cookie", it) }
+            info.optString("token").takeIf { it.isNotEmpty() }?.let { h.setRequestProperty("X-Cue-Profile", it) }
+            val ok = h.responseCode == 200
+            val body = if (ok) h.inputStream.bufferedReader().use { it.readText() } else ""
+            h.disconnect()
+            if (ok) JSONObject(body).optString("url").takeIf { it.isNotEmpty() }?.let { server + it } else null
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    private fun useShift(url: String) {
+        shifting = url.isNotEmpty()
+        shiftUrl = url
+        liveButtons.forEach { it.visibility = if (shifting) View.VISIBLE else View.GONE }
+        main.removeCallbacks(shiftKeeper)
+        if (shifting) main.postDelayed(shiftKeeper, 30_000)
+        refreshLiveBadge()
+    }
+
+    // While paused the player may fetch nothing: a word now and then keeps
+    // the server's copy going.
+    private val shiftKeeper = object : Runnable {
+        override fun run() {
+            val u = shiftUrl
+            if (u.isEmpty() || finished) return
+            Thread {
+                runCatching {
+                    val h = URL(u).openConnection() as HttpURLConnection
+                    h.connectTimeout = 8000
+                    h.readTimeout = 8000
+                    h.responseCode
+                    h.disconnect()
+                }
+            }.start()
+            main.postDelayed(this, 30_000)
+        }
+    }
+
+    // leaveShift tells Cue this player is done with its copy.
+    private fun leaveShift() {
+        if (!live || server.isEmpty()) return
+        val cookie = CookieManager.getInstance().getCookie(server)
+        val token = info.optString("token")
+        Thread {
+            runCatching {
+                val h = URL("$server/api/live/timeshift?v=$viewer").openConnection() as HttpURLConnection
+                h.requestMethod = "DELETE"
+                h.connectTimeout = 5000
+                h.readTimeout = 5000
+                h.setRequestProperty("User-Agent", "CueTV/1 (native)")
+                if (cookie != null) h.setRequestProperty("Cookie", cookie)
+                if (token.isNotEmpty()) h.setRequestProperty("X-Cue-Profile", token)
+                h.responseCode
+                h.disconnect()
+            }
+        }.start()
+    }
+
+    // How far behind live the picture is (ms), on the server's copy.
+    private fun behindLive(): Long {
+        if (!shifting) return 0
+        val off = player.currentLiveOffset
+        if (off == C.TIME_UNSET) return 0
+        return maxOf(0L, off - LIVE_OFFSET_SLACK)
+    }
+
+    private fun liveSeek(ms: Long) {
+        if (!shifting) return
+        val dur = player.duration
+        if (dur == C.TIME_UNSET || dur <= 0) return
+        val to = (player.currentPosition + ms).coerceIn(0, maxOf(0L, dur - 8_000))
+        player.seekTo(to)
+        refreshLiveBadge()
+    }
+
+    private fun goLive() {
+        player.seekToDefaultPosition()
+        player.play()
+        refreshLiveBadge()
+    }
+
+    private fun refreshLiveBadge() {
+        val b = liveBadgeText ?: return
+        val behind = behindLive()
+        val text = if (shifting && (behind > 10_000 || !player.playWhenReady)) {
+            if (behind > 10_000) "−" + clock(behind) else "❚❚  PAUSED"
+        } else "●  LIVE"
+        if (b.text.toString() != text) b.text = text
+    }
+
     private fun togglePlay() {
         if (player.isPlaying) {
             player.pause()
@@ -1435,7 +1579,10 @@ class PlayerActivity : Activity() {
     }
 
     private fun seekBy(ms: Long) {
-        if (live) return
+        if (live) {
+            liveSeek(ms)
+            return
+        }
         val from = if (pendingSeek >= 0) pendingSeek else position()
         noteJump(from, from + ms)
         val dur = length().takeIf { it > 0 } ?: Long.MAX_VALUE
@@ -2270,10 +2417,13 @@ class PlayerActivity : Activity() {
             } catch (_: Exception) {
                 null
             }
+            // The server's copy, for pausing (and its own address after it).
+            val shifted = answer?.optString("timeshift")?.takeIf { it.isNotEmpty() && id == zapTarget }?.let { shiftAddress(it) }
             runOnUiThread {
                 if (finished || id != zapTarget) return@runOnUiThread
                 val direct = answer?.optString("direct").orEmpty()
-                val url = direct.ifEmpty { answer?.optString("url")?.takeIf { it.isNotEmpty() }?.let { server + it }.orEmpty() }
+                val own = direct.ifEmpty { answer?.optString("url")?.takeIf { it.isNotEmpty() }?.let { server + it }.orEmpty() }
+                val url = shifted ?: own
                 if (url.isEmpty()) {
                     Toast.makeText(this, "${c.optString("name")} won't play right now.", Toast.LENGTH_LONG).show()
                     return@runOnUiThread
@@ -2293,6 +2443,8 @@ class PlayerActivity : Activity() {
                 answer?.optJSONArray("directAlts")?.let { list ->
                     for (i in 0 until list.length()) list.optString(i).takeIf { it.isNotEmpty() }?.let { alts.addLast(it) }
                 }
+                if (shifted != null && own.isNotEmpty()) alts.addFirst(own)
+                useShift(shifted ?: "")
                 player.setMediaItem(MediaItem.fromUri(url))
                 player.prepare()
                 player.playWhenReady = true
@@ -2636,6 +2788,7 @@ class PlayerActivity : Activity() {
     private fun end(reason: String, message: String = "") {
         if (finished) return
         finished = true
+        leaveShift()
         runCatching { booster?.release() }
         party?.close()
         saveProgress()
@@ -2668,6 +2821,7 @@ class PlayerActivity : Activity() {
     }
 
     override fun onDestroy() {
+        if (!finished) leaveShift()
         ScreenLink.onControl = null
         ScreenLink.onPlayInPlayer = null
         if (!live) ScreenLink.report(JSONObject().put("playing", false)) // back on Home
@@ -2682,6 +2836,9 @@ class PlayerActivity : Activity() {
         // (kept across players: the next episode can open a new one).
         @JvmStatic var autoInARow = 0
         const val STILL_WATCHING_AFTER = 3
+        // ExoPlayer sits this far behind the newest piece when "at live"
+        // (three four-second pieces).
+        const val LIVE_OFFSET_SLACK = 12_000L
         const val EXTRA_JSON = "json"
         const val EXTRA_SERVER = "server"
         const val RESULT_REASON = "reason"

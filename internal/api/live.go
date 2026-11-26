@@ -513,6 +513,12 @@ func (s *Server) handleLivePlay(w http.ResponseWriter, r *http.Request) {
 	if ch.Logo != "" {
 		out["logo"] = "/api/live/logo/" + url.PathEscape(ch.ID)
 	}
+	if s.timeshiftOn() {
+		// Pausing and going back: the player asks here for the server's
+		// copy of the channel (live_timeshift.go), and plays the usual
+		// addresses when that doesn't answer.
+		out["timeshift"] = "/api/live/timeshift/" + url.PathEscape(ch.ID)
+	}
 	if strings.Contains(r.UserAgent(), "CueTV/") {
 		// The TV plays MPEG-TS straight from the provider, which most
 		// Xtream providers serve best; HLS when the account only has that.
@@ -879,6 +885,9 @@ func (s *Server) handleGetIPTV(w http.ResponseWriter, r *http.Request) {
 		out["expires"] = s.live.status.Expires
 	}
 	s.live.mu.Unlock()
+	// Pausing live TV: how much the server keeps, whether it can (ffmpeg),
+	// and the channels being kept now.
+	out["timeshift"] = map[string]any{"minutes": s.timeshiftMinutes(), "available": canConvert(), "running": len(s.timeshiftRunning())}
 	writeJSON(w, http.StatusOK, out)
 }
 
@@ -1168,6 +1177,12 @@ func (s *Server) handleLiveCatchup(w http.ResponseWriter, r *http.Request) {
 	out := map[string]any{"id": ch.ID, "num": ch.Num, "name": ch.Name, "url": alts[0]["url"], "alts": alts, "catchup": true}
 	if ch.Logo != "" {
 		out["logo"] = "/api/live/logo/" + url.PathEscape(ch.ID)
+	}
+	if s.timeshiftOn() {
+		// Pausing and going back: the player asks here for the server's
+		// copy of the channel (live_timeshift.go), and plays the usual
+		// addresses when that doesn't answer.
+		out["timeshift"] = "/api/live/timeshift/" + url.PathEscape(ch.ID)
 	}
 	if strings.Contains(r.UserAgent(), "CueTV/") {
 		format := "ts"

@@ -1522,6 +1522,29 @@ html.watch-mode:has(.wx-live-preview.is-full) body {
   background: var(--wx-accent);
   box-shadow: 0 0 0 3px rgba(var(--wx-accent-rgb), 0.3);
 }
+/* Kept live TV: LIVE goes back to now; grey while behind. */
+.vx-live-btn {
+  background: none;
+  border: 0;
+  color: inherit;
+  padding: 6px 10px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-family: inherit;
+}
+.vx-live-btn:disabled {
+  cursor: default;
+}
+.vx-live-btn.behind {
+  background: rgba(255, 255, 255, 0.14);
+}
+.vx-live-btn.behind i {
+  background: rgba(255, 255, 255, 0.55);
+  box-shadow: none;
+}
+.vx-live-btn.behind:hover {
+  background: rgba(255, 255, 255, 0.24);
+}
 .vx-pop-wrap {
   position: relative;
 }

@@ -201,6 +201,7 @@ class Playback(
                     .put("title", (if (ch.num > 0) "${ch.num}  " else "") + ch.name)
                     .put("subtitle", ch.now?.let { "${it.title} · until ${clock(it.stop)}" } ?: "")
                     .put("live", true)
+                    .put("timeshift", p.optString("timeshift"))
                     .put("id", ch.id)
                     .put("channels", channels)
                     .put("token", api.profileToken)

@@ -68,6 +68,10 @@ export function liveHref(id: string, cat: string): string {
   return `/watch/live?cat=${encodeURIComponent(cat)}&ch=${encodeURIComponent(id)}&full=1`
 }
 
+// This page's own id with the server's copies of channels (for pausing):
+// changing channel here stops the copy no one else is watching.
+const viewer = Math.random().toString(36).slice(2) + Date.now().toString(36)
+
 const hhmm = (d: Date | string) => new Date(d).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
 
 // when says the day and time of a show: "Today 7:30 PM", "Tomorrow 1:00 PM".
@@ -335,9 +339,41 @@ export default function LivePage() {
     }
   }, [ch, catchup, at, atEnd, cuOffset])
 
+  // Pausing and going back: the server's copy of the channel, when it
+  // keeps one ('' while asking, null when it doesn't: the usual addresses).
+  const [shiftUrl, setShiftUrl] = useState<string | null>(null)
+  useEffect(() => {
+    setShiftUrl(null)
+    if (!play?.timeshift || play.catchup || onTVPlayer) return
+    let current = true
+    setShiftUrl('')
+    api
+      .liveTimeshift(play.timeshift, viewer)
+      .then((r) => current && setShiftUrl(r.url))
+      .catch(() => current && setShiftUrl(null))
+    return () => {
+      current = false
+    }
+  }, [play, onTVPlayer])
+  // While paused the player may not fetch anything: a word now and then
+  // keeps the copy going. Leaving Live TV stops it.
+  useEffect(() => {
+    if (!shiftUrl) return
+    const t = window.setInterval(() => void fetch(shiftUrl, { cache: 'no-store' }).catch(() => undefined), 30_000)
+    return () => window.clearInterval(t)
+  }, [shiftUrl])
+  useEffect(() => {
+    if (!ch || catchup) void api.leaveTimeshift(viewer).catch(() => undefined)
+  }, [ch, catchup])
+  useEffect(() => () => void api.leaveTimeshift(viewer).catch(() => undefined), [])
+
   // The stream, in the window (or full screen: the same video, so going
   // full screen and back never restarts it).
-  const sources = useMemo(() => (play && !onTVPlayer ? (play.alts?.length ? play.alts : [{ kind: 'hls' as const, url: play.url }]) : null), [play, onTVPlayer])
+  const sources = useMemo(() => {
+    if (!play || onTVPlayer || shiftUrl === '') return null
+    const usual = play.alts?.length ? play.alts : [{ kind: 'hls' as const, url: play.url }]
+    return shiftUrl ? [{ kind: 'hls' as const, url: shiftUrl }, ...usual] : usual
+  }, [play, onTVPlayer, shiftUrl])
   useLiveStream(videoEl, sources, setPlayError)
 
   const setPlaying = useCallback(
@@ -388,6 +424,8 @@ export default function LivePage() {
           subtitle: p.catchup ? 'Catch-up' : c?.now ? `${c.now.title} · until ${hhmm(c.now.stop)}` : '',
           live: !p.catchup,
           catchup: !!p.catchup,
+          // Pausing and going back: the TV asks Cue for its copy first.
+          timeshift: p.catchup ? '' : (p.timeshift ?? ''),
           // For moving through a catch-up show: the TV asks Cue for the
           // stream from a new minute, like the browser does.
           id: p.id,
@@ -719,7 +757,7 @@ export default function LivePage() {
               <p>Playing full screen</p>
             </div>
           )}
-          {ch && !play && !playError && !onTVPlayer && <div className="wx-live-tuning">Tuning in…</div>}
+          {ch && (!play || shiftUrl === '') && !playError && !onTVPlayer && <div className="wx-live-tuning">Tuning in…</div>}
           {playError && <div className="wx-live-problem">{playError}</div>}
           {ch && play && !browserFull && !onTVPlayer && (
             <button className="wx-live-expand" onClick={goFull} aria-label="Full screen">
@@ -730,6 +768,7 @@ export default function LivePage() {
             <VideoControls
               video={videoEl}
               live={!catchup}
+              dvr={!catchup && !!shiftUrl}
               timeline={
                 catchup
                   ? { offset: cuOffset, duration: (atEnd - at) / 1000, onSeek: (sec) => setCuOffset(Math.max(0, Math.floor(sec / 60) * 60)) }

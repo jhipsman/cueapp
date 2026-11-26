@@ -79,6 +79,7 @@ type Server struct {
 	omdb              omdbState      // the OMDb client for the saved key (watch_api.go)
 	fallback          fallbackState  // Internet Archive and YouTube, when nothing else is found (play_fallback.go)
 	recorder          recorderState  // Live TV recordings running (live_record.go)
+	shift             timeshiftState // Live TV kept a while, for pausing and going back (live_timeshift.go)
 	profileBox        *crypto.Box    // seals profile tokens (watch_profiles.go)
 	live              liveState      // Live TV's channel list and guide (live.go)
 
@@ -322,6 +323,8 @@ func (s *Server) Routes() http.Handler {
 	// id, are the key (play_convert_hls.go).
 	public.HandleFunc("GET /api/play/convert/hls", s.handleConvertHLS)
 	public.HandleFunc("GET /api/play/convert/hls/{id}/{file}", s.handleConvertHLSFile)
+	// Live TV's copy for pausing (live_timeshift.go): its long random id is the key.
+	public.HandleFunc("GET /api/live/ts/{id}/{file}", s.handleTimeshiftFile)
 
 	public.Handle("/api/", s.signedIn(s.protectedRoutes()))
 
@@ -608,6 +611,8 @@ func (s *Server) protectedRoutes() *routeTable {
 	play.HandleFunc("PUT /api/live/reminders", s.handleAddLiveReminder)
 	play.HandleFunc("DELETE /api/live/reminders", s.handleRemoveLiveReminder)
 	play.HandleFunc("GET /api/live/hls", s.handleLiveHLS)
+	play.HandleFunc("GET /api/live/timeshift/{id}", s.handleLiveTimeshift)
+	play.HandleFunc("DELETE /api/live/timeshift", s.handleLeaveTimeshift)
 	play.HandleFunc("GET /api/play/convert", s.handleConvertProbe)
 	play.HandleFunc("GET /api/play/convert/stream", s.handleConvertStream)
 	play.HandleFunc("GET /api/play/convert/start", s.handleConvertStart)
@@ -844,6 +849,7 @@ func (s *Server) protectedRoutes() *routeTable {
 	admin.HandleFunc("GET /api/settings/streaming/setup", s.handleStreamingSetup)
 	admin.HandleFunc("GET /api/settings/iptv", s.handleGetIPTV)
 	admin.HandleFunc("PUT /api/settings/iptv", s.handlePutIPTV)
+	admin.HandleFunc("PUT /api/settings/iptv/timeshift", s.handlePutTimeshift)
 	admin.HandleFunc("GET /api/live/guide-setup", s.handleGetGuideSetup)
 	admin.HandleFunc("PUT /api/live/guide-setup", s.handlePutGuideSetup)
 	admin.HandleFunc("GET /api/live/guide-channels", s.handleGuideChannels)
