@@ -60,6 +60,7 @@ import androidx.media3.ui.CaptionStyleCompat
 import androidx.media3.ui.SubtitleView
 import androidx.media3.ui.PlayerView
 import androidx.media3.ui.TrackSelectionDialogBuilder
+import org.json.JSONArray
 import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
@@ -1082,6 +1083,7 @@ class PlayerActivity : Activity() {
         if (live) channelList().firstOrNull { it.optString("id") == lastChannelId }?.let { c ->
             add("Back to ${c.optString("name")}" to { zapBack() })
         }
+        if (live && channelList().size > 1) add("Multiview: 2 or 4 channels at once" to { openMultiview() })
         if (!live) add("Speed: ${speedText(speed)}" to { speedMenu() })
         if (hasOther && !live && !catchup) add("Other version" to { end("other") })
         if (!live && !catchup && info.optString("release").isNotEmpty()) add("Wrong video (never use this one again)" to { end("wrong", info.optString("release")) })
@@ -1459,6 +1461,37 @@ class PlayerActivity : Activity() {
     private fun scheduleHide() {
         main.removeCallbacks(hider)
         main.postDelayed(hider, 4500)
+    }
+
+    // ---- Multiview ----
+
+    // openMultiview hands the screen to Multiview (this channel and others
+    // at once); this player rests meanwhile, so it isn't one more connection.
+    @Suppress("DEPRECATION")
+    private fun openMultiview() {
+        hideControls()
+        player.stop()
+        leaveShift()
+        useShift("")
+        val json = JSONObject(info.toString()).put("channels", JSONArray().also { a -> channelList().forEach { a.put(it) } })
+        startActivityForResult(
+            Intent(this, MultiviewActivity::class.java)
+                .putExtra(MultiviewActivity.EXTRA_JSON, json.toString())
+                .putExtra(MultiviewActivity.EXTRA_SERVER, server),
+            MULTIVIEW,
+        )
+    }
+
+    // Back from Multiview: the channel picked there (full screen), or the one
+    // that was playing.
+    @Deprecated("startActivityForResult keeps this simple on every Android version")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        @Suppress("DEPRECATION")
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode != MULTIVIEW || finished) return
+        val id = data?.getStringExtra(MultiviewActivity.RESULT_CHANNEL)?.takeIf { it.isNotEmpty() } ?: info.optString("id")
+        zapTarget = id
+        tune(id)
     }
 
     // ---- Kept live TV ----
@@ -2836,6 +2869,7 @@ class PlayerActivity : Activity() {
         // (kept across players: the next episode can open a new one).
         @JvmStatic var autoInARow = 0
         const val STILL_WATCHING_AFTER = 3
+        private const val MULTIVIEW = 41
         // ExoPlayer sits this far behind the newest piece when "at live"
         // (three four-second pieces).
         const val LIVE_OFFSET_SLACK = 12_000L

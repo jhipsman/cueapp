@@ -16,6 +16,7 @@ import { useProfiles } from './profiles'
 import { savedTheme } from './theme'
 import { onTV, type TVPlayerResult, tvRemote } from './tv'
 import VideoControls from './VideoControls'
+import Multiview from './Multiview'
 
 // How the guide is drawn: pixels per minute, how far ahead it reaches, and
 // how many channels are drawn at a time (more as you scroll).
@@ -203,6 +204,9 @@ export default function LivePage() {
   // On a TV, while the app's own player has the channel, the window rests
   // (one connection at a time).
   const [onTVPlayer, setOnTVPlayer] = useState(false)
+  // Multiview: the channels in it (null: closed). The window's own player
+  // rests meanwhile (each channel is a connection to the provider).
+  const [multi, setMulti] = useState<string[] | null>(null)
   const nativeNext = useRef(false)
 
   // The guide starts on the half hour just gone, and moves on with it.
@@ -366,6 +370,12 @@ export default function LivePage() {
     if (!ch || catchup) void api.leaveTimeshift(viewer).catch(() => undefined)
   }, [ch, catchup])
   useEffect(() => () => void api.leaveTimeshift(viewer).catch(() => undefined), [])
+
+  const openMulti = () => {
+    void api.leaveTimeshift(viewer).catch(() => undefined)
+    const others = topNow.map((c) => c.id).filter((id) => id !== ch)
+    setMulti(ch ? [ch, ...others.slice(0, 1)] : others.slice(0, 2))
+  }
 
   // The stream, in the window (or full screen: the same video, so going
   // full screen and back never restarts it).
@@ -714,6 +724,19 @@ export default function LivePage() {
             </>
   ) : null
 
+  if (multi) {
+    return (
+      <Multiview
+        channels={(data?.channels ?? []).filter((c) => !c.divider)}
+        first={multi}
+        onClose={() => setMulti(null)}
+        onWatch={(id) => {
+          setMulti(null)
+          if (id) setPlaying(id)
+        }}
+      />
+    )
+  }
   return (
     <div className={`wx-page wx-live${browserFull ? ' is-full' : ''}`}>
       {typedNum && (
@@ -740,7 +763,7 @@ export default function LivePage() {
       {(ch || picked || guideFirst) && (
       <section className={`wx-live-top${guideFirst ? ' guide-first' : ''}`} aria-label="Now playing">
         <div className={`wx-live-preview${browserFull ? ' is-full' : ''}${!ch ? ' idle' : ''}`}>
-          {ch && !onTVPlayer && <video ref={videoRef} autoPlay playsInline onClick={() => !browserFull && goFull()} />}
+          {ch && !onTVPlayer && !multi && <video ref={videoRef} autoPlay playsInline onClick={() => !browserFull && goFull()} />}
           {!ch && (
             <div className="wx-live-empty">
               <Icon name="tv" size={34} />
@@ -760,9 +783,16 @@ export default function LivePage() {
           {ch && (!play || shiftUrl === '') && !playError && !onTVPlayer && <div className="wx-live-tuning">Tuning in…</div>}
           {playError && <div className="wx-live-problem">{playError}</div>}
           {ch && play && !browserFull && !onTVPlayer && (
-            <button className="wx-live-expand" onClick={goFull} aria-label="Full screen">
-              <Icon name="maximize" size={18} />
-            </button>
+            <>
+              <button className="wx-live-expand" onClick={goFull} aria-label="Full screen">
+                <Icon name="maximize" size={18} />
+              </button>
+              {!onTV() && !catchup && (
+                <button className="wx-live-expand wx-live-multi" onClick={() => openMulti()} aria-label="Multiview: more channels at once" title="Multiview">
+                  <Icon name="grid" size={18} />
+                </button>
+              )}
+            </>
           )}
           {browserFull && play && (
             <VideoControls
@@ -780,6 +810,12 @@ export default function LivePage() {
               actions={
                 <>
                   <ChannelLogo className="wx-live-logo" name={play.name} src={play.logo || channel?.logo} />
+                  {!catchup && !onTV() && (
+                    <button className="vx-text-btn" onClick={() => (exitFull(), openMulti())} aria-label="Multiview">
+                      <Icon name="grid" size={22} />
+                      <span>Multi</span>
+                    </button>
+                  )}
                   {list.length > 1 && !catchup && (
                     <>
                       <button className="vx-text-btn" onClick={() => zap(-1)} aria-label="Previous channel">
