@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { api, type IPTVSettings } from '../api'
+import GuideSources from './GuideSources'
 import { useToast } from './Toast'
 
 // Settings > Streaming: the IPTV provider for Live TV, an Xtream Codes login
@@ -96,6 +97,7 @@ export default function IPTVCard() {
         </div>
         {error && <p className="error-text">{error}</p>}
       </div>
+      {st?.set && <GuideSources />}
     </section>
   )
 }

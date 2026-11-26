@@ -8933,3 +8933,201 @@ button.wx-switch.on:hover {
   font-size: 1.1rem;
   font-weight: 600;
 }
+
+/* Live TV: For you and Tonight, rows of small cards above the channels. */
+.wx-picks {
+  display: grid;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+.wx-picks h3 {
+  margin: 0 0 8px;
+  font-size: 1rem;
+}
+.wx-picks-row {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding: 2px 2px 6px;
+  scrollbar-width: none;
+}
+.wx-pick {
+  flex: none;
+  width: 250px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px 8px 8px;
+  border: 0;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--wx-text);
+  text-align: left;
+  cursor: pointer;
+}
+.wx-pick:hover,
+.wx-pick:focus-visible {
+  background: rgba(255, 255, 255, 0.14);
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.85);
+  outline: none;
+}
+.wx-pick-logo {
+  flex: none;
+  width: 56px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+.wx-pick-logo img {
+  max-width: 50px;
+  max-height: 30px;
+  object-fit: contain;
+}
+.wx-pick-text {
+  min-width: 0;
+  display: grid;
+}
+.wx-pick-text small {
+  color: var(--wx-dim);
+  font-size: 0.75rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.wx-pick-text b {
+  font-size: 0.9rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* A channel's tools (rename, lists, guide). */
+.wx-chan-tools {
+  margin-top: 10px;
+}
+.wx-chan-tools-row,
+.wx-chan-tools-panel,
+.wx-chan-tools-panel form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.wx-chan-tools-panel {
+  margin-top: 10px;
+}
+.wx-chan-tools-panel.column {
+  flex-direction: column;
+  align-items: stretch;
+}
+.wx-chan-tools input {
+  padding: 7px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(0, 0, 0, 0.3);
+  color: var(--wx-text);
+  font: inherit;
+  font-size: 0.85rem;
+  min-width: 200px;
+}
+.wx-guide-options {
+  display: grid;
+  gap: 4px;
+  max-height: 220px;
+  overflow-y: auto;
+}
+.wx-guide-option {
+  display: grid;
+  text-align: left;
+  padding: 8px 12px;
+  border: 0;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--wx-text);
+  cursor: pointer;
+}
+.wx-guide-option:hover,
+.wx-guide-option:focus-visible {
+  background: rgba(255, 255, 255, 0.14);
+  outline: none;
+}
+.wx-guide-option small {
+  color: var(--wx-dim);
+}
+
+/* One of your lists: Edit, and the editor. */
+.wx-list-bar {
+  margin-bottom: 12px;
+}
+.wx-list-editor {
+  margin-bottom: 18px;
+  padding: 14px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.04);
+}
+.wx-list-editor-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.wx-list-editor-head input {
+  padding: 7px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(0, 0, 0, 0.3);
+  color: var(--wx-text);
+  font: inherit;
+}
+.wx-list-editor ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 6px;
+}
+.wx-list-editor li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.wx-list-editor-logo {
+  width: 48px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+.wx-list-editor-logo img {
+  max-width: 44px;
+  max-height: 26px;
+}
+.wx-list-editor-name {
+  flex: 1;
+  font-weight: 600;
+}
+.wx-guide-day select {
+  height: 34px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--wx-text);
+  font: inherit;
+  font-weight: 700;
+}
+.wx-guide-day select option {
+  color: #0b0b0c;
+}
+.wx-picks section {
+  margin: 0;
+  padding: 0;
+}
+.wx-picks > section + section {
+  margin-top: 0;
+}

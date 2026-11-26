@@ -149,6 +149,27 @@ export interface LiveChannel {
   divider?: boolean
   raw?: string // the provider's own name
   rank?: number // 0 the big networks, 1 the rest, then events, 24/7 loops, adult: the default order
+  language?: string // "English", "Spanish"…
+  renamed?: boolean // this profile gave it its name (raw is the provider's)
+}
+// A profile's own channel list, in its own order.
+export interface LiveList {
+  id: number
+  name: string
+  items: string[]
+}
+// Live TV's front: a show or a channel on now.
+export interface LiveHit {
+  channel: LiveChannel
+  show?: LiveProgramme
+  onNow: boolean
+}
+// Extra TV guides (Settings > Live TV).
+export interface GuideSetup {
+  sources: string[]
+  status?: { url: string; channels: number; matched: number; problem?: string }[]
+  matches: Record<string, string>
+  loading: boolean
 }
 export interface PrepareStatus {
   state: 'none' | 'preparing' | 'ready' | 'failed'
@@ -169,6 +190,8 @@ export interface LiveChannels {
   channelCount?: number // one of each channel
   copies?: number // HD/FHD/backup copies folded into their channel (its backups when it won't play)
   topics?: { key: string; name: string }[]
+  languages?: { name: string; count: number }[]
+  lists?: LiveList[]
   categories?: { id: string; name: string }[]
   channels?: LiveChannel[]
   guideReady?: boolean
@@ -2684,6 +2707,17 @@ export const api = {
     del<null>(`/live/reminders?channel=${encodeURIComponent(channelId)}&start=${encodeURIComponent(new Date(start).toISOString().replace(/\.\d{3}Z$/, 'Z'))}`),
   livePlay: (id: string) => get<LivePlay>(`/live/play/${encodeURIComponent(id)}`),
   getIPTV: () => get<IPTVSettings>('/settings/iptv'),
+  // Live TV, this profile's own: lists, names, the front's picks.
+  livePicks: () => get<{ tonight: LiveHit[]; forYou: LiveHit[] }>(`/live/picks?tz=${-new Date().getTimezoneOffset()}`),
+  createLiveList: (name: string, items: string[] = []) => post<LiveList>('/live/lists', { name, items }),
+  updateLiveList: (id: number, body: { name?: string; items?: string[] }) => put<null>(`/live/lists/${id}`, body),
+  deleteLiveList: (id: number) => del<null>(`/live/lists/${id}`),
+  renameChannel: (id: string, name: string) => put<null>(`/live/channels/${encodeURIComponent(id)}/name`, { name }),
+  // Extra TV guides and matching a channel's guide by hand (the owner).
+  guideSetup: () => get<GuideSetup>('/live/guide-setup'),
+  saveGuideSources: (sources: string[]) => put<GuideSetup>('/live/guide-setup', { sources }),
+  guideChannels: (q: string) => get<{ key: string; name: string; source: string }[]>(`/live/guide-channels?q=${encodeURIComponent(q)}`),
+  matchGuide: (id: string, key: string) => put<null>(`/live/channels/${encodeURIComponent(id)}/guide`, { key }),
   putIPTV: (body: { server: string; username?: string; password?: string }) => put<IPTVSettings>('/settings/iptv', body),
   getOMDb: () => get<{ set: boolean }>('/settings/omdb'),
   putOMDb: (apiKey: string) => put<{ set: boolean }>('/settings/omdb', { apiKey }),

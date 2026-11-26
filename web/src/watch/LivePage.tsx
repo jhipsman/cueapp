@@ -4,6 +4,7 @@ import { api, profileToken, type LiveChannel, type LiveChannels, type LivePlay, 
 import Icon from '../components/Icon'
 import { useDocumentTitle } from '../documentTitle'
 import LiveHero, { ChannelSpotlight } from './LiveHero'
+import { ChannelTools, ListEditor, LivePicks } from './LiveTools'
 import ChannelLogo from './ChannelLogo'
 import { PeekInfo, peekStore } from './GuidePeek'
 import { recentChannels, rememberChannel, useLiveStream } from './liveStream'
@@ -33,6 +34,12 @@ export function channelsIn(data: LiveChannels | null, cat: string): LiveChannel[
     return recentChannels()
       .map((id) => byId.get(id))
       .filter((c): c is LiveChannel => !!c)
+  }
+  // One of your own lists, in its order.
+  if (cat.startsWith('list:')) {
+    const l = data?.lists?.find((x) => `list:${x.id}` === cat)
+    const byId = new Map(all.map((c) => [c.id, c]))
+    return (l?.items ?? []).map((id) => byId.get(id)).filter((c): c is LiveChannel => !!c)
   }
   // Everything else: channels only, one of each (no dividers, no copies).
   const real = all.filter((c) => !c.divider && !c.copyOf)
@@ -69,6 +76,13 @@ function when(iso: string): string {
   const days = Math.round((new Date(d).setHours(0, 0, 0, 0) - new Date().setHours(0, 0, 0, 0)) / 86_400_000)
   const day = days === 0 ? 'Today' : days === 1 ? 'Tomorrow' : days === -1 ? 'Yesterday' : d.toLocaleDateString([], { weekday: 'long' })
   return `${day} ${hhmm(d)}`
+}
+
+// dayStart is midnight of t's day (local time).
+function dayStart(t: number): number {
+  const d = new Date(t)
+  d.setHours(0, 0, 0, 0)
+  return d.getTime()
 }
 
 // canCatchup says a show that has started can be played from its start: the
@@ -115,6 +129,14 @@ export default function LivePage() {
   // All channels sorts by Cue's catalog: a country ("" is every country) and a topic ("" is all).
   const [country, setCountryState] = useState<string | null>(() => stored('cue-live-country'))
   const [topic, setTopic] = useState('')
+  // A language ("" is any), kept per device.
+  const [lang, setLangState] = useState(() => stored('cue-live-lang') ?? '')
+  const setLang = (l: string) => {
+    setLangState(l)
+    setTopic('')
+    store('cue-live-lang', l)
+  }
+  const [editingList, setEditingList] = useState(false)
   const setCountry = (c: string) => {
     setCountryState(c)
     setTopic('')
@@ -189,6 +211,10 @@ export default function LivePage() {
   }, [Math.floor(now / 1_800_000), shift])
   const end = start + HOURS * 3_600_000
   const x = (t: number) => ((Math.max(t, start) - start) / 60_000) * PPM
+  // A day of the week in the guide: today is now; another day opens at its
+  // evening (6 pm), in steps of the guide's three hours.
+  const base = start - shift * 3 * 3_600_000
+  const shiftToDay = (d: number) => (d === 0 ? 0 : Math.round((dayStart(Date.now()) + d * 86_400_000 + 18 * 3_600_000 - base) / (3 * 3_600_000)))
 
   const load = useCallback(() => {
     api
@@ -217,7 +243,11 @@ export default function LivePage() {
   const cat = params.get('cat') ?? (favCount > 0 ? 'fav' : 'all')
   const place = country ?? data?.homeCountry ?? ''
   const inGroup = useMemo(() => channelsIn(data, cat), [data, cat])
-  const inPlace = useMemo(() => (cat === 'all' && place ? inGroup.filter((c) => c.country === place || !c.country) : inGroup), [inGroup, cat, place])
+  const inPlace = useMemo(() => {
+    let l = cat === 'all' && place ? inGroup.filter((c) => c.country === place || !c.country) : inGroup
+    if (cat === 'all' && lang) l = l.filter((c) => c.language === lang || !c.language)
+    return l
+  }, [inGroup, cat, place, lang])
   // The topics this country has, for the chips.
   const topicCounts = useMemo(() => {
     const m = new Map<string, number>()
@@ -231,7 +261,7 @@ export default function LivePage() {
     const found = findText
       ? list.filter((c) => c.name.toLowerCase().includes(findText) || (c.now?.title ?? '').toLowerCase().includes(findText))
       : list
-    if (cat === 'recent') return found
+    if (cat === 'recent' || cat.startsWith('list:')) return found // their own order
     const byNum = (a: LiveChannel, b: LiveChannel) => (Number(a.num) || 1e9) - (Number(b.num) || 1e9)
     return [...found].sort((a, b) =>
       sort === 'num' ? byNum(a, b) : sort === 'top' ? (a.rank ?? 1) - (b.rank ?? 1) || Number(!a.now) - Number(!b.now) || byNum(a, b) : a.name.localeCompare(b.name),
@@ -551,6 +581,7 @@ export default function LivePage() {
   const groups = [
     ...(recentCount > 0 ? [{ id: 'recent', name: 'Recent', count: recentCount, fixed: true }] : []),
     ...(favCount > 0 ? [{ id: 'fav', name: 'Favourites', count: favCount, fixed: true }] : []),
+    ...(data.lists ?? []).map((l) => ({ id: `list:${l.id}`, name: l.name, count: l.items.length, fixed: true })),
     { id: 'all', name: 'All channels', count: allCount, fixed: true },
     { id: 'recordings', name: 'Recordings', count: recs.list.length, fixed: true },
     ...cats.map((c) => ({ id: c.id, name: c.name, count: counts.get(c.id) ?? 0, fixed: false })),
@@ -641,6 +672,7 @@ export default function LivePage() {
                   <Icon name="star" size={16} /> {channel.favorite ? 'Favourite' : 'Add to Favourites'}
                 </button>
               </div>
+              <ChannelTools channel={channel} lists={data.lists ?? []} owner={!!main && active?.id === main.id} onChanged={load} />
             </>
   ) : null
 
@@ -846,6 +878,28 @@ export default function LivePage() {
               )}
             </div>
           )}
+          {cat === 'all' && !findText && (
+            <LivePicks onWatch={(id) => setPlaying(id)} onShow={(c, show) => (Date.parse(show.start) <= Date.now() ? setPlaying(c.id) : setPicked({ channel: c, show }))} />
+          )}
+          {cat.startsWith('list:') && (
+            <div className="wx-list-bar">
+              <button className="wx-btn small" aria-pressed={editingList} onClick={() => setEditingList((e) => !e)}>
+                <Icon name="sliders" size={14} /> {editingList ? 'Done' : 'Edit this list'}
+              </button>
+            </div>
+          )}
+          {cat.startsWith('list:') && editingList && data.lists?.find((l) => `list:${l.id}` === cat) && (
+            <ListEditor
+              list={data.lists.find((l) => `list:${l.id}` === cat)!}
+              channels={data.channels ?? []}
+              onChanged={load}
+              onRemoved={() => {
+                setEditingList(false)
+                setParams({ cat: 'all' }, { replace: true })
+                load()
+              }}
+            />
+          )}
           {cat === 'all' && (data.countries?.length ?? 0) > 0 && (
             <div className="wx-live-catalog" role="group" aria-label="Country and topic">
               {guideFirst && (
@@ -856,6 +910,20 @@ export default function LivePage() {
                     {groups.map((g) => (
                       <option key={g.id} value={g.id}>
                         {g.name} ({g.count})
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              )}
+              {(data.languages?.length ?? 0) > 1 && (
+                <label className="wx-live-country">
+                  <Icon name="chat" size={14} />
+                  <span className="sr-only">Language</span>
+                  <select value={lang} onChange={(e) => setLang(e.target.value)}>
+                    <option value="">Any language</option>
+                    {data.languages!.map((l) => (
+                      <option key={l.name} value={l.name}>
+                        {l.name} ({l.count})
                       </option>
                     ))}
                   </select>
@@ -904,11 +972,21 @@ export default function LivePage() {
                     <Icon name="chevron-left" size={16} />
                   </button>
                   <button onClick={() => setShift(0)} disabled={shift === 0}>
-                    {shift === 0 ? 'Today' : 'Now'}
+                    Now
                   </button>
-                  <button onClick={() => setShift((n) => n + 1)} disabled={shift >= 8} aria-label="Later">
+                  <button onClick={() => setShift((n) => n + 1)} disabled={shift >= 7 * 8} aria-label="Later">
                     <Icon name="chevron-right" size={16} />
                   </button>
+                  <label className="wx-guide-day">
+                    <span className="sr-only">Day</span>
+                    <select value={Math.max(0, Math.round((dayStart(start) - dayStart(Date.now())) / 86_400_000))} onChange={(e) => setShift(shiftToDay(Number(e.target.value)))}>
+                      {Array.from({ length: 7 }, (_, d) => (
+                        <option key={d} value={d}>
+                          {d === 0 ? 'Today' : d === 1 ? 'Tomorrow' : new Date(Date.now() + d * 86_400_000).toLocaleDateString([], { weekday: 'long' })}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
                   {shift !== 0 && <small>{when(new Date(start).toISOString())}</small>}
                 </span>
               ) : (
