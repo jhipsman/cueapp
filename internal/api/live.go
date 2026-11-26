@@ -16,7 +16,6 @@ package api
 // address the browser sees is sealed.
 
 import (
-	"maps"
 	"bufio"
 	"cmp"
 	"context"
@@ -28,6 +27,7 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"maps"
 	"net/http"
 	"net/url"
 	"os"
@@ -46,9 +46,9 @@ import (
 )
 
 const (
-	liveListFor    = 6 * time.Hour  // how long a channel list is used
-	liveGuideFor   = 4 * time.Hour  // how often the guide reloads
-	liveGuideBack  = 2 * time.Hour  // guide kept from this long ago (channels with catch-up: their days, up to liveCatchupMax)...
+	liveListFor    = 6 * time.Hour      // how long a channel list is used
+	liveGuideFor   = 4 * time.Hour      // how often the guide reloads
+	liveGuideBack  = 2 * time.Hour      // guide kept from this long ago (channels with catch-up: their days, up to liveCatchupMax)...
 	liveGuideAhead = 7 * 24 * time.Hour // ...to a week ahead
 	liveDescAhead  = 36 * time.Hour     // shows' descriptions kept this far ahead
 	liveSealPrefix = "cue-live:"
