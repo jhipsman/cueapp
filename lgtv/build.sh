@@ -11,5 +11,5 @@ version="$(echo "$version" | grep -oE '^[0-9]+\.[0-9]+\.[0-9]+' || echo 1.0.0)"
 rm -rf dist build && mkdir -p dist build
 cp index.html icon.png largeIcon.png splash.png build/
 sed "s/\"version\": \"[^\"]*\"/\"version\": \"$version\"/" appinfo.json > build/appinfo.json
-npx --yes @webos-tools/cli@3 ares-package build -o dist
+npx --yes -p @webos-tools/cli@3.2.6 ares-package build -o dist
 ls dist/*.ipk
