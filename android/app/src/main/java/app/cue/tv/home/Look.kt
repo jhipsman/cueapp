@@ -363,14 +363,14 @@ fun Modifier.lift(focused: Boolean, scale: Float, shape: androidx.compose.ui.gra
     val light = lightMode() // a slow TV: no soft shadow (costly to draw)
     return this.graphicsLayer {
         val glow = tintState.value ?: accent
-        val k = ((s - 1f) / (scale - 1f)).coerceIn(0f, 1f)
         // The theme's glow: none (a plain shadow), soft, or strong.
         val g = GlowAmount
         spotShadowColor = if (g == 0f) Color.Black else glow.copy(alpha = (0.55f * g).coerceAtMost(1f))
         ambientShadowColor = if (g == 0f) Color.Black else glow.copy(alpha = (0.35f * g).coerceAtMost(1f))
         scaleX = s
         scaleY = s
-        translationY = -4.dp.toPx() * k
+        // No rise: a highlighted card moved up counts its neighbours in the
+        // row as "below" it, and Down could go sideways along the row.
         // The shadow steps on with the highlight rather than growing frame by
         // frame (redrawing a big soft shadow every frame is what makes a
         // Fire TV stutter).
