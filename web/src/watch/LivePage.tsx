@@ -109,7 +109,8 @@ export default function LivePage() {
   // The show the pointer (or the remote) is on in the guide, for the top.
   const [peek] = useState(peekStore)
   // "top": the big networks first, the 24/7 loops and events last (the
-  // server's rank), then by number.
+  // server's rank), those with something in the guide before those
+  // without, then by number.
   const [sort, setSort] = useState<'top' | 'az' | 'num'>('top')
   // All channels sorts by Cue's catalog: a country ("" is every country) and a topic ("" is all).
   const [country, setCountryState] = useState<string | null>(() => stored('cue-live-country'))
@@ -233,14 +234,18 @@ export default function LivePage() {
     if (cat === 'recent') return found
     const byNum = (a: LiveChannel, b: LiveChannel) => (Number(a.num) || 1e9) - (Number(b.num) || 1e9)
     return [...found].sort((a, b) =>
-      sort === 'num' ? byNum(a, b) : sort === 'top' ? (a.rank ?? 1) - (b.rank ?? 1) || byNum(a, b) : a.name.localeCompare(b.name),
+      sort === 'num' ? byNum(a, b) : sort === 'top' ? (a.rank ?? 1) - (b.rank ?? 1) || Number(!a.now) - Number(!b.now) || byNum(a, b) : a.name.localeCompare(b.name),
     )
   }, [list, findText, sort, cat])
   const visible = shownList.slice(0, shown)
   // The biggest channels on now in the picked country (the server's rank),
   // for the top of the page when there are no games.
   const topNow = useMemo(
-    () => [...inPlace].filter((c) => c.now).sort((a, b) => (a.rank ?? 1) - (b.rank ?? 1) || (Number(a.num) || 1e9) - (Number(b.num) || 1e9)).slice(0, 4),
+    () =>
+      [...inPlace]
+        .filter((c) => c.now && (c.rank ?? 1) < 2)
+        .sort((a, b) => (a.rank ?? 1) - (b.rank ?? 1) || (Number(a.num) || 1e9) - (Number(b.num) || 1e9))
+        .slice(0, 12),
     [inPlace],
   )
 
@@ -728,7 +733,7 @@ export default function LivePage() {
               </div>
             </>
           ) : guideFirst ? (
-            <PeekInfo store={peek} fallback={playingInfo} first={topNow[0] ?? visible[0]} guideReady={data.guideReady} now={now} />
+            <PeekInfo store={peek} fallback={playingInfo} cycle={topNow.length ? topNow : visible.slice(0, 1)} guideReady={data.guideReady} now={now} />
           ) : playingInfo ? (
             playingInfo
           ) : (

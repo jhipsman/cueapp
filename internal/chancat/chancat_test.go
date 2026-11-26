@@ -62,3 +62,22 @@ func TestCleanSymbolsAndRank(t *testing.T) {
 		t.Errorf("ranks: %d %d %d", Rank(Read("US: ABC", "")), Rank(Read("US: Hallmark", "")), Rank(Read("24/7 Friends", "24/7")))
 	}
 }
+
+func TestEventFeedsAreEvents(t *testing.T) {
+	for _, name := range []string{
+		"UCL 01 Sabah vs Barcelona 7:45 CET", "UCL 03 PSG vs Roma 20:00 CET", "NBA 12: Lakers @ Celtics",
+		"PPV 3", "EPL 04 Arsenal v Chelsea", "Bills at Chiefs 8:20pm ET",
+	} {
+		if got := Read(name, "").Topic; got != "events" {
+			t.Errorf("%q: topic %q, want events", name, got)
+		}
+		if r := Rank(Read(name, "")); r != 2 {
+			t.Errorf("%q: rank %d, want 2", name, r)
+		}
+	}
+	for _, name := range []string{"ESPN", "Channel V", "FOX 5 New York", "Sky Sports 1", "BBC One", "TSN 2", "NBC Sports Boston"} {
+		if got := Read(name, "").Topic; got == "events" {
+			t.Errorf("%q counted as an event", name)
+		}
+	}
+}

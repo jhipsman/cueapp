@@ -271,7 +271,17 @@ var rules = []rule{
 
 // topic is what a channel is about, from its group first (the provider's
 // "UK | NEWS") then its name.
+// eventName: a feed for one game or show rather than a channel — a
+// matchup ("Sabah vs Barcelona", "Bills @ Chiefs"), a start time
+// ("20:00 CET", "7:45pm ET"), or a league or pass with a feed number ("UCL
+// 01", "NBA 12", "PPV 3"). They sit empty between games, so they're Events
+// and come after the real channels.
+var eventName = regexp.MustCompile(`(?i)(\s(vs\.?|v|@)\s)|(\b\d{1,2}[:.]\d{2}\s*(cet|cest|et|est|edt|ct|cst|pt|pst|gmt|bst|uk|utc|am|pm)\b)|(^(ucl|uel|uecl|epl|efl|nfl|nba|nhl|mlb|mls|ncaa[fb]?|cfb|cbb|ufc|wwe|ppv|event|events|laliga|bundesliga|serie a|ligue 1|nfl sunday ticket|mlb tv|nba league pass|nhl center ice|espn\+|dazn|flo\w*|peacock|paramount\+|fanatiz|fubo)\s*[:#-]?\s*\d{1,3}\b)`)
+
 func topic(name, group string) string {
+	if eventName.MatchString(name) {
+		return "events"
+	}
 	for _, src := range []string{" " + group + " ", " " + name + " "} {
 		if strings.TrimSpace(src) == "" {
 			continue
