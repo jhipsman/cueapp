@@ -124,15 +124,12 @@ class ScreensTest {
             see(marker)
             shot(place)
         }
-        // Live TV with the highlight in the guide, the menu closed: the
-        // show it's on fills the top.
+        // Live TV with the highlight on the channels, the menu closed.
         press(KeyEvent.KEYCODE_DPAD_UP)
         see("BILLS")
         press(KeyEvent.KEYCODE_DPAD_RIGHT)
-        press(KeyEvent.KEYCODE_DPAD_DOWN, 3)
         press(KeyEvent.KEYCODE_DPAD_RIGHT, 2)
-        see("Tonight: the stories") // the show, big at the top
-        shot("live-tv-guide")
+        shot("live-tv-channels")
         press(KeyEvent.KEYCODE_BACK)
         press(KeyEvent.KEYCODE_DPAD_UP, 4)
         see("Search from your phone")

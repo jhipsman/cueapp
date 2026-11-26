@@ -1199,31 +1199,26 @@ fun PosterGrid(items: List<Tile>, memory: FocusMemory, prefix: String, onCard: (
 
 // ---- Live TV ----
 
-// Live TV, a TV box's guide: the show the highlight is on, big, at the top
-// (the channel, the show, how long, when it started, what it's about, how
-// far in) with the channel itself playing beside it once the remote rests;
-// under it the country and topics in a row, then the guide: a row per
-// channel, its shows as tiles across the next two and a half hours, a line
-// at now. With games on, the game that matters most (LiveHero) takes the top
-// while the highlight is on the topics or above; down into the guide, the
-// show takes it back. A channel plays in the player, where up and down
-// change channel.
-
-private const val GuideMinutes = 150
-private val GuideChanW = 196.dp
-private val GuideRowH = 50.dp
-
-// The show the highlight is on: read by the top alone, so only the top is
-// drawn again as the highlight moves.
-private data class GuidePeek(val channel: Channel, val show: Show?)
+// Live TV: the game that matters most at the top (LiveHero: both teams, a
+// countdown or the score, Featured beside it), then the groups down the
+// left and On now: a card per channel, two to a row. Moving down into the
+// channels folds the hero away; back to the top row brings it again. A
+// channel plays in the player, where up and down change channel. Without
+// games, the highlighted channel shows at the top instead.
+// The banner for the channel the highlight is on: reads it itself, so only
+// the banner is drawn again as the highlight moves.
+@Composable
+private fun SpotBanner(api: CueApi, channel: () -> Channel?) {
+    channel()?.let { LiveBanner(api, it) }
+}
 
 @Composable
-fun LiveScreen(api: CueApi, playback: Playback, @Suppress("UNUSED_PARAMETER") openWeb: (String) -> Unit) {
+fun LiveScreen(api: CueApi, playback: Playback, openWeb: (String) -> Unit) {
     var live by remember { mutableStateOf<LiveChannels?>(null) }
     var problem by remember { mutableStateOf("") }
     var group by remember { mutableStateOf("") } // "★" favourites, "*" every topic, else a topic's key
     var country by remember { mutableStateOf<String?>(null) } // "" is every country
-    var picking by remember { mutableStateOf(false) } // the row lists the countries
+    var picking by remember { mutableStateOf(false) } // the column lists the countries
     var find by remember { mutableStateOf("") } // a game no channel was matched to: channels showing it
     var board by remember { mutableStateOf(SportsBoard(null, emptyList(), emptyList())) }
     LaunchedEffect(Unit) {
@@ -1274,258 +1269,87 @@ fun LiveScreen(api: CueApi, playback: Playback, @Suppress("UNUSED_PARAMETER") op
     BackHandler(enabled = picking) { picking = false }
     BackHandler(enabled = find.isNotEmpty() && !picking) { find = "" }
     val hasGames = board.big != null || board.now.isNotEmpty() || board.soon.isNotEmpty()
-
-    // The guide's window: from the last half hour, two and a half hours on.
-    val from = remember { System.currentTimeMillis() / 1_800_000L * 1_800_000L }
-    val to = from + GuideMinutes * 60_000L
-    // Each channel's shows, read as its rows come near.
-    val guide = remember { androidx.compose.runtime.mutableStateMapOf<String, List<Show>>() }
-    val listState = androidx.compose.foundation.lazy.rememberLazyListState()
-    val batch by remember { androidx.compose.runtime.derivedStateOf { listState.firstVisibleItemIndex / 20 } }
-    LaunchedEffect(shown, batch) {
-        val want = shown.drop(batch * 20).take(40).map { it.id }.filter { it !in guide }
-        if (want.isEmpty()) return@LaunchedEffect
-        val got = runCatching { api.guide(want, from, 3) }.getOrNull() ?: return@LaunchedEffect
-        want.forEach { guide[it] = got[it].orEmpty() }
-    }
-
-    // Where the highlight is, held outside composition: reading it here
-    // would rebuild the whole screen on every press of the remote.
-    val peek = remember { mutableStateOf<GuidePeek?>(null) }
-    // The guide row the highlight is on (-1: the topics or the game above).
+    // Where the highlight is, held outside composition: reading it here would
+    // rebuild the whole screen on every press of the remote.
+    val spot = remember { mutableStateOf<Channel?>(null) }
+    val gridState = androidx.compose.foundation.lazy.rememberLazyListState()
+    // The row of channels the highlight is on (-1: none, or the hero): the
+    // hero shows while it's on the first row or above, so Up from there
+    // reaches it. (Only crossing that line changes anything.)
     val focusRow = remember { mutableIntStateOf(-1) }
-    val gameOnTop by remember(hasGames) { androidx.compose.runtime.derivedStateOf { hasGames && focusRow.intValue < 0 } }
-    val play = { ch: Channel -> playback.playLive(ch, shown) }
-
+    val atTop by remember { androidx.compose.runtime.derivedStateOf { focusRow.intValue <= 0 } }
     Column(Modifier.fillMaxSize()) {
-        AnimatedContent(
-            targetState = gameOnTop,
-            transitionSpec = { fadeIn(tween(260)) togetherWith fadeOut(tween(160)) },
-            label = "live-top",
-        ) { game ->
+        androidx.compose.animation.AnimatedVisibility(
+            visible = atTop,
+            enter = androidx.compose.animation.expandVertically(tween(320, easing = Settle)) + fadeIn(tween(320)),
+            exit = androidx.compose.animation.shrinkVertically(tween(280, easing = Settle)) + fadeOut(tween(200)),
+        ) {
             Box(Modifier.padding(top = 14.dp)) {
-                if (game) LiveHero(board) { g ->
+                if (hasGames) LiveHero(board) { g ->
                     val ch = g.channelId?.let { id -> l.channels.firstOrNull { it.id == id } }
                     // No channel matched: every channel whose name or show has the team in it.
-                    if (ch != null) play(ch) else find = g.home.name
+                    if (ch != null) playback.playLive(ch, shown) else find = g.home.name
                 }
-                else GuideTop(api) { peek.value ?: shown.firstOrNull()?.let { GuidePeek(it, null) } }
+                else SpotBanner(api) { spot.value ?: shown.firstOrNull() }
             }
         }
-        // The country and topics (or the countries, picking one).
-        LazyRow(
-            Modifier.fillMaxWidth().padding(top = 12.dp).onFocusChanged { if (it.hasFocus) focusRow.intValue = -1 },
-            contentPadding = PaddingValues(horizontal = Gutter),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            if (picking) {
-                items(l.countries + Triple("", "Every country", real.size), key = { "c-" + it.first }) { (code, name, n) ->
-                    ChoiceTab("$name  ·  $n", selected = code == place) {
-                        country = code
-                        api.liveCountry = code
-                        picking = false
-                        find = ""
-                        if (group != "★") group = "*"
-                    }
+        Row(Modifier.fillMaxSize().padding(top = 16.dp)) {
+            LazyColumn(Modifier.width(214.dp), contentPadding = PaddingValues(start = Gutter, bottom = 60.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                item {
+                    Text("CHANNELS", fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.5.sp, color = Dim,
+                        modifier = Modifier.padding(start = 6.dp, bottom = 6.dp))
                 }
-            } else {
-                if (find.isNotEmpty()) item(key = "find") { ChoiceTab("✕  Showing “$find”", selected = true) { find = "" } }
-                if (l.countries.isNotEmpty()) item(key = "country") { ChoiceTab("$countryName  ›", selected = false) { picking = true } }
-                if (favorites.isNotEmpty()) item(key = "★") {
-                    ChoiceTab("★ Favorites  ·  ${favorites.size}", selected = group == "★" && find.isEmpty()) { group = "★"; find = "" }
-                }
-                item(key = "*") { ChoiceTab("All  ·  ${here.size}", selected = group == "*" && find.isEmpty()) { group = "*"; find = "" } }
-                items(l.topics.filter { (topicCounts[it.first] ?: 0) > 0 }, key = { "t-" + it.first }) { (key, name) ->
-                    ChoiceTab("$name  ·  ${topicCounts[key] ?: 0}", selected = group == key && find.isEmpty()) { group = key; find = "" }
-                }
-            }
-        }
-        // The guide.
-        androidx.compose.foundation.layout.BoxWithConstraints(Modifier.fillMaxSize().padding(start = Gutter, end = Gutter, top = 10.dp)) {
-            val perMin = (maxWidth - GuideChanW - 6.dp) / GuideMinutes.toFloat()
-            Column(Modifier.fillMaxSize()) {
-                GuideTimes(from, perMin)
-                CompositionLocalProvider(LocalBringIntoViewSpec provides PivotSpec) {
-                    LazyColumn(Modifier.fillMaxSize(), state = listState, contentPadding = PaddingValues(top = 4.dp, bottom = 60.dp),
-                        verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        itemsIndexed(shown, key = { _, c -> c.id }) { i, ch ->
-                            val shows = guide[ch.id] ?: listOfNotNull(ch.now, ch.next)
-                            GuideRow(api, ch, shows, from, to, perMin,
-                                onFocus = { s -> peek.value = GuidePeek(ch, s); focusRow.intValue = i },
-                                onClick = { play(ch) })
+                if (picking) {
+                    // The countries, most channels first; then every country.
+                    items(l.countries + Triple("", "Every country", real.size), key = { "c-" + it.first }) { (code, name, n) ->
+                        ChoiceTab("$name  ·  $n", selected = code == place, modifier = Modifier.fillMaxWidth()) {
+                            country = code
+                            api.liveCountry = code
+                            picking = false
+                            find = ""
+                            if (group != "★") group = "*"
                         }
                     }
+                } else {
+                    if (favorites.isNotEmpty()) item(key = "★") {
+                        ChoiceTab("Favorites  ·  ${favorites.size}", selected = group == "★" && find.isEmpty(), modifier = Modifier.fillMaxWidth()) { group = "★"; find = "" }
+                    }
+                    if (l.countries.isNotEmpty()) item(key = "country") {
+                        ChoiceTab("$countryName  ›", selected = false, modifier = Modifier.fillMaxWidth()) { picking = true }
+                    }
+                    item(key = "*") {
+                        ChoiceTab("All topics  ·  ${here.size}", selected = group == "*" && find.isEmpty(), modifier = Modifier.fillMaxWidth()) { group = "*"; find = "" }
+                    }
+                    items(l.topics.filter { (topicCounts[it.first] ?: 0) > 0 }, key = { "t-" + it.first }) { (key, name) ->
+                        ChoiceTab("$name  ·  ${topicCounts[key] ?: 0}", selected = group == key && find.isEmpty(), modifier = Modifier.fillMaxWidth()) { group = key; find = "" }
+                    }
+                }
+                item {
+                    Gap(10.dp)
+                    Pill("Full guide") { openWeb("/watch/live") }
                 }
             }
-            GuideNowLine(from, perMin)
-        }
-    }
-}
-
-// The top of the guide: the highlighted show, big, and its channel live.
-@Composable
-private fun GuideTop(api: CueApi, peek: () -> GuidePeek?) {
-    val p = peek() ?: return
-    val shape = RoundedCornerShape(PanelCorner)
-    Row(Modifier.padding(horizontal = Gutter).fillMaxWidth().height(196.dp)) {
-        AnimatedContent(
-            targetState = p,
-            contentKey = { it.channel.id + "/" + (it.show?.start ?: 0L) },
-            transitionSpec = { fadeIn(tween(220, delayMillis = 60)) togetherWith fadeOut(tween(120)) },
-            label = "guide-peek",
-            modifier = Modifier.weight(1f).fillMaxHeight(),
-        ) { (c, s0) ->
-            val s = s0 ?: c.now
-            val now = System.currentTimeMillis()
-            val onNow = s != null && s.start <= now && s.stop > now
-            Column(
-                Modifier.fillMaxSize().clip(shape).background(Color(0x991B1D22)).border(1.dp, Color(0x14FFFFFF), shape).padding(horizontal = 24.dp, vertical = 18.dp),
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(Modifier.size(72.dp, 40.dp).clip(RoundedCornerShape(8.dp)).background(Color(0x1FFFFFFF))) {
-                        ChannelLogo(api, c, Modifier.fillMaxSize().padding(5.dp))
+            CompositionLocalProvider(LocalBringIntoViewSpec provides PivotSpec) {
+                LazyColumn(Modifier.fillMaxSize(), state = gridState, contentPadding = PaddingValues(start = 18.dp, end = Gutter, top = 2.dp, bottom = 60.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    item(key = "head") {
+                        Row(verticalAlignment = Alignment.Bottom) {
+                            Text(if (find.isNotEmpty()) "Showing “$find”" else "On now", fontFamily = Type.display(), fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                            HGap(10.dp)
+                            Text(if (find.isNotEmpty()) "${shown.size} channels, every country" else "${shown.size} channels live", fontSize = 11.sp, color = Dim, modifier = Modifier.padding(bottom = 2.dp))
+                        }
                     }
-                    HGap(12.dp)
-                    Text((if (c.num > 0) "${c.num}  " else "") + c.name, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Color.White,
-                        maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
-                    if (onNow) { HGap(10.dp); Chip("LIVE", bg = Color(0xFFE5484D)) }
-                }
-                Spacer(Modifier.weight(1f))
-                Text(s?.title ?: "No guide for this channel", fontFamily = Type.display(), fontSize = 26.sp, fontWeight = FontWeight.Bold,
-                    color = Color.White, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                s?.let {
-                    Gap(4.dp)
-                    Text(showWhen(it, now), fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Color(0xE6FFFFFF), maxLines = 1)
-                    if (it.desc.isNotEmpty()) {
-                        Gap(4.dp)
-                        Text(it.desc, fontSize = 12.sp, color = Dim, maxLines = 2, overflow = TextOverflow.Ellipsis, lineHeight = 17.sp)
-                    }
-                    if (onNow) {
-                        Gap(8.dp)
-                        Box(Modifier.width(240.dp).height(3.dp).clip(RoundedCornerShape(2.dp)).background(Color(0x33FFFFFF))) {
-                            Box(Modifier.fillMaxWidth(it.progress(now)).fillMaxHeight().background(Color.White))
+                    itemsIndexed(shown.chunked(2), key = { _, row -> row.first().id }) { i, row ->
+                        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                            row.forEach { ch ->
+                                ChannelTile(api, ch, Modifier.weight(1f), onFocus = { spot.value = ch; focusRow.intValue = i }) { playback.playLive(ch, shown) }
+                            }
+                            if (row.size == 1) Box(Modifier.weight(1f))
                         }
                     }
                 }
             }
         }
-        HGap(16.dp)
-        // The channel, live, once the remote rests on it (its logo until then).
-        Box(Modifier.fillMaxHeight().aspectRatio(16f / 9f).clip(shape).background(Color.Black).border(1.dp, Color(0x14FFFFFF), shape)) {
-            ChannelLogo(api, p.channel, Modifier.fillMaxSize().padding(48.dp))
-            LivePreview(api, p.channel, Modifier.fillMaxSize())
-        }
-    }
-}
-
-// "1h 20m · Started at 10:00 PM", "30m · Starts at 11:00 PM".
-private fun showWhen(s: Show, now: Long): String {
-    val m = ((s.stop - s.start) / 60_000L).toInt()
-    val length = if (m < 60) "${m}m" else if (m % 60 == 0) "${m / 60}h" else "${m / 60}h ${m % 60}m"
-    val at = clockTime(s.start)
-    return when {
-        s.stop <= now -> "$length  ·  Was on at $at"
-        s.start <= now -> "$length  ·  Started at $at  ·  ${((s.stop - now) / 60_000L).coerceAtLeast(0)}m left"
-        else -> "$length  ·  Starts at $at"
-    }
-}
-
-// The times across the top of the guide, every half hour.
-@Composable
-private fun GuideTimes(from: Long, perMin: androidx.compose.ui.unit.Dp) {
-    Row(Modifier.fillMaxWidth().height(22.dp)) {
-        Text("Today", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color.White, modifier = Modifier.width(GuideChanW + 6.dp))
-        Box(Modifier.weight(1f).fillMaxHeight()) {
-            for (k in 0 until GuideMinutes / 30) {
-                Text(clockTime(from + k * 1_800_000L), fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = Dim,
-                    modifier = Modifier.offset(x = perMin * (k * 30f) + 10.dp))
-            }
-        }
-    }
-}
-
-// The line at now, moving with the clock.
-@Composable
-private fun GuideNowLine(from: Long, perMin: androidx.compose.ui.unit.Dp) {
-    val now by androidx.compose.runtime.produceState(System.currentTimeMillis()) {
-        while (true) {
-            delay(30_000)
-            value = System.currentTimeMillis()
-        }
-    }
-    val x = GuideChanW + 6.dp + perMin * ((now - from) / 60_000f)
-    Box(Modifier.offset(x = x).padding(top = 22.dp).width(2.dp).fillMaxHeight().background(Color(0xD9FFFFFF)))
-}
-
-// A channel's row: the channel, then its shows as tiles, each as wide as it
-// is long. The row the highlight is in lights its channel.
-@Composable
-private fun GuideRow(
-    api: CueApi, ch: Channel, shows: List<Show>, from: Long, to: Long, perMin: androidx.compose.ui.unit.Dp,
-    onFocus: (Show?) -> Unit, onClick: () -> Unit,
-) {
-    var inRow by remember { mutableStateOf(false) }
-    Row(Modifier.fillMaxWidth().height(GuideRowH).onFocusChanged { inRow = it.hasFocus }, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-        GuideTile(Modifier.width(GuideChanW).fillMaxHeight(), lit = inRow, onFocus = { onFocus(null) }, onClick = onClick) { dark ->
-            Row(Modifier.fillMaxSize().padding(horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                Box(Modifier.size(56.dp, 34.dp).clip(RoundedCornerShape(6.dp)).background(if (dark) Color(0x14000000) else Color(0x14FFFFFF))) {
-                    ChannelLogo(api, ch, Modifier.fillMaxSize().padding(4.dp))
-                }
-                HGap(10.dp)
-                Text(ch.name, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = if (dark) Color(0xFF0B0B0C) else Color.White,
-                    maxLines = 1, overflow = TextOverflow.Ellipsis)
-            }
-        }
-        Box(Modifier.weight(1f).fillMaxHeight()) {
-            val list = shows.filter { it.stop > from && it.start < to }
-            if (list.isEmpty()) {
-                GuideTile(Modifier.fillMaxSize(), onFocus = { onFocus(null) }, onClick = onClick) {
-                    Text(ch.now?.title ?: "No guide for this channel", fontSize = 13.sp, color = Dim, maxLines = 1,
-                        modifier = Modifier.align(Alignment.CenterStart).padding(horizontal = 12.dp))
-                }
-            }
-            list.forEach { s ->
-                val x = perMin * ((maxOf(s.start, from) - from) / 60_000f)
-                val w = perMin * ((minOf(s.stop, to) - maxOf(s.start, from)) / 60_000f) - 4.dp
-                if (w < 6.dp) return@forEach
-                GuideTile(Modifier.offset(x = x).width(w).fillMaxHeight(), focusable = w >= 24.dp, onFocus = { onFocus(s) }, onClick = onClick) {
-                    Column(Modifier.align(Alignment.CenterStart).padding(horizontal = 12.dp)) {
-                        Text(s.title, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Color.White, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                        Text("${clockTime(s.start)} – ${clockTime(s.stop)}", fontSize = 10.sp, color = Dim, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    }
-                }
-            }
-        }
-    }
-}
-
-// One tile of the guide: a channel or a show. Highlighted, it brightens and
-// takes a white edge; a lit channel (its row has the highlight) turns white.
-@Composable
-private fun GuideTile(
-    modifier: Modifier, lit: Boolean = false, focusable: Boolean = true, onFocus: () -> Unit, onClick: () -> Unit,
-    content: @Composable androidx.compose.foundation.layout.BoxScope.(dark: Boolean) -> Unit,
-) {
-    var focused by remember { mutableStateOf(false) }
-    val shape = RoundedCornerShape(10.dp)
-    val white = lit
-    Card(
-        onClick = onClick,
-        modifier = modifier
-            .onFocusChanged {
-                focused = it.isFocused
-                if (it.isFocused) onFocus()
-            }
-            .focusProperties { canFocus = focusable },
-        shape = CardDefaults.shape(shape),
-        scale = CardDefaults.scale(focusedScale = 1f),
-        colors = CardDefaults.colors(
-            containerColor = if (white) Color(0xFFF4F4F5) else Color(0x14FFFFFF),
-            focusedContainerColor = if (white) Color(0xFFFFFFFF) else Color(0x40FFFFFF),
-        ),
-        border = CardDefaults.border(focusedBorder = Border(BorderStroke(2.dp, Color.White), shape = shape)),
-    ) {
-        Box(Modifier.fillMaxSize()) { content(white) }
     }
 }
 

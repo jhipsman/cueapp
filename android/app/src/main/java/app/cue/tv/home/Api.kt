@@ -271,15 +271,6 @@ class CueApi(ctx: Context, val server: String) {
 
     suspend fun channels(): LiveChannels = LiveChannels.from(obj("/api/live/channels"))
 
-    /** The TV guide for these channels, [from] (ms) for [hours]: each channel's shows in order. */
-    suspend fun guide(ids: List<String>, from: Long, hours: Int): Map<String, List<Show>> {
-        val o = obj("/api/live/guide?ids=" + java.net.URLEncoder.encode(ids.joinToString(","), "UTF-8") + "&from=${from / 1000}&hours=$hours")
-        val p = o.optJSONObject("programmes") ?: return emptyMap()
-        return p.keys().asSequence().associateWith { k ->
-            p.optJSONArray(k)?.let { a -> (0 until a.length()).mapNotNull { Show.from(a.optJSONObject(it)) } }.orEmpty()
-        }
-    }
-
     /** The country Live TV lists, as picked on this TV (null: the catalog's own pick). */
     var liveCountry: String?
         get() = prefs.getString("live-country", null)
@@ -506,14 +497,14 @@ data class Episode(
     }
 }
 
-data class Show(val title: String, val start: Long, val stop: Long, val desc: String = "") {
+data class Show(val title: String, val start: Long, val stop: Long) {
     fun progress(now: Long = System.currentTimeMillis()): Float =
         if (stop > start) ((now - start).toFloat() / (stop - start)).coerceIn(0f, 1f) else 0f
 
     companion object {
         fun from(o: JSONObject?): Show? {
             o ?: return null
-            return Show(o.optString("title"), parseTime(o.optString("start")), parseTime(o.optString("stop")), o.optString("desc"))
+            return Show(o.optString("title"), parseTime(o.optString("start")), parseTime(o.optString("stop")))
         }
 
         // An RFC 3339 time ("2026-10-11T17:00:00Z", "...+02:00"), on every

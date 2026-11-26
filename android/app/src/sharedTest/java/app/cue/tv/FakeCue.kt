@@ -104,23 +104,6 @@ class FakeCue : Dispatcher() {
             }
         })
 
-    // A few hours of shows for each channel, from a little before now.
-    private fun guide() = JSONObject().put("programmes", JSONObject().apply {
-        val titles = listOf("Evening Report", "The World Tonight", "NFL Football: Bills at Chiefs", "College Basketball", "Saturday Toons",
-            "Night Harbor", "Late Edition", "Weather Watch", "Highlights", "Paper Moons", "Quiz Night", "Late Movie")
-        for (i in 0 until 7) {
-            var t = -0.5 - (i % 3) * 0.25
-            put("c$i", JSONArray().apply {
-                for (k in 0 until 6) {
-                    val len = listOf(0.5, 1.0, 1.5, 0.5, 1.0)[(i + k) % 5]
-                    put(JSONObject().put("title", titles[(i + k * 3) % titles.size]).put("start", iso(t)).put("stop", iso(t + len))
-                        .put("desc", "Tonight: the stories that shaped the week, with guests and highlights from around the country."))
-                    t += len
-                }
-            })
-        }
-    })
-
     private val colors = mapOf("KC" to "e31837", "BUF" to "00338d", "BOS" to "007a33", "LAL" to "552583")
 
     private fun team(name: String, short: String, abbr: String, score: String) =
@@ -191,7 +174,6 @@ class FakeCue : Dispatcher() {
             path.startsWith("/api/watch/person/") -> ok(JSONObject().put("credits", cards(6, 2)))
             path == "/api/live/channels" -> ok(channels())
             path == "/api/live/sports" -> ok(sports())
-            path == "/api/live/guide" -> ok(guide())
             path == "/api/parties" -> ok(JSONArray())
             path.startsWith("/api/live/") -> ok(JSONArray())
             path == "/api/play/crash" -> MockResponse().setResponseCode(204)
