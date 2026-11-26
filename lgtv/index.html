@@ -2,104 +2,11 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=1920, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
 <title>Cue</title>
-<style>
-  /* Cue on an LG TV: this page asks for your Cue's address once, then opens
-     it (Watch, laid out for the remote) every time the app starts. For a
-     moment at the start it offers to change the address. */
-  html, body { margin: 0; height: 100%; background: #0b0b0c; color: #f4f4f5;
-    font-family: "LG Smart UI", "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
-  main { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 28px; }
-  img { width: 140px; height: 140px; }
-  h1 { margin: 0; font-size: 56px; font-weight: 700; }
-  p { margin: 0; font-size: 30px; color: #a6a8ae; max-width: 1200px; text-align: center; line-height: 1.4; }
-  input { width: 900px; font-size: 36px; padding: 18px 26px; border-radius: 16px; border: 3px solid #3f3f46;
-    background: #18181b; color: #fff; outline: none; }
-  input:focus { border-color: #fff; }
-  button { font-size: 34px; font-weight: 700; padding: 18px 48px; border-radius: 999px; border: 0;
-    background: #27272a; color: #fff; outline: none; }
-  button:focus { background: #fff; color: #0b0b0c; transform: scale(1.04); }
-  .row { display: flex; gap: 20px; }
-  .err { color: #f87171; min-height: 40px; }
-  [hidden] { display: none !important; }
-</style>
 </head>
 <body>
-<main>
-  <img src="largeIcon.png" alt="">
-  <section id="connecting" hidden>
-    <main style="height:auto">
-      <h1 id="where">Opening Cue…</h1>
-      <p>Press <b>OK</b> or <b>Down</b> to change the server.</p>
-    </main>
-  </section>
-  <section id="setup" hidden>
-    <main style="height:auto">
-      <h1>Your Cue</h1>
-      <p>Type your Cue's web address, the one you open in a browser (like <b>https://cue.example.com</b> or <b>http://192.168.1.20:8080</b>).</p>
-      <input id="server" type="url" inputmode="url" autocomplete="off" spellcheck="false" placeholder="https://">
-      <div class="err" id="err"></div>
-      <div class="row"><button id="go">Open Cue</button></div>
-    </main>
-  </section>
-</main>
-<script>
-(function () {
-  var KEY = 'cue-server';
-  var saved = null;
-  try { saved = localStorage.getItem(KEY); } catch (e) {}
-  var connecting = document.getElementById('connecting');
-  var setup = document.getElementById('setup');
-  var input = document.getElementById('server');
-  var err = document.getElementById('err');
-  var timer = null;
-
-  // An address as typed: a scheme added when missing, the trailing slash dropped.
-  function tidy(s) {
-    s = (s || '').trim();
-    if (!s) return '';
-    if (!/^https?:\/\//i.test(s)) s = 'https://' + s;
-    return s.replace(/\/+$/, '');
-  }
-  function open(server) {
-    // Watch, told it's on the LG app (the remote's layout, its keys).
-    window.location.replace(server + '/watch?device=webos');
-  }
-  function showSetup() {
-    if (timer) clearTimeout(timer);
-    connecting.hidden = true;
-    setup.hidden = false;
-    input.value = saved || '';
-    input.focus();
-  }
-  function go() {
-    var s = tidy(input.value);
-    if (!/^https?:\/\/[^\s/]+/i.test(s)) { err.textContent = "That doesn't look like a web address."; input.focus(); return; }
-    try { localStorage.setItem(KEY, s); } catch (e) {}
-    open(s);
-  }
-  document.getElementById('go').addEventListener('click', go);
-  input.addEventListener('keydown', function (e) {
-    if (e.keyCode === 13) { e.preventDefault(); go(); }
-    if (e.keyCode === 40) { e.preventDefault(); document.getElementById('go').focus(); }
-  });
-  document.getElementById('go').addEventListener('keydown', function (e) {
-    if (e.keyCode === 38) { e.preventDefault(); input.focus(); }
-  });
-  document.addEventListener('keydown', function (e) {
-    // OK or Down while it's opening: change the server instead.
-    if (!connecting.hidden && (e.keyCode === 13 || e.keyCode === 40)) { e.preventDefault(); showSetup(); }
-  });
-
-  if (saved) {
-    connecting.hidden = false;
-    document.getElementById('where').textContent = 'Opening ' + saved.replace(/^https?:\/\//, '') + '…';
-    timer = setTimeout(function () { open(saved); }, 1800);
-  } else {
-    showSetup();
-  }
-})();
-</script>
+<div id="root"></div>
+<script type="module" src="/src/main.tsx"></script>
 </body>
 </html>
