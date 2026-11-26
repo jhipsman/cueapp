@@ -5,22 +5,17 @@
 // each step and fails on any problem.
 //   npm run build && node test/walk.cjs dist-app test-shots
 const fs = require('fs')
-const os = require('os')
 const path = require('path')
-const { execFileSync } = require('child_process')
 const { chromium } = require('playwright')
 
 const APP = process.argv[2] || 'dist-app'
 const OUT = process.argv[3] || 'test-shots'
 fs.mkdirSync(OUT, { recursive: true })
 
-// Pictures: one plain tile for every poster and backdrop. Video: 20 seconds
-// of a test pattern, made with ffmpeg (WebM: what this Chromium plays).
+// Pictures: one plain tile for every poster and backdrop. Video: 12 seconds
+// of a test pattern (test/walk.webm: WebM, what this Chromium plays).
 const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAIAAAADCAIAAAA2iEnWAAAAFElEQVR4nGO0cYtiYGBgYmBgQFAAEIoA4nyaPE0AAAAASUVORK5CYII=', 'base64')
-const VIDEO = path.join(os.tmpdir(), 'cue-walk.webm')
-if (!fs.existsSync(VIDEO)) {
-  execFileSync('ffmpeg', ['-loglevel', 'error', '-y', '-f', 'lavfi', '-i', 'testsrc2=size=640x360:rate=25', '-t', '20', '-c:v', 'libvpx-vp9', '-b:v', '300k', VIDEO])
-}
+const VIDEO = path.join(__dirname, 'walk.webm')
 
 const titles = ['Night Harbor', 'Paper Moons', 'Signal Fire', 'Glass Rivers', 'Northbound', 'Copper Sky', 'Quiet Hours', 'Last Light', 'Open Water', 'Far Country']
 const card = (i, kind = i % 3 ? 'movie' : 'tv', extra = {}) => ({
