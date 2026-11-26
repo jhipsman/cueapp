@@ -4,7 +4,7 @@ import Icon from '../components/Icon'
 import ChannelLogo from './ChannelLogo'
 import { recordingSize } from './recordings'
 import { savedTheme } from './theme'
-import { onTV } from './tv'
+import { onTV, tvRemote } from './tv'
 
 function when(iso: string): string {
   const d = new Date(iso)
@@ -93,7 +93,7 @@ export default function RecordingsList({ list, onRemove }: { list: LiveRecording
                 className="wx-btn small"
                 onClick={() => {
                   const what = r.status === 'scheduled' || r.status === 'recording' ? 'Cancel this recording?' : 'Delete this recording?'
-                  if (onTV() || window.confirm(what)) onRemove(r.id)
+                  if (tvRemote() || window.confirm(what)) onRemove(r.id)
                 }}
               >
                 <Icon name={r.status === 'done' || r.status === 'failed' ? 'trash' : 'x'} size={14} />

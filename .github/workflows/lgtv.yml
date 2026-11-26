@@ -1,0 +1,57 @@
+# Builds Cue's LG TV app (webOS, lgtv/) and publishes the .ipk as the
+# "lg-latest" release, to install on the TV in Developer Mode (lgtv/README.md):
+#   https://github.com/<owner>/<repo>/releases/download/lg-latest/cue-lg.ipk
+name: LG TV app
+
+on:
+  push:
+    paths:
+      - "lgtv/**"
+      - "VERSION"
+      - ".github/workflows/lgtv.yml"
+  pull_request:
+    paths:
+      - "lgtv/**"
+      - ".github/workflows/lgtv.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write # to publish the .ipk as a release
+
+concurrency:
+  group: lg-app-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Build the .ipk
+        run: |
+          node -e "JSON.parse(require('fs').readFileSync('lgtv/appinfo.json','utf8'))"
+          ./lgtv/build.sh
+          cp lgtv/dist/*.ipk cue-lg.ipk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cue-lg
+          path: cue-lg.ipk
+
+      - name: Publish as the lg-latest release
+        if: github.ref == 'refs/heads/main'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: lg-latest
+          name: Cue for LG TV (latest)
+          body: |
+            The latest build of Cue for LG TVs (webOS), build ${{ github.run_number }}.
+            Install it on a TV in Developer Mode: see lgtv/README.md.
+          prerelease: true
+          make_latest: false
+          files: cue-lg.ipk

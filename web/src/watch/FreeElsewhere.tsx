@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { api, type WatchProvider } from '../api'
-import { onTV } from './tv'
+import { tvRemote } from './tv'
 
 // FreeElsewhere shows the free services (Tubi, Pluto TV, The Roku
 // Channel...) a title is on, each opening a search for it there. Not on the
@@ -19,7 +19,7 @@ export default function FreeElsewhere({
   const [free, setFree] = useState<WatchProvider[]>([])
   const [paid, setPaid] = useState<WatchProvider[]>([])
   useEffect(() => {
-    if (onTV()) return
+    if (tvRemote()) return
     let live = true
     setFree([])
     setPaid([])

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { api, type WatchCard, type WatchExtras, type WatchRatings } from '../api'
 import Icon from '../components/Icon'
 import { CardPreview, trailersAllowed } from './living'
-import { onTV } from './tv'
+import { tvRemote } from './tv'
 
 // Building blocks shared by the Watch pages.
 
@@ -76,7 +76,7 @@ export function Card({ card, wide }: { card: WatchCard; wide?: boolean }) {
   const spotlight = useContext(SpotlightContext)
   let img = wide ? card.backdropUrl || card.posterUrl : card.posterUrl
   // A TV's posters are small: a smaller picture loads and draws faster.
-  if (img && onTV()) img = img.replace('/t/p/w500/', '/t/p/w342/').replace('/t/p/w1280/', '/t/p/w780/')
+  if (img && tvRemote()) img = img.replace('/t/p/w500/', '/t/p/w342/').replace('/t/p/w1280/', '/t/p/w780/')
   // A card opens its page, Continue Watching and new episodes too: Resume
   // (or Play) is there, with the episodes, so nothing starts by surprise.
   const open = () => navigate(titleHref(card))
@@ -143,7 +143,7 @@ export function Card({ card, wide }: { card: WatchCard; wide?: boolean }) {
             <span style={{ width: `${Math.round(card.progress * 100)}%` }} />
           </span>
         )}
-        {hot && !wide && !onTV() && <QuickActions card={card} />}
+        {hot && !wide && !tvRemote() && <QuickActions card={card} />}
       </span>
       <span className="wx-card-name">{card.title}</span>
       {wide && card.episodeTitle && <span className="wx-card-sub">{card.episodeTitle}</span>}

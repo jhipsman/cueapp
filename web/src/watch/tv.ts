@@ -26,6 +26,26 @@ export function onTV(): boolean {
   return typeof window !== 'undefined' && !!window.CueTV
 }
 
+// onLG: Cue's LG TV app (webOS), which opens Watch in the TV's own web
+// engine with ?device=webos (kept for the visit), or any webOS browser.
+// There's no Cue player there: videos play in the page, as on a computer.
+export function onLG(): boolean {
+  if (typeof window === 'undefined') return false
+  try {
+    if (new URLSearchParams(window.location.search).get('device') === 'webos') sessionStorage.setItem('cue-device', 'webos')
+    if (sessionStorage.getItem('cue-device') === 'webos') return true
+  } catch {
+    // No storage: the browser's name says it.
+  }
+  return /Web0S|webOS/i.test(navigator.userAgent)
+}
+
+// tvRemote: on a TV, worked with a remote (the TV app's web view, or the
+// LG app): arrows move between buttons, layouts are the TV's.
+export function tvRemote(): boolean {
+  return onTV() || onLG()
+}
+
 const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea, [tabindex]:not([tabindex="-1"])'
 
 function visible(el: HTMLElement): boolean {
@@ -173,9 +193,9 @@ function focus(el: HTMLElement) {
 const KEYS: Record<string, Dir> = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right' }
 
 // installTVNavigation turns the remote's arrows into focus moves. It does
-// nothing outside the TV app.
+// nothing outside the TV apps.
 export function installTVNavigation(): () => void {
-  if (!onTV()) return () => undefined
+  if (!tvRemote()) return () => undefined
   document.documentElement.classList.add('tv-mode')
   // TVs give a web view a 960-pixel-wide page, which makes everything huge.
   // Laid out 1280 wide (a 720p screen) and scaled to fit, Cue looks the
@@ -183,6 +203,16 @@ export function installTVNavigation(): () => void {
   const meta = document.querySelector<HTMLMetaElement>('meta[name="viewport"]')
   if (meta) meta.content = 'width=1280, user-scalable=no'
   const onKey = (e: KeyboardEvent) => {
+    // The LG remote's play, pause and stop buttons work the video on the page.
+    if (e.keyCode === 415 || e.keyCode === 19 || e.keyCode === 413) {
+      const v = document.querySelector('video')
+      if (v) {
+        e.preventDefault()
+        if (e.keyCode === 415) void v.play()
+        else v.pause()
+      }
+      return
+    }
     const dir = KEYS[e.key]
     if (!dir) return
     const active = document.activeElement as HTMLElement | null
@@ -220,7 +250,7 @@ export function installTVNavigation(): () => void {
 // refocusSoon puts the focus on the page's main button after a page change,
 // when nothing on the new page has it.
 export function refocusSoon() {
-  if (!onTV()) return
+  if (!tvRemote()) return
   const page = here()
   // The page may still be loading its rows: tried a few times.
   let tries = 0

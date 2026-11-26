@@ -7,7 +7,7 @@ import { useDocumentTitle } from '../documentTitle'
 import { Spinner } from './parts'
 import { useProfiles } from './profiles'
 import { ACCENTS, applyTheme, BACKGROUNDS, DEFAULT_THEME, GLOWS, themeVars } from './theme'
-import { onTV } from './tv'
+import { tvRemote } from './tv'
 
 // Colors: the profile on this device picks its accent, glow and background.
 // Watch changes as you pick; Save keeps it for the profile on every device.
@@ -90,7 +90,7 @@ function ThemeEditor() {
               {theme.accent === a.color && <Icon name="check" size={18} strokeWidth={3} />}
             </button>
           ))}
-          {!onTV() && (
+          {!tvRemote() && (
             <label className={`wx-swatch wx-swatch-custom ${custom ? 'on' : ''}`} title="Any color" style={custom ? { background: theme.accent } : undefined}>
               <input type="color" value={theme.accent} onChange={(e) => set({ accent: e.target.value })} aria-label="Any color" />
               {!custom && <Icon name="plus" size={18} />}

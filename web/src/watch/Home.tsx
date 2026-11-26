@@ -9,7 +9,7 @@ import { Greeting, NetworkStrip, TopTen } from './browse'
 import { useDocumentTitle } from '../documentTitle'
 import { Ambient, epCode, playHref, Row, SpotlightContext, TitleMark, titleHref, useExtras, useTint } from './parts'
 import { Frames, PreviewVideo, useFrames, usePreview } from './living'
-import { onTV } from './tv'
+import { tvRemote } from './tv'
 
 // Home: a banner, then rows to scroll. With only set, just movies or just
 // shows (the Movies and Shows tabs).
@@ -22,7 +22,7 @@ export default function Home({ only }: { only?: WatchKind }) {
   const [error, setError] = useState('')
   const [spot, setSpot] = useState<WatchCard | null>(null)
   const spotTimer = useRef(0)
-  const tv = onTV()
+  const tv = tvRemote()
   useDocumentTitle(only === 'movie' ? 'Movies' : only === 'tv' ? 'Shows' : 'Watch')
 
   useEffect(() => {
@@ -129,7 +129,7 @@ function Banner({ card, featured }: { card: WatchCard; featured: boolean }) {
   const preview = usePreview(card, `${card.kind}-${card.tmdbId}-${card.season ?? 0}-${card.episode ?? 0}`)
   const frames = useFrames(card, preview.none)
   return (
-    <header className={`wx-hero${onTV() ? '' : ' full'}${preview.playing && !preview.over ? ' playing' : ''}${frames.length > 1 ? ' framing' : ''}`}>
+    <header className={`wx-hero${tvRemote() ? '' : ' full'}${preview.playing && !preview.over ? ' playing' : ''}${frames.length > 1 ? ' framing' : ''}`}>
       {card.backdropUrl && <div className="wx-hero-pic drift" key={card.backdropUrl} style={{ backgroundImage: `url(${card.backdropUrl})` }} />}
       {preview.src && <PreviewVideo key={preview.src} src={preview.src} onPlaying={preview.onPlaying} onEnded={preview.onEnded} playing={preview.playing} over={preview.over} />}
       {frames.length > 1 && <Frames urls={frames} />}

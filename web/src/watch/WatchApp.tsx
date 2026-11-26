@@ -37,7 +37,7 @@ import TopPage from './TopPage'
 import PersonPage from './PersonPage'
 import ReportsPage, { useOpenReports } from './reports'
 import { api, isAdmin } from '../api'
-import { installTVNavigation, onTV, refocusSoon } from './tv'
+import { installTVNavigation, onTV, refocusSoon, tvRemote } from './tv'
 import './watch.css'
 
 // Watch: the streaming side of Cue. Browse anything TMDB knows, press
@@ -214,7 +214,7 @@ function ProfileMenu() {
             <Avatar profile={active} size={28} /> {active.name}
           </div>
           {multi && <button onClick={() => navigate('/watch/who')}>Switch profile</button>}
-          {!onTV() && <button onClick={() => navigate('/watch/tv-remote')}>TV remote</button>}
+          {!tvRemote() && <button onClick={() => navigate('/watch/tv-remote')}>TV remote</button>}
           <button onClick={() => navigate('/watch/settings')}>Settings</button>
           {owner && <button onClick={() => navigate('/watch/profiles')}>Manage profiles</button>}
           <button onClick={() => navigate('/watch/reports')}>

@@ -9,7 +9,7 @@ import { ReportSheet } from './reports'
 import { FindLine } from './findLine'
 import { loadSubsPrefs, saveSubsPrefs, type SubsPrefs } from './subsPrefs'
 import { savedTheme } from './theme'
-import { onTV, type TVPlayerResult } from './tv'
+import { onTV, type TVPlayerResult, tvRemote } from './tv'
 import VideoControls from './VideoControls'
 import FreeElsewhere from './FreeElsewhere'
 import YouTubePlayer from './YouTubePlayer'
@@ -1309,7 +1309,7 @@ function GetItReady({ kind, tmdbId, season, episode, onReady }: { kind: WatchKin
     <div className="wx-ready-box">
       {st?.message && st.state !== 'none' && <small className="wx-error">{st.message}</small>}
       {st?.state === 'none' && st.message && <small>{st.message}</small>}
-      <button className="wx-btn play" onClick={start} disabled={busy} autoFocus={onTV()}>
+      <button className="wx-btn play" onClick={start} disabled={busy} autoFocus={tvRemote()}>
         <Icon name="download" size={16} /> {busy ? 'Sending it…' : 'Get it ready'}
       </button>
       <small>For new releases: Premiumize fetches it, usually in a few minutes.</small>
