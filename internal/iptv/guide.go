@@ -1,6 +1,8 @@
 package iptv
 
 import (
+	"bufio"
+	"compress/gzip"
 	"context"
 	"encoding/xml"
 	"errors"
@@ -65,6 +67,26 @@ func xmltvTime(s string) (time.Time, error) {
 // channels (all when wanted is nil) that overlap [from, to). Guides run to
 // tens of megabytes, so it reads as it goes and keeps only those.
 func ParseGuide(r io.Reader, wanted map[string]bool, from, to time.Time) (Guide, error) {
+	keep := func(id string) bool { return wanted == nil || wanted[id] }
+	return ParseGuideWith(r, GuideRead{Keep: keep, From: from, To: to})
+}
+
+// GuideRead says what to keep of a guide being read.
+type GuideRead struct {
+	// Keep: whether a channel's programmes are kept. It's asked as each
+	// programme is read, after OnChannel has seen the channel (XMLTV lists
+	// its channels first), so OnChannel can decide what Keep says.
+	Keep func(id string) bool
+	// OnChannel, when set, gets each <channel>: its id and display names.
+	OnChannel func(id string, names []string)
+	From, To  time.Time
+	// DescUntil, when set: shows starting after it keep no description
+	// (a week of guide is mostly descriptions).
+	DescUntil time.Time
+}
+
+// ParseGuideWith reads an XMLTV document as rd says.
+func ParseGuideWith(r io.Reader, rd GuideRead) (Guide, error) {
 	dec := xml.NewDecoder(r)
 	dec.Strict = false
 	dec.CharsetReader = func(_ string, in io.Reader) (io.Reader, error) { return in, nil }
@@ -81,7 +103,20 @@ func ParseGuide(r io.Reader, wanted map[string]bool, from, to time.Time) (Guide,
 			return nil, fmt.Errorf("couldn't read the guide: %w", err)
 		}
 		se, ok := tok.(xml.StartElement)
-		if !ok || se.Name.Local != "programme" {
+		if !ok {
+			continue
+		}
+		if se.Name.Local == "channel" && rd.OnChannel != nil {
+			var c struct {
+				ID    string   `xml:"id,attr"`
+				Names []string `xml:"display-name"`
+			}
+			if err := dec.DecodeElement(&c, &se); err == nil && c.ID != "" {
+				rd.OnChannel(c.ID, c.Names)
+			}
+			continue
+		}
+		if se.Name.Local != "programme" {
 			continue
 		}
 		var p struct {
@@ -94,17 +129,20 @@ func ParseGuide(r io.Reader, wanted map[string]bool, from, to time.Time) (Guide,
 		if err := dec.DecodeElement(&p, &se); err != nil {
 			continue
 		}
-		if wanted != nil && !wanted[p.Channel] {
+		if rd.Keep != nil && !rd.Keep(p.Channel) {
 			continue
 		}
 		start, err1 := xmltvTime(p.Start)
 		stop, err2 := xmltvTime(p.Stop)
-		if err1 != nil || err2 != nil || !stop.After(from) || !start.Before(to) {
+		if err1 != nil || err2 != nil || !stop.After(rd.From) || !start.Before(rd.To) {
 			continue
 		}
-		desc := strings.TrimSpace(p.Desc)
-		if len(desc) > 400 {
-			desc = desc[:397] + "..."
+		desc := ""
+		if rd.DescUntil.IsZero() || !start.After(rd.DescUntil) {
+			desc = strings.TrimSpace(p.Desc)
+			if len(desc) > 400 {
+				desc = desc[:397] + "..."
+			}
 		}
 		g[p.Channel] = append(g[p.Channel], Programme{Title: strings.TrimSpace(p.Title), Desc: desc, Start: start, Stop: stop})
 	}
@@ -114,8 +152,52 @@ func ParseGuide(r io.Reader, wanted map[string]bool, from, to time.Time) (Guide,
 	return g, nil
 }
 
+// guideBody is a guide download as text: gunzipped when it's compressed
+// (a .xml.gz, as most XMLTV sources are), at most 512 MB.
+func guideBody(r io.Reader) (io.Reader, error) {
+	br := bufio.NewReader(r)
+	if head, err := br.Peek(2); err == nil && head[0] == 0x1f && head[1] == 0x8b {
+		zr, err := gzip.NewReader(br)
+		if err != nil {
+			return nil, fmt.Errorf("couldn't open the compressed guide: %w", err)
+		}
+		return io.LimitReader(zr, 512<<20), nil
+	}
+	return io.LimitReader(br, 512<<20), nil
+}
+
+// LoadXMLTV downloads and reads an XMLTV guide at url (an extra guide
+// source: plain or .gz), as rd says.
+func LoadXMLTV(ctx context.Context, hc *http.Client, url string, rd GuideRead) (Guide, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return nil, fmt.Errorf("that guide address doesn't look right: %w", err)
+	}
+	req.Header.Set("User-Agent", "Cue")
+	c := *hc
+	c.Timeout = 5 * time.Minute
+	resp, err := c.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't download the guide: %w", err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("the guide download answered with status %d", resp.StatusCode)
+	}
+	body, err := guideBody(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGuideWith(body, rd)
+}
+
 // LoadGuide downloads and reads the account's XMLTV guide.
 func (c *Client) LoadGuide(ctx context.Context, wanted map[string]bool, from, to time.Time) (Guide, error) {
+	return c.LoadGuideWith(ctx, GuideRead{Keep: func(id string) bool { return wanted == nil || wanted[id] }, From: from, To: to})
+}
+
+// LoadGuideWith downloads and reads the account's XMLTV guide as rd says.
+func (c *Client) LoadGuideWith(ctx context.Context, rd GuideRead) (Guide, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.GuideURL(), nil)
 	if err != nil {
 		return nil, err
@@ -135,5 +217,9 @@ func (c *Client) LoadGuide(ctx context.Context, wanted map[string]bool, from, to
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("the guide download answered with status %d", resp.StatusCode)
 	}
-	return ParseGuide(io.LimitReader(resp.Body, 512<<20), wanted, from, to)
+	body, err := guideBody(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGuideWith(body, rd)
 }

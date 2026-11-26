@@ -16,6 +16,7 @@ package api
 // address the browser sees is sealed.
 
 import (
+	"maps"
 	"bufio"
 	"cmp"
 	"context"
@@ -48,7 +49,8 @@ const (
 	liveListFor    = 6 * time.Hour  // how long a channel list is used
 	liveGuideFor   = 4 * time.Hour  // how often the guide reloads
 	liveGuideBack  = 2 * time.Hour  // guide kept from this long ago (channels with catch-up: their days, up to liveCatchupMax)...
-	liveGuideAhead = 36 * time.Hour // ...to this far ahead
+	liveGuideAhead = 7 * 24 * time.Hour // ...to a week ahead
+	liveDescAhead  = 36 * time.Hour     // shows' descriptions kept this far ahead
 	liveSealPrefix = "cue-live:"
 	liveCatchupMax = 3 * 24 * time.Hour // the furthest back the guide keeps, for catch-up
 	liveGuideMax   = 300                // channels in one guide answer
@@ -71,6 +73,13 @@ type liveState struct {
 	guideAt      time.Time
 	guideLoading bool
 	guideErr     string
+	// More guides (live_guide_sources.go): the provider's own guide id of
+	// each channel, the extra sources' channels matched by name, every
+	// guide channel's name (for matching by hand), and how each source went.
+	providerEPG map[string]string
+	autoGuide   map[string]string
+	guideNames  map[string]string
+	sourceInfo  []guideSourceInfo
 
 	hc *http.Client // for the provider (tests swap it)
 
@@ -175,6 +184,7 @@ func (s *Server) liveChannels(ctx context.Context) ([]iptv.Category, []iptv.Chan
 	if stErr == nil {
 		s.live.status = st
 	}
+	s.applyGuideIDsLocked(chans)
 	s.live.byID = make(map[string]iptv.Channel, len(chans))
 	for _, ch := range chans {
 		s.live.byID[ch.ID] = ch
@@ -205,8 +215,8 @@ func (s *Server) liveGuideLocked() (iptv.Guide, bool) {
 		wanted := map[string]bool{}
 		back := map[string]time.Duration{} // per guide id: how far back to keep
 		for _, ch := range s.live.chans {
-			if ch.EPGID == "" {
-				continue
+			if ch.EPGID == "" || isSourceKey(ch.EPGID) {
+				continue // (an extra source's: loadExtraGuides)
 			}
 			wanted[ch.EPGID] = true
 			keep := liveGuideBack
@@ -227,7 +237,19 @@ func (s *Server) loadLiveGuide(c *iptv.Client, wanted map[string]bool, back map[
 	for _, d := range back {
 		furthest = max(furthest, d)
 	}
-	g, err := c.LoadGuide(context.Background(), wanted, now.Add(-furthest), now.Add(liveGuideAhead))
+	// A week ahead; descriptions for the next day and a half (the rest of a
+	// week of descriptions would take a lot of memory for little).
+	names := map[string]string{}
+	g, err := c.LoadGuideWith(context.Background(), iptv.GuideRead{
+		Keep:      func(id string) bool { return wanted[id] },
+		OnChannel: func(id string, n []string) { names[id] = firstName(n) },
+		From:      now.Add(-furthest), To: now.Add(liveGuideAhead), DescUntil: now.Add(liveDescAhead),
+	})
+	extra, auto, info := s.loadExtraGuides(now)
+	maps.Copy(g, extra)
+	for k, v := range info.names {
+		names[k] = v
+	}
 	// Past shows are kept only for channels that can play them again.
 	for id, list := range g {
 		from := now.Add(-back[id])
@@ -250,6 +272,8 @@ func (s *Server) loadLiveGuide(c *iptv.Client, wanted map[string]bool, back map[
 		return
 	}
 	s.live.guide, s.live.guideErr = g, ""
+	s.live.guideNames, s.live.sourceInfo = names, info.sources
+	s.setAutoGuideLocked(auto)
 	slog.Info("live tv: guide loaded", "channels", len(g), "took", time.Since(started).Round(time.Millisecond))
 }
 

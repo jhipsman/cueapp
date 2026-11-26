@@ -217,12 +217,16 @@ Every route the server exposes. Routes marked **public** need no sign-in; all ot
 |---|---|---|---|
 | GET | `/api/live/catchup/{id}` | signed in | GET /api/live/catchup/{id}?start=<unix>&stop=<unix>: where a show that has aired (or started) on a channel with catch-up plays from its beginning. |
 | GET | `/api/live/channels` | signed in | GET /api/live/channels: every channel with what's on now and next. |
+| PUT | `/api/live/channels/{id}/guide` | admin | PUT /api/live/channels/{id}/guide {key}: matches the channel to a guide channel by hand ("" goes back to the automatic one). |
 | DELETE | `/api/live/favorites/{id}` | signed in | PUT and DELETE /api/live/favorites/{id}: star a channel for this profile. |
 | PUT | `/api/live/favorites/{id}` | signed in | PUT and DELETE /api/live/favorites/{id}: star a channel for this profile. |
 | DELETE | `/api/live/follows` | signed in | PUT or DELETE /api/live/follows {"phrase"}: follow, or stop following. |
 | GET | `/api/live/follows` | signed in | GET /api/live/follows: the words this profile follows. |
 | PUT | `/api/live/follows` | signed in | PUT or DELETE /api/live/follows {"phrase"}: follow, or stop following. |
 | GET | `/api/live/guide` | signed in | GET /api/live/guide?ids=1,2,3&from=<unix>&hours=6: the guide for those channels (at most liveGuideMax), from..from+hours. |
+| GET | `/api/live/guide-channels` | admin | GET /api/live/guide-channels?q=: guide channels to match a channel to by hand, by name (up to 40), with each one's guide. |
+| GET | `/api/live/guide-setup` | admin | GET /api/live/guide-setup: the extra guides (how each went) and the channels matched by hand. |
+| PUT | `/api/live/guide-setup` | admin |  |
 | GET | `/api/live/hls` | signed in | GET /api/live/hls?u=<sealed address>: a provider's playlist, with every address in it pointed back here, or a piece of video passed through. |
 | GET | `/api/live/logo/{id}` | signed in | GET /api/live/logo/{id}: the channel's logo, through Cue (the page may only show pictures from a few places) and kept on disk for a week. |
 | GET | `/api/live/play/{id}` | signed in | GET /api/live/play/{id}: where the channel plays. |
@@ -780,4 +784,4 @@ Every route the server exposes. Routes marked **public** need no sign-in; all ot
 | PUT | `/api/watched/settings` | admin | PUT /api/watched/settings {"sync": true, "cleanup": {...}} |
 | POST | `/api/watched/sync` | admin | POST /api/watched/sync: read what's been watched now. |
 
-445 routes.
+449 routes.

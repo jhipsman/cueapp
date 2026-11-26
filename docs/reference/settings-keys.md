@@ -33,6 +33,8 @@ The keys the app stores in its settings table. You normally change these from th
 | `ebooks.path` | ebooks library folder; falls back to the EBOOKS_DIR env default (/ebooks) when unset |
 | `flaresolverr.url` | e.g. http://flaresolverr:8191; unset = none |
 | `iptv.account` | encrypted JSON {server, username, password}: an Xtream Codes login for Live TV; unset = no Live TV |
+| `iptv.guide_match` | JSON {channel id: guide id}: channels matched to a guide channel by hand ("s1:cnn.us" is the first extra source's); unset = none |
+| `iptv.guide_sources` | encrypted JSON list of XMLTV addresses: guides beside the provider's, for channels it has none for; unset = the provider's only |
 | `legal.acknowledged_at` |  |
 | `library.default_profile_id` | id of the stored quality profile used by items with no profile of their own |
 | `library.default_sources` | usenet \| torrent \| both (default both) |
