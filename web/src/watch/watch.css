@@ -8627,3 +8627,287 @@ button.wx-switch.on:hover {
   height: 100%;
   background: #fff;
 }
+
+/* Live TV, guide first: the highlighted show big at the top (the channel,
+   the show, how long, when it started, what it's about, how far in), the
+   channel playing in a window to its right, and the guide across the whole
+   page below, a TV box's guide. */
+.wx-live-top.guide-first {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: stretch;
+  gap: 20px;
+  margin-bottom: 18px;
+}
+.wx-live-top.guide-first .wx-live-preview {
+  order: 2;
+}
+.wx-live-top.guide-first .wx-live-info {
+  justify-content: flex-end;
+  padding: 22px 26px;
+  border-radius: 16px;
+  background:
+    radial-gradient(120% 140% at 0% 0%, rgba(255, 255, 255, 0.07), transparent 60%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.015));
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.07);
+  max-height: none;
+  height: var(--live-top-h);
+}
+.wx-peek {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  animation: wx-peek-in 0.18s ease-out;
+}
+@keyframes wx-peek-in {
+  from {
+    opacity: 0.4;
+    transform: translateY(3px);
+  }
+}
+.wx-peek-chan {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: auto;
+}
+.wx-peek-chan > span:nth-child(2) {
+  display: grid;
+  min-width: 0;
+}
+.wx-peek-chan b {
+  font-size: 0.95rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.wx-peek-chan small {
+  color: var(--wx-dim);
+  font-size: 0.78rem;
+}
+.wx-peek-logo {
+  flex: none;
+  width: 84px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+.wx-peek-logo img {
+  max-width: 74px;
+  max-height: 40px;
+  object-fit: contain;
+}
+.wx-peek h2 {
+  margin: 6px 0 0;
+  font-size: clamp(1.6rem, 2.6vw, 2.5rem);
+  line-height: 1.08;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.wx-peek-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 0;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+.wx-peek-meta span + span::before {
+  content: '·';
+  margin: 0 8px;
+  color: var(--wx-dim);
+}
+.wx-peek-desc {
+  margin: 0;
+  max-width: 70ch;
+  color: rgba(255, 255, 255, 0.78);
+  line-height: 1.45;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.wx-peek-bar {
+  display: block;
+  width: min(380px, 70%);
+  height: 4px;
+  margin-top: 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.16);
+  overflow: hidden;
+}
+.wx-peek-bar i {
+  display: block;
+  height: 100%;
+  background: #fff;
+}
+
+/* The side menu folds into a row above the guide. */
+.wx-live-body.is-guide {
+  grid-template-columns: minmax(0, 1fr);
+}
+.wx-live-body.is-guide > .wx-live-side,
+.wx-live-body.is-guide > .wx-live-select {
+  display: none;
+}
+.wx-live-head .wx-live-search {
+  flex: 0 1 300px;
+  margin: 0;
+}
+.wx-guide-steps {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.wx-guide-steps button {
+  display: inline-grid;
+  place-items: center;
+  min-width: 34px;
+  height: 34px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--wx-text);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+.wx-guide-steps button:first-child,
+.wx-guide-steps button:nth-child(3) {
+  padding: 0;
+}
+.wx-guide-steps button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.wx-guide-steps small {
+  margin-left: 8px;
+  color: var(--wx-dim);
+}
+.wx-live-catalog .wx-live-group + .wx-live-country {
+  margin-left: 0;
+}
+
+/* The guide's shows as tiles with a gap between them; the row under the
+   pointer lights its channel, the show under it gets a white edge. */
+.wx-live .wx-guide {
+  background: transparent;
+  border-radius: 12px;
+}
+.wx-guide-times,
+.wx-guide-corner {
+  background: var(--wx-bg);
+  border: 0;
+}
+.wx-guide-corner {
+  font-size: 1.05rem;
+}
+.wx-guide-slots span {
+  border-left: 0;
+  padding-left: 12px;
+  font-weight: 600;
+}
+.wx-guide-row {
+  height: 62px;
+  border: 0;
+}
+.wx-guide-chan {
+  background: var(--wx-bg);
+  border: 0;
+  padding: 3px 4px 3px 0;
+}
+.wx-guide-chan-play {
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.06);
+  transition: background 0.12s, color 0.12s;
+}
+.wx-guide-row:hover .wx-guide-chan-play,
+.wx-guide-chan-play:focus-visible {
+  background: #f4f4f5;
+  color: #0b0b0c;
+}
+.wx-guide-row:hover .wx-guide-name small,
+.wx-guide-chan-play:focus-visible .wx-guide-name small {
+  color: #52525b;
+}
+.wx-guide-row.playing .wx-guide-chan-play {
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.55);
+}
+.wx-prog {
+  top: 3px;
+  bottom: 3px;
+  border: 0;
+  border-left: 0;
+  border-right: 4px solid var(--wx-bg);
+  background-clip: padding-box;
+  border-radius: 10px;
+  background-color: rgba(255, 255, 255, 0.06);
+  transition: background-color 0.12s;
+}
+.wx-prog.now {
+  background-color: rgba(255, 255, 255, 0.12);
+}
+.wx-prog:hover,
+.wx-prog:focus-visible {
+  background-color: rgba(255, 255, 255, 0.2);
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.9);
+  outline: none;
+}
+.wx-prog.picked {
+  box-shadow: inset 0 0 0 2px #fff;
+}
+.wx-guide-now {
+  width: 2px;
+  background: rgba(255, 255, 255, 0.85);
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
+}
+@media (max-width: 900px) {
+  .wx-live-top.guide-first {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .wx-live-top.guide-first .wx-live-preview {
+    order: 0;
+    width: 100%;
+    height: auto;
+  }
+  .wx-live-top.guide-first .wx-live-info {
+    height: auto;
+    padding: 16px;
+  }
+  .wx-peek h2 {
+    white-space: normal;
+  }
+  .wx-live-top.guide-first .wx-live-preview.idle {
+    display: none;
+  }
+}
+.wx-live .wx-live-catalog .wx-live-group {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-right: 8px;
+  padding: 0 4px 0 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+.wx-live .wx-live-catalog .wx-live-group select {
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 7px 6px;
+  max-width: 240px;
+  cursor: pointer;
+}
+.wx-live .wx-live-catalog .wx-live-group select option {
+  color: #0b0b0c;
+}
