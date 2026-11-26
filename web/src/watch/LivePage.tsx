@@ -13,7 +13,7 @@ import { useRecordings } from './recordings'
 import { Spinner } from './parts'
 import { useProfiles } from './profiles'
 import { savedTheme } from './theme'
-import { onTV, type TVPlayerResult } from './tv'
+import { onTV, type TVPlayerResult, tvRemote } from './tv'
 import VideoControls from './VideoControls'
 
 // How the guide is drawn: pixels per minute, how far ahead it reaches, and
@@ -719,7 +719,7 @@ export default function LivePage() {
               </div>
               {picked.show.desc && <p className="wx-live-desc">{picked.show.desc}</p>}
               <div className="wx-live-actions">
-                <button className="wx-btn play small" autoFocus={onTV()} onClick={() => void reminders.toggle(picked.channel.id, picked.show)}>
+                <button className="wx-btn play small" autoFocus={tvRemote()} onClick={() => void reminders.toggle(picked.channel.id, picked.show)}>
                   <Icon name={reminders.has(picked.channel.id, picked.show.start) ? 'check' : 'clock'} size={16} />
                   {reminders.has(picked.channel.id, picked.show.start) ? 'Reminder set' : 'Remind me'}
                 </button>

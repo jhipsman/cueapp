@@ -4,7 +4,7 @@ import { api, type LiveProgramme, type LiveReminder } from '../api'
 import Icon from '../components/Icon'
 import ChannelLogo from './ChannelLogo'
 import { useProfiles } from './profiles'
-import { onTV } from './tv'
+import { onTV, tvRemote } from './tv'
 
 // Live TV reminders: shows this profile asked to be told about. They're kept
 // on the server (so a reminder set on the phone shows on the TV), and when
@@ -101,7 +101,7 @@ export function RemindersProvider({ children }: { children: ReactNode }) {
           <div className="wx-reminder-actions">
             <button
               className="wx-btn play small"
-              autoFocus={onTV()}
+              autoFocus={tvRemote()}
               onClick={() => {
                 dismiss(due)
                 navigate(`/watch/live?cat=all&ch=${encodeURIComponent(due.channelId)}${onTV() ? '' : '&full=1'}`)

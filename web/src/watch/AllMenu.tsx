@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Icon, { type IconName } from '../components/Icon'
 import { useProfiles } from './profiles'
-import { onTV } from './tv'
+import { tvRemote } from './tv'
 
 // The menu that names everything: every section and tool in Cue in one list,
 // so nothing hides behind an icon. A sheet from the bottom on a phone (the
@@ -40,7 +40,7 @@ export function useAllItems(): { group: string; items: Item[] }[] {
       items: [
         { label: 'Your year', to: '/watch/year', icon: 'clock' },
         { label: 'Reports', to: '/watch/reports', icon: 'warning', hint: 'Problems reported and the answers' },
-        ...(onTV() ? [] : [{ label: 'TV remote', to: '/watch/tv-remote', icon: 'monitor' as IconName }]),
+        ...(tvRemote() ? [] : [{ label: 'TV remote', to: '/watch/tv-remote', icon: 'monitor' as IconName }]),
         ...((data?.profiles.length ?? 0) > 1 ? [{ label: 'Switch profile', to: '/watch/who', icon: 'users' as IconName }] : []),
         ...(active?.main ? [{ label: 'Manage profiles', to: '/watch/profiles', icon: 'user' as IconName }] : []),
         { label: 'Settings', to: '/watch/settings', icon: 'sliders' },

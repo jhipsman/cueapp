@@ -8,7 +8,7 @@ import { useDocumentTitle } from '../documentTitle'
 import FreeElsewhere from './FreeElsewhere'
 import { Frames, PreviewVideo, useFrames, usePreview } from './living'
 import { Ambient, Card, epCode, minutes, playHref, Row, Scores, TitleMark, useExtras, useTint } from './parts'
-import { onTV } from './tv'
+import { tvRemote } from './tv'
 
 // A movie's or a show's page: the banner with ratings and Play, then for a
 // show its seasons and episodes, then cast and "More like this".
@@ -242,8 +242,8 @@ export default function TitlePage({ kind }: { kind: WatchKind }) {
 
         {title.collection && <Row title={title.collection.name} items={title.collection.parts} />}
 
-        {title.more.length > 0 && onTV() && <Row title="More like this" items={title.more.slice(0, 18)} />}
-        {title.more.length > 0 && !onTV() && (
+        {title.more.length > 0 && tvRemote() && <Row title="More like this" items={title.more.slice(0, 18)} />}
+        {title.more.length > 0 && !tvRemote() && (
           <>
             <h2>More like this</h2>
             <div className="wx-grid">
@@ -341,7 +341,7 @@ function PlayOnTV({ kind, tmdbId, season, episode }: { kind: WatchKind; tmdbId: 
   const navigate = useNavigate()
   const [picking, setPicking] = useState(false)
   const [error, setError] = useState('')
-  if (onTV() || !screens || screens.length === 0) return null
+  if (tvRemote() || !screens || screens.length === 0) return null
   const send = async (id: string) => {
     setError('')
     try {

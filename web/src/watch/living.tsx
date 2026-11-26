@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import Icon from '../components/Icon'
 import { api, type WatchCard } from '../api'
-import { onTV } from './tv'
+import { tvRemote } from './tv'
 
 // Bringing a title's artwork alive, on Home's banner, a title's page and a
 // card the mouse rests on: its own preview clip, silent, once the viewer has
@@ -88,7 +88,7 @@ export function setPreviewsOn(on: boolean) {
 }
 
 export function trailersAllowed(): boolean {
-  return previewsOn && matchMedia('(hover: hover) and (min-width: 900px)').matches && !matchMedia('(prefers-reduced-motion: reduce)').matches && !onTV()
+  return previewsOn && matchMedia('(hover: hover) and (min-width: 900px)').matches && !matchMedia('(prefers-reduced-motion: reduce)').matches && !tvRemote()
 }
 
 // usePreview: a title's own preview clip (cut on the server, kept),

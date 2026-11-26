@@ -1,0 +1,14 @@
+{
+  "id": "app.cue.tv",
+  "version": "1.0.0",
+  "vendor": "Cue",
+  "type": "web",
+  "main": "index.html",
+  "title": "Cue",
+  "icon": "icon.png",
+  "largeIcon": "largeIcon.png",
+  "splashBackground": "splash.png",
+  "bgColor": "#0b0b0c",
+  "resolution": "1920x1080",
+  "disableBackHistoryAPI": false
+}
