@@ -56,10 +56,15 @@ export default function AppShell() {
     api.mediaServerHomes().then(setHomes).catch(() => setHomes([]))
   }, [])
   useEffect(() => scrollToTop(), [location.pathname, location.search])
-  const { user } = useAuth()
+  const auth = useAuth()
+  const { user } = auth
   const admin = isAdmin(user)
   // Members only have their own profile and About under Settings.
-  const { on: moduleOn, streamingOnly } = useModules()
+  const modules = useModules()
+  const moduleOn = modules.on
+  // Until the modules have loaded, what sign-in already said (it knows before
+  // the first paint), so the menu doesn't draw every page and then shrink.
+  const streamingOnly = modules.loaded ? modules.streamingOnly : auth.streamingOnly
   const settingsGroups = settingsGroupsFor(admin, streamingOnly)
   // Streaming only: Watch and Settings; the library manager's pages stay hidden.
   const nav = (streamingOnly ? NAV.filter((n) => n.sec === 'settings') : NAV).map((n) =>
