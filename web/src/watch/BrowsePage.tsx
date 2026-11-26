@@ -36,6 +36,11 @@ export default function BrowsePage() {
           <b>Top 10</b>
           <span>By service, genre, decade and country</span>
         </Link>
+        <Link to="/watch/list" className="wx-browse-quick-tile mine">
+          <Icon name="bookmark" size={22} />
+          <b>My List</b>
+          <span>Everything you've saved</span>
+        </Link>
       </div>
       {!home && <p className="wx-dim">{problem || 'Loading…'}</p>}
       {home && home.services.length > 0 && (

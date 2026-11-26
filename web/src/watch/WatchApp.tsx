@@ -242,13 +242,13 @@ function PhoneTabs() {
         <Icon name="grid" size={20} />
         Home
       </NavLink>
-      <NavLink to="/watch/shows">
-        <Icon name="tv" size={20} />
-        Shows
-      </NavLink>
       <NavLink to="/watch/movies">
         <Icon name="film" size={20} />
         Movies
+      </NavLink>
+      <NavLink to="/watch/shows">
+        <Icon name="tv" size={20} />
+        Shows
       </NavLink>
       {liveTV && (
         <NavLink to="/watch/live">
@@ -256,9 +256,9 @@ function PhoneTabs() {
           Live TV
         </NavLink>
       )}
-      <NavLink to="/watch/list">
-        <Icon name="bookmark" size={20} />
-        My List
+      <NavLink to="/watch/browse">
+        <Icon name="compass" size={20} />
+        Browse
       </NavLink>
       <button className={more ? 'active' : ''} onClick={() => setMore((m) => !m)} aria-expanded={more}>
         <Icon name="menu" size={20} />
@@ -311,12 +311,11 @@ function TopBar() {
         <NavLink to="/watch" end>
           Home
         </NavLink>
-        <NavLink to="/watch/shows">Shows</NavLink>
+        {/* As on the TV apps: My List is in Browse, Sports leads Live TV (both also in More). */}
         <NavLink to="/watch/movies">Movies</NavLink>
-        <NavLink to="/watch/list">My List</NavLink>
-        <NavLink to="/watch/sports">Sports</NavLink>
-        <NavLink to="/watch/browse">Browse</NavLink>
+        <NavLink to="/watch/shows">Shows</NavLink>
         {liveTV && <NavLink to="/watch/live">Live TV</NavLink>}
+        <NavLink to="/watch/browse">Browse</NavLink>
         <span className="wx-more-wrap">
           <button className="wx-more" onClick={() => setMore((m) => !m)} aria-expanded={more}>
             More <Icon name="chevron-down" size={14} />

@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from 'react'
-import { api, type SportsAnswer, type SportsGame, type SportsTeam } from '../api'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import { api, type LiveChannel, type SportsAnswer, type SportsGame, type SportsTeam } from '../api'
+import ChannelLogo from './ChannelLogo'
 import Icon from '../components/Icon'
 
 // Live TV's hero: the game that matters most right now, as an event. Both
@@ -70,7 +71,15 @@ function Side({ team, align }: { team: SportsTeam; align: 'left' | 'right' }) {
 
 // onFind searches Live TV for a game no channel was matched to (lists
 // carry most games somewhere: an event channel, a backup).
-export default function LiveHero({ onWatch, onFind }: { onWatch: (channelId: string) => void; onFind: (query: string) => void }) {
+export default function LiveHero({
+  onWatch,
+  onFind,
+  fallback = null,
+}: {
+  onWatch: (channelId: string) => void
+  onFind: (query: string) => void
+  fallback?: ReactNode // shown when there are no games (no sports data, or a quiet hour)
+}) {
   const [data, setData] = useState<SportsAnswer | null>(null)
   const [pickedId, setPickedId] = useState<string | null>(null)
   const [paused, setPaused] = useState(false)
@@ -111,7 +120,7 @@ export default function LiveHero({ onWatch, onFind }: { onWatch: (channelId: str
     return () => window.clearTimeout(t)
   }, [games, index, paused])
 
-  if (games.length === 0) return null
+  if (games.length === 0) return <>{fallback}</>
   const g = games[index]
   const live = g.state === 'in'
   const countdown = until(g.start, now)
@@ -211,6 +220,78 @@ export default function LiveHero({ onWatch, onFind }: { onWatch: (channelId: str
                 </span>
               </span>
               {i === index && games.length > 1 && <span className={`wx-lh-card-bar${paused ? ' paused' : ''}`} key={g.id + String(paused)} />}
+            </button>
+          ))}
+        </aside>
+      )}
+    </section>
+  )
+}
+
+// ChannelSpotlight: the top of Live TV when there are no games: the biggest
+// channels on now, the hero showing one (its logo, what's on, how far in),
+// Featured beside it moving through them as the games do. Picking the hero
+// watches it.
+export function ChannelSpotlight({ channels, onWatch }: { channels: LiveChannel[]; onWatch: (channelId: string) => void }) {
+  const list = channels.filter((c) => c.now).slice(0, 4)
+  const [at, setAt] = useState(0)
+  const [paused, setPaused] = useState(false)
+  const [now, setNow] = useState(() => Date.now())
+  useEffect(() => {
+    const t = window.setInterval(() => setNow(Date.now()), 30_000)
+    return () => window.clearInterval(t)
+  }, [])
+  const index = list.length ? at % list.length : 0
+  useEffect(() => {
+    if (list.length < 2 || paused) return
+    const t = window.setTimeout(() => setAt((i) => i + 1), ROTATE_MS)
+    return () => window.clearTimeout(t)
+  }, [list.length, index, paused])
+  if (list.length === 0) return null
+  const c = list[index]
+  const n = c.now!
+  const s0 = Date.parse(n.start)
+  const e0 = Date.parse(n.stop)
+  const pct = Math.min(1, Math.max(0, (now - s0) / (e0 - s0)))
+  const left = Math.max(0, Math.round((e0 - now) / 60000))
+  return (
+    <section className="wx-lh" aria-label="On now" onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)}>
+      <button className="wx-lh-hero wx-lh-chan" key={c.id} onClick={() => onWatch(c.id)} title={`Watch ${c.name}`}>
+        <div className="wx-lh-chan-body">
+          <span className="wx-lh-chan-logo">
+            <ChannelLogo name={c.name} src={c.logo} />
+          </span>
+          <span className="wx-lh-kicker live">
+            <i /> ON NOW · {c.name}
+          </span>
+          <b className="wx-lh-chan-show">{n.title}</b>
+          {n.desc && <span className="wx-lh-chan-desc">{n.desc}</span>}
+          <span className="wx-lh-chan-bar">
+            <i style={{ width: `${pct * 100}%` }} />
+          </span>
+          <small className="wx-lh-when">{left > 0 ? `${left}m left` : 'Ending now'}</small>
+        </div>
+        <div className="wx-lh-foot">
+          <span className="wx-lh-on">
+            <Icon name="play" size={12} /> Watch {c.name}
+          </span>
+        </div>
+      </button>
+      {list.length > 1 && (
+        <aside className="wx-lh-featured" aria-label="Featured channels">
+          <div className="wx-lh-featured-head">
+            <b>On now</b>
+            <small>
+              {index + 1} / {list.length}
+            </small>
+          </div>
+          {list.map((f, i) => (
+            <button key={f.id} className={`wx-lh-card${i === index ? ' on' : ''}`} onClick={() => setAt(i)} aria-pressed={i === index}>
+              <small className="wx-lh-card-league">{f.name}</small>
+              <span className="wx-lh-card-row">
+                <span className="wx-lh-card-team">{f.now?.title}</span>
+              </span>
+              {i === index && <span className={`wx-lh-card-bar${paused ? ' paused' : ''}`} key={f.id + String(paused)} />}
             </button>
           ))}
         </aside>

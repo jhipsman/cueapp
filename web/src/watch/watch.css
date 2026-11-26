@@ -7789,9 +7789,9 @@ button.wx-switch.on:hover {
 /* ---- Browse: quick tiles, services, collections, film series. */
 .wx-browse-quick {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
   gap: 12px;
-  max-width: 760px;
+  max-width: 1040px;
 }
 .wx-browse-quick-tile {
   display: grid;
@@ -7823,6 +7823,9 @@ button.wx-switch.on:hover {
 }
 .wx-browse-quick-tile.top {
   background: linear-gradient(135deg, #d6409f, #5e1a47);
+}
+.wx-browse-quick-tile.mine {
+  background: linear-gradient(135deg, #52525b, #1c1c1f);
 }
 .wx-browse-section {
   margin-top: 28px;
@@ -8573,4 +8576,54 @@ button.wx-switch.on:hover {
   gap: 6px;
   color: var(--wx-dim);
   font-size: 0.88rem;
+}
+
+/* Live TV's top without games: a channel on now, in the hero's place. */
+.wx-lh-chan {
+  text-align: left;
+  background: radial-gradient(120% 140% at 0% 0%, rgba(255, 255, 255, 0.08), transparent 60%), linear-gradient(180deg, #1a1a1c, #0e0e10);
+}
+.wx-lh-chan-body {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 28px 32px 22px;
+}
+.wx-lh-chan-logo {
+  width: 96px;
+  height: 54px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+  margin-bottom: auto;
+}
+.wx-lh-chan-show {
+  font-size: clamp(1.5rem, 3vw, 2.4rem);
+  line-height: 1.1;
+}
+.wx-lh-chan-desc {
+  color: rgba(255, 255, 255, 0.75);
+  max-width: 60ch;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.wx-lh-chan-bar {
+  width: min(360px, 60%);
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.15);
+  overflow: hidden;
+}
+.wx-lh-chan-bar i {
+  display: block;
+  height: 100%;
+  background: #fff;
 }

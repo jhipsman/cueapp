@@ -3,7 +3,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { api, profileToken, type LiveChannel, type LiveChannels, type LivePlay, type LiveProgramme } from '../api'
 import Icon from '../components/Icon'
 import { useDocumentTitle } from '../documentTitle'
-import LiveHero from './LiveHero'
+import LiveHero, { ChannelSpotlight } from './LiveHero'
 import ChannelLogo from './ChannelLogo'
 import { recentChannels, rememberChannel, useLiveStream } from './liveStream'
 import { useReminders } from './reminders'
@@ -233,6 +233,12 @@ export default function LivePage() {
     )
   }, [list, findText, sort, cat])
   const visible = shownList.slice(0, shown)
+  // The biggest channels on now in the picked country (the server's rank),
+  // for the top of the page when there are no games.
+  const topNow = useMemo(
+    () => [...inPlace].filter((c) => c.now).sort((a, b) => (a.rank ?? 1) - (b.rank ?? 1) || (Number(a.num) || 1e9) - (Number(b.num) || 1e9)).slice(0, 4),
+    [inPlace],
+  )
 
   // A channel picked from elsewhere (the game up top, Sports, a search):
   // the list shows it, scrolled to and marked as playing. Its country and
@@ -533,6 +539,8 @@ export default function LivePage() {
       {/* Nothing playing: the game that matters most, as an event. */}
       {!ch && !picked && (
         <LiveHero
+          // No games: the biggest channels on now, in the same place.
+          fallback={<ChannelSpotlight channels={topNow} onWatch={(id) => setPlaying(id)} />}
           onWatch={(id) => setPlaying(id)}
           onFind={(q) => {
             // Every channel, every country: whatever's on with the team in it.
