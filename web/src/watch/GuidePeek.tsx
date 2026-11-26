@@ -1,4 +1,4 @@
-import { useSyncExternalStore, type ReactNode } from 'react'
+import { useEffect, useState, useSyncExternalStore, type ReactNode } from 'react'
 import type { LiveChannel, LiveProgramme } from '../api'
 import ChannelLogo from './ChannelLogo'
 
@@ -44,21 +44,29 @@ function dayOf(d: Date): string {
 export function PeekInfo({
   store,
   fallback,
-  first,
+  cycle,
   guideReady,
   now,
 }: {
   store: PeekStore
   // What shows when the pointer isn't on the guide: the channel playing.
   fallback: ReactNode
-  // Nothing playing either: this channel (the top one on now).
-  first?: LiveChannel
+  // Nothing playing either: the big channels on now, taking turns.
+  cycle: LiveChannel[]
   guideReady?: boolean
   // The page's clock (it ticks), for how far in.
   now: number
 }) {
   const peek = useSyncExternalStore(store.subscribe, store.get)
+  const [turn, setTurn] = useState(0)
+  const idle = !peek && !fallback && cycle.length > 1
+  useEffect(() => {
+    if (!idle) return
+    const t = window.setInterval(() => setTurn((i) => i + 1), 8000)
+    return () => window.clearInterval(t)
+  }, [idle])
   if (!peek && fallback) return <>{fallback}</>
+  const first = cycle.length ? cycle[turn % cycle.length] : undefined
   const p = peek ?? (first ? { channel: first } : null)
   if (!p) return null
   const c = p.channel
@@ -69,7 +77,7 @@ export function PeekInfo({
   const past = !!show && e <= now
   const pct = onNow ? (now - s) / (e - s) : 0
   return (
-    <div className="wx-peek">
+    <div className="wx-peek" key={c.id + (show?.start ?? '')}>
       <div className="wx-peek-chan">
         <span className="wx-peek-logo">
           <ChannelLogo name={c.name} src={c.logo} />
