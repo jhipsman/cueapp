@@ -1522,6 +1522,29 @@ html.watch-mode:has(.wx-live-preview.is-full) body {
   background: var(--wx-accent);
   box-shadow: 0 0 0 3px rgba(var(--wx-accent-rgb), 0.3);
 }
+/* Kept live TV: LIVE goes back to now; grey while behind. */
+.vx-live-btn {
+  background: none;
+  border: 0;
+  color: inherit;
+  padding: 6px 10px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-family: inherit;
+}
+.vx-live-btn:disabled {
+  cursor: default;
+}
+.vx-live-btn.behind {
+  background: rgba(255, 255, 255, 0.14);
+}
+.vx-live-btn.behind i {
+  background: rgba(255, 255, 255, 0.55);
+  box-shadow: none;
+}
+.vx-live-btn.behind:hover {
+  background: rgba(255, 255, 255, 0.24);
+}
 .vx-pop-wrap {
   position: relative;
 }
@@ -8910,4 +8933,453 @@ button.wx-switch.on:hover {
 }
 .wx-live .wx-live-catalog .wx-live-group select option {
   color: #0b0b0c;
+}
+
+/* A channel number being typed (Live TV): top left, over everything. */
+.wx-live-typed {
+  position: fixed;
+  z-index: 60;
+  top: 28px;
+  left: 32px;
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  padding: 12px 22px;
+  border-radius: 14px;
+  background: rgba(20, 21, 25, 0.92);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+}
+.wx-live-typed b {
+  font-size: 2rem;
+}
+.wx-live-typed span {
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+/* Live TV: For you and Tonight, rows of small cards above the channels. */
+.wx-picks {
+  display: grid;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+.wx-picks h3 {
+  margin: 0 0 8px;
+  font-size: 1rem;
+}
+.wx-picks-row {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding: 2px 2px 6px;
+  scrollbar-width: none;
+}
+.wx-pick {
+  flex: none;
+  width: 250px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px 8px 8px;
+  border: 0;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--wx-text);
+  text-align: left;
+  cursor: pointer;
+}
+.wx-pick:hover,
+.wx-pick:focus-visible {
+  background: rgba(255, 255, 255, 0.14);
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.85);
+  outline: none;
+}
+.wx-pick-logo {
+  flex: none;
+  width: 56px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+.wx-pick-logo img {
+  max-width: 50px;
+  max-height: 30px;
+  object-fit: contain;
+}
+.wx-pick-text {
+  min-width: 0;
+  display: grid;
+}
+.wx-pick-text small {
+  color: var(--wx-dim);
+  font-size: 0.75rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.wx-pick-text b {
+  font-size: 0.9rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* A channel's tools (rename, lists, guide). */
+.wx-chan-tools {
+  margin-top: 10px;
+}
+.wx-chan-tools-row,
+.wx-chan-tools-panel,
+.wx-chan-tools-panel form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.wx-chan-tools-panel {
+  margin-top: 10px;
+}
+.wx-chan-tools-panel.column {
+  flex-direction: column;
+  align-items: stretch;
+}
+.wx-chan-tools input {
+  padding: 7px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(0, 0, 0, 0.3);
+  color: var(--wx-text);
+  font: inherit;
+  font-size: 0.85rem;
+  min-width: 200px;
+}
+.wx-guide-options {
+  display: grid;
+  gap: 4px;
+  max-height: 220px;
+  overflow-y: auto;
+}
+.wx-guide-option {
+  display: grid;
+  text-align: left;
+  padding: 8px 12px;
+  border: 0;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--wx-text);
+  cursor: pointer;
+}
+.wx-guide-option:hover,
+.wx-guide-option:focus-visible {
+  background: rgba(255, 255, 255, 0.14);
+  outline: none;
+}
+.wx-guide-option small {
+  color: var(--wx-dim);
+}
+
+/* One of your lists: Edit, and the editor. */
+.wx-list-bar {
+  margin-bottom: 12px;
+}
+.wx-list-editor {
+  margin-bottom: 18px;
+  padding: 14px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.04);
+}
+.wx-list-editor-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.wx-list-editor-head input {
+  padding: 7px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(0, 0, 0, 0.3);
+  color: var(--wx-text);
+  font: inherit;
+}
+.wx-list-editor ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 6px;
+}
+.wx-list-editor li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.wx-list-editor-logo {
+  width: 48px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+.wx-list-editor-logo img {
+  max-width: 44px;
+  max-height: 26px;
+}
+.wx-list-editor-name {
+  flex: 1;
+  font-weight: 600;
+}
+.wx-guide-day select {
+  height: 34px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--wx-text);
+  font: inherit;
+  font-weight: 700;
+}
+.wx-guide-day select option {
+  color: #0b0b0c;
+}
+.wx-picks section {
+  margin: 0;
+  padding: 0;
+}
+.wx-picks > section + section {
+  margin-top: 0;
+}
+
+/* Multiview: two or four channels at once, filling the screen; the one
+   with the sound has its border lit. */
+.wx-live-multi {
+  right: 56px;
+}
+.wx-mv {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  background: #000;
+  color: #fff;
+}
+.wx-mv-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 10px 16px;
+  background: #0b0c0f;
+}
+.wx-mv-bar b {
+  font-size: 1.05rem;
+}
+.wx-mv-sizes {
+  display: flex;
+  gap: 6px;
+}
+.wx-mv-grid {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  gap: 4px;
+  padding: 4px;
+}
+.wx-mv-grid.n2 {
+  grid-template-columns: 1fr 1fr;
+  align-content: center;
+}
+.wx-mv-grid.n2 .wx-mv-tile {
+  aspect-ratio: 16 / 9;
+}
+.wx-mv-grid.n4 {
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+}
+@media (max-width: 700px) {
+  .wx-mv-grid.n2,
+  .wx-mv-grid.n4 {
+    grid-template-columns: 1fr;
+    grid-template-rows: none;
+    overflow-y: auto;
+    align-content: start;
+  }
+  .wx-mv-grid .wx-mv-tile {
+    aspect-ratio: 16 / 9;
+  }
+}
+.wx-mv-tile {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  border-radius: 8px;
+  background: #111216;
+  outline: 3px solid transparent;
+  outline-offset: -3px;
+  cursor: pointer;
+  transition: outline-color 0.15s;
+}
+.wx-mv-tile.heard {
+  outline-color: var(--wx-accent);
+}
+.wx-mv-tile video {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+  background: #000;
+}
+.wx-mv-tile.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 2px dashed rgba(255, 255, 255, 0.18);
+  color: rgba(255, 255, 255, 0.7);
+  font: inherit;
+}
+.wx-mv-tile.empty:hover {
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.4);
+}
+.wx-mv-note {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.75);
+}
+.wx-mv-note.problem {
+  color: #ffb4b4;
+}
+.wx-mv-label {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 24px 12px 10px;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.8));
+  pointer-events: none;
+}
+.wx-mv-logo {
+  flex: none;
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+}
+.wx-mv-logo img {
+  max-width: 100%;
+  max-height: 100%;
+}
+.wx-mv-text {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+}
+.wx-mv-text b,
+.wx-mv-text small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.wx-mv-text small {
+  color: rgba(255, 255, 255, 0.72);
+}
+.wx-mv-sound {
+  margin-left: auto;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--wx-accent);
+  color: #000;
+}
+.wx-mv-tools {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: flex;
+  gap: 6px;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.wx-mv-tile:hover .wx-mv-tools,
+.wx-mv-tools:focus-within {
+  opacity: 1;
+}
+.wx-mv-tools button {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.65);
+  color: #fff;
+  cursor: pointer;
+}
+.wx-mv-picker {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.6);
+}
+.wx-mv-picker-box {
+  width: min(520px, 100%);
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  border-radius: 14px;
+  background: #16171b;
+}
+.wx-mv-picker-box input {
+  width: 100%;
+}
+.wx-mv-options {
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+.wx-mv-options button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.wx-mv-options button:hover,
+.wx-mv-options button:focus {
+  background: rgba(255, 255, 255, 0.08);
+}
+.wx-mv-sizes [aria-pressed='true'] {
+  background: var(--wx-accent);
+  color: #000;
+}
+.wx-mv-note.problem {
+  font-size: 0.85rem;
 }

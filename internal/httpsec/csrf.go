@@ -58,6 +58,12 @@ func (p *Proxies) crossSite(r *http.Request, extra []string) bool {
 	if r.Header.Get("X-API-Key") != "" {
 		return false
 	}
+	// An app's request (the LG TV app) is signed in by its X-Cue-Session
+	// header alone, never a cookie (auth.SessionToken), so another site
+	// can't make one count: it doesn't have the session.
+	if r.Header.Get("X-Cue-App") != "" {
+		return false
+	}
 	site := strings.ToLower(r.Header.Get("Sec-Fetch-Site"))
 	if site == "same-origin" || site == "none" {
 		return false

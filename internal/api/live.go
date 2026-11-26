@@ -27,6 +27,7 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"maps"
 	"net/http"
 	"net/url"
 	"os"
@@ -37,6 +38,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/jhipsman/cueapp/internal/auth"
 	"github.com/jhipsman/cueapp/internal/chancat"
 	"github.com/jhipsman/cueapp/internal/iptv"
 	"github.com/jhipsman/cueapp/internal/settings"
@@ -44,10 +46,11 @@ import (
 )
 
 const (
-	liveListFor    = 6 * time.Hour  // how long a channel list is used
-	liveGuideFor   = 4 * time.Hour  // how often the guide reloads
-	liveGuideBack  = 2 * time.Hour  // guide kept from this long ago (channels with catch-up: their days, up to liveCatchupMax)...
-	liveGuideAhead = 36 * time.Hour // ...to this far ahead
+	liveListFor    = 6 * time.Hour      // how long a channel list is used
+	liveGuideFor   = 4 * time.Hour      // how often the guide reloads
+	liveGuideBack  = 2 * time.Hour      // guide kept from this long ago (channels with catch-up: their days, up to liveCatchupMax)...
+	liveGuideAhead = 7 * 24 * time.Hour // ...to a week ahead
+	liveDescAhead  = 36 * time.Hour     // shows' descriptions kept this far ahead
 	liveSealPrefix = "cue-live:"
 	liveCatchupMax = 3 * 24 * time.Hour // the furthest back the guide keeps, for catch-up
 	liveGuideMax   = 300                // channels in one guide answer
@@ -70,6 +73,13 @@ type liveState struct {
 	guideAt      time.Time
 	guideLoading bool
 	guideErr     string
+	// More guides (live_guide_sources.go): the provider's own guide id of
+	// each channel, the extra sources' channels matched by name, every
+	// guide channel's name (for matching by hand), and how each source went.
+	providerEPG map[string]string
+	autoGuide   map[string]string
+	guideNames  map[string]string
+	sourceInfo  []guideSourceInfo
 
 	hc *http.Client // for the provider (tests swap it)
 
@@ -174,6 +184,7 @@ func (s *Server) liveChannels(ctx context.Context) ([]iptv.Category, []iptv.Chan
 	if stErr == nil {
 		s.live.status = st
 	}
+	s.applyGuideIDsLocked(chans)
 	s.live.byID = make(map[string]iptv.Channel, len(chans))
 	for _, ch := range chans {
 		s.live.byID[ch.ID] = ch
@@ -204,8 +215,8 @@ func (s *Server) liveGuideLocked() (iptv.Guide, bool) {
 		wanted := map[string]bool{}
 		back := map[string]time.Duration{} // per guide id: how far back to keep
 		for _, ch := range s.live.chans {
-			if ch.EPGID == "" {
-				continue
+			if ch.EPGID == "" || isSourceKey(ch.EPGID) {
+				continue // (an extra source's: loadExtraGuides)
 			}
 			wanted[ch.EPGID] = true
 			keep := liveGuideBack
@@ -226,7 +237,19 @@ func (s *Server) loadLiveGuide(c *iptv.Client, wanted map[string]bool, back map[
 	for _, d := range back {
 		furthest = max(furthest, d)
 	}
-	g, err := c.LoadGuide(context.Background(), wanted, now.Add(-furthest), now.Add(liveGuideAhead))
+	// A week ahead; descriptions for the next day and a half (the rest of a
+	// week of descriptions would take a lot of memory for little).
+	names := map[string]string{}
+	g, err := c.LoadGuideWith(context.Background(), iptv.GuideRead{
+		Keep:      func(id string) bool { return wanted[id] },
+		OnChannel: func(id string, n []string) { names[id] = firstName(n) },
+		From:      now.Add(-furthest), To: now.Add(liveGuideAhead), DescUntil: now.Add(liveDescAhead),
+	})
+	extra, auto, info := s.loadExtraGuides(now)
+	maps.Copy(g, extra)
+	for k, v := range info.names {
+		names[k] = v
+	}
 	// Past shows are kept only for channels that can play them again.
 	for id, list := range g {
 		from := now.Add(-back[id])
@@ -249,6 +272,8 @@ func (s *Server) loadLiveGuide(c *iptv.Client, wanted map[string]bool, back map[
 		return
 	}
 	s.live.guide, s.live.guideErr = g, ""
+	s.live.guideNames, s.live.sourceInfo = names, info.sources
+	s.setAutoGuideLocked(auto)
 	slog.Info("live tv: guide loaded", "channels", len(g), "took", time.Since(started).Round(time.Millisecond))
 }
 
@@ -275,6 +300,9 @@ type liveChannel struct {
 	Divider bool   `json:"divider,omitempty"`
 	Raw     string `json:"raw,omitempty"`  // the provider's own name
 	Rank    int    `json:"rank,omitempty"` // 0 the big networks … 4 adult (chancat.Rank): the default order
+	// Language: "English", "Spanish"… (chancat); Renamed: this profile gave it its name.
+	Language string `json:"language,omitempty"`
+	Renamed  bool   `json:"renamed,omitempty"`
 }
 
 // GET /api/live/channels: every channel with what's on now and next.
@@ -294,10 +322,13 @@ func (s *Server) handleLiveChannels(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	favs, _ := s.WatchRepo.LiveFavorites(pid)
+	names, _ := s.WatchRepo.LiveNames(pid)
+	lists, _ := s.WatchRepo.LiveLists(pid)
 	guide, loading := s.liveGuide()
 	now := time.Now()
 	cat := s.liveCatalogFor(cats, chans)
 	out := make([]liveChannel, 0, len(chans))
+	langCount := map[string]int{}
 	for _, ch := range chans {
 		lc := liveChannel{ID: ch.ID, Num: ch.Num, Name: ch.Name, Category: ch.Category, Favorite: favs[ch.ID], Catchup: ch.CatchupDays}
 		in := cat.info[ch.ID]
@@ -307,6 +338,16 @@ func (s *Server) handleLiveChannels(w http.ResponseWriter, r *http.Request) {
 		}
 		lc.CopyOf, lc.Spares = cat.mainOf[ch.ID], len(cat.spares[ch.ID])
 		lc.Rank = chancat.Rank(in)
+		lc.Language = in.Language
+		if in.Language != "" && !in.Divider && lc.CopyOf == "" {
+			langCount[in.Language]++
+		}
+		if n := names[ch.ID]; n != "" { // this profile's own name for it
+			if lc.Raw == "" {
+				lc.Raw = ch.Name
+			}
+			lc.Name, lc.Renamed = n, true
+		}
 		if ch.Logo != "" {
 			lc.Logo = "/api/live/logo/" + url.PathEscape(ch.ID)
 		}
@@ -334,6 +375,8 @@ func (s *Server) handleLiveChannels(w http.ResponseWriter, r *http.Request) {
 		"channelCount": cat.real,        // one of each: every channel the lists can show
 		"copies":       len(cat.mainOf), // folded into their channel (its backups)
 		"topics":       catalogTopics(),
+		"languages":    languageCounts(langCount),
+		"lists":        lists,
 		"channels":     out,
 		"guideReady":   guide != nil,
 		"guideLoading": loading,
@@ -425,6 +468,9 @@ var errLiveNoChannel = errors.New("no such channel")
 // GET /api/live/play/{id}: where the channel plays. Browsers get Cue's
 // address for it; the TV app also gets the provider's own.
 func (s *Server) handleLivePlay(w http.ResponseWriter, r *http.Request) {
+	if p, ok := s.activeProfile(r); ok { // for Live TV's For you
+		_ = s.WatchRepo.NoteLiveWatch(p.ID, r.PathValue("id"), time.Now())
+	}
 	ch, c, err := s.liveChannelByID(r.Context(), r.PathValue("id"))
 	switch {
 	case errors.Is(err, errLiveNotSet):
@@ -467,6 +513,12 @@ func (s *Server) handleLivePlay(w http.ResponseWriter, r *http.Request) {
 	if ch.Logo != "" {
 		out["logo"] = "/api/live/logo/" + url.PathEscape(ch.ID)
 	}
+	if s.timeshiftOn() {
+		// Pausing and going back: the player asks here for the server's
+		// copy of the channel (live_timeshift.go), and plays the usual
+		// addresses when that doesn't answer.
+		out["timeshift"] = "/api/live/timeshift/" + url.PathEscape(ch.ID)
+	}
 	if strings.Contains(r.UserAgent(), "CueTV/") {
 		// The TV plays MPEG-TS straight from the provider, which most
 		// Xtream providers serve best; HLS when the account only has that.
@@ -488,6 +540,17 @@ func (s *Server) handleLivePlay(w http.ResponseWriter, r *http.Request) {
 	} else if strings.Contains(r.UserAgent(), "CueAppleTV/") {
 		// The Apple TV app's player plays HLS, not a bare MPEG-TS stream.
 		out["direct"] = c.StreamURL(ch.ID, "m3u8")
+	} else if r.Header.Get(auth.AppHeader) == "webos" {
+		// The LG app's player (the TV's own) plays HLS from the provider;
+		// Cue's /api/live/hls needs a cookie it doesn't have.
+		out["direct"] = c.StreamURL(ch.ID, "m3u8")
+		var more []string
+		for _, id := range spares {
+			more = append(more, c.StreamURL(id, "m3u8"))
+		}
+		if len(more) > 0 {
+			out["directAlts"] = more
+		}
 	}
 	writeJSON(w, http.StatusOK, out)
 }
@@ -822,6 +885,9 @@ func (s *Server) handleGetIPTV(w http.ResponseWriter, r *http.Request) {
 		out["expires"] = s.live.status.Expires
 	}
 	s.live.mu.Unlock()
+	// Pausing live TV: how much the server keeps, whether it can (ffmpeg),
+	// and the channels being kept now.
+	out["timeshift"] = map[string]any{"minutes": s.timeshiftMinutes(), "available": canConvert(), "running": len(s.timeshiftRunning())}
 	writeJSON(w, http.StatusOK, out)
 }
 
@@ -919,12 +985,42 @@ func searchWords(q string) []string {
 
 func matchesAll(text string, words []string) bool {
 	text = strings.ToLower(text)
+	var tokens []string // read only when a word isn't simply in the text
 	for _, w := range words {
-		if !strings.Contains(text, w) {
+		if strings.Contains(text, w) {
+			continue
+		}
+		if tokens == nil {
+			tokens = searchWords(text)
+		}
+		if !nearWord(w, tokens) {
 			return false
 		}
 	}
 	return len(words) > 0
+}
+
+// nearWord says a searched word is one of tokens give or take a typo: one
+// letter wrong, missing, extra or swapped (two for long words). Short
+// words must be spelled right ("cnn" isn't "cbs").
+func nearWord(w string, tokens []string) bool {
+	n := len([]rune(w))
+	if n < 4 {
+		return false
+	}
+	most := 1
+	if n >= 8 {
+		most = 2
+	}
+	for _, t := range tokens {
+		if d := len([]rune(t)) - n; d > most || -d > most {
+			continue
+		}
+		if editDistance(w, t, most) <= most {
+			return true
+		}
+	}
+	return false
 }
 
 // GET /api/live/search?q=: what's on now and coming up whose title (or
@@ -1081,6 +1177,12 @@ func (s *Server) handleLiveCatchup(w http.ResponseWriter, r *http.Request) {
 	out := map[string]any{"id": ch.ID, "num": ch.Num, "name": ch.Name, "url": alts[0]["url"], "alts": alts, "catchup": true}
 	if ch.Logo != "" {
 		out["logo"] = "/api/live/logo/" + url.PathEscape(ch.ID)
+	}
+	if s.timeshiftOn() {
+		// Pausing and going back: the player asks here for the server's
+		// copy of the channel (live_timeshift.go), and plays the usual
+		// addresses when that doesn't answer.
+		out["timeshift"] = "/api/live/timeshift/" + url.PathEscape(ch.ID)
 	}
 	if strings.Contains(r.UserAgent(), "CueTV/") {
 		format := "ts"

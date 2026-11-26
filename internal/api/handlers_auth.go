@@ -199,6 +199,11 @@ func (s *Server) startSession(w http.ResponseWriter, r *http.Request, userID int
 		writeError(w, http.StatusInternalServerError, "Couldn't sign you in. Try again.")
 		return
 	}
+	if auth.FromApp(r) {
+		// An app keeps the session itself: handed over in a header, no cookie.
+		w.Header().Set(auth.SessionHeader, token)
+		return
+	}
 	auth.SetSessionCookie(w, token, expiresAt, s.isHTTPS(r))
 }
 

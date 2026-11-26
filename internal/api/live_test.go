@@ -337,7 +337,7 @@ func TestLiveCatchupAndReminders(t *testing.T) {
 
 	// Reminders.
 	later := time.Now().Add(3 * time.Hour).UTC().Truncate(time.Second)
-	body := fmt.Sprintf(`{"channelId":"10","start":%q,"stop":%q,"title":"Chiefs vs Bills"}`, later.Format(time.RFC3339), later.Add(3*time.Hour).Format(time.RFC3339))
+	body := fmt.Sprintf(`{"channelId":"10","start":%q,"stop":%q,"title":"Chiefs vs Bills","switch":true}`, later.Format(time.RFC3339), later.Add(3*time.Hour).Format(time.RFC3339))
 	if w := call("PUT", "/", body, "", s.handleAddLiveReminder); w.Code != http.StatusNoContent {
 		t.Fatalf("add reminder: %d %s", w.Code, w.Body)
 	}
@@ -345,9 +345,10 @@ func TestLiveCatchupAndReminders(t *testing.T) {
 		ChannelID string `json:"channelId"`
 		Title     string
 		Channel   string
+		Switch    bool
 	}
 	_ = json.Unmarshal(call("GET", "/", "", "", s.handleLiveReminders).Body.Bytes(), &rems)
-	if len(rems) != 1 || rems[0].Title != "Chiefs vs Bills" || rems[0].Channel != "News 24" {
+	if len(rems) != 1 || rems[0].Title != "Chiefs vs Bills" || rems[0].Channel != "News 24" || !rems[0].Switch {
 		t.Fatalf("reminders: %+v", rems)
 	}
 	if w := call("DELETE", "/?channel=10&start="+url.QueryEscape(later.Format(time.RFC3339)), "", "", s.handleRemoveLiveReminder); w.Code != http.StatusNoContent {
@@ -356,5 +357,24 @@ func TestLiveCatchupAndReminders(t *testing.T) {
 	_ = json.Unmarshal(call("GET", "/", "", "", s.handleLiveReminders).Body.Bytes(), &rems)
 	if len(rems) != 0 {
 		t.Fatalf("after removing: %+v", rems)
+	}
+}
+
+func TestMatchesAllForgivesTypos(t *testing.T) {
+	for _, c := range []struct {
+		text, q string
+		want    bool
+	}{
+		{"The Simpsons", "simpsns", true},
+		{"The Simpsons", "smipsons", true},
+		{"Kansas City Chiefs at Buffalo Bills", "cheifs bils", true},
+		{"Kansas City Chiefs at Buffalo Bills", "chiefs ravens", false},
+		{"Monday Night Football", "footbal", true},
+		{"CNN Newsroom", "cbs", false},
+		{"Champions League Highlights", "champoins leage", true},
+	} {
+		if got := matchesAll(c.text, searchWords(c.q)); got != c.want {
+			t.Errorf("%q in %q: %v, want %v", c.q, c.text, got, c.want)
+		}
 	}
 }

@@ -271,6 +271,20 @@ class CueApi(ctx: Context, val server: String) {
 
     suspend fun channels(): LiveChannels = LiveChannels.from(obj("/api/live/channels"))
 
+    suspend fun livePicks(): LivePicks {
+        val tz = java.util.TimeZone.getDefault().getOffset(System.currentTimeMillis()) / 60_000
+        val o = obj("/api/live/picks?tz=$tz")
+        fun hits(k: String) = (o.optJSONArray(k) ?: JSONArray()).let { a -> (0 until a.length()).mapNotNull { a.optJSONObject(it) } }
+        return LivePicks(
+            hits("forYou").map { it.optJSONObject("channel")?.optString("id").orEmpty() }.filter { it.isNotEmpty() },
+            hits("tonight").mapNotNull { h ->
+                val id = h.optJSONObject("channel")?.optString("id").orEmpty()
+                val start = Show.parseTime(h.optJSONObject("show")?.optString("start").orEmpty())
+                if (id.isEmpty()) null else id to start
+            },
+        )
+    }
+
     /** The guide for these channels, from [fromMs] for [hours]: each channel's shows in time order (none when the provider has no guide for it). */
     suspend fun guide(ids: List<String>, fromMs: Long, hours: Int): Map<String, List<GuideShow>> {
         if (ids.isEmpty()) return emptyMap()
@@ -554,10 +568,18 @@ data class Channel(
     }
 }
 
+data class LiveList(val id: Long, val name: String, val items: List<String>)
+
+// Live TV's front: For you (the channels watched most) and Tonight (the big
+// shows this evening), as channel ids with, for Tonight, when each starts.
+data class LivePicks(val forYou: List<String>, val tonight: List<Pair<String, Long>>)
+
 data class LiveChannels(
     val configured: Boolean, val groups: List<Pair<String, String>>, val channels: List<Channel>,
     // The catalog's countries (code, name, count) and topics (key, name), and the country to start on.
     val countries: List<Triple<String, String, Int>> = emptyList(), val topics: List<Pair<String, String>> = emptyList(), val home: String = "",
+    // This profile's own channel lists (made on the web or a phone), in their order.
+    val lists: List<LiveList> = emptyList(),
 ) {
     companion object {
         fun from(o: JSONObject): LiveChannels {
@@ -572,6 +594,12 @@ data class LiveChannels(
                 (0 until co.length()).map { co.getJSONObject(it).let { x -> Triple(x.optString("code"), x.optString("name"), x.optInt("count")) } },
                 (0 until to.length()).map { to.getJSONObject(it).let { x -> x.optString("key") to x.optString("name") } },
                 o.optString("homeCountry"),
+                (o.optJSONArray("lists") ?: JSONArray()).let { a ->
+                    (0 until a.length()).mapNotNull { a.optJSONObject(it) }.map { x ->
+                        val items = x.optJSONArray("items") ?: JSONArray()
+                        LiveList(x.optLong("id"), x.optString("name"), (0 until items.length()).map { items.optString(it) })
+                    }
+                },
             )
         }
     }

@@ -4,6 +4,7 @@ import { api, profileToken, type LiveChannel, type LiveChannels, type LivePlay, 
 import Icon from '../components/Icon'
 import { useDocumentTitle } from '../documentTitle'
 import LiveHero, { ChannelSpotlight } from './LiveHero'
+import { ChannelTools, ListEditor, LivePicks } from './LiveTools'
 import ChannelLogo from './ChannelLogo'
 import { PeekInfo, peekStore } from './GuidePeek'
 import { recentChannels, rememberChannel, useLiveStream } from './liveStream'
@@ -15,6 +16,7 @@ import { useProfiles } from './profiles'
 import { savedTheme } from './theme'
 import { onTV, type TVPlayerResult, tvRemote } from './tv'
 import VideoControls from './VideoControls'
+import Multiview from './Multiview'
 
 // How the guide is drawn: pixels per minute, how far ahead it reaches, and
 // how many channels are drawn at a time (more as you scroll).
@@ -33,6 +35,12 @@ export function channelsIn(data: LiveChannels | null, cat: string): LiveChannel[
     return recentChannels()
       .map((id) => byId.get(id))
       .filter((c): c is LiveChannel => !!c)
+  }
+  // One of your own lists, in its order.
+  if (cat.startsWith('list:')) {
+    const l = data?.lists?.find((x) => `list:${x.id}` === cat)
+    const byId = new Map(all.map((c) => [c.id, c]))
+    return (l?.items ?? []).map((id) => byId.get(id)).filter((c): c is LiveChannel => !!c)
   }
   // Everything else: channels only, one of each (no dividers, no copies).
   const real = all.filter((c) => !c.divider && !c.copyOf)
@@ -61,6 +69,10 @@ export function liveHref(id: string, cat: string): string {
   return `/watch/live?cat=${encodeURIComponent(cat)}&ch=${encodeURIComponent(id)}&full=1`
 }
 
+// This page's own id with the server's copies of channels (for pausing):
+// changing channel here stops the copy no one else is watching.
+const viewer = Math.random().toString(36).slice(2) + Date.now().toString(36)
+
 const hhmm = (d: Date | string) => new Date(d).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
 
 // when says the day and time of a show: "Today 7:30 PM", "Tomorrow 1:00 PM".
@@ -69,6 +81,13 @@ function when(iso: string): string {
   const days = Math.round((new Date(d).setHours(0, 0, 0, 0) - new Date().setHours(0, 0, 0, 0)) / 86_400_000)
   const day = days === 0 ? 'Today' : days === 1 ? 'Tomorrow' : days === -1 ? 'Yesterday' : d.toLocaleDateString([], { weekday: 'long' })
   return `${day} ${hhmm(d)}`
+}
+
+// dayStart is midnight of t's day (local time).
+function dayStart(t: number): number {
+  const d = new Date(t)
+  d.setHours(0, 0, 0, 0)
+  return d.getTime()
 }
 
 // canCatchup says a show that has started can be played from its start: the
@@ -115,6 +134,14 @@ export default function LivePage() {
   // All channels sorts by Cue's catalog: a country ("" is every country) and a topic ("" is all).
   const [country, setCountryState] = useState<string | null>(() => stored('cue-live-country'))
   const [topic, setTopic] = useState('')
+  // A language ("" is any), kept per device.
+  const [lang, setLangState] = useState(() => stored('cue-live-lang') ?? '')
+  const setLang = (l: string) => {
+    setLangState(l)
+    setTopic('')
+    store('cue-live-lang', l)
+  }
+  const [editingList, setEditingList] = useState(false)
   const setCountry = (c: string) => {
     setCountryState(c)
     setTopic('')
@@ -177,6 +204,9 @@ export default function LivePage() {
   // On a TV, while the app's own player has the channel, the window rests
   // (one connection at a time).
   const [onTVPlayer, setOnTVPlayer] = useState(false)
+  // Multiview: the channels in it (null: closed). The window's own player
+  // rests meanwhile (each channel is a connection to the provider).
+  const [multi, setMulti] = useState<string[] | null>(null)
   const nativeNext = useRef(false)
 
   // The guide starts on the half hour just gone, and moves on with it.
@@ -189,6 +219,10 @@ export default function LivePage() {
   }, [Math.floor(now / 1_800_000), shift])
   const end = start + HOURS * 3_600_000
   const x = (t: number) => ((Math.max(t, start) - start) / 60_000) * PPM
+  // A day of the week in the guide: today is now; another day opens at its
+  // evening (6 pm), in steps of the guide's three hours.
+  const base = start - shift * 3 * 3_600_000
+  const shiftToDay = (d: number) => (d === 0 ? 0 : Math.round((dayStart(Date.now()) + d * 86_400_000 + 18 * 3_600_000 - base) / (3 * 3_600_000)))
 
   const load = useCallback(() => {
     api
@@ -217,7 +251,11 @@ export default function LivePage() {
   const cat = params.get('cat') ?? (favCount > 0 ? 'fav' : 'all')
   const place = country ?? data?.homeCountry ?? ''
   const inGroup = useMemo(() => channelsIn(data, cat), [data, cat])
-  const inPlace = useMemo(() => (cat === 'all' && place ? inGroup.filter((c) => c.country === place || !c.country) : inGroup), [inGroup, cat, place])
+  const inPlace = useMemo(() => {
+    let l = cat === 'all' && place ? inGroup.filter((c) => c.country === place || !c.country) : inGroup
+    if (cat === 'all' && lang) l = l.filter((c) => c.language === lang || !c.language)
+    return l
+  }, [inGroup, cat, place, lang])
   // The topics this country has, for the chips.
   const topicCounts = useMemo(() => {
     const m = new Map<string, number>()
@@ -231,7 +269,7 @@ export default function LivePage() {
     const found = findText
       ? list.filter((c) => c.name.toLowerCase().includes(findText) || (c.now?.title ?? '').toLowerCase().includes(findText))
       : list
-    if (cat === 'recent') return found
+    if (cat === 'recent' || cat.startsWith('list:')) return found // their own order
     const byNum = (a: LiveChannel, b: LiveChannel) => (Number(a.num) || 1e9) - (Number(b.num) || 1e9)
     return [...found].sort((a, b) =>
       sort === 'num' ? byNum(a, b) : sort === 'top' ? (a.rank ?? 1) - (b.rank ?? 1) || Number(!a.now) - Number(!b.now) || byNum(a, b) : a.name.localeCompare(b.name),
@@ -305,9 +343,47 @@ export default function LivePage() {
     }
   }, [ch, catchup, at, atEnd, cuOffset])
 
+  // Pausing and going back: the server's copy of the channel, when it
+  // keeps one ('' while asking, null when it doesn't: the usual addresses).
+  const [shiftUrl, setShiftUrl] = useState<string | null>(null)
+  useEffect(() => {
+    setShiftUrl(null)
+    if (!play?.timeshift || play.catchup || onTVPlayer) return
+    let current = true
+    setShiftUrl('')
+    api
+      .liveTimeshift(play.timeshift, viewer)
+      .then((r) => current && setShiftUrl(r.url))
+      .catch(() => current && setShiftUrl(null))
+    return () => {
+      current = false
+    }
+  }, [play, onTVPlayer])
+  // While paused the player may not fetch anything: a word now and then
+  // keeps the copy going. Leaving Live TV stops it.
+  useEffect(() => {
+    if (!shiftUrl) return
+    const t = window.setInterval(() => void fetch(shiftUrl, { cache: 'no-store' }).catch(() => undefined), 30_000)
+    return () => window.clearInterval(t)
+  }, [shiftUrl])
+  useEffect(() => {
+    if (!ch || catchup) void api.leaveTimeshift(viewer).catch(() => undefined)
+  }, [ch, catchup])
+  useEffect(() => () => void api.leaveTimeshift(viewer).catch(() => undefined), [])
+
+  const openMulti = () => {
+    void api.leaveTimeshift(viewer).catch(() => undefined)
+    const others = topNow.map((c) => c.id).filter((id) => id !== ch)
+    setMulti(ch ? [ch, ...others.slice(0, 1)] : others.slice(0, 2))
+  }
+
   // The stream, in the window (or full screen: the same video, so going
   // full screen and back never restarts it).
-  const sources = useMemo(() => (play && !onTVPlayer ? (play.alts?.length ? play.alts : [{ kind: 'hls' as const, url: play.url }]) : null), [play, onTVPlayer])
+  const sources = useMemo(() => {
+    if (!play || onTVPlayer || shiftUrl === '') return null
+    const usual = play.alts?.length ? play.alts : [{ kind: 'hls' as const, url: play.url }]
+    return shiftUrl ? [{ kind: 'hls' as const, url: shiftUrl }, ...usual] : usual
+  }, [play, onTVPlayer, shiftUrl])
   useLiveStream(videoEl, sources, setPlayError)
 
   const setPlaying = useCallback(
@@ -358,6 +434,8 @@ export default function LivePage() {
           subtitle: p.catchup ? 'Catch-up' : c?.now ? `${c.now.title} · until ${hhmm(c.now.stop)}` : '',
           live: !p.catchup,
           catchup: !!p.catchup,
+          // Pausing and going back: the TV asks Cue for its copy first.
+          timeshift: p.catchup ? '' : (p.timeshift ?? ''),
           // For moving through a catch-up show: the TV asks Cue for the
           // stream from a new minute, like the browser does.
           id: p.id,
@@ -436,6 +514,30 @@ export default function LivePage() {
     },
     [list, ch, full, setPlaying],
   )
+
+  // A channel number typed on the keyboard (or a TV remote's number keys):
+  // it builds up for a moment, then that channel plays.
+  const [typedNum, setTypedNum] = useState('')
+  useEffect(() => {
+    if (onTV()) return
+    const onKey = (e: KeyboardEvent) => {
+      const t = e.target as HTMLElement | null
+      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT')) return
+      if (!/^[0-9]$/.test(e.key)) return
+      setTypedNum((n) => (n + e.key).slice(-4))
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
+  useEffect(() => {
+    if (!typedNum) return
+    const t = window.setTimeout(() => {
+      const c = (data?.channels ?? []).find((x) => !x.divider && !x.copyOf && String(x.num) === typedNum)
+      setTypedNum('')
+      if (c) setPlaying(c.id, { full })
+    }, 1300)
+    return () => window.clearTimeout(t)
+  }, [typedNum, data, full, setPlaying])
 
   // Full screen in a browser: up and down change channel, Escape leaves.
   useEffect(() => {
@@ -527,6 +629,7 @@ export default function LivePage() {
   const groups = [
     ...(recentCount > 0 ? [{ id: 'recent', name: 'Recent', count: recentCount, fixed: true }] : []),
     ...(favCount > 0 ? [{ id: 'fav', name: 'Favourites', count: favCount, fixed: true }] : []),
+    ...(data.lists ?? []).map((l) => ({ id: `list:${l.id}`, name: l.name, count: l.items.length, fixed: true })),
     { id: 'all', name: 'All channels', count: allCount, fixed: true },
     { id: 'recordings', name: 'Recordings', count: recs.list.length, fixed: true },
     ...cats.map((c) => ({ id: c.id, name: c.name, count: counts.get(c.id) ?? 0, fixed: false })),
@@ -617,11 +720,31 @@ export default function LivePage() {
                   <Icon name="star" size={16} /> {channel.favorite ? 'Favourite' : 'Add to Favourites'}
                 </button>
               </div>
+              <ChannelTools channel={channel} lists={data.lists ?? []} owner={!!main && active?.id === main.id} onChanged={load} />
             </>
   ) : null
 
+  if (multi) {
+    return (
+      <Multiview
+        channels={(data?.channels ?? []).filter((c) => !c.divider)}
+        first={multi}
+        onClose={() => setMulti(null)}
+        onWatch={(id) => {
+          setMulti(null)
+          if (id) setPlaying(id)
+        }}
+      />
+    )
+  }
   return (
     <div className={`wx-page wx-live${browserFull ? ' is-full' : ''}`}>
+      {typedNum && (
+        <div className="wx-live-typed" role="status">
+          <b>{typedNum}_</b>
+          <span>{(data.channels ?? []).find((x) => !x.divider && !x.copyOf && String(x.num) === typedNum)?.name ?? ''}</span>
+        </div>
+      )}
       {/* Nothing playing: the game that matters most, as an event. */}
       {!ch && !picked && !guideFirst && (
         <LiveHero
@@ -640,7 +763,7 @@ export default function LivePage() {
       {(ch || picked || guideFirst) && (
       <section className={`wx-live-top${guideFirst ? ' guide-first' : ''}`} aria-label="Now playing">
         <div className={`wx-live-preview${browserFull ? ' is-full' : ''}${!ch ? ' idle' : ''}`}>
-          {ch && !onTVPlayer && <video ref={videoRef} autoPlay playsInline onClick={() => !browserFull && goFull()} />}
+          {ch && !onTVPlayer && !multi && <video ref={videoRef} autoPlay playsInline onClick={() => !browserFull && goFull()} />}
           {!ch && (
             <div className="wx-live-empty">
               <Icon name="tv" size={34} />
@@ -657,17 +780,25 @@ export default function LivePage() {
               <p>Playing full screen</p>
             </div>
           )}
-          {ch && !play && !playError && !onTVPlayer && <div className="wx-live-tuning">Tuning in…</div>}
+          {ch && (!play || shiftUrl === '') && !playError && !onTVPlayer && <div className="wx-live-tuning">Tuning in…</div>}
           {playError && <div className="wx-live-problem">{playError}</div>}
           {ch && play && !browserFull && !onTVPlayer && (
-            <button className="wx-live-expand" onClick={goFull} aria-label="Full screen">
-              <Icon name="maximize" size={18} />
-            </button>
+            <>
+              <button className="wx-live-expand" onClick={goFull} aria-label="Full screen">
+                <Icon name="maximize" size={18} />
+              </button>
+              {!onTV() && !catchup && (
+                <button className="wx-live-expand wx-live-multi" onClick={() => openMulti()} aria-label="Multiview: more channels at once" title="Multiview">
+                  <Icon name="grid" size={18} />
+                </button>
+              )}
+            </>
           )}
           {browserFull && play && (
             <VideoControls
               video={videoEl}
               live={!catchup}
+              dvr={!catchup && !!shiftUrl}
               timeline={
                 catchup
                   ? { offset: cuOffset, duration: (atEnd - at) / 1000, onSeek: (sec) => setCuOffset(Math.max(0, Math.floor(sec / 60) * 60)) }
@@ -679,6 +810,12 @@ export default function LivePage() {
               actions={
                 <>
                   <ChannelLogo className="wx-live-logo" name={play.name} src={play.logo || channel?.logo} />
+                  {!catchup && !onTV() && (
+                    <button className="vx-text-btn" onClick={() => (exitFull(), openMulti())} aria-label="Multiview">
+                      <Icon name="grid" size={22} />
+                      <span>Multi</span>
+                    </button>
+                  )}
                   {list.length > 1 && !catchup && (
                     <>
                       <button className="vx-text-btn" onClick={() => zap(-1)} aria-label="Previous channel">
@@ -723,6 +860,17 @@ export default function LivePage() {
                   <Icon name={reminders.has(picked.channel.id, picked.show.start) ? 'check' : 'clock'} size={16} />
                   {reminders.has(picked.channel.id, picked.show.start) ? 'Reminder set' : 'Remind me'}
                 </button>
+                {reminders.has(picked.channel.id, picked.show.start) && (
+                  <button
+                    className="wx-btn small"
+                    aria-pressed={reminders.switches(picked.channel.id, picked.show.start)}
+                    onClick={() => void reminders.setSwitch(picked.channel.id, picked.show, !reminders.switches(picked.channel.id, picked.show.start))}
+                    title="When it starts, change to the channel by itself (ten seconds to say no)"
+                  >
+                    <Icon name={reminders.switches(picked.channel.id, picked.show.start) ? 'check' : 'tv'} size={16} />
+                    {reminders.switches(picked.channel.id, picked.show.start) ? 'Switches to it' : 'Switch to it'}
+                  </button>
+                )}
                 {recordButton(picked.channel.id, picked.show)}
                 <button className="wx-btn small" onClick={() => setPlaying(picked.channel.id)}>
                   <Icon name="play" size={16} /> Watch {picked.channel.name} now
@@ -805,6 +953,28 @@ export default function LivePage() {
               )}
             </div>
           )}
+          {cat === 'all' && !findText && (
+            <LivePicks onWatch={(id) => setPlaying(id)} onShow={(c, show) => (Date.parse(show.start) <= Date.now() ? setPlaying(c.id) : setPicked({ channel: c, show }))} />
+          )}
+          {cat.startsWith('list:') && (
+            <div className="wx-list-bar">
+              <button className="wx-btn small" aria-pressed={editingList} onClick={() => setEditingList((e) => !e)}>
+                <Icon name="sliders" size={14} /> {editingList ? 'Done' : 'Edit this list'}
+              </button>
+            </div>
+          )}
+          {cat.startsWith('list:') && editingList && data.lists?.find((l) => `list:${l.id}` === cat) && (
+            <ListEditor
+              list={data.lists.find((l) => `list:${l.id}` === cat)!}
+              channels={data.channels ?? []}
+              onChanged={load}
+              onRemoved={() => {
+                setEditingList(false)
+                setParams({ cat: 'all' }, { replace: true })
+                load()
+              }}
+            />
+          )}
           {cat === 'all' && (data.countries?.length ?? 0) > 0 && (
             <div className="wx-live-catalog" role="group" aria-label="Country and topic">
               {guideFirst && (
@@ -815,6 +985,20 @@ export default function LivePage() {
                     {groups.map((g) => (
                       <option key={g.id} value={g.id}>
                         {g.name} ({g.count})
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              )}
+              {(data.languages?.length ?? 0) > 1 && (
+                <label className="wx-live-country">
+                  <Icon name="chat" size={14} />
+                  <span className="sr-only">Language</span>
+                  <select value={lang} onChange={(e) => setLang(e.target.value)}>
+                    <option value="">Any language</option>
+                    {data.languages!.map((l) => (
+                      <option key={l.name} value={l.name}>
+                        {l.name} ({l.count})
                       </option>
                     ))}
                   </select>
@@ -863,11 +1047,21 @@ export default function LivePage() {
                     <Icon name="chevron-left" size={16} />
                   </button>
                   <button onClick={() => setShift(0)} disabled={shift === 0}>
-                    {shift === 0 ? 'Today' : 'Now'}
+                    Now
                   </button>
-                  <button onClick={() => setShift((n) => n + 1)} disabled={shift >= 8} aria-label="Later">
+                  <button onClick={() => setShift((n) => n + 1)} disabled={shift >= 7 * 8} aria-label="Later">
                     <Icon name="chevron-right" size={16} />
                   </button>
+                  <label className="wx-guide-day">
+                    <span className="sr-only">Day</span>
+                    <select value={Math.max(0, Math.round((dayStart(start) - dayStart(Date.now())) / 86_400_000))} onChange={(e) => setShift(shiftToDay(Number(e.target.value)))}>
+                      {Array.from({ length: 7 }, (_, d) => (
+                        <option key={d} value={d}>
+                          {d === 0 ? 'Today' : d === 1 ? 'Tomorrow' : new Date(Date.now() + d * 86_400_000).toLocaleDateString([], { weekday: 'long' })}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
                   {shift !== 0 && <small>{when(new Date(start).toISOString())}</small>}
                 </span>
               ) : (

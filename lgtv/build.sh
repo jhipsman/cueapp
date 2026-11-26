@@ -8,8 +8,9 @@ version="$(tr -d ' \n' < ../VERSION 2>/dev/null || echo 1.0.0)"
 version="${version#v}"
 # webOS versions are three numbers.
 version="$(echo "$version" | grep -oE '^[0-9]+\.[0-9]+\.[0-9]+' || echo 1.0.0)"
-rm -rf dist build && mkdir -p dist build
-cp index.html icon.png largeIcon.png splash.png build/
-sed "s/\"version\": \"[^\"]*\"/\"version\": \"$version\"/" appinfo.json > build/appinfo.json
-npx --yes -p @webos-tools/cli@3.2.6 ares-package build -o dist
+npm ci --no-audit --no-fund
+npm run build
+sed -i "s/\"version\": \"[^\"]*\"/\"version\": \"$version\"/" dist-app/appinfo.json
+rm -rf dist && mkdir -p dist
+npx --yes -p @webos-tools/cli@3.2.6 ares-package dist-app -o dist
 ls dist/*.ipk

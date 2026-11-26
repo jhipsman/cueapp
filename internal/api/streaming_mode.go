@@ -185,6 +185,20 @@ func browserPictureFirst(cands []playCandidate, converted, safari bool) []playCa
 	return out
 }
 
+// lgSilentAudio is sound many LG TVs play nothing for: DTS (left out of
+// most 2017-2020 sets) and TrueHD. Dolby Digital and Digital Plus play.
+var lgSilentAudio = regexp.MustCompile(`(?i)(^|[^a-z0-9])(dts(-?hd|-?x|-?ma)?|truehd)([^a-z0-9]|$)`)
+
+// lgAudioFirst puts versions with sound an LG TV plays first (the LG app,
+// client=webos). The picture needn't change: they play HEVC and MKV.
+func lgAudioFirst(cands []playCandidate) []playCandidate {
+	out := append([]playCandidate(nil), cands...)
+	sort.SliceStable(out, func(i, j int) bool {
+		return !lgSilentAudio.MatchString(out[i].Release) && lgSilentAudio.MatchString(out[j].Release)
+	})
+	return out
+}
+
 func browserAudioFirst(cands []playCandidate, converted bool) []playCandidate {
 	silent := func(c playCandidate) bool {
 		return c.URL != "" && !(converted && c.Hash != "") && cinemaAudio.MatchString(c.Release)

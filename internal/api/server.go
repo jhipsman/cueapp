@@ -79,6 +79,7 @@ type Server struct {
 	omdb              omdbState      // the OMDb client for the saved key (watch_api.go)
 	fallback          fallbackState  // Internet Archive and YouTube, when nothing else is found (play_fallback.go)
 	recorder          recorderState  // Live TV recordings running (live_record.go)
+	shift             timeshiftState // Live TV kept a while, for pausing and going back (live_timeshift.go)
 	profileBox        *crypto.Box    // seals profile tokens (watch_profiles.go)
 	live              liveState      // Live TV's channel list and guide (live.go)
 
@@ -305,6 +306,7 @@ func (s *Server) Routes() http.Handler {
 	// Signing a TV in from a signed-in phone (handlers_tvlink.go).
 	public.HandleFunc("POST /api/auth/tv-link", s.handleTVLinkStart)
 	public.HandleFunc("GET /api/auth/tv-link/{token}", s.handleTVLinkPoll)
+	public.HandleFunc("GET /api/auth/tv-link/qr/{code}", s.handleTVLinkQR)
 	// The family invite link: check it, and make an account from it.
 	public.HandleFunc("GET /api/join/family-code", s.handleFamilyCodeOpen)
 	public.HandleFunc("POST /api/join/family-code", s.handleJoinWithCode)
@@ -321,6 +323,8 @@ func (s *Server) Routes() http.Handler {
 	// id, are the key (play_convert_hls.go).
 	public.HandleFunc("GET /api/play/convert/hls", s.handleConvertHLS)
 	public.HandleFunc("GET /api/play/convert/hls/{id}/{file}", s.handleConvertHLSFile)
+	// Live TV's copy for pausing (live_timeshift.go): its long random id is the key.
+	public.HandleFunc("GET /api/live/ts/{id}/{file}", s.handleTimeshiftFile)
 
 	public.Handle("/api/", s.signedIn(s.protectedRoutes()))
 
@@ -590,6 +594,11 @@ func (s *Server) protectedRoutes() *routeTable {
 	play.HandleFunc("PUT /api/live/favorites/{id}", s.handleLiveFavorite)
 	play.HandleFunc("DELETE /api/live/favorites/{id}", s.handleLiveFavorite)
 	play.HandleFunc("GET /api/live/play/{id}", s.handleLivePlay)
+	play.HandleFunc("GET /api/live/picks", s.handleLivePicks)
+	play.HandleFunc("POST /api/live/lists", s.handleCreateLiveList)
+	play.HandleFunc("PUT /api/live/lists/{id}", s.handleUpdateLiveList)
+	play.HandleFunc("DELETE /api/live/lists/{id}", s.handleUpdateLiveList)
+	play.HandleFunc("PUT /api/live/channels/{id}/name", s.handleRenameChannel)
 	play.HandleFunc("GET /api/live/catchup/{id}", s.handleLiveCatchup)
 	play.HandleFunc("GET /api/live/recordings", s.handleLiveRecordings)
 	play.HandleFunc("PUT /api/live/recordings", s.handleAddLiveRecording)
@@ -602,6 +611,8 @@ func (s *Server) protectedRoutes() *routeTable {
 	play.HandleFunc("PUT /api/live/reminders", s.handleAddLiveReminder)
 	play.HandleFunc("DELETE /api/live/reminders", s.handleRemoveLiveReminder)
 	play.HandleFunc("GET /api/live/hls", s.handleLiveHLS)
+	play.HandleFunc("GET /api/live/timeshift/{id}", s.handleLiveTimeshift)
+	play.HandleFunc("DELETE /api/live/timeshift", s.handleLeaveTimeshift)
 	play.HandleFunc("GET /api/play/convert", s.handleConvertProbe)
 	play.HandleFunc("GET /api/play/convert/stream", s.handleConvertStream)
 	play.HandleFunc("GET /api/play/convert/start", s.handleConvertStart)
@@ -838,6 +849,11 @@ func (s *Server) protectedRoutes() *routeTable {
 	admin.HandleFunc("GET /api/settings/streaming/setup", s.handleStreamingSetup)
 	admin.HandleFunc("GET /api/settings/iptv", s.handleGetIPTV)
 	admin.HandleFunc("PUT /api/settings/iptv", s.handlePutIPTV)
+	admin.HandleFunc("PUT /api/settings/iptv/timeshift", s.handlePutTimeshift)
+	admin.HandleFunc("GET /api/live/guide-setup", s.handleGetGuideSetup)
+	admin.HandleFunc("PUT /api/live/guide-setup", s.handlePutGuideSetup)
+	admin.HandleFunc("GET /api/live/guide-channels", s.handleGuideChannels)
+	admin.HandleFunc("PUT /api/live/channels/{id}/guide", s.handleMatchGuide)
 	admin.HandleFunc("PUT /api/settings/streaming", s.handlePutStreamingSettings)
 	admin.HandleFunc("GET /api/settings/stream-addons", s.handleListStreamAddons)
 	admin.HandleFunc("POST /api/settings/stream-addons", s.handleAddStreamAddon)

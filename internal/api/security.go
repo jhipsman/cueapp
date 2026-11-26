@@ -71,5 +71,30 @@ func (s *Server) isHTTPS(r *http.Request) bool {
 // cross-site request check.
 func (s *Server) harden(next http.Handler) http.Handler {
 	st := s.sec()
-	return st.proxies.Headers(st.proxies.CSRF(st.origins, next))
+	return st.proxies.Headers(appCORS(st.proxies.CSRF(st.origins, next)))
+}
+
+// appCORS lets the LG TV app call the API. Its pages are files on the TV,
+// so its requests come from Origin "null" (or "file://"); it signs in with
+// headers (auth.AppHeader, auth.SessionHeader), never cookies, and the
+// answer never allows credentials, so a page elsewhere gets nothing a
+// stranger with curl wouldn't. Other origins get no CORS answer at all.
+func appCORS(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		origin := r.Header.Get("Origin")
+		if (origin == "null" || strings.HasPrefix(origin, "file://")) && strings.HasPrefix(r.URL.Path, "/api/") {
+			h := w.Header()
+			h.Set("Access-Control-Allow-Origin", origin)
+			h.Add("Vary", "Origin")
+			h.Set("Access-Control-Allow-Headers", "Content-Type, "+auth.AppHeader+", "+auth.SessionHeader+", "+profileHeader)
+			h.Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+			h.Set("Access-Control-Expose-Headers", auth.SessionHeader)
+			h.Set("Access-Control-Max-Age", "600")
+			if r.Method == http.MethodOptions {
+				w.WriteHeader(http.StatusNoContent)
+				return
+			}
+		}
+		next.ServeHTTP(w, r)
+	})
 }

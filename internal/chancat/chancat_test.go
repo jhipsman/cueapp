@@ -81,3 +81,19 @@ func TestEventFeedsAreEvents(t *testing.T) {
 		}
 	}
 }
+
+func TestRadioAndLanguage(t *testing.T) {
+	for _, c := range []struct{ name, group, topic, lang string }{
+		{"UK: BBC Radio 1", "UK | RADIO", "radio", "English"},
+		{"Radio-Canada Info", "CA | FRENCH", "general", "French"}, // TV, not radio
+		{"ES: Antena 3", "ES | ENTRETENIMIENTO", "general", "Spanish"},
+		{"US: Univision", "US | LATINO", "general", "Spanish"},
+		{"DE: Das Erste", "DE", "general", "German"},
+		{"ESPN", "", "sports", ""},
+	} {
+		in := Read(c.name, c.group)
+		if in.Topic != c.topic || in.Language != c.lang {
+			t.Errorf("%q/%q: %s %q, want %s %q", c.name, c.group, in.Topic, in.Language, c.topic, c.lang)
+		}
+	}
+}

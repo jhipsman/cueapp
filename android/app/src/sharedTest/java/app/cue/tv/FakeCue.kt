@@ -84,6 +84,7 @@ class FakeCue : Dispatcher() {
         .put("countries", JSONArray().put(JSONObject().put("code", "US").put("name", "United States").put("count", 6))
             .put(JSONObject().put("code", "UK").put("name", "United Kingdom").put("count", 1)))
         .put("homeCountry", "US")
+        .put("lists", JSONArray().put(JSONObject().put("id", 1).put("name", "Evenings").put("items", JSONArray().put("c5").put("c2"))))
         .put("topics", JSONArray().apply {
             listOf("general" to "General", "news" to "News", "sports" to "Sports", "kids" to "Kids", "movies" to "Movies").forEach { (k, n) ->
                 put(JSONObject().put("key", k).put("name", n))
@@ -188,6 +189,10 @@ class FakeCue : Dispatcher() {
             path.startsWith("/api/watch/person/") -> ok(JSONObject().put("credits", cards(6, 2)))
             path == "/api/live/channels" -> ok(channels())
             path == "/api/live/sports" -> ok(sports())
+            path == "/api/live/picks" -> ok(JSONObject()
+                .put("forYou", JSONArray().put(JSONObject().put("channel", JSONObject().put("id", "c2")).put("onNow", true)))
+                .put("tonight", JSONArray().put(JSONObject().put("channel", JSONObject().put("id", "c5"))
+                    .put("show", JSONObject().put("title", "Night Harbor").put("start", iso(2.0)).put("stop", iso(4.0))))))
             path == "/api/live/guide" -> ok(guide(request.requestUrl?.queryParameter("ids").orEmpty().split(",")))
             path == "/api/parties" -> ok(JSONArray())
             path.startsWith("/api/live/") -> ok(JSONArray())

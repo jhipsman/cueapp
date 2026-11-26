@@ -10,5 +10,5 @@
   "splashBackground": "splash.png",
   "bgColor": "#0b0b0c",
   "resolution": "1920x1080",
-  "disableBackHistoryAPI": false
+  "disableBackHistoryAPI": true
 }

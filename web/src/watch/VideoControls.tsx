@@ -26,6 +26,9 @@ interface Props {
   subtitle?: string
   onBack: () => void
   live?: boolean
+  // Live TV the server keeps a while: it can pause, go back and catch up
+  // (the bar is what's kept, and LIVE goes back to now).
+  dvr?: boolean
   // A catch-up show plays as a stream that starts somewhere in the show and
   // can't seek far by itself: the bar shows the whole show (duration, in
   // seconds), offset is where in it the stream began, and a jump outside
@@ -83,7 +86,7 @@ function Skip({ back }: { back?: boolean }) {
   )
 }
 
-export default function VideoControls({ video, title, subtitle, onBack, live, note, actions, menu, timeline, captions, thumbs }: Props) {
+export default function VideoControls({ video, title, subtitle, onBack, live, dvr, note, actions, menu, timeline, captions, thumbs }: Props) {
   const root = useRef<HTMLDivElement>(null)
   const bar = useRef<HTMLDivElement>(null)
   const [playing, setPlaying] = useState(false)
@@ -99,19 +102,28 @@ export default function VideoControls({ video, title, subtitle, onBack, live, no
   const [speed, setSpeed] = useState(1)
   const [hover, setHover] = useState<number | null>(null) // 0..1 along the bar
   const [dragging, setDragging] = useState(false)
+  const [win, setWin] = useState({ start: 0, end: 0 }) // live: what's kept (seconds)
   const [flash, setFlash] = useState<{ kind: 'play' | 'pause' | 'back' | 'fwd'; n: number } | null>(null)
   const idleTimer = useRef<ReturnType<typeof setTimeout>>(undefined)
   const lastTap = useRef<{ t: number; x: number }>({ t: 0, x: 0 })
 
   // Where in the title (or catch-up show) the picture is, and how long it is.
+  // Kept live TV: where in what's kept, and how far behind now.
+  const shifting = !!(live && dvr && win.end - win.start > 20)
+  const behind = shifting ? Math.max(0, win.end - time) : 0
+  const atLive = !shifting || behind < 20 // players sit about three pieces (12 s) behind the newest
   const offset = timeline?.offset ?? 0
-  const pos = offset + time
-  const total = timeline ? timeline.duration : duration
+  const pos = shifting ? time - win.start : offset + time
+  const total = shifting ? win.end - win.start : timeline ? timeline.duration : duration
   // jump goes to sec in the title: within what's loaded it moves the video;
   // further (catch-up only), it asks for the stream from there.
   const jump = useCallback(
     (sec: number) => {
       if (!video) return
+      if (shifting) {
+        media.seek(video, Math.max(win.start, Math.min(win.start + sec, win.end - 3)))
+        return
+      }
       const rel = sec - offset
       const r = video.seekable
       for (let i = 0; i < r.length; i++) {
@@ -123,8 +135,13 @@ export default function VideoControls({ video, title, subtitle, onBack, live, no
       if (timeline) timeline.onSeek(sec)
       else if (isFinite(video.duration)) media.seek(video, Math.max(0, Math.min(rel, video.duration - 1)))
     },
-    [video, offset, timeline],
+    [video, offset, timeline, shifting, win],
   )
+  const goLive = useCallback(() => {
+    if (!video) return
+    media.seek(video, Math.max(0, win.end - 10))
+    if (video.paused) void video.play().catch(() => undefined)
+  }, [video, win])
 
   // Follow the video.
   useEffect(() => {
@@ -141,6 +158,8 @@ export default function VideoControls({ video, title, subtitle, onBack, live, no
       let end = 0
       for (let i = 0; i < b.length; i++) if (b.start(i) <= v.currentTime + 1) end = Math.max(end, b.end(i))
       setLoaded(end)
+      const sk = v.seekable
+      setWin(sk.length > 0 ? { start: sk.start(0), end: sk.end(sk.length - 1) } : { start: 0, end: 0 })
     }
     const wait = () => setWaiting(true)
     const go = () => {
@@ -191,12 +210,12 @@ export default function VideoControls({ video, title, subtitle, onBack, live, no
 
   const skip = useCallback(
     (sec: number) => {
-      if (!video || live) return
+      if (!video || (live && !shifting)) return
       jump(Math.max(0, Math.min(offset + video.currentTime + sec, (timeline ? timeline.duration : video.duration || 0) - 1)))
       setFlash((f) => ({ kind: sec < 0 ? 'back' : 'fwd', n: (f?.n ?? 0) + 1 }))
       wake()
     },
-    [video, live, wake, jump, offset, timeline],
+    [video, live, shifting, wake, jump, offset, timeline],
   )
 
   const fullscreen = useCallback(() => {
@@ -235,11 +254,11 @@ export default function VideoControls({ video, title, subtitle, onBack, live, no
           toggle()
           break
         case 'ArrowLeft':
-          if (live) handled = false
+          if (live && !shifting) handled = false
           else skip(-10)
           break
         case 'ArrowRight':
-          if (live) handled = false
+          if (live && !shifting) handled = false
           else skip(10)
           break
         case 'ArrowUp':
@@ -268,7 +287,7 @@ export default function VideoControls({ video, title, subtitle, onBack, live, no
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [video, live, toggle, skip, setVol, fullscreen, wake])
+  }, [video, live, shifting, toggle, skip, setVol, fullscreen, wake])
 
   // The time bar: click or drag to jump.
   const fraction = (clientX: number) => {
@@ -311,7 +330,7 @@ export default function VideoControls({ video, title, subtitle, onBack, live, no
     const double = now - lastTap.current.t < 300
     lastTap.current = { t: now, x }
     if (e.pointerType === 'touch') {
-      if (double && !live && (x < 0.4 || x > 0.6)) {
+      if (double && (!live || shifting) && (x < 0.4 || x > 0.6)) {
         skip(x < 0.4 ? -10 : 10)
         return
       }
@@ -328,7 +347,7 @@ export default function VideoControls({ video, title, subtitle, onBack, live, no
   }
 
   const pct = (n: number) => (total > 0 && isFinite(total) ? `${Math.min(100, Math.max(0, (n / total) * 100))}%` : '0%')
-  const showBar = !live && total > 0 && isFinite(total)
+  const showBar = (!live || shifting) && total > 0 && isFinite(total)
   const shownPos = dragging && timeline && hover !== null ? hover * total : pos
   const volIcon = muted || volume === 0 ? 'volume-x' : volume < 0.5 ? 'volume-low' : 'volume'
 
@@ -387,7 +406,7 @@ export default function VideoControls({ video, title, subtitle, onBack, live, no
               tabIndex={0}
             >
               <div className="vx-track">
-                <div className="vx-loaded" style={{ width: pct(offset + loaded) }} />
+                <div className="vx-loaded" style={{ width: pct(shifting ? loaded - win.start : offset + loaded) }} />
                 <div className="vx-played" style={{ width: pct(shownPos) }} />
               </div>
               <div className="vx-thumb" style={{ left: pct(shownPos) }} />
@@ -402,7 +421,7 @@ export default function VideoControls({ video, title, subtitle, onBack, live, no
                 </div>
               )}
             </div>
-            <span className="vx-remaining">{clock(total - pos)}</span>
+            <span className="vx-remaining">{shifting ? (atLive ? 'Live' : `−${clock(behind)}`) : clock(total - pos)}</span>
           </div>
         )}
 
@@ -411,7 +430,7 @@ export default function VideoControls({ video, title, subtitle, onBack, live, no
             <button className="vx-icon" onClick={toggle} aria-label={waiting && pos === 0 ? 'Loading' : playing ? 'Pause' : 'Play'} aria-busy={waiting || undefined}>
               {waiting && pos === 0 ? <span className="vx-spinner small" /> : <Icon name={playing ? 'pause' : 'play'} size={30} fill="currentColor" />}
             </button>
-            {!live && (
+            {(!live || shifting) && (
               <>
                 <button className="vx-icon" onClick={() => skip(-10)} aria-label="Back 10 seconds">
                   <Skip back />
@@ -436,10 +455,20 @@ export default function VideoControls({ video, title, subtitle, onBack, live, no
                 style={{ ['--vx-vol' as string]: `${(muted ? 0 : volume) * 100}%` }}
               />
             </div>
-            {live && (
+            {live && !shifting && (
               <span className="vx-live">
                 <i /> LIVE
               </span>
+            )}
+            {shifting && (
+              <button
+                className={`vx-live vx-live-btn${atLive ? '' : ' behind'}`}
+                onClick={goLive}
+                disabled={atLive}
+                aria-label={atLive ? 'Live' : `${clock(behind)} behind live: back to live`}
+              >
+                <i /> LIVE
+              </button>
             )}
           </div>
 

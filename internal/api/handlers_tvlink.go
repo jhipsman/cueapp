@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"math/big"
 	"net/http"
+	"rsc.io/qr"
 	"strings"
 	"sync"
 	"time"
@@ -149,4 +150,30 @@ func (s *Server) handleTVLinkApprove(w http.ResponseWriter, r *http.Request) {
 	}
 	l.userID = u.ID
 	writeJSON(w, http.StatusOK, map[string]any{"ok": true})
+}
+
+// GET /api/auth/tv-link/qr/{code}: a QR code of this Cue's sign-in page for
+// a TV's code (<the address the TV used>/link/CODE), for a TV to show beside
+// the code: a phone scans it and lands on the page with the code filled in.
+// The code is only checked for shape: it's on the TV's screen anyway.
+func (s *Server) handleTVLinkQR(w http.ResponseWriter, r *http.Request) {
+	code := strings.ToUpper(r.PathValue("code"))
+	if len(code) != 6 || strings.Trim(code, tvLinkAlphabet) != "" {
+		writeError(w, http.StatusBadRequest, "That isn't a TV code.")
+		return
+	}
+	hosts := s.sec().proxies.PublicHosts(r)
+	scheme := "http"
+	if s.isHTTPS(r) {
+		scheme = "https"
+	}
+	img, err := qr.Encode(scheme+"://"+hosts[len(hosts)-1]+"/link/"+code, qr.M)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "Couldn't draw the QR code.")
+		return
+	}
+	img.Scale = 8
+	w.Header().Set("Content-Type", "image/png")
+	w.Header().Set("Cache-Control", "no-store")
+	_, _ = w.Write(img.PNG())
 }
