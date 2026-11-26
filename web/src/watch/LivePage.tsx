@@ -3,8 +3,9 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { api, profileToken, type LiveChannel, type LiveChannels, type LivePlay, type LiveProgramme } from '../api'
 import Icon from '../components/Icon'
 import { useDocumentTitle } from '../documentTitle'
-import LiveHero from './LiveHero'
+import LiveHero, { ChannelSpotlight } from './LiveHero'
 import ChannelLogo from './ChannelLogo'
+import { PeekInfo, peekStore } from './GuidePeek'
 import { recentChannels, rememberChannel, useLiveStream } from './liveStream'
 import { useReminders } from './reminders'
 import RecordingsList from './RecordingsList'
@@ -95,15 +96,18 @@ export default function LivePage() {
   const [error, setError] = useState('')
   const [shown, setShown] = useState(PAGE)
   const [find, setFind] = useState('')
-  // How the channels show: "now", a card each with what's on (the default),
-  // or "guide", the grid of what's on through the evening. Kept per device.
+  // How the channels show: "guide", the grid of what's on through the
+  // evening under the highlighted show (the default, like a TV box), or
+  // "now", a card each with what's on. Kept per device.
   const [view, setView] = useState<'now' | 'guide'>(() => {
     try {
-      return localStorage.getItem('cue-live-view') === 'guide' ? 'guide' : 'now'
+      return localStorage.getItem('cue-live-view2') === 'now' ? 'now' : 'guide'
     } catch {
-      return 'now'
+      return 'guide'
     }
   })
+  // The show the pointer (or the remote) is on in the guide, for the top.
+  const [peek] = useState(peekStore)
   // "top": the big networks first, the 24/7 loops and events last (the
   // server's rank), then by number.
   const [sort, setSort] = useState<'top' | 'az' | 'num'>('top')
@@ -118,7 +122,7 @@ export default function LivePage() {
   const chooseView = (v: 'now' | 'guide') => {
     setView(v)
     try {
-      localStorage.setItem('cue-live-view', v)
+      localStorage.setItem('cue-live-view2', v)
     } catch {
       // Not kept: fine.
     }
@@ -233,6 +237,12 @@ export default function LivePage() {
     )
   }, [list, findText, sort, cat])
   const visible = shownList.slice(0, shown)
+  // The biggest channels on now in the picked country (the server's rank),
+  // for the top of the page when there are no games.
+  const topNow = useMemo(
+    () => [...inPlace].filter((c) => c.now).sort((a, b) => (a.rank ?? 1) - (b.rank ?? 1) || (Number(a.num) || 1e9) - (Number(b.num) || 1e9)).slice(0, 4),
+    [inPlace],
+  )
 
   // A channel picked from elsewhere (the game up top, Sports, a search):
   // the list shows it, scrolled to and marked as playing. Its country and
@@ -528,11 +538,90 @@ export default function LivePage() {
   const progress = nowShow ? Math.min(1, Math.max(0, (now - Date.parse(nowShow.start)) / (Date.parse(nowShow.stop) - Date.parse(nowShow.start)))) : 0
   const browserFull = full && !onTV()
 
+  // The guide, first: the highlighted show big at the top, the channel
+  // playing in a window beside it, the grid below across the page.
+  const guideFirst = view === 'guide' && cat !== 'recordings'
+  const playingInfo = channel ? (
+            <>
+              <div className="wx-live-info-chan">
+                <span className="wx-live-info-logo">
+                  <ChannelLogo name={channel.name} src={channel.logo} />
+                </span>
+                <span>
+                  <small>{channel.num ? `Channel ${channel.num}` : 'Channel'}</small>
+                  <b>{channel.name}</b>
+                </span>
+                {catchup ? (
+                  <span className="wx-live-badge again">
+                    <Icon name="refresh" size={11} /> CATCH-UP
+                  </span>
+                ) : (
+                  <span className="wx-live-badge">
+                    <i /> LIVE
+                  </span>
+                )}
+              </div>
+              {catchup ? (
+                <>
+                  <h2>{catchupShow?.title ?? 'A past show'}</h2>
+                  <div className="wx-live-time">
+                    <span>
+                      {when(new Date(at).toISOString())} – {hhmm(new Date(atEnd))}
+                    </span>
+                  </div>
+                  {catchupShow?.desc && <p className="wx-live-desc">{catchupShow.desc}</p>}
+                </>
+              ) : nowShow ? (
+                <>
+                  <h2>{nowShow.title}</h2>
+                  <div className="wx-live-time">
+                    <span>{hhmm(nowShow.start)}</span>
+                    <div className="wx-live-progress">
+                      <div style={{ width: `${progress * 100}%` }} />
+                    </div>
+                    <span>{hhmm(nowShow.stop)}</span>
+                  </div>
+                  {nowShow.desc && <p className="wx-live-desc">{nowShow.desc}</p>}
+                </>
+              ) : (
+                <h2>{data.guideReady ? 'No guide for this channel' : 'The TV guide is loading…'}</h2>
+              )}
+              {!catchup && channel.next && (
+                <p className="wx-live-next">
+                  <b>Next</b> {hhmm(channel.next.start)} · {channel.next.title}
+                </p>
+              )}
+              <div className="wx-live-actions">
+                <button className="wx-btn play small" onClick={goFull} disabled={!play}>
+                  <Icon name="maximize" size={16} /> Full screen
+                </button>
+                {catchup ? (
+                  <button className="wx-btn small" onClick={() => setPlaying(channel.id)}>
+                    <Icon name="tv" size={16} /> Back to live
+                  </button>
+                ) : (
+                  nowShow &&
+                  canCatchup(channel, nowShow) && (
+                    <button className="wx-btn small" onClick={() => setPlaying(channel.id, { from: nowShow })}>
+                      <Icon name="refresh" size={16} /> From the start
+                    </button>
+                  )
+                )}
+                {!catchup && nowShow && recordButton(channel.id, nowShow)}
+                <button className="wx-btn small" onClick={() => void toggleFavorite(channel)} aria-pressed={channel.favorite}>
+                  <Icon name="star" size={16} /> {channel.favorite ? 'Favourite' : 'Add to Favourites'}
+                </button>
+              </div>
+            </>
+  ) : null
+
   return (
     <div className={`wx-page wx-live${browserFull ? ' is-full' : ''}`}>
       {/* Nothing playing: the game that matters most, as an event. */}
-      {!ch && !picked && (
+      {!ch && !picked && !guideFirst && (
         <LiveHero
+          // No games: the biggest channels on now, in the same place.
+          fallback={<ChannelSpotlight channels={topNow} onWatch={(id) => setPlaying(id)} />}
           onWatch={(id) => setPlaying(id)}
           onFind={(q) => {
             // Every channel, every country: whatever's on with the team in it.
@@ -543,17 +632,17 @@ export default function LivePage() {
         />
       )}
       {/* The channel playing, and what's on it. */}
-      {(ch || picked) && (
-      <section className="wx-live-top" aria-label="Now playing">
-        <div className={`wx-live-preview${browserFull ? ' is-full' : ''}`}>
+      {(ch || picked || guideFirst) && (
+      <section className={`wx-live-top${guideFirst ? ' guide-first' : ''}`} aria-label="Now playing">
+        <div className={`wx-live-preview${browserFull ? ' is-full' : ''}${!ch ? ' idle' : ''}`}>
           {ch && !onTVPlayer && <video ref={videoRef} autoPlay playsInline onClick={() => !browserFull && goFull()} />}
           {!ch && (
             <div className="wx-live-empty">
               <Icon name="tv" size={34} />
-              <p>Pick a channel in the guide to start watching.</p>
-              {last && (
-                <button className="wx-btn small" onClick={() => setPlaying(last.id)}>
-                  <Icon name="play" size={14} /> {last.name}
+              <p>Pick a channel in the guide to watch it here.</p>
+              {(last ?? topNow[0]) && (
+                <button className="wx-btn small" onClick={() => setPlaying((last ?? topNow[0]).id)}>
+                  <Icon name="play" size={14} /> Watch {(last ?? topNow[0]).name}
                 </button>
               )}
             </div>
@@ -638,78 +727,10 @@ export default function LivePage() {
                 </button>
               </div>
             </>
-          ) : channel ? (
-            <>
-              <div className="wx-live-info-chan">
-                <span className="wx-live-info-logo">
-                  <ChannelLogo name={channel.name} src={channel.logo} />
-                </span>
-                <span>
-                  <small>{channel.num ? `Channel ${channel.num}` : 'Channel'}</small>
-                  <b>{channel.name}</b>
-                </span>
-                {catchup ? (
-                  <span className="wx-live-badge again">
-                    <Icon name="refresh" size={11} /> CATCH-UP
-                  </span>
-                ) : (
-                  <span className="wx-live-badge">
-                    <i /> LIVE
-                  </span>
-                )}
-              </div>
-              {catchup ? (
-                <>
-                  <h2>{catchupShow?.title ?? 'A past show'}</h2>
-                  <div className="wx-live-time">
-                    <span>
-                      {when(new Date(at).toISOString())} – {hhmm(new Date(atEnd))}
-                    </span>
-                  </div>
-                  {catchupShow?.desc && <p className="wx-live-desc">{catchupShow.desc}</p>}
-                </>
-              ) : nowShow ? (
-                <>
-                  <h2>{nowShow.title}</h2>
-                  <div className="wx-live-time">
-                    <span>{hhmm(nowShow.start)}</span>
-                    <div className="wx-live-progress">
-                      <div style={{ width: `${progress * 100}%` }} />
-                    </div>
-                    <span>{hhmm(nowShow.stop)}</span>
-                  </div>
-                  {nowShow.desc && <p className="wx-live-desc">{nowShow.desc}</p>}
-                </>
-              ) : (
-                <h2>{data.guideReady ? 'No guide for this channel' : 'The TV guide is loading…'}</h2>
-              )}
-              {!catchup && channel.next && (
-                <p className="wx-live-next">
-                  <b>Next</b> {hhmm(channel.next.start)} · {channel.next.title}
-                </p>
-              )}
-              <div className="wx-live-actions">
-                <button className="wx-btn play small" onClick={goFull} disabled={!play}>
-                  <Icon name="maximize" size={16} /> Full screen
-                </button>
-                {catchup ? (
-                  <button className="wx-btn small" onClick={() => setPlaying(channel.id)}>
-                    <Icon name="tv" size={16} /> Back to live
-                  </button>
-                ) : (
-                  nowShow &&
-                  canCatchup(channel, nowShow) && (
-                    <button className="wx-btn small" onClick={() => setPlaying(channel.id, { from: nowShow })}>
-                      <Icon name="refresh" size={16} /> From the start
-                    </button>
-                  )
-                )}
-                {!catchup && nowShow && recordButton(channel.id, nowShow)}
-                <button className="wx-btn small" onClick={() => void toggleFavorite(channel)} aria-pressed={channel.favorite}>
-                  <Icon name="star" size={16} /> {channel.favorite ? 'Favourite' : 'Add to Favourites'}
-                </button>
-              </div>
-            </>
+          ) : guideFirst ? (
+            <PeekInfo store={peek} fallback={playingInfo} first={topNow[0] ?? visible[0]} guideReady={data.guideReady} now={now} />
+          ) : playingInfo ? (
+            playingInfo
           ) : (
             <>
               <h2>Live TV</h2>
@@ -723,7 +744,7 @@ export default function LivePage() {
       </section>
       )}
 
-      <div className="wx-live-body">
+      <div className={`wx-live-body${guideFirst ? ' is-guide' : ''}`}>
         {/* The groups: a side menu (on a phone, a picker). */}
         <nav className="wx-live-side" aria-label="Channel groups">
           <label className="wx-live-search">
@@ -762,8 +783,38 @@ export default function LivePage() {
 
         <div className="wx-live-main">
           {cat === 'recordings' && <RecordingsList list={recs.list} onRemove={(id) => void recs.remove(id)} />}
+          {guideFirst && cat !== 'all' && (
+            <div className="wx-live-catalog" role="group" aria-label="Channel group">
+              {guideFirst && (
+                <label className="wx-live-group">
+                  <Icon name="list" size={14} />
+                  <span className="sr-only">Channel group</span>
+                  <select value={cat} onChange={(e) => setParams(ch ? { cat: e.target.value, ch } : { cat: e.target.value }, { replace: true })}>
+                    {groups.map((g) => (
+                      <option key={g.id} value={g.id}>
+                        {g.name} ({g.count})
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              )}
+            </div>
+          )}
           {cat === 'all' && (data.countries?.length ?? 0) > 0 && (
             <div className="wx-live-catalog" role="group" aria-label="Country and topic">
+              {guideFirst && (
+                <label className="wx-live-group">
+                  <Icon name="list" size={14} />
+                  <span className="sr-only">Channel group</span>
+                  <select value={cat} onChange={(e) => setParams(ch ? { cat: e.target.value, ch } : { cat: e.target.value }, { replace: true })}>
+                    {groups.map((g) => (
+                      <option key={g.id} value={g.id}>
+                        {g.name} ({g.count})
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              )}
               <label className="wx-live-country">
                 <Icon name="globe" size={14} />
                 <span className="sr-only">Country</span>
@@ -790,7 +841,7 @@ export default function LivePage() {
               </span>
             </div>
           )}
-          {cat === 'all' && (data.copies ?? 0) > 0 && (
+          {cat === 'all' && !guideFirst && (data.copies ?? 0) > 0 && (
             <p className="wx-live-folded">
               {(data.channelCount ?? 0).toLocaleString()} channels. {(data.copies ?? 0).toLocaleString()} duplicate copies (HD, FHD, backups) are folded into
               their channel, and used automatically if it won't play.
@@ -801,11 +852,34 @@ export default function LivePage() {
           )}
           {cat !== 'recordings' && list.length > 0 && (
             <div className="wx-live-head">
-              <h3>{view === 'now' ? 'On now' : 'Guide'}</h3>
-              <small>
-                {shownList.length} {shownList.length === 1 ? 'channel' : 'channels'}
-                {findText ? ` matching “${find.trim()}”` : view === 'now' ? ' live' : ''}
-              </small>
+              {guideFirst ? (
+                <span className="wx-guide-steps" role="group" aria-label="Guide time">
+                  <button onClick={() => setShift((n) => n - 1)} disabled={start - 3 * 3_600_000 < Date.now() - maxBack} aria-label="Earlier">
+                    <Icon name="chevron-left" size={16} />
+                  </button>
+                  <button onClick={() => setShift(0)} disabled={shift === 0}>
+                    {shift === 0 ? 'Today' : 'Now'}
+                  </button>
+                  <button onClick={() => setShift((n) => n + 1)} disabled={shift >= 8} aria-label="Later">
+                    <Icon name="chevron-right" size={16} />
+                  </button>
+                  {shift !== 0 && <small>{when(new Date(start).toISOString())}</small>}
+                </span>
+              ) : (
+                <>
+                  <h3>{view === 'now' ? 'On now' : 'Guide'}</h3>
+                  <small>
+                    {shownList.length} {shownList.length === 1 ? 'channel' : 'channels'}
+                    {findText ? ` matching “${find.trim()}”` : view === 'now' ? ' live' : ''}
+                  </small>
+                </>
+              )}
+              {guideFirst && (
+                <label className="wx-live-search">
+                  <Icon name="search" size={14} />
+                  <input value={find} onChange={(e) => setFind(e.target.value)} placeholder="Search channels" aria-label="Search channels" />
+                </label>
+              )}
               <span className="wx-live-head-tools">
                 {cat !== 'recent' && (
                   <label className="wx-live-sort">
@@ -873,7 +947,7 @@ export default function LivePage() {
               {shown < shownList.length && <div ref={more} style={{ height: 40 }} />}
             </div>
           )}
-          {view === 'guide' && list.length > 0 && (
+          {view === 'guide' && !guideFirst && list.length > 0 && (
             <div className="wx-guide-bar">
               <button className="wx-btn small" onClick={() => setShift((n) => n - 1)} disabled={start - 3 * 3_600_000 < Date.now() - maxBack}>
                 <Icon name="chevron-left" size={16} /> Earlier
@@ -889,7 +963,7 @@ export default function LivePage() {
             </div>
           )}
           {view === 'guide' && list.length > 0 && (
-            <div className="wx-guide" ref={scroller}>
+            <div className="wx-guide" ref={scroller} onMouseLeave={() => peek.set(null)}>
               <div className="wx-guide-inner" style={{ width: `calc(var(--wx-chan-w) + ${width}px)` }}>
                 <div className="wx-guide-times">
                   <div className="wx-guide-corner">{hhmm(new Date(now))}</div>
@@ -907,7 +981,13 @@ export default function LivePage() {
                   return (
                     <div className={`wx-guide-row${playing ? ' playing' : ''}`} key={c.id} data-ch={c.id}>
                       <div className="wx-guide-chan">
-                        <button className="wx-guide-chan-play" onClick={() => pick(c)} title={playing ? `${c.name}: full screen` : `Watch ${c.name}`}>
+                        <button
+                          className="wx-guide-chan-play"
+                          onClick={() => pick(c)}
+                          onMouseEnter={() => peek.set({ channel: c })}
+                          onFocus={() => peek.set({ channel: c })}
+                          title={playing ? `${c.name}: full screen` : `Watch ${c.name}`}
+                        >
                           <span className="wx-guide-logo">
                             <ChannelLogo name={c.name} src={c.logo} />
                           </span>
@@ -951,6 +1031,8 @@ export default function LivePage() {
                               style={{ left, width: w }}
                               title={`${p.title} · ${hhmm(new Date(s))}–${hhmm(new Date(e))}${p.desc ? `\n${p.desc}` : ''}`}
                               tabIndex={w < 30 ? -1 : 0}
+                              onMouseEnter={() => peek.set({ channel: c, show: p })}
+                              onFocus={() => peek.set({ channel: c, show: p })}
                               onClick={() => pick(c, p)}
                             >
                               <span className="wx-prog-text">
