@@ -89,9 +89,28 @@ func (s *Service) userFromRequest(r *http.Request) (*User, error) {
 	return s.UserForSession(token)
 }
 
-// SessionToken is the session token in the request's session cookie, under
-// its current name or the one from before the rename.
+// The LG TV app (and any app that keeps its own sign-in) says so with
+// AppHeader and sends its session in SessionHeader instead of a cookie: it
+// runs from the TV, not from Cue's site, so a browser engine there would
+// never send Cue's cookie. Such a request is signed in by the header alone,
+// cookies ignored, so nothing a browser sends on its own counts for it (see
+// httpsec.CSRF and the API's CORS answer, which never allows credentials).
+const (
+	AppHeader     = "X-Cue-App"
+	SessionHeader = "X-Cue-Session"
+)
+
+// FromApp reports whether r comes from an app that signs in with the header.
+func FromApp(r *http.Request) bool { return r.Header.Get(AppHeader) != "" }
+
+// SessionToken is the session token: from an app, its SessionHeader; else
+// the request's session cookie, under its current name or the one from
+// before the rename.
 func SessionToken(r *http.Request) (string, bool) {
+	if FromApp(r) {
+		t := r.Header.Get(SessionHeader)
+		return t, t != ""
+	}
 	for _, name := range []string{CookieName, legacyCookieName} {
 		if c, err := r.Cookie(name); err == nil && c.Value != "" {
 			return c.Value, true

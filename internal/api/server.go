@@ -305,6 +305,7 @@ func (s *Server) Routes() http.Handler {
 	// Signing a TV in from a signed-in phone (handlers_tvlink.go).
 	public.HandleFunc("POST /api/auth/tv-link", s.handleTVLinkStart)
 	public.HandleFunc("GET /api/auth/tv-link/{token}", s.handleTVLinkPoll)
+	public.HandleFunc("GET /api/auth/tv-link/qr/{code}", s.handleTVLinkQR)
 	// The family invite link: check it, and make an account from it.
 	public.HandleFunc("GET /api/join/family-code", s.handleFamilyCodeOpen)
 	public.HandleFunc("POST /api/join/family-code", s.handleJoinWithCode)

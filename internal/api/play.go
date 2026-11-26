@@ -448,6 +448,10 @@ func (s *Server) servePlay(w http.ResponseWriter, r *http.Request, t playTarget)
 		entry.candidates = browserPictureFirst(entry.candidates, pm != nil, r.URL.Query().Get("safari") == "1")
 		entry.candidates = browserFilesFirst(entry.candidates)
 	}
+	if r.URL.Query().Get("client") == "webos" {
+		// The LG app: sound the TV plays first.
+		entry.candidates = lgAudioFirst(entry.candidates)
+	}
 	if code := r.URL.Query().Get("party"); code != "" {
 		// In a watch party: the party's version, the same for everyone.
 		entry.candidates = partyVersionFirst(code, entry.candidates, pm != nil)

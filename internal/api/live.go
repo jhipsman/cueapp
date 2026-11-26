@@ -37,6 +37,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/jhipsman/cueapp/internal/auth"
 	"github.com/jhipsman/cueapp/internal/chancat"
 	"github.com/jhipsman/cueapp/internal/iptv"
 	"github.com/jhipsman/cueapp/internal/settings"
@@ -488,6 +489,17 @@ func (s *Server) handleLivePlay(w http.ResponseWriter, r *http.Request) {
 	} else if strings.Contains(r.UserAgent(), "CueAppleTV/") {
 		// The Apple TV app's player plays HLS, not a bare MPEG-TS stream.
 		out["direct"] = c.StreamURL(ch.ID, "m3u8")
+	} else if r.Header.Get(auth.AppHeader) == "webos" {
+		// The LG app's player (the TV's own) plays HLS from the provider;
+		// Cue's /api/live/hls needs a cookie it doesn't have.
+		out["direct"] = c.StreamURL(ch.ID, "m3u8")
+		var more []string
+		for _, id := range spares {
+			more = append(more, c.StreamURL(id, "m3u8"))
+		}
+		if len(more) > 0 {
+			out["directAlts"] = more
+		}
 	}
 	writeJSON(w, http.StatusOK, out)
 }
