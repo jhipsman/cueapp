@@ -81,7 +81,9 @@ fun LiveScreen(api: CueApi, playback: Playback, openWeb: (String) -> Unit) {
     val ctx = androidx.compose.ui.platform.LocalContext.current
     var live by remember { mutableStateOf<LiveChannels?>(null) }
     var problem by remember { mutableStateOf("") }
-    var group by remember { mutableStateOf("") } // "★" favourites, "*" every topic, else a topic's key
+    var group by remember { mutableStateOf("") } // "★" favourites, "*" every topic, "you" For you, "tonight", "list:<id>" a list, else a topic's key
+    var picks by remember { mutableStateOf(LivePicks(emptyList(), emptyList())) }
+    LaunchedEffect(Unit) { runCatching { api.livePicks() }.getOrNull()?.let { picks = it } }
     var country by remember { mutableStateOf<String?>(null) } // "" is every country
     var picking by remember { mutableStateOf(false) } // the tabs list the countries
     var find by remember { mutableStateOf("") } // a game no channel was matched to: channels showing it
@@ -132,15 +134,19 @@ fun LiveScreen(api: CueApi, playback: Playback, openWeb: (String) -> Unit) {
     // The channel last watched on this TV leads the list (when it's in it),
     // so Live TV opens on it, playing at the top.
     val lastId = remember { LastChannel.get(ctx) }
-    val shown = remember(l, here, group, find) {
+    val shown = remember(l, here, group, find, picks) {
         val list = when {
             find.isNotEmpty() -> real.filter { it.name.contains(find, true) || it.now?.title?.contains(find, true) == true }
             group == "★" -> favorites
+            group == "you" -> picks.forYou.mapNotNull { id -> real.firstOrNull { it.id == id } }
+            group == "tonight" -> picks.tonight.mapNotNull { (id, _) -> real.firstOrNull { it.id == id } }
+            group.startsWith("list:") -> l.lists.firstOrNull { "list:${it.id}" == group }?.items.orEmpty().mapNotNull { id -> real.firstOrNull { it.id == id } }
             group == "*" || group.isEmpty() -> here
             else -> here.filter { it.topic == group }
         }.distinctBy { it.id }
         val last = list.firstOrNull { it.id == lastId }
-        (if (last != null && find.isEmpty()) listOf(last) + (list - last) else list).take(300)
+        val ownOrder = group.startsWith("list:") || group == "you" || group == "tonight"
+        (if (last != null && find.isEmpty() && !ownOrder) listOf(last) + (list - last) else list).take(300)
     }
     val countryName = l.countries.firstOrNull { it.first == place }?.second ?: "Every country"
     // Back closes the country tabs, or the search for a game, first.
@@ -148,7 +154,9 @@ fun LiveScreen(api: CueApi, playback: Playback, openWeb: (String) -> Unit) {
     BackHandler(enabled = find.isNotEmpty() && !picking) { find = "" }
 
     // The guide's two hours start at the half hour before now.
-    val start = now - now % HALF_HOUR
+    // Tonight: the guide opens at the evening's first show.
+    val evening = picks.tonight.minOfOrNull { it.second }?.takeIf { group == "tonight" && it > now }
+    val start = (evening ?: now) - (evening ?: now) % HALF_HOUR
     var guide by remember { mutableStateOf<Map<String, List<GuideShow>>>(emptyMap()) }
     LaunchedEffect(shown, start) {
         runCatching { api.guide(shown.map { it.id }, start, 3) }.getOrNull()?.let { guide = guide + it }
@@ -192,6 +200,15 @@ fun LiveScreen(api: CueApi, playback: Playback, openWeb: (String) -> Unit) {
                 if (find.isNotEmpty()) item(key = "find") { ChoiceTab("Showing “$find”  ·  ${shown.size}", selected = true) { find = "" } }
                 if (favorites.isNotEmpty()) item(key = "★") {
                     ChoiceTab("Favorites  ·  ${favorites.size}", selected = group == "★" && find.isEmpty()) { group = "★"; find = "" }
+                }
+                if (picks.forYou.isNotEmpty()) item(key = "you") {
+                    ChoiceTab("For you", selected = group == "you" && find.isEmpty()) { group = "you"; find = "" }
+                }
+                if (picks.tonight.isNotEmpty()) item(key = "tonight") {
+                    ChoiceTab("Tonight", selected = group == "tonight" && find.isEmpty()) { group = "tonight"; find = "" }
+                }
+                items(l.lists, key = { "list-" + it.id }) { li ->
+                    ChoiceTab("${li.name}  ·  ${li.items.size}", selected = group == "list:${li.id}" && find.isEmpty()) { group = "list:${li.id}"; find = "" }
                 }
                 item(key = "*") {
                     ChoiceTab("All  ·  ${here.size}", selected = group == "*" && find.isEmpty()) { group = "*"; find = "" }
