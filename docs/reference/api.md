@@ -218,6 +218,7 @@ Every route the server exposes. Routes marked **public** need no sign-in; all ot
 | GET | `/api/live/catchup/{id}` | signed in | GET /api/live/catchup/{id}?start=<unix>&stop=<unix>: where a show that has aired (or started) on a channel with catch-up plays from its beginning. |
 | GET | `/api/live/channels` | signed in | GET /api/live/channels: every channel with what's on now and next. |
 | PUT | `/api/live/channels/{id}/guide` | admin | PUT /api/live/channels/{id}/guide {key}: matches the channel to a guide channel by hand ("" goes back to the automatic one). |
+| PUT | `/api/live/channels/{id}/name` | signed in | PUT /api/live/channels/{id}/name {name}: this profile's name for a channel ("" gives it back its own). |
 | DELETE | `/api/live/favorites/{id}` | signed in | PUT and DELETE /api/live/favorites/{id}: star a channel for this profile. |
 | PUT | `/api/live/favorites/{id}` | signed in | PUT and DELETE /api/live/favorites/{id}: star a channel for this profile. |
 | DELETE | `/api/live/follows` | signed in | PUT or DELETE /api/live/follows {"phrase"}: follow, or stop following. |
@@ -228,7 +229,11 @@ Every route the server exposes. Routes marked **public** need no sign-in; all ot
 | GET | `/api/live/guide-setup` | admin | GET /api/live/guide-setup: the extra guides (how each went) and the channels matched by hand. |
 | PUT | `/api/live/guide-setup` | admin |  |
 | GET | `/api/live/hls` | signed in | GET /api/live/hls?u=<sealed address>: a provider's playlist, with every address in it pointed back here, or a piece of video passed through. |
+| POST | `/api/live/lists` | signed in | POST /api/live/lists {name, items?}: a new list. |
+| DELETE | `/api/live/lists/{id}` | signed in | PUT /api/live/lists/{id} {name?, items?}: renames the list and/or sets its channels, in order. |
+| PUT | `/api/live/lists/{id}` | signed in | PUT /api/live/lists/{id} {name?, items?}: renames the list and/or sets its channels, in order. |
 | GET | `/api/live/logo/{id}` | signed in | GET /api/live/logo/{id}: the channel's logo, through Cue (the page may only show pictures from a few places) and kept on disk for a week. |
+| GET | `/api/live/picks` | signed in | GET /api/live/picks?tz=<minutes east of UTC>: Tonight, the big shows starting this evening (7 to 11 pm, the viewer's time) on the main channels, one a channe... |
 | GET | `/api/live/play/{id}` | signed in | GET /api/live/play/{id}: where the channel plays. |
 | GET | `/api/live/recordings` | signed in | GET /api/live/recordings: every recording, newest show first. |
 | PUT | `/api/live/recordings` | signed in | PUT /api/live/recordings {channelId, start, stop, title}: record a show (one on now starts at once). |
@@ -784,4 +789,4 @@ Every route the server exposes. Routes marked **public** need no sign-in; all ot
 | PUT | `/api/watched/settings` | admin | PUT /api/watched/settings {"sync": true, "cleanup": {...}} |
 | POST | `/api/watched/sync` | admin | POST /api/watched/sync: read what's been watched now. |
 
-449 routes.
+454 routes.

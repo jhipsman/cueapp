@@ -18,11 +18,12 @@ import (
 
 // Info is what a channel's name and group say about it.
 type Info struct {
-	Clean   string // the channel's plain name
-	Country string // "US", "UK", "CA"…; "" when the list doesn't say
-	Topic   string // one of Topics' keys
-	Quality int    // higher is the better pick of two copies of a channel
-	Divider bool   // not a channel: a heading the provider put in the list
+	Clean    string // the channel's plain name
+	Country  string // "US", "UK", "CA"…; "" when the list doesn't say
+	Topic    string // one of Topics' keys
+	Language string // "English", "Spanish"…: from the country, or the name or group saying so; "" when unknown
+	Quality  int    // higher is the better pick of two copies of a channel
+	Divider  bool   // not a channel: a heading the provider put in the list
 }
 
 // Topics are what a channel can be about, in the order a picker lists them.
@@ -34,6 +35,7 @@ var Topics = []struct{ Key, Name string }{
 	{"movies", "Movies"},
 	{"docs", "Documentary"},
 	{"music", "Music"},
+	{"radio", "Radio"},
 	{"local", "Local"},
 	{"247", "24/7"},
 	{"faith", "Faith"},
@@ -187,7 +189,44 @@ func Read(name, group string) Info {
 		}
 	}
 	in.Topic = topic(strings.ToLower(in.Clean), strings.ToLower(groupRest))
+	in.Language = language(in.Country, strings.ToLower(name+" "+group))
 	return in
+}
+
+// countryLanguage is the language a country's channels are in.
+var countryLanguage = map[string]string{
+	"US": "English", "UK": "English", "CA": "English", "AU": "English", "NZ": "English", "IE": "English", "ZA": "English",
+	"CARIB": "English", "PH": "English", "DE": "German", "FR": "French", "ES": "Spanish", "MX": "Spanish", "LAT": "Spanish",
+	"IT": "Italian", "PT": "Portuguese", "BR": "Portuguese", "NL": "Dutch", "BE": "Dutch", "PL": "Polish", "TR": "Turkish",
+	"AR": "Arabic", "IN": "Hindi", "PK": "Urdu", "EXYU": "Ex-Yu languages", "GR": "Greek", "SE": "Swedish", "NO": "Norwegian",
+	"DK": "Danish", "FI": "Finnish", "RU": "Russian", "RO": "Romanian", "AL": "Albanian",
+}
+
+// languageWords: a name or group saying its language outright ("ES |
+// LATINO", "FR (VF)", "Arabic") wins over its country.
+var languageWords = []struct {
+	lang  string
+	words []string
+}{
+	{"Spanish", []string{"spanish", "español", "espanol", "latino", "castellano"}},
+	{"French", []string{"french", "français", "francais", "(vf)", "québec", "quebec"}},
+	{"German", []string{"german", "deutsch"}},
+	{"Portuguese", []string{"portugu"}},
+	{"Italian", []string{"italian", "italiano"}},
+	{"Arabic", []string{"arabic", "عربي"}},
+	{"Hindi", []string{"hindi"}},
+	{"English", []string{"english"}},
+}
+
+func language(country, text string) string {
+	for _, l := range languageWords {
+		for _, w := range l.words {
+			if strings.Contains(text, w) {
+				return l.lang
+			}
+		}
+	}
+	return countryLanguage[country]
 }
 
 // clean drops symbols, brackets of qualifiers and quality words: "ESPN
@@ -263,7 +302,7 @@ var rules = []rule{
 	{"news", []string{"news", "cnn", "msnbc", "cnbc", "bloomberg", "al jazeera", "aljazeera", "euronews", "france 24", " dw ", "newsmax", "newsnation", "weather", "c-span", "cspan", "bbc world", "sky news", "gb news", "fox business", "abc news", "cbs news", "nbc news", "cheddar", "i24", " rt ", "trt world", "cgtn", "nhk world", "headline"}},
 	{"movies", []string{"movie", "cinema", "film", "hbo", "showtime", "starz", "cinemax", " tmc", "epix", "mgm+", "mgm", "tcm", "sky cinema", "hallmark movies", "lifetime movie", "flix", "sony max", " action", "thriller", "comedy central"}},
 	{"docs", []string{"discovery", "history", "nat geo", "national geographic", "natgeo", "documentar", "docu", "animal planet", "science", "smithsonian", "investigation", " id ", "crime", "travel", "planet", "nature", "military", "curiosity", "magnolia", "hgtv", "food network", "cooking"}},
-	{"music", []string{"music", "mtv", "vh1", "cmt", "bet jams", "bet soul", "radio", "hits", "jukebox", "stingray", "concert", "kerrang", "clubland", "4music", "trace"}},
+	{"music", []string{"music", "mtv", "vh1", "cmt", "bet jams", "bet soul", "hits", "jukebox", "stingray", "concert", "kerrang", "clubland", "4music", "trace"}},
 	{"faith", []string{"religio", "church", "god tv", "ewtn", "tbn", "daystar", "quran", "islam", "christian", "gospel", "catholic", "worship", "bible", "peace tv", "sky angel", "hope channel"}},
 	{"247", []string{"24/7", "24-7", "24x7", "247 "}},
 	{"local", []string{"local", "regional", "region", "affiliate", "metro", " pbs", "pbs ", "wcbs", "wnbc", "wabc", "kcbs", "knbc", "kabc"}},
@@ -281,6 +320,12 @@ var eventName = regexp.MustCompile(`(?i)(\s(vs\.?|v|@)\s)|(\b\d{1,2}[:.]\d{2}\s*
 func topic(name, group string) string {
 	if eventName.MatchString(name) {
 		return "events"
+	}
+	// Radio stations ("BBC Radio 1", a "RADIO" group); Radio-Canada is TV.
+	for _, src := range []string{group, name} {
+		if strings.Contains(src, "radio") && !strings.Contains(src, "canada") && !strings.Contains(src, "televis") {
+			return "radio"
+		}
 	}
 	for _, src := range []string{" " + group + " ", " " + name + " "} {
 		if strings.TrimSpace(src) == "" {

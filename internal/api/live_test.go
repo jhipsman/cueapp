@@ -359,3 +359,22 @@ func TestLiveCatchupAndReminders(t *testing.T) {
 		t.Fatalf("after removing: %+v", rems)
 	}
 }
+
+func TestMatchesAllForgivesTypos(t *testing.T) {
+	for _, c := range []struct {
+		text, q string
+		want    bool
+	}{
+		{"The Simpsons", "simpsns", true},
+		{"The Simpsons", "smipsons", true},
+		{"Kansas City Chiefs at Buffalo Bills", "cheifs bils", true},
+		{"Kansas City Chiefs at Buffalo Bills", "chiefs ravens", false},
+		{"Monday Night Football", "footbal", true},
+		{"CNN Newsroom", "cbs", false},
+		{"Champions League Highlights", "champoins leage", true},
+	} {
+		if got := matchesAll(c.text, searchWords(c.q)); got != c.want {
+			t.Errorf("%q in %q: %v, want %v", c.q, c.text, got, c.want)
+		}
+	}
+}

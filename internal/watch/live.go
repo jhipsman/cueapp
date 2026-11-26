@@ -1,6 +1,7 @@
 package watch
 
 import (
+	"encoding/json"
 	"fmt"
 	"time"
 )
@@ -127,4 +128,130 @@ func (r *Repo) SetLiveFollow(profileID int64, phrase string, on bool) error {
 		_, err = r.db.Exec(`DELETE FROM live_follows WHERE profile_id = ? AND phrase = ?`, profileID, phrase)
 	}
 	return err
+}
+
+// ---- A profile's own channel lists, names and habits ----
+
+// LiveList is one of a profile's own channel lists, in its own order.
+type LiveList struct {
+	ID    int64    `json:"id"`
+	Name  string   `json:"name"`
+	Items []string `json:"items"`
+}
+
+// LiveLists is profileID's lists, oldest first.
+func (r *Repo) LiveLists(profileID int64) ([]LiveList, error) {
+	rows, err := r.db.Query(`SELECT id, name, items FROM live_lists WHERE profile_id = ? ORDER BY id`, profileID)
+	if err != nil {
+		return nil, fmt.Errorf("list channel lists: %w", err)
+	}
+	defer rows.Close()
+	out := []LiveList{}
+	for rows.Next() {
+		var l LiveList
+		var items string
+		if err := rows.Scan(&l.ID, &l.Name, &items); err != nil {
+			return nil, err
+		}
+		_ = json.Unmarshal([]byte(items), &l.Items)
+		if l.Items == nil {
+			l.Items = []string{}
+		}
+		out = append(out, l)
+	}
+	return out, rows.Err()
+}
+
+// CreateLiveList makes a list (with these channels, in order).
+func (r *Repo) CreateLiveList(profileID int64, name string, items []string) (LiveList, error) {
+	if items == nil {
+		items = []string{}
+	}
+	b, _ := json.Marshal(items)
+	res, err := r.db.Exec(`INSERT INTO live_lists (profile_id, name, items, created_at) VALUES (?, ?, ?, ?)`,
+		profileID, name, string(b), time.Now().UTC().Format(time.RFC3339))
+	if err != nil {
+		return LiveList{}, fmt.Errorf("make channel list: %w", err)
+	}
+	id, _ := res.LastInsertId()
+	return LiveList{ID: id, Name: name, Items: items}, nil
+}
+
+// UpdateLiveList renames a list and/or sets its channels (nil leaves each as it is).
+func (r *Repo) UpdateLiveList(profileID, id int64, name *string, items []string) error {
+	if name != nil {
+		if _, err := r.db.Exec(`UPDATE live_lists SET name = ? WHERE id = ? AND profile_id = ?`, *name, id, profileID); err != nil {
+			return err
+		}
+	}
+	if items != nil {
+		b, _ := json.Marshal(items)
+		if _, err := r.db.Exec(`UPDATE live_lists SET items = ? WHERE id = ? AND profile_id = ?`, string(b), id, profileID); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// DeleteLiveList removes a list.
+func (r *Repo) DeleteLiveList(profileID, id int64) error {
+	_, err := r.db.Exec(`DELETE FROM live_lists WHERE id = ? AND profile_id = ?`, id, profileID)
+	return err
+}
+
+// LiveNames is the channels profileID renamed: channel id -> its name.
+func (r *Repo) LiveNames(profileID int64) (map[string]string, error) {
+	rows, err := r.db.Query(`SELECT stream_id, name FROM live_names WHERE profile_id = ?`, profileID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := map[string]string{}
+	for rows.Next() {
+		var id, name string
+		if err := rows.Scan(&id, &name); err != nil {
+			return nil, err
+		}
+		out[id] = name
+	}
+	return out, rows.Err()
+}
+
+// SetLiveName renames a channel for profileID ("" gives it back its own name).
+func (r *Repo) SetLiveName(profileID int64, streamID, name string) error {
+	if name == "" {
+		_, err := r.db.Exec(`DELETE FROM live_names WHERE profile_id = ? AND stream_id = ?`, profileID, streamID)
+		return err
+	}
+	_, err := r.db.Exec(`INSERT INTO live_names (profile_id, stream_id, name) VALUES (?, ?, ?)
+		ON CONFLICT(profile_id, stream_id) DO UPDATE SET name = excluded.name`, profileID, streamID, name)
+	return err
+}
+
+// NoteLiveWatch counts a channel played by profileID.
+func (r *Repo) NoteLiveWatch(profileID int64, streamID string, at time.Time) error {
+	_, err := r.db.Exec(`INSERT INTO live_watched (profile_id, stream_id, plays, last_at) VALUES (?, ?, 1, ?)
+		ON CONFLICT(profile_id, stream_id) DO UPDATE SET plays = plays + 1, last_at = excluded.last_at`,
+		profileID, streamID, at.UTC().Format(time.RFC3339))
+	return err
+}
+
+// LiveMostWatched is the channels profileID watches most (in the last 60
+// days), most first.
+func (r *Repo) LiveMostWatched(profileID int64, limit int) ([]string, error) {
+	since := time.Now().Add(-60 * 24 * time.Hour).UTC().Format(time.RFC3339)
+	rows, err := r.db.Query(`SELECT stream_id FROM live_watched WHERE profile_id = ? AND last_at >= ? ORDER BY plays DESC, last_at DESC LIMIT ?`, profileID, since, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []string
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		out = append(out, id)
+	}
+	return out, rows.Err()
 }
