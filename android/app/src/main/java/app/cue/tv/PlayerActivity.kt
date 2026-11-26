@@ -292,6 +292,8 @@ class PlayerActivity : Activity() {
         info = JSONObject(intent.getStringExtra(EXTRA_JSON) ?: "{}")
         server = intent.getStringExtra(EXTRA_SERVER) ?: ""
         live = info.optBoolean("live")
+        if (live) LastChannel.save(this, info.optString("id"))
+        if (server.isNotEmpty()) main.postDelayed(reminderCheck, 10_000)
         catchup = info.optBoolean("catchup")
         if (catchup) {
             cuStart = info.optLong("showStart")
@@ -1038,6 +1040,9 @@ class PlayerActivity : Activity() {
 
     // More: speed, the versions, a watch party, and reporting a problem.
     private fun moreMenu() = menu("More", buildList {
+        if (live) channelList().firstOrNull { it.optString("id") == lastChannelId }?.let { c ->
+            add("Back to ${c.optString("name")}" to { zapBack() })
+        }
         if (!live) add("Speed: ${speedText(speed)}" to { speedMenu() })
         if (hasOther && !live && !catchup) add("Other version" to { end("other") })
         if (!live && !catchup && info.optString("release").isNotEmpty()) add("Wrong video (never use this one again)" to { end("wrong", info.optString("release")) })
@@ -1540,6 +1545,9 @@ class PlayerActivity : Activity() {
                 when (code) {
                     KeyEvent.KEYCODE_CHANNEL_UP, KeyEvent.KEYCODE_PAGE_UP -> { zap(1); return true }
                     KeyEvent.KEYCODE_CHANNEL_DOWN, KeyEvent.KEYCODE_PAGE_DOWN -> { zap(-1); return true }
+                    KeyEvent.KEYCODE_LAST_CHANNEL -> { zapBack(); return true }
+                    in KeyEvent.KEYCODE_0..KeyEvent.KEYCODE_9 -> { typeDigit(code - KeyEvent.KEYCODE_0); return true }
+                    in KeyEvent.KEYCODE_NUMPAD_0..KeyEvent.KEYCODE_NUMPAD_9 -> { typeDigit(code - KeyEvent.KEYCODE_NUMPAD_0); return true }
                 }
             }
             if (!controlsShowing()) {
@@ -2123,6 +2131,55 @@ class PlayerActivity : Activity() {
     private var zapTarget = ""
     private val zapHider = Runnable { zapBanner?.animate()?.alpha(0f)?.setDuration(400)?.start() }
     private val zapTuner = Runnable { tune(zapTarget) }
+    // The channel before this one (the remote's Last key, or More > Back to),
+    // and a channel number being typed with the remote's number keys.
+    private var lastChannelId = ""
+    private var typed = ""
+    private val typedTuner = Runnable { tuneTyped() }
+
+    // A number key: the number builds up for a moment, then that channel.
+    private fun typeDigit(d: Int) {
+        typed = (typed + d).takeLast(4)
+        val match = channelList().firstOrNull { it.optString("num") == typed }
+        showZapBanner(JSONObject().put("num", typed + "_").put("name", match?.optString("name") ?: "").put("now", match?.optString("now") ?: ""))
+        main.removeCallbacks(typedTuner)
+        main.postDelayed(typedTuner, 1500)
+    }
+
+    private fun tuneTyped() {
+        val want = typed
+        typed = ""
+        val match = channelList().firstOrNull { it.optString("num") == want }
+        if (match != null) zapTo(match.optString("id"))
+        else showZapBanner(JSONObject().put("num", want).put("name", "No channel $want here"))
+    }
+
+    // Live TV reminders, every half minute: one set to switch changes channel
+    // (watching live); otherwise, and over a film, a message says it's on.
+    private val reminderCheck = object : Runnable {
+        override fun run() {
+            if (finished) return
+            val token = info.optString("token")
+            Thread {
+                val due = LiveReminders.check(server, token) ?: return@Thread
+                runOnUiThread {
+                    if (finished) return@runOnUiThread
+                    if (due.switch && due.started && live && channelList().any { it.optString("id") == due.channelId }) {
+                        Toast.makeText(this@PlayerActivity, "Switching to ${due.channel.ifEmpty { "the channel" }}: ${due.title}", Toast.LENGTH_LONG).show()
+                        zapTo(due.channelId)
+                    } else {
+                        Toast.makeText(this@PlayerActivity, LiveReminders.words(due), Toast.LENGTH_LONG).show()
+                    }
+                }
+            }.start()
+            main.postDelayed(this, 30_000)
+        }
+    }
+
+    // Back to the channel before (the remote's Last key; More > Back to).
+    private fun zapBack() {
+        if (lastChannelId.isNotEmpty() && channelList().any { it.optString("id") == lastChannelId }) zapTo(lastChannelId)
+    }
 
     private fun channelList(): List<JSONObject> {
         val a = info.optJSONArray("channels") ?: return emptyList()
@@ -2221,7 +2278,9 @@ class PlayerActivity : Activity() {
                     Toast.makeText(this, "${c.optString("name")} won't play right now.", Toast.LENGTH_LONG).show()
                     return@runOnUiThread
                 }
+                info.optString("id").takeIf { it.isNotEmpty() && it != id }?.let { lastChannelId = it }
                 info.put("id", id)
+                LastChannel.save(this, id)
                 val num = c.optString("num")
                 info.put("title", (if (num.isNotEmpty()) "$num  " else "") + c.optString("name"))
                 val now = c.optString("now")

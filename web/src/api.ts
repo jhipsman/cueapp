@@ -235,6 +235,7 @@ export interface LiveReminder {
   title: string
   channel?: string
   logo?: string
+  switch?: boolean // at the start, change to the channel by itself
 }
 export interface LivePlay {
   id: string
@@ -2678,7 +2679,7 @@ export const api = {
   liveFollows: () => get<string[]>('/live/follows'),
   followLive: (phrase: string) => put<null>('/live/follows', { phrase }),
   unfollowLive: (phrase: string) => request<null>('/live/follows', { method: 'DELETE', body: JSON.stringify({ phrase }) }),
-  addLiveReminder: (r: { channelId: string; start: string; stop: string; title: string }) => put<null>('/live/reminders', r),
+  addLiveReminder: (r: { channelId: string; start: string; stop: string; title: string; switch?: boolean }) => put<null>('/live/reminders', r),
   removeLiveReminder: (channelId: string, start: string) =>
     del<null>(`/live/reminders?channel=${encodeURIComponent(channelId)}&start=${encodeURIComponent(new Date(start).toISOString().replace(/\.\d{3}Z$/, 'Z'))}`),
   livePlay: (id: string) => get<LivePlay>(`/live/play/${encodeURIComponent(id)}`),

@@ -337,7 +337,7 @@ func TestLiveCatchupAndReminders(t *testing.T) {
 
 	// Reminders.
 	later := time.Now().Add(3 * time.Hour).UTC().Truncate(time.Second)
-	body := fmt.Sprintf(`{"channelId":"10","start":%q,"stop":%q,"title":"Chiefs vs Bills"}`, later.Format(time.RFC3339), later.Add(3*time.Hour).Format(time.RFC3339))
+	body := fmt.Sprintf(`{"channelId":"10","start":%q,"stop":%q,"title":"Chiefs vs Bills","switch":true}`, later.Format(time.RFC3339), later.Add(3*time.Hour).Format(time.RFC3339))
 	if w := call("PUT", "/", body, "", s.handleAddLiveReminder); w.Code != http.StatusNoContent {
 		t.Fatalf("add reminder: %d %s", w.Code, w.Body)
 	}
@@ -345,9 +345,10 @@ func TestLiveCatchupAndReminders(t *testing.T) {
 		ChannelID string `json:"channelId"`
 		Title     string
 		Channel   string
+		Switch    bool
 	}
 	_ = json.Unmarshal(call("GET", "/", "", "", s.handleLiveReminders).Body.Bytes(), &rems)
-	if len(rems) != 1 || rems[0].Title != "Chiefs vs Bills" || rems[0].Channel != "News 24" {
+	if len(rems) != 1 || rems[0].Title != "Chiefs vs Bills" || rems[0].Channel != "News 24" || !rems[0].Switch {
 		t.Fatalf("reminders: %+v", rems)
 	}
 	if w := call("DELETE", "/?channel=10&start="+url.QueryEscape(later.Format(time.RFC3339)), "", "", s.handleRemoveLiveReminder); w.Code != http.StatusNoContent {

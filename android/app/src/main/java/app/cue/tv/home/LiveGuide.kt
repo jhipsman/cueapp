@@ -1,5 +1,7 @@
 package app.cue.tv.home
 
+import app.cue.tv.LastChannel
+
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.tween
@@ -76,6 +78,7 @@ private val LiveRed = Color(0xFFE5484D)
 @OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 fun LiveScreen(api: CueApi, playback: Playback, openWeb: (String) -> Unit) {
+    val ctx = androidx.compose.ui.platform.LocalContext.current
     var live by remember { mutableStateOf<LiveChannels?>(null) }
     var problem by remember { mutableStateOf("") }
     var group by remember { mutableStateOf("") } // "★" favourites, "*" every topic, else a topic's key
@@ -126,13 +129,18 @@ fun LiveScreen(api: CueApi, playback: Playback, openWeb: (String) -> Unit) {
     val here = remember(real, place) { if (place.isEmpty()) real else real.filter { it.country == place || it.country.isEmpty() } }
     val topicCounts = remember(here) { here.groupingBy { it.topic }.eachCount() }
     val favorites = remember(l) { l.channels.filter { it.favorite } }
+    // The channel last watched on this TV leads the list (when it's in it),
+    // so Live TV opens on it, playing at the top.
+    val lastId = remember { LastChannel.get(ctx) }
     val shown = remember(l, here, group, find) {
-        when {
+        val list = when {
             find.isNotEmpty() -> real.filter { it.name.contains(find, true) || it.now?.title?.contains(find, true) == true }
             group == "★" -> favorites
             group == "*" || group.isEmpty() -> here
             else -> here.filter { it.topic == group }
-        }.distinctBy { it.id }.take(300)
+        }.distinctBy { it.id }
+        val last = list.firstOrNull { it.id == lastId }
+        (if (last != null && find.isEmpty()) listOf(last) + (list - last) else list).take(300)
     }
     val countryName = l.countries.firstOrNull { it.first == place }?.second ?: "Every country"
     // Back closes the country tabs, or the search for a game, first.

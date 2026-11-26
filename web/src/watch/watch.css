@@ -8911,3 +8911,25 @@ button.wx-switch.on:hover {
 .wx-live .wx-live-catalog .wx-live-group select option {
   color: #0b0b0c;
 }
+
+/* A channel number being typed (Live TV): top left, over everything. */
+.wx-live-typed {
+  position: fixed;
+  z-index: 60;
+  top: 28px;
+  left: 32px;
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  padding: 12px 22px;
+  border-radius: 14px;
+  background: rgba(20, 21, 25, 0.92);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+}
+.wx-live-typed b {
+  font-size: 2rem;
+}
+.wx-live-typed span {
+  font-size: 1.1rem;
+  font-weight: 600;
+}

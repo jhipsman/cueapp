@@ -437,6 +437,30 @@ export default function LivePage() {
     [list, ch, full, setPlaying],
   )
 
+  // A channel number typed on the keyboard (or a TV remote's number keys):
+  // it builds up for a moment, then that channel plays.
+  const [typedNum, setTypedNum] = useState('')
+  useEffect(() => {
+    if (onTV()) return
+    const onKey = (e: KeyboardEvent) => {
+      const t = e.target as HTMLElement | null
+      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT')) return
+      if (!/^[0-9]$/.test(e.key)) return
+      setTypedNum((n) => (n + e.key).slice(-4))
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
+  useEffect(() => {
+    if (!typedNum) return
+    const t = window.setTimeout(() => {
+      const c = (data?.channels ?? []).find((x) => !x.divider && !x.copyOf && String(x.num) === typedNum)
+      setTypedNum('')
+      if (c) setPlaying(c.id, { full })
+    }, 1300)
+    return () => window.clearTimeout(t)
+  }, [typedNum, data, full, setPlaying])
+
   // Full screen in a browser: up and down change channel, Escape leaves.
   useEffect(() => {
     if (!full || onTV()) return
@@ -622,6 +646,12 @@ export default function LivePage() {
 
   return (
     <div className={`wx-page wx-live${browserFull ? ' is-full' : ''}`}>
+      {typedNum && (
+        <div className="wx-live-typed" role="status">
+          <b>{typedNum}_</b>
+          <span>{(data.channels ?? []).find((x) => !x.divider && !x.copyOf && String(x.num) === typedNum)?.name ?? ''}</span>
+        </div>
+      )}
       {/* Nothing playing: the game that matters most, as an event. */}
       {!ch && !picked && !guideFirst && (
         <LiveHero
@@ -723,6 +753,17 @@ export default function LivePage() {
                   <Icon name={reminders.has(picked.channel.id, picked.show.start) ? 'check' : 'clock'} size={16} />
                   {reminders.has(picked.channel.id, picked.show.start) ? 'Reminder set' : 'Remind me'}
                 </button>
+                {reminders.has(picked.channel.id, picked.show.start) && (
+                  <button
+                    className="wx-btn small"
+                    aria-pressed={reminders.switches(picked.channel.id, picked.show.start)}
+                    onClick={() => void reminders.setSwitch(picked.channel.id, picked.show, !reminders.switches(picked.channel.id, picked.show.start))}
+                    title="When it starts, change to the channel by itself (ten seconds to say no)"
+                  >
+                    <Icon name={reminders.switches(picked.channel.id, picked.show.start) ? 'check' : 'tv'} size={16} />
+                    {reminders.switches(picked.channel.id, picked.show.start) ? 'Switches to it' : 'Switch to it'}
+                  </button>
+                )}
                 {recordButton(picked.channel.id, picked.show)}
                 <button className="wx-btn small" onClick={() => setPlaying(picked.channel.id)}>
                   <Icon name="play" size={16} /> Watch {picked.channel.name} now

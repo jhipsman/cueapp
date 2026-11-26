@@ -14,6 +14,9 @@ interface RemindersState {
   list: LiveReminder[]
   has: (channelId: string, start: string) => boolean
   toggle: (channelId: string, show: LiveProgramme) => Promise<void>
+  // Whether a reminder switches to its channel by itself, and setting that.
+  switches: (channelId: string, start: string) => boolean
+  setSwitch: (channelId: string, show: LiveProgramme, on: boolean) => Promise<void>
 }
 
 const Ctx = createContext<RemindersState | null>(null)
@@ -54,6 +57,15 @@ export function RemindersProvider({ children }: { children: ReactNode }) {
   }, [load])
 
   const keys = useMemo(() => new Set(list.map((r) => key(r.channelId, r.start))), [list])
+  const switching = useMemo(() => new Set(list.filter((r) => r.switch).map((r) => key(r.channelId, r.start))), [list])
+  const switches = useCallback((channelId: string, start: string) => switching.has(key(channelId, start)), [switching])
+  const setSwitch = useCallback(
+    async (channelId: string, show: LiveProgramme, on: boolean) => {
+      await api.addLiveReminder({ channelId, start: show.start, stop: show.stop, title: show.title, switch: on })
+      load()
+    },
+    [load],
+  )
   const has = useCallback((channelId: string, start: string) => keys.has(key(channelId, start)), [keys])
   const toggle = useCallback(
     async (channelId: string, show: LiveProgramme) => {
@@ -82,7 +94,38 @@ export function RemindersProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  const value = useMemo(() => ({ list, has, toggle }), [list, has, toggle])
+  // A reminder that switches: once its show has started, ten seconds to
+  // say no (Dismiss), then the channel.
+  const [count, setCount] = useState<number | null>(null)
+  const switchNow = !!due?.switch && Date.parse(due.start) <= now + 1000
+  useEffect(() => {
+    if (!switchNow || !due) {
+      setCount(null)
+      return
+    }
+    let n = 10
+    setCount(n)
+    const t = setInterval(() => {
+      n -= 1
+      setCount(n)
+      if (n <= 0) {
+        clearInterval(t)
+        dismiss(due)
+        navigate(`/watch/live?cat=all&ch=${encodeURIComponent(due.channelId)}${onTV() ? '' : '&full=1'}`)
+      }
+    }, 1000)
+    return () => clearInterval(t)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [switchNow, due?.channelId, due?.start])
+  // The minute clock, closer to a switching reminder's start: it starts on time.
+  useEffect(() => {
+    const next = list.filter((r) => r.switch).map((r) => Date.parse(r.start)).find((s) => s > now && s - now < 60_000)
+    if (!next) return
+    const t = window.setTimeout(() => setNow(Date.now()), next - now + 200)
+    return () => window.clearTimeout(t)
+  }, [list, now])
+
+  const value = useMemo(() => ({ list, has, toggle, switches, setSwitch }), [list, has, toggle, switches, setSwitch])
   return (
     <Ctx.Provider value={value}>
       {children}
@@ -93,8 +136,9 @@ export function RemindersProvider({ children }: { children: ReactNode }) {
           </span>
           <div className="wx-reminder-body">
             <small>
-              <Icon name="clock" size={13} /> {Date.parse(due.start) > now ? 'Starting in a minute' : 'Starting now'}
-              {due.channel ? ` on ${due.channel}` : ''}
+              <Icon name="clock" size={13} />{' '}
+              {count !== null ? `Switching${due.channel ? ` to ${due.channel}` : ''} in ${count}` : Date.parse(due.start) > now ? 'Starting in a minute' : 'Starting now'}
+              {count === null && due.channel ? ` on ${due.channel}` : ''}
             </small>
             <b>{due.title}</b>
           </div>
@@ -121,5 +165,5 @@ export function RemindersProvider({ children }: { children: ReactNode }) {
 
 export function useReminders(): RemindersState {
   const v = useContext(Ctx)
-  return v ?? { list: [], has: () => false, toggle: async () => undefined }
+  return v ?? { list: [], has: () => false, toggle: async () => undefined, switches: () => false, setSwitch: async () => undefined }
 }

@@ -6,6 +6,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import kotlinx.coroutines.launch
 import app.cue.tv.CrashLog
 import app.cue.tv.MainActivity
@@ -55,6 +56,24 @@ class HomeActivity : ComponentActivity() {
                 // The player fades in, rather than the TV's own window switch.
                 androidx.core.app.ActivityOptionsCompat.makeCustomAnimation(this, android.R.anim.fade_in, android.R.anim.fade_out),
             )
+        }
+        // Live TV reminders while Cue's screens are in front (the player
+        // checks its own): one set to switch starts its channel, the others
+        // say the show is on.
+        lifecycleScope.launch {
+            repeatOnLifecycle(androidx.lifecycle.Lifecycle.State.STARTED) {
+                while (true) {
+                    kotlinx.coroutines.delay(30_000)
+                    val due = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { app.cue.tv.LiveReminders.check(api.server, api.profileToken) } ?: continue
+                    val ch = if (due.switch && due.started) runCatching { api.channels().channels.firstOrNull { it.id == due.channelId } }.getOrNull() else null
+                    if (ch != null) {
+                        android.widget.Toast.makeText(this@HomeActivity, "Switching to ${ch.name}: ${due.title}", android.widget.Toast.LENGTH_LONG).show()
+                        playback.playLive(ch, listOf(ch))
+                    } else {
+                        android.widget.Toast.makeText(this@HomeActivity, app.cue.tv.LiveReminders.words(due), android.widget.Toast.LENGTH_LONG).show()
+                    }
+                }
+            }
         }
         // Send to TV: a phone can see this TV and send it a title to play.
         app.cue.tv.ScreenLink.start(this, server) { api.profileToken }

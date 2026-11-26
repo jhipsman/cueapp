@@ -45,13 +45,15 @@ type LiveReminder struct {
 	Start    time.Time `json:"start"`
 	Stop     time.Time `json:"stop"`
 	Title    string    `json:"title"`
+	// Switch: at the start, change to the channel by itself (not only say so).
+	Switch bool `json:"switch,omitempty"`
 }
 
 // AddLiveReminder saves a reminder (again: no change).
 func (r *Repo) AddLiveReminder(profileID int64, rem LiveReminder) error {
-	_, err := r.db.Exec(`INSERT INTO live_reminders (profile_id, stream_id, start_at, stop_at, title) VALUES (?, ?, ?, ?, ?)
-		ON CONFLICT(profile_id, stream_id, start_at) DO UPDATE SET stop_at = excluded.stop_at, title = excluded.title, dismissed = 0`,
-		profileID, rem.StreamID, rem.Start.UTC().Format(time.RFC3339), rem.Stop.UTC().Format(time.RFC3339), rem.Title)
+	_, err := r.db.Exec(`INSERT INTO live_reminders (profile_id, stream_id, start_at, stop_at, title, switch_to) VALUES (?, ?, ?, ?, ?, ?)
+		ON CONFLICT(profile_id, stream_id, start_at) DO UPDATE SET stop_at = excluded.stop_at, title = excluded.title, switch_to = excluded.switch_to, dismissed = 0`,
+		profileID, rem.StreamID, rem.Start.UTC().Format(time.RFC3339), rem.Stop.UTC().Format(time.RFC3339), rem.Title, rem.Switch)
 	if err != nil {
 		return fmt.Errorf("save reminder: %w", err)
 	}
@@ -78,7 +80,7 @@ func (r *Repo) RemoveLiveReminder(profileID int64, streamID string, start time.T
 // soonest first. Ended ones are cleared on the way.
 func (r *Repo) LiveReminders(profileID int64, now time.Time) ([]LiveReminder, error) {
 	_, _ = r.db.Exec(`DELETE FROM live_reminders WHERE stop_at < ?`, now.UTC().Format(time.RFC3339))
-	rows, err := r.db.Query(`SELECT stream_id, start_at, stop_at, title FROM live_reminders WHERE profile_id = ? AND dismissed = 0 ORDER BY start_at`, profileID)
+	rows, err := r.db.Query(`SELECT stream_id, start_at, stop_at, title, switch_to FROM live_reminders WHERE profile_id = ? AND dismissed = 0 ORDER BY start_at`, profileID)
 	if err != nil {
 		return nil, fmt.Errorf("list reminders: %w", err)
 	}
@@ -87,7 +89,7 @@ func (r *Repo) LiveReminders(profileID int64, now time.Time) ([]LiveReminder, er
 	for rows.Next() {
 		var rem LiveReminder
 		var start, stop string
-		if err := rows.Scan(&rem.StreamID, &start, &stop, &rem.Title); err != nil {
+		if err := rows.Scan(&rem.StreamID, &start, &stop, &rem.Title, &rem.Switch); err != nil {
 			return nil, err
 		}
 		rem.Start, _ = time.Parse(time.RFC3339, start)
