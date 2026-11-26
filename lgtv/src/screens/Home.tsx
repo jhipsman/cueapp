@@ -7,13 +7,15 @@ import { PosterRow, Spinner } from '../ui'
 // rows sliding up beneath them, the highlighted row just under the story.
 
 let cached: Home | null = null
+let loading: Promise<Home> | null = null
 
+// Home's rows, asked for once for Home, Movies and Shows together.
 export function useHome() {
   const [home, setHome] = useState<Home | null>(cached)
   const [problem, setProblem] = useState('')
   useEffect(() => {
-    api
-      .home()
+    if (!loading) loading = api.home().finally(() => window.setTimeout(() => (loading = null), 5000))
+    loading
       .then((h) => {
         cached = h
         setHome(h)

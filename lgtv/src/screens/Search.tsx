@@ -54,6 +54,7 @@ export function SearchScreen({ onPick }: { onPick: (c: Card) => void }) {
         <input
           data-f=""
           data-first=""
+          data-down=".grid [data-f]"
           value={q}
           placeholder="Titles, people, genres"
           spellCheck={false}

@@ -135,12 +135,13 @@ function Main({ onProfiles, onSignedOut }: { onProfiles: () => void; onSignedOut
   }, [])
 
   const railItem = (t: Tab) => rail.current?.querySelector<HTMLElement>(`[data-k="${t}"]`) ?? null
-  const intoContent = useCallback(() => {
-    const box = content.current?.querySelector<HTMLElement>(`[data-tab="${tab}"]`) ?? null
-    const last = lastIn.current.get(tab)
+  // Into a tab's page: where the highlight was there, else its first thing.
+  const intoContent = useCallback((t: Tab) => {
+    const box = content.current?.querySelector<HTMLElement>(`[data-tab="${t}"]`) ?? null
+    const last = lastIn.current.get(t)
     if (last && document.contains(last) && box?.contains(last)) focus(last)
     else focusIn(box)
-  }, [tab])
+  }, [])
 
   const openTitle = useCallback((card: Card) => {
     setStack((s) => [...s.slice(-7), { card, from: document.activeElement as HTMLElement | null }])
@@ -150,11 +151,11 @@ function Main({ onProfiles, onSignedOut }: { onProfiles: () => void; onSignedOut
       const top = s[s.length - 1]
       window.setTimeout(() => {
         if (top?.from && document.contains(top.from)) focus(top.from)
-        else if (s.length <= 1) intoContent()
+        else if (s.length <= 1) intoContent(tab)
       }, 30)
       return s.slice(0, -1)
     })
-  }, [intoContent])
+  }, [intoContent, tab])
 
   // The remote, for the menu and Back (screens take their keys first).
   useEffect(() =>
@@ -181,12 +182,18 @@ function Main({ onProfiles, onSignedOut }: { onProfiles: () => void; onSignedOut
       }
       if (stack.length) return false
       if (code === KEY.right && inRail) {
-        intoContent()
+        // Into the page of the menu item the highlight is on (now, not
+        // when the menu would have switched to it).
+        const t = (active?.getAttribute('data-k') ?? tab) as Tab
+        if (!TABS.some((x) => x.id === t)) return true
+        window.clearTimeout(tabTimer.current)
+        setTab(t)
+        window.setTimeout(() => intoContent(t), 40)
         return true
       }
       if (code === KEY.left && !inRail && active?.closest('[data-tab]')) {
-        // Left from the first thing in a row: the menu.
-        if (!move('left')) focus(railItem(tab))
+        // Left from the first thing in a row: the menu, on this page's item.
+        if (!move('left', (el) => !rail.current?.contains(el))) focus(railItem(tab))
         return true
       }
       return false
@@ -212,18 +219,19 @@ function Main({ onProfiles, onSignedOut }: { onProfiles: () => void; onSignedOut
               data-k={t.id}
               onFocus={() => pickTab(t.id)}
               onClick={() => {
+                window.clearTimeout(tabTimer.current)
                 setTab(t.id)
-                window.setTimeout(intoContent, 60)
+                window.setTimeout(() => intoContent(t.id), 40)
               }}
             >
               <Icon name={t.icon} />
-              <span>{t.label}</span>
+              <span className="rail-label">{t.label}</span>
             </button>
           ))}
         </div>
         <button className="rail-item rail-me" data-f="" data-k="me" onClick={onProfiles}>
           {me ? <Avatar avatar={me.avatar} name={me.name} size={2.6} /> : <Avatar avatar="teal" name="?" size={2.6} />}
-          <span>{me ? `${me.name} · Switch` : 'Profiles'}</span>
+          <span className="rail-label">{me ? `${me.name} · Switch` : 'Profiles'}</span>
         </button>
       </nav>
       <div className="content" ref={content}>

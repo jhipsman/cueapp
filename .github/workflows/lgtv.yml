@@ -32,9 +32,31 @@ jobs:
         with:
           node-version: "20"
 
-      - name: Build the .ipk
+      - name: Build the app
+        working-directory: lgtv
         run: |
-          node -e "JSON.parse(require('fs').readFileSync('lgtv/appinfo.json','utf8'))"
+          node -e "JSON.parse(require('fs').readFileSync('public/appinfo.json','utf8'))"
+          npm ci --no-audit --no-fund
+          npm run build
+
+      # The app walked with the remote against a stand-in Cue: sign-in,
+      # profiles, Home, the menu, Search, a show's page, playing.
+      - name: Walk through the app
+        working-directory: lgtv
+        run: |
+          npx playwright install --with-deps chromium
+          npm test
+
+      - name: Screenshots of the walk
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lg-walk-screens
+          path: lgtv/test-shots
+          if-no-files-found: ignore
+
+      - name: Package the .ipk
+        run: |
           ./lgtv/build.sh
           cp lgtv/dist/*.ipk cue-lg.ipk
 

@@ -149,17 +149,28 @@ export function focus(el: HTMLElement | null | undefined) {
   reveal(el)
 }
 
-export function move(dir: Dir): boolean {
-  const list = candidates()
+// move takes the highlight one step; `allow` narrows where it may land.
+export function move(dir: Dir, allow?: (el: HTMLElement) => boolean): boolean {
+  const list = allow ? candidates().filter(allow) : candidates()
   const from = document.activeElement as HTMLElement | null
   if (!from || from === document.body || !from.matches(SEL) || !shown(from)) {
     focus(list[0])
     return !!list[0]
   }
+  // An element can name where a direction goes (data-down=".grid [data-f]").
+  const jump = from.getAttribute(`data-${dir}`)
+  if (jump) {
+    const to = list.find((el) => el.matches(jump))
+    if (to) {
+      focus(to)
+      return true
+    }
+  }
   let next = best(from, dir, list)
-  // Into another row: where the highlight was in it.
+  // Into another row: where the highlight was in it, else the row's own
+  // starting point (data-first: the episode you're on).
   const g = groupOf(next)
-  if (next && g && g !== groupOf(from)) next = remembered(g, list) ?? next
+  if (next && g && g !== groupOf(from)) next = remembered(g, list) ?? list.find((el) => groupOf(el) === g && el.hasAttribute('data-first')) ?? next
   if (!next) return false
   focus(next)
   return true

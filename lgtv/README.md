@@ -1,11 +1,33 @@
 # Cue for LG TVs (webOS)
 
-The LG app opens your Cue server's Watch pages laid out for the TV: the
-remote's arrows move between buttons, OK picks, Back goes back, and the
-play/pause buttons work the video. Videos and live channels play in the
-TV's own web engine (Cue picks the browser-friendly version, as it does for
-a computer). It asks for your server's address once; afterwards, press OK or
-Down while it says "Opening…" to change it.
+Cue's own app for LG TVs: its screens live in the app, made for the remote,
+like the Fire TV app's. It has:
+
+- **Signing in** by scanning a code with your phone (or typing the code at
+  `<your Cue>/link`), or with your username and password; two-step sign-in
+  works too. Then **who's watching**, with profile PINs (the remote's
+  number keys type them).
+- **The side menu**: Search, Home, Movies, Shows, and your profile (to
+  switch). Back from a page goes to the menu; Back twice on Home leaves Cue.
+- **Home, Movies and Shows**: the highlighted title's picture behind the
+  screen with its story, the rows sliding up beneath (Continue watching, a
+  Top 10, what's trending, My List). Each row remembers where you were.
+- **Search**, with what's trending before you type.
+- **Title pages**: Play or Resume, My List, a show's seasons and episodes
+  (starting on the one you're on), More like this.
+- **The player**, on the TV's own player (MKV, HEVC and Dolby sound play;
+  Cue picks versions with sound the TV plays): OK pauses, left and right
+  skip 10 seconds, the remote's play/pause/stop/fast-forward buttons work. It
+  starts where you left off and keeps your place; a version that won't play
+  falls back to Cue's converted copy, then the next version; at a show's
+  end, the next episode.
+
+Coming next: Live TV (the guide, with the channel playing as you browse),
+then Browse, Ask Cue, Settings and Watch party.
+
+It signs in with its own session, sent in a header (the app's pages are
+files on the TV, so Cue's cookie can't be used), and talks to your Cue
+directly; live channels play straight from your provider.
 
 LG only lets you install your own apps in **Developer Mode**, which lasts 50
 hours at a time: open the Developer Mode app on the TV now and then and
@@ -38,12 +60,26 @@ press **Extend** (or it resets and the app has to be installed again).
    ares-install --device lgtv cue-lg.ipk
    ```
 4. **Open Cue** from the TV's apps list (it's in the row at the bottom, or
-   under Apps). Type your server's address, the one you open in a browser.
+   under Apps). Type your server's address, the one you open in a browser,
+   then sign in with your phone.
 
 ## Updating
 
-Most changes are on your server, so the app picks them up by itself. Only a
-change to `lgtv/` needs the app installed again (step 3).
+Install the new `cue-lg.ipk` the same way (step 3); you stay signed in.
+
+## Building and testing
+
+```
+cd lgtv
+npm ci
+npm run build      # dist-app/: the app as the TV gets it
+npm test           # walks it with the remote against a stand-in Cue
+./build.sh         # dist/*.ipk
+```
+
+To try it on a computer, open `dist-app/index.html` in Chrome (as a file,
+the way the TV opens it; Cue answers only that): arrow keys, Enter, and
+Escape for Back.
 
 ## Keeping Developer Mode on
 

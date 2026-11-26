@@ -33,6 +33,8 @@ export function Player({ target, onClose, onPlay }: { target: PlayTarget; onClos
   const [time, setTime] = useState({ at: 0, length: 0 })
   const [upNext, setUpNext] = useState<{ ep: Episode; in: number } | null>(null)
   const resumeAt = useRef(0)
+  // Where it's got to, kept here: the video is gone by the time the last save runs.
+  const place = useRef({ at: 0, length: 0 })
   const hideTimer = useRef(0)
 
   // Where you were.
@@ -72,10 +74,10 @@ export function Player({ target, onClose, onPlay }: { target: PlayTarget; onClos
   // Keeping your place: every 15 seconds, and on leaving.
   useEffect(() => {
     const save = () => {
-      const v = video.current
-      if (!v || !v.duration || v.currentTime < 5) return
+      const { at, length } = place.current
+      if (!length || at < 5) return
       void api
-        .saveProgress({ kind: target.kind, tmdbId: target.tmdbId, season: target.season, episode: target.episode, position: Math.floor(v.currentTime), duration: Math.floor(v.duration) })
+        .saveProgress({ kind: target.kind, tmdbId: target.tmdbId, season: target.season, episode: target.episode, position: Math.floor(at), duration: Math.floor(length) })
         .catch(() => undefined)
     }
     const t = window.setInterval(save, 15000)
@@ -200,7 +202,11 @@ export function Player({ target, onClose, onPlay }: { target: PlayTarget; onClos
             resumeAt.current = 0
             setNote('')
           }}
-          onTimeUpdate={(e) => setTime({ at: e.currentTarget.currentTime, length: e.currentTarget.duration || 0 })}
+          onTimeUpdate={(e) => {
+            const t = { at: e.currentTarget.currentTime, length: e.currentTarget.duration || 0 }
+            place.current = t
+            setTime(t)
+          }}
           onPlaying={() => {
             setWaiting(false)
             setPaused(false)

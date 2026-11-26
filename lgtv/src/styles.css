@@ -80,8 +80,8 @@ h1, h2, h3, p { margin: 0; }
 .rail-items { display: flex; flex-direction: column; flex: 1; justify-content: center; }
 .rail-item { display: flex; align-items: center; height: 3.8rem; padding: 0 1.1rem; border-radius: 1rem; color: var(--dim);
   font-size: 1.4rem; font-weight: 600; white-space: nowrap; width: 100%; }
-.rail-item span { opacity: 0; transition: opacity 0.15s; }
-.rail.open .rail-item span { opacity: 1; }
+.rail-label { opacity: 0; transition: opacity 0.15s; }
+.rail.open .rail-label { opacity: 1; }
 .rail-item.on { color: #fff; }
 .rail-item:focus { background: #fff; color: #0b0b0c; }
 .rail-me { padding-left: 0.6rem; }
