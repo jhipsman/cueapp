@@ -247,6 +247,9 @@ Every route the server exposes. Routes marked **public** need no sign-in; all ot
 | GET | `/api/live/sports/teams` | signed in | GET /api/live/sports/teams?league=nfl: the league's teams to follow, and the profile's. |
 | DELETE | `/api/live/sports/teams/{league}/{id}` | signed in | PUT\|DELETE /api/live/sports/teams/{league}/{id} {name, logo}: follow a team (or stop). |
 | PUT | `/api/live/sports/teams/{league}/{id}` | signed in | PUT\|DELETE /api/live/sports/teams/{league}/{id} {name, logo}: follow a team (or stop). |
+| DELETE | `/api/live/timeshift` | signed in | DELETE /api/live/timeshift?v=<player>: the player stopped watching; a copy only it was watching stops now. |
+| GET | `/api/live/timeshift/{id}` | signed in | GET /api/live/timeshift/{id}?v=<player>: starts keeping the channel (or joins its copy) and answers the playlist's address once its first piece is made: {url... |
+| GET | `/api/live/ts/{id}/{file}` | **public** | GET /api/live/ts/{id}/{file}: a copy's playlist or a piece. |
 
 ## manual-import
 
@@ -568,6 +571,7 @@ Every route the server exposes. Routes marked **public** need no sign-in; all ot
 | PUT | `/api/settings/hardcover` | admin | PUT /api/settings/hardcover {"token": "..."}: checks the token with Hardcover and saves it (encrypted). |
 | GET | `/api/settings/iptv` | admin | GET /api/settings/iptv: the saved login, without its password. |
 | PUT | `/api/settings/iptv` | admin | PUT /api/settings/iptv {server, username, password}: checks the login with the provider and saves it, encrypted. |
+| PUT | `/api/settings/iptv/timeshift` | admin | PUT /api/settings/iptv/timeshift {minutes}: how much of a channel the server keeps (0 turns it off). |
 | GET | `/api/settings/naming-preview` | admin | shows a naming preset or custom format applied to a fixed sample release (kind=movie, the default, or kind=tv), so the page can display the exact file name w... |
 | GET | `/api/settings/naming-tokens` | admin | lists the tokens a custom format can use and the ready-made formats to start from, for the builder in Settings. |
 | GET | `/api/settings/omdb` | admin | GET /api/settings/omdb: whether an OMDb key is saved. |
@@ -789,4 +793,4 @@ Every route the server exposes. Routes marked **public** need no sign-in; all ot
 | PUT | `/api/watched/settings` | admin | PUT /api/watched/settings {"sync": true, "cleanup": {...}} |
 | POST | `/api/watched/sync` | admin | POST /api/watched/sync: read what's been watched now. |
 
-454 routes.
+458 routes.

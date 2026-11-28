@@ -241,7 +241,7 @@ private fun PlaybackSettings() {
         }
         SettingRow(
             "Light mode",
-            if (light) "Still pictures instead of moving previews, for a smoother TV." else "Moving previews on. Turn on if this TV feels slow.",
+            if (light) "Still pictures, no live previews or blur, two channels at most in Multiview: smoother on a slow TV." else "Moving previews and soft backgrounds. Turn on if this TV feels slow.",
             if (light) "On" else "Off",
         ) {
             light = !light

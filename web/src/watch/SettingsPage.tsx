@@ -1,3 +1,4 @@
+import { liteChoice, liteOn, setLite } from '../lite'
 import { useEffect, useState, type FormEvent, type ReactNode } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { api, isAdmin } from '../api'
@@ -86,6 +87,32 @@ function Row({ title, text, children }: { title: string; text?: ReactNode; child
       </div>
       {children && <div className="wx-set-control">{children}</div>}
     </div>
+  )
+}
+
+// Light mode on this device (src/lite.ts): its own setting, not the
+// account's, since it's about how fast this screen is.
+function LiteToggle() {
+  const [on, setOn] = useState(liteOn())
+  const auto = liteChoice() === 'auto'
+  return (
+    <Row
+      title="Light mode on this device"
+      text={`No blur or moving pictures, for a slow TV or device.${auto ? (on ? ' On by itself here (a TV or a device with little memory).' : '') : ''}`}
+    >
+      <button
+        role="switch"
+        aria-checked={on}
+        aria-label="Light mode on this device"
+        className={`wx-switch${on ? ' on' : ''}`}
+        onClick={() => {
+          setLite(on ? 'off' : 'on')
+          setOn(liteOn())
+        }}
+      >
+        <i />
+      </button>
+    </Row>
   )
 }
 
@@ -352,6 +379,7 @@ function PlaybackSection() {
     <>
       <Toggle k="autoplayNext" title="Play the next episode automatically" text="When an episode ends, the next one starts after a short countdown." />
       <Toggle k="previews" title="Previews" text="Short clips play on Home's banner and on a title's page after a moment." />
+      <LiteToggle />
       <Toggle k="previewSound" title="Preview sound on a title's page" text="A title's preview plays with its sound, as on the streaming apps." />
       <Row title="Streaming quality" text="The picture to aim for, and how big a file may be.">
         <Go to="/watch/quality">Change</Go>

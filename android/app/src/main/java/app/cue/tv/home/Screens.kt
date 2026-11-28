@@ -290,7 +290,9 @@ fun LaunchLogo() {
         word.animateTo(1f, tween(600, easing = Settle))
     }
     val breathe = androidx.compose.animation.core.rememberInfiniteTransition(label = "glow")
-    val glow by breathe.animateFloat(0.7f, 1f, androidx.compose.animation.core.infiniteRepeatable(tween(1400), androidx.compose.animation.core.RepeatMode.Reverse), label = "g")
+    val breathing by breathe.animateFloat(0.7f, 1f, androidx.compose.animation.core.infiniteRepeatable(tween(1400), androidx.compose.animation.core.RepeatMode.Reverse), label = "g")
+    val light = lightMode() // Light mode: a steady glow
+    val glow = if (light) 1f else breathing
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Box(Modifier.size(360.dp).graphicsLayer { alpha = mark.value * glow; scaleX = 0.8f + 0.2f * glow; scaleY = 0.8f + 0.2f * glow }
             .background(Brush.radialGradient(listOf(Teal.copy(alpha = 0.32f), Color.Transparent))))

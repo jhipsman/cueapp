@@ -6,6 +6,7 @@ import './design.css'
 import './setup.css'
 import { demoEnabled, installDemo } from './demo'
 import App from './App.tsx'
+import { applyLite } from './lite'
 import { ToastProvider } from './components/Toast'
 import { ConfirmProvider } from './components/ConfirmProvider'
 
@@ -42,6 +43,9 @@ if ('serviceWorker' in navigator) {
       // ignore — not having permission to look is fine
     })
 }
+
+// Light mode on a slow device, before anything draws.
+applyLite()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

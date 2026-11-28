@@ -63,8 +63,10 @@ private const val TRAILER_REST_MS = 800L
 private fun trailersFit(ctx: Context): Boolean = !LightMode.on(ctx)
 
 // Light mode: no moving previews (Home's banner, a title's page, live TV's
-// banner), and highlighted cards without their shadow and sweeping shine,
-// for TVs with a slow processor. On by itself on a TV with little
+// picture), highlighted cards without their shadow and sweeping shine, no
+// blurred picture behind the pages, still pictures where they'd drift
+// (the screensaver, the tour, the opening logo), and two channels at most in
+// Multiview, for TVs with a slow processor. On by itself on a TV with little
 // memory (most built-in Google TVs); Profile switches it either way.
 object LightMode {
     private const val KEY = "lightMode"
@@ -165,10 +167,12 @@ fun Screensaver(api: CueApi, slides: List<SaverSlide>) {
             delay(15_000)
         }
     }
+    // Light mode: the pictures stay still (no slow zoom), and change with a shorter fade.
+    val light = lightMode()
     Box(Modifier.fillMaxSize().background(Color.Black)) {
-        Crossfade(targetState = index % slides.size, animationSpec = tween(2200), label = "saver") { i ->
+        Crossfade(targetState = index % slides.size, animationSpec = tween(if (light) 900 else 2200), label = "saver") { i ->
             val drift = remember(i) { Animatable(0f) }
-            LaunchedEffect(i) { drift.animateTo(1f, tween((SLIDE_MS + 3000).toInt(), easing = LinearEasing)) }
+            LaunchedEffect(i) { if (!light) drift.animateTo(1f, tween((SLIDE_MS + 3000).toInt(), easing = LinearEasing)) }
             AsyncImage(
                 model = slides[i].tile.backdrop,
                 contentDescription = null,

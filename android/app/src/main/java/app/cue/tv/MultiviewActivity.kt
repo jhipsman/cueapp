@@ -247,7 +247,8 @@ class MultiviewActivity : Activity() {
             slots[index] = ""
             t.show("")
         }
-        items += (if (size == 2) "Show four" else "Show two") to { setSize(if (size == 2) 4 else 2) }
+        // Light mode (a slow TV): two at most; four players at once is too much for it.
+        if (size == 4 || !app.cue.tv.home.LightMode.on(this)) items += (if (size == 2) "Show four" else "Show two") to { setSize(if (size == 2) 4 else 2) }
         AlertDialog.Builder(this)
             .setItems(items.map { it.first }.toTypedArray()) { _, w -> items[w].second() }
             .show()
