@@ -980,6 +980,32 @@ input:focus, select:focus, textarea:focus { border-color: var(--sec, var(--accen
   *, *::before, *::after { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; scroll-behavior: auto !important; }
 }
 
+/* Light mode (src/lite.ts): a slow TV or device, by itself or chosen in Watch
+   › Settings. The same page, drawn far more cheaply: no blur (glass panels
+   keep their tint), no endless or arrival motion, short transitions, and the
+   soft glows and blurred pictures behind pages left out. */
+html.lite *, html.lite *::before, html.lite *::after {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  animation-duration: 0.001ms !important;
+  animation-delay: 0s !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.12s !important;
+  transition-delay: 0s !important;
+  scroll-behavior: auto !important;
+}
+html.lite .title-hero-bg,
+html.lite .wx-ambient,
+html.lite .main-area::before,
+html.lite .finish-glow,
+html.lite .hero-welcome::before,
+html.lite .hero-welcome::after,
+html.lite .wx-tour-glow,
+html.lite .lp-glow { display: none !important; }
+html.lite .wx-tour-pic.blurry,
+html.lite .wx-tour-pic.blurry::after,
+html.lite .section-off .section-body { filter: none !important; }
+
 /* Tiles are buttons, so let their text wrap instead of running off the edge. */
 .type-tile { white-space: normal; text-align: left; display: grid; }
 .type-tile small { white-space: normal; text-align: left; line-height: 1.35; }

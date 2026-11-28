@@ -1,3 +1,4 @@
+import { liteOn } from '../lite'
 import { useEffect, useRef, useState } from 'react'
 import Icon from '../components/Icon'
 import { api, type WatchCard } from '../api'
@@ -88,7 +89,8 @@ export function setPreviewsOn(on: boolean) {
 }
 
 export function trailersAllowed(): boolean {
-  return previewsOn && matchMedia('(hover: hover) and (min-width: 900px)').matches && !matchMedia('(prefers-reduced-motion: reduce)').matches && !tvRemote()
+  // Not in Light mode (a slow device: src/lite.ts).
+  return previewsOn && !liteOn() && matchMedia('(hover: hover) and (min-width: 900px)').matches && !matchMedia('(prefers-reduced-motion: reduce)').matches && !tvRemote()
 }
 
 // usePreview: a title's own preview clip (cut on the server, kept),
