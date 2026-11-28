@@ -93,7 +93,9 @@ fun tiny(url: String?): String? = url?.replace(Regex("/t/p/w\\d+/"), "/t/p/w300/
 @Composable
 fun AmbientBackground(url: String?) {
     Box(Modifier.fillMaxSize().background(Background)) {
-        Crossfade(targetState = tiny(url), animationSpec = tween(700), label = "ambient") { u ->
+        // Light mode: no picture behind (a full-screen blur is costly to draw).
+        val light = lightMode()
+        Crossfade(targetState = if (light) null else tiny(url), animationSpec = tween(700), label = "ambient") { u ->
             if (u != null) {
                 AsyncImage(
                     model = ImageRequest.Builder(LocalContext.current).data(u).crossfade(false).build(),
@@ -451,6 +453,7 @@ fun Modifier.settleIn(from: Float = 1.06f, settled: Boolean = false): Modifier {
 // A slow drift on a big picture (Apple's top shelf moves gently).
 @Composable
 fun Modifier.drift(): Modifier {
+    if (lightMode()) return this // Light mode: still (a slow TV redraws the picture every frame otherwise)
     val t = androidx.compose.animation.core.rememberInfiniteTransition(label = "drift")
     val z by t.animateFloat(1f, 1.05f, androidx.compose.animation.core.infiniteRepeatable(
         androidx.compose.animation.core.tween(18000, easing = androidx.compose.animation.core.LinearEasing),

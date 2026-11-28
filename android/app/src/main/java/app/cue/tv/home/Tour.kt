@@ -211,7 +211,8 @@ fun TourScreen(done: () -> Unit) {
 @Composable
 private fun BoxScope.Picture(first: Color, second: Color) {
     val t = rememberInfiniteTransition(label = "drift")
-    val z by t.animateFloat(1f, 1.08f, infiniteRepeatable(tween(9000, easing = LinearEasing), RepeatMode.Reverse), label = "z")
+    val drifting by t.animateFloat(1f, 1.08f, infiniteRepeatable(tween(9000, easing = LinearEasing), RepeatMode.Reverse), label = "z")
+    val z = if (lightMode()) 1f else drifting // Light mode: still
     Box(
         Modifier.matchParentSize().graphicsLayer { scaleX = z; scaleY = z }.background(
             Brush.radialGradient(listOf(first, Color.Transparent), radius = 520f, center = androidx.compose.ui.geometry.Offset(560f, 160f)),
@@ -225,7 +226,8 @@ private fun BoxScope.Picture(first: Color, second: Color) {
 @Composable
 private fun Modifier.ring(shape: RoundedCornerShape = RoundedCornerShape(50)): Modifier {
     val t = rememberInfiniteTransition(label = "ring")
-    val a by t.animateFloat(1f, 0f, infiniteRepeatable(tween(1800, easing = FastOutSlowInEasing)), label = "a")
+    val fading by t.animateFloat(1f, 0f, infiniteRepeatable(tween(1800, easing = FastOutSlowInEasing)), label = "a")
+    val a = if (lightMode()) 0.8f else fading // Light mode: a steady ring
     return border(2.dp, Teal.copy(alpha = a), shape).padding(3.dp)
 }
 
@@ -275,7 +277,8 @@ private fun BoxScope.Bar(content: @Composable () -> Unit) {
 @Composable
 private fun BoxScope.WelcomeArt() {
     val t = rememberInfiniteTransition(label = "glow")
-    val g by t.animateFloat(0.85f, 1.15f, infiniteRepeatable(tween(3600), RepeatMode.Reverse), label = "g")
+    val glowing by t.animateFloat(0.85f, 1.15f, infiniteRepeatable(tween(3600), RepeatMode.Reverse), label = "g")
+    val g = if (lightMode()) 1f else glowing // Light mode: steady
     Box(
         Modifier.matchParentSize().background(
             Brush.verticalGradient(listOf(Color.Transparent, Teal.copy(alpha = 0.14f))),
