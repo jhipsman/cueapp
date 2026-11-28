@@ -1,0 +1,62 @@
+         1795882473.782  4629  4649 I CueWalkThrough: step 01 home
+         1795882474.084  4629  4649 I CueWalkThrough: press KEYCODE_DPAD_LEFT
+         1795882474.524  4629  4649 I CueWalkThrough: press KEYCODE_DPAD_LEFT
+         1795882474.905  4629  4649 I CueWalkThrough: press KEYCODE_DPAD_LEFT
+         1795882475.320  4629  4649 I CueWalkThrough: step 02 side-menu
+         1795882475.549  4629  4649 I CueWalkThrough: press KEYCODE_DPAD_DOWN
+         1795882476.689  4629  4649 I CueWalkThrough: step 03 movies
+         1795882477.012  4629  4649 I CueWalkThrough: press KEYCODE_DPAD_DOWN
+         1795882478.425  4629  4649 I CueWalkThrough: step 04 shows
+         1795882478.730  4629  4649 I CueWalkThrough: press KEYCODE_DPAD_DOWN
+         1795882479.906  4629  4649 I CueWalkThrough: step 05 live-tv
+         1795882480.117  4629  4649 I CueWalkThrough: press KEYCODE_DPAD_DOWN
+         1795882481.147  4629  4649 I CueWalkThrough: step 06 browse
+         1795882481.328  4629  4649 I CueWalkThrough: press KEYCODE_DPAD_RIGHT
+         1795882482.252  4629  4649 I CueWalkThrough: press KEYCODE_DPAD_UP
+         1795882482.676  4629  4649 I CueWalkThrough: press KEYCODE_DPAD_UP
+         1795882483.282  4629  4649 I CueWalkThrough: press KEYCODE_DPAD_UP
+         1795882483.671  4629  4649 I CueWalkThrough: press KEYCODE_DPAD_UP
+         1795882484.073  4629  4649 I CueWalkThrough: step 07 browse-in
+         1795882484.270  4629  4649 I CueWalkThrough: press KEYCODE_DPAD_DOWN
+         1795882484.694  4629  4649 I CueWalkThrough: press KEYCODE_DPAD_CENTER
+         1795882486.415  4629  4649 I CueWalkThrough: step 08 service-page
+         1795882486.880  4629  4649 I CueWalkThrough: press KEYCODE_DPAD_CENTER
+         1795882488.550  4629  4649 I CueWalkThrough: step 09 title
+         1795882488.796  4629  4649 I CueWalkThrough: press KEYCODE_BACK
+         1795882489.644  4629  4649 I CueWalkThrough: press KEYCODE_BACK
+         1795882490.557  4629  4649 I CueWalkThrough: step 10 back-to-browse
+         1795882490.783  4629  4649 I CueWalkThrough: press KEYCODE_BACK
+         1795882491.195  4629  4649 I CueWalkThrough: press KEYCODE_DPAD_UP
+         1795882491.924  4629  4649 I CueWalkThrough: press KEYCODE_DPAD_UP
+         1795882492.531  4629  4649 I CueWalkThrough: press KEYCODE_DPAD_UP
+         1795882493.144  4629  4649 I CueWalkThrough: press KEYCODE_DPAD_UP
+         1795882493.767  4629  4649 I CueWalkThrough: press KEYCODE_DPAD_UP
+         1795882495.405  4629  4649 I CueWalkThrough: step 11 search
+         1795882495.715  4629  4649 I CueWalkThrough: press KEYCODE_DPAD_RIGHT
+         1795882496.209  4629  4649 I CueWalkThrough: press KEYCODE_DPAD_CENTER
+         1795882497.281  4629  4649 I CueWalkThrough: step 12 ask-cue
+         1795882497.512  4629  4649 I CueWalkThrough: press KEYCODE_DPAD_CENTER
+         1795882498.533  4629  4649 I CueWalkThrough: step 13 ask-cue-answer
+         1795882498.782  4629  4649 I CueWalkThrough: press KEYCODE_BACK
+         1795882499.715  4629  4649 I CueWalkThrough: press KEYCODE_BACK
+         1795882500.103  4629  4649 I CueWalkThrough: press KEYCODE_BACK
+         1795882501.641  4629  4649 I CueWalkThrough: step 14 home-again
+         1795882501.893  4629  4649 I CueWalkThrough: press KEYCODE_DPAD_LEFT
+         1795882502.302  4629  4649 I CueWalkThrough: press KEYCODE_DPAD_LEFT
+         1795882502.684  4629  4649 I CueWalkThrough: press KEYCODE_DPAD_LEFT
+         1795882503.078  4629  4649 I CueWalkThrough: press KEYCODE_DPAD_DOWN
+         1795882504.027  4629  4649 I CueWalkThrough: press KEYCODE_DPAD_DOWN
+         1795882505.115  4629  4649 I CueWalkThrough: press KEYCODE_DPAD_DOWN
+         1795882506.111  4629  4649 I CueWalkThrough: press KEYCODE_DPAD_DOWN
+         1795882507.251  4629  4649 I CueWalkThrough: press KEYCODE_DPAD_DOWN
+         1795882508.139  4629  4649 I CueWalkThrough: step 15 settings
+         1795882508.335  4629  4649 I CueWalkThrough: press KEYCODE_DPAD_RIGHT
+         1795882508.754  4629  4649 I CueWalkThrough: press KEYCODE_DPAD_DOWN
+         1795882509.533  4629  4649 I CueWalkThrough: step 16 settings-playback
+         1795882509.734  4629  4649 I CueWalkThrough: press KEYCODE_DPAD_DOWN
+         1795882510.446  4629  4649 I CueWalkThrough: step 17 settings-problems
+         1795882510.622  4629  4649 I CueWalkThrough: press KEYCODE_DPAD_DOWN
+         1795882511.389  4629  4649 I CueWalkThrough: step 18 settings-about
+         1795882511.592  4629  4649 I CueWalkThrough: press KEYCODE_BACK
+         1795882511.996  4629  4649 I CueWalkThrough: press KEYCODE_BACK
+         1795882513.929  4629  4649 I CueWalkThrough: unknown requests: [GET /api/screens/listen, GET /tv.version, GET /api/screens/listen, GET /api/screens/listen, GET /api/screens/listen, GET /api/screens/listen, GET /api/watch/providers/movie/101, GET /api/screens/listen, GET /api/screens/listen, GET /api/screens/listen, GET /api/screens/listen, GET /api/screens/listen, GET /api/screens/listen, GET /api/screens/listen]
